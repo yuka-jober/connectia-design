@@ -450,27 +450,34 @@
     }
 
     /* ─── PDF 다운로드 플로팅 버튼 ──────────────────────────────────── */
-    .pdf-download-btn {
-      position: fixed;
+    .pdf-btn-wrap {
+      position: sticky;
       top: 20px;
-      right: 24px;
-      z-index: 900;
-      display: flex;
+      height: 0;
+      overflow: visible;
+      text-align: right;
+      z-index: 100;
+      padding-right: 20px;
+    }
+    .pdf-download-btn {
+      display: inline-flex;
       align-items: center;
       gap: 0;
       height: 40px;
       padding: 0 14px;
-      background: #252638;
-      color: #fff;
-      border: none;
+      background: rgba(255, 255, 255, 0.55);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      color: #252638;
+      border: 1px solid rgba(255,255,255,0.7);
       border-radius: 9999px;
       cursor: pointer;
       font-family: 'Pretendard Variable', 'Pretendard', sans-serif;
       font-size: 13px;
       font-weight: 600;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.18);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.1);
       overflow: hidden;
-      transition: background 200ms ease, box-shadow 200ms ease, padding 220ms ease;
+      transition: background 200ms ease, box-shadow 200ms ease;
       white-space: nowrap;
     }
     .pdf-download-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
@@ -482,7 +489,7 @@
       margin-left: 0;
     }
     .pdf-download-btn:hover {
-      background: #1a1a2e;
+      background: rgba(255,255,255,0.8);
       box-shadow: 0 6px 20px rgba(0,0,0,0.24);
     }
     .pdf-download-btn:hover .pdf-label {
@@ -494,20 +501,23 @@
 </head>
 <body>
 
-  <!-- PDF 다운로드 플로팅 버튼 -->
-  <button class="pdf-download-btn" onclick="window.print()" title="PDF 저장">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-      <polyline points="7 10 12 15 17 10"/>
-      <line x1="12" y1="15" x2="12" y2="3"/>
-    </svg>
-    <span class="pdf-label">PDF 저장</span>
-  </button>
-
 <div class="split">
 
   <!-- ── Left: 이력서 ────────────────────────────────────────────── -->
   <div class="resume-col">
+
+    <!-- PDF 다운로드 플로팅 버튼 -->
+    <div class="pdf-btn-wrap">
+      <button class="pdf-download-btn" onclick="window.print()" title="PDF 저장">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        <span class="pdf-label">PDF 저장</span>
+      </button>
+    </div>
+
     <div class="resume-page">
 
       <div class="r-header">
