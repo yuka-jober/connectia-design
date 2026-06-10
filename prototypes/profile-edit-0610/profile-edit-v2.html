@@ -59,6 +59,27 @@
 
 .banner-wrap { position: relative; background: var(--color-surface); margin-bottom: 8px; }
     .banner-placeholder { width: 100%; aspect-ratio: 9/4; background: var(--color-banner-gradient); display: flex; align-items: center; justify-content: center; }
+
+    /* ── 명함 템플릿 로고 영역 ── */
+    .logo-area {
+      display: none;
+      padding: 24px 20px 20px;
+      background: var(--color-surface);
+    }
+    .logo-upload {
+      display: flex; align-items: center; gap: 12px; cursor: pointer;
+    }
+    .logo-placeholder {
+      width: 48px; height: 48px; border-radius: var(--r-sm);
+      border: 1.5px dashed var(--color-border);
+      background: var(--color-surface-sub);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--color-text-muted); flex-shrink: 0;
+    }
+    .logo-upload-label {
+      font-size: var(--fs-body); font-weight: var(--fw-medium); color: var(--color-text-muted);
+    }
+    .logo-divider { height: 1px; background: var(--color-text); opacity: 0.12; margin-top: 20px; }
     .banner-area { position: relative; cursor: pointer; }
     .banner-hover-overlay {
       position: absolute; inset: 0; background: var(--color-scrim);
@@ -302,7 +323,21 @@
   <div class="scroll-area">
 
     <!-- Banner + Avatar -->
-    <div class="banner-wrap">
+    <!-- 명함 템플릿 로고 영역 -->
+    <div class="logo-area" id="logo-area">
+      <div class="logo-upload">
+        <div class="logo-placeholder">
+          <i data-lucide="image" style="width:20px;height:20px"></i>
+        </div>
+        <div>
+          <p class="logo-upload-label">로고 이미지 업로드</p>
+          <p style="font-size:var(--fs-caption);color:var(--color-text-muted);margin-top:2px;">브랜드 로고를 넣어주세요</p>
+        </div>
+      </div>
+      <div class="logo-divider"></div>
+    </div>
+
+    <div class="banner-wrap" id="banner-wrap">
       <div class="banner-area">
         <div class="banner-placeholder"></div>
         <div class="banner-hover-overlay">
@@ -885,6 +920,11 @@
         item.classList.remove('is-selected');
       });
       el.classList.add('is-selected');
+      var items = document.querySelectorAll('#template-list .tpl-item');
+      var idx = Array.from(items).indexOf(el);
+      var isCard = idx === 2;
+      document.getElementById('banner-wrap').style.display = isCard ? 'none' : '';
+      document.getElementById('logo-area').style.display = isCard ? 'block' : 'none';
     }
 
     function selectBtnStyle(el) {
