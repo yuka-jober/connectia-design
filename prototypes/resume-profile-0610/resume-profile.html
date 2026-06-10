@@ -448,9 +448,61 @@
         right: 20px;
       }
     }
+
+    /* ─── PDF 다운로드 플로팅 버튼 ──────────────────────────────────── */
+    .pdf-download-btn {
+      position: fixed;
+      top: 20px;
+      right: 24px;
+      z-index: 900;
+      display: flex;
+      align-items: center;
+      gap: 0;
+      height: 40px;
+      padding: 0 14px;
+      background: #252638;
+      color: #fff;
+      border: none;
+      border-radius: 9999px;
+      cursor: pointer;
+      font-family: 'Pretendard Variable', 'Pretendard', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.18);
+      overflow: hidden;
+      transition: background 200ms ease, box-shadow 200ms ease, padding 220ms ease;
+      white-space: nowrap;
+    }
+    .pdf-download-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+    .pdf-download-btn .pdf-label {
+      max-width: 0;
+      opacity: 0;
+      overflow: hidden;
+      transition: max-width 220ms ease, opacity 180ms ease, margin-left 220ms ease;
+      margin-left: 0;
+    }
+    .pdf-download-btn:hover {
+      background: #1a1a2e;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.24);
+    }
+    .pdf-download-btn:hover .pdf-label {
+      max-width: 80px;
+      opacity: 1;
+      margin-left: 7px;
+    }
   </style>
 </head>
 <body>
+
+  <!-- PDF 다운로드 플로팅 버튼 -->
+  <button class="pdf-download-btn" onclick="window.print()" title="PDF 저장">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+      <polyline points="7 10 12 15 17 10"/>
+      <line x1="12" y1="15" x2="12" y2="3"/>
+    </svg>
+    <span class="pdf-label">PDF 저장</span>
+  </button>
 
 <div class="split">
 
