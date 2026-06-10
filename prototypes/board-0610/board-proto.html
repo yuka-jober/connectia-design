@@ -199,7 +199,7 @@
     padding: 16px 0 12px;
   }
   .comment-item { display: flex; gap: 10px; margin-bottom: 16px; }
-  .comment-content { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: stretch; }
+  .comment-content { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; }
   .comment-header { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
   .comment-author { font-size: var(--fs-label); font-weight: var(--fw-semibold); color: var(--color-text); }
   .comment-time { font-size: var(--fs-caption); color: var(--color-text-muted); }
@@ -210,7 +210,7 @@
   .comment-edit-actions { display: flex; gap: 6px; justify-content: flex-end; }
   .comment-reply-btn { background: none; border: none; font-family: var(--font-base); font-size: var(--fs-caption); color: var(--color-text-muted); cursor: pointer; padding: 4px 0 0; }
   .comment-reply-btn:hover { color: var(--color-primary); }
-  .reply-input-wrap { display: none; align-items: center; gap: 8px; margin-top: 8px; width: 100%; }
+  .reply-input-wrap { display: none; align-items: center; gap: 8px; margin-top: 8px; align-self: stretch; }
   .reply-input-wrap.on { display: flex; }
   .reply-input-wrap .input { flex: 1; font-size: var(--fs-body); }
   .comment-replies { display: flex; flex-direction: column; gap: 0; margin-top: 8px; padding-left: 20px; border-left: 2px solid var(--color-border); }
