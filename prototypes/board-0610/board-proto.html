@@ -208,6 +208,15 @@
   .comment-edit-wrap.on { display: flex; }
   .comment-edit-wrap .textarea { font-size: var(--fs-body); }
   .comment-edit-actions { display: flex; gap: 6px; justify-content: flex-end; }
+  .comment-reply-btn { background: none; border: none; font-family: var(--font-base); font-size: var(--fs-caption); color: var(--color-text-muted); cursor: pointer; padding: 4px 0 0; }
+  .comment-reply-btn:hover { color: var(--color-primary); }
+  .reply-input-wrap { display: none; align-items: center; gap: 8px; margin-top: 8px; }
+  .reply-input-wrap.on { display: flex; }
+  .reply-input-wrap .input { flex: 1; font-size: var(--fs-body); }
+  .comment-replies { display: flex; flex-direction: column; gap: 0; margin-top: 8px; padding-left: 20px; border-left: 2px solid var(--color-border); }
+  .reply-item { display: flex; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--color-border); }
+  .reply-item:last-child { border-bottom: none; }
+  .reply-content { flex: 1; min-width: 0; }
 
   /* ── 포토 그리드 ── */
   .photo-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 20px; }
@@ -705,6 +714,12 @@
                 <button class="btn btn-sm btn-fill-primary" onclick="saveEdit('edit-event-1')">저장</button>
               </div>
             </div>
+            <button class="comment-reply-btn" onclick="toggleReplyInput(this)">답글 달기</button>
+            <div class="reply-input-wrap">
+              <input class="input" placeholder="답글을 입력하세요" onkeydown="if(event.key==='Enter')addReply(this)">
+              <button class="icon-btn icon-btn-fill" onclick="addReply(this.previousElementSibling)" aria-label="답글 등록"><i data-lucide="send" style="width:14px;height:14px;"></i></button>
+            </div>
+            <div class="comment-replies"></div>
           </div>
           <button class="icon-btn icon-btn-clear" onclick="openCommentMenu(this,'edit-event-1')" aria-label="더보기">
             <i data-lucide="ellipsis" style="width:16px;height:16px;color:var(--color-text-muted)"></i>
@@ -725,6 +740,12 @@
                 <button class="btn btn-sm btn-fill-primary" onclick="saveEdit('edit-event-2')">저장</button>
               </div>
             </div>
+            <button class="comment-reply-btn" onclick="toggleReplyInput(this)">답글 달기</button>
+            <div class="reply-input-wrap">
+              <input class="input" placeholder="답글을 입력하세요" onkeydown="if(event.key==='Enter')addReply(this)">
+              <button class="icon-btn icon-btn-fill" onclick="addReply(this.previousElementSibling)" aria-label="답글 등록"><i data-lucide="send" style="width:14px;height:14px;"></i></button>
+            </div>
+            <div class="comment-replies"></div>
           </div>
           <button class="icon-btn icon-btn-clear" onclick="openCommentMenu(this,'edit-event-2')" aria-label="더보기">
             <i data-lucide="ellipsis" style="width:16px;height:16px;color:var(--color-text-muted)"></i>
@@ -783,6 +804,12 @@
                 <button class="btn btn-sm btn-fill-primary" onclick="saveEdit('edit-notice-1')">저장</button>
               </div>
             </div>
+            <button class="comment-reply-btn" onclick="toggleReplyInput(this)">답글 달기</button>
+            <div class="reply-input-wrap">
+              <input class="input" placeholder="답글을 입력하세요" onkeydown="if(event.key==='Enter')addReply(this)">
+              <button class="icon-btn icon-btn-fill" onclick="addReply(this.previousElementSibling)" aria-label="답글 등록"><i data-lucide="send" style="width:14px;height:14px;"></i></button>
+            </div>
+            <div class="comment-replies"></div>
           </div>
           <button class="icon-btn icon-btn-clear" onclick="openCommentMenu(this,'edit-notice-1')" aria-label="더보기">
             <i data-lucide="ellipsis" style="width:16px;height:16px;color:var(--color-text-muted)"></i>
@@ -845,6 +872,12 @@
                 <button class="btn btn-sm btn-fill-primary" onclick="saveEdit('edit-post-1')">저장</button>
               </div>
             </div>
+            <button class="comment-reply-btn" onclick="toggleReplyInput(this)">답글 달기</button>
+            <div class="reply-input-wrap">
+              <input class="input" placeholder="답글을 입력하세요" onkeydown="if(event.key==='Enter')addReply(this)">
+              <button class="icon-btn icon-btn-fill" onclick="addReply(this.previousElementSibling)" aria-label="답글 등록"><i data-lucide="send" style="width:14px;height:14px;"></i></button>
+            </div>
+            <div class="comment-replies"></div>
           </div>
           <button class="icon-btn icon-btn-clear" onclick="openCommentMenu(this,'edit-post-1')" aria-label="더보기">
             <i data-lucide="ellipsis" style="width:16px;height:16px;color:var(--color-text-muted)"></i>
@@ -865,6 +898,12 @@
                 <button class="btn btn-sm btn-fill-primary" onclick="saveEdit('edit-post-2')">저장</button>
               </div>
             </div>
+            <button class="comment-reply-btn" onclick="toggleReplyInput(this)">답글 달기</button>
+            <div class="reply-input-wrap">
+              <input class="input" placeholder="답글을 입력하세요" onkeydown="if(event.key==='Enter')addReply(this)">
+              <button class="icon-btn icon-btn-fill" onclick="addReply(this.previousElementSibling)" aria-label="답글 등록"><i data-lucide="send" style="width:14px;height:14px;"></i></button>
+            </div>
+            <div class="comment-replies"></div>
           </div>
           <button class="icon-btn icon-btn-clear" onclick="openCommentMenu(this,'edit-post-2')" aria-label="더보기">
             <i data-lucide="ellipsis" style="width:16px;height:16px;color:var(--color-text-muted)"></i>
@@ -885,6 +924,12 @@
                 <button class="btn btn-sm btn-fill-primary" onclick="saveEdit('edit-post-3')">저장</button>
               </div>
             </div>
+            <button class="comment-reply-btn" onclick="toggleReplyInput(this)">답글 달기</button>
+            <div class="reply-input-wrap">
+              <input class="input" placeholder="답글을 입력하세요" onkeydown="if(event.key==='Enter')addReply(this)">
+              <button class="icon-btn icon-btn-fill" onclick="addReply(this.previousElementSibling)" aria-label="답글 등록"><i data-lucide="send" style="width:14px;height:14px;"></i></button>
+            </div>
+            <div class="comment-replies"></div>
           </div>
           <button class="icon-btn icon-btn-clear" onclick="openCommentMenu(this,'edit-post-3')" aria-label="더보기">
             <i data-lucide="ellipsis" style="width:16px;height:16px;color:var(--color-text-muted)"></i>
@@ -1473,6 +1518,12 @@
               '<button class="btn btn-sm btn-fill-primary" onclick="saveEdit(\'' + id + '\')">저장</button>' +
             '</div>' +
           '</div>' +
+          '<button class="comment-reply-btn" onclick="toggleReplyInput(this)">답글 달기</button>' +
+          '<div class="reply-input-wrap">' +
+            '<input class="input" placeholder="답글을 입력하세요" onkeydown="if(event.key===\'Enter\')addReply(this)">' +
+            '<button class="icon-btn icon-btn-fill" onclick="addReply(this.previousElementSibling)" aria-label="답글 등록"><i data-lucide="send" style="width:14px;height:14px;"></i></button>' +
+          '</div>' +
+          '<div class="comment-replies"></div>' +
         '</div>' +
         '<button class="icon-btn icon-btn-clear" onclick="openCommentMenu(this,\'' + id + '\')" aria-label="더보기">' +
           '<i data-lucide="ellipsis" style="width:16px;height:16px;color:var(--color-text-muted)"></i>' +
@@ -1488,6 +1539,49 @@
   function updateCommentCount(section) {
     var count = section.querySelectorAll('.comment-item').length;
     section.querySelector('.comment-section-title').textContent = '댓글 ' + count;
+  }
+
+  function toggleReplyInput(btn) {
+    var wrap = btn.nextElementSibling;
+    var isOn = wrap.classList.toggle('on');
+    btn.textContent = isOn ? '취소' : '답글 달기';
+    if (isOn) wrap.querySelector('input').focus();
+  }
+
+  function addReply(input) {
+    var text = input.value.trim();
+    if (!text) return;
+    var commentItem = input.closest('.comment-item');
+    var replies = commentItem.querySelector('.comment-replies');
+    var id = 'edit-reply-' + Date.now();
+    var html =
+      '<div class="reply-item">' +
+        '<div class="avatar avatar-xs"></div>' +
+        '<div class="reply-content">' +
+          '<div class="comment-header">' +
+            '<span class="comment-author">나</span>' +
+            '<span class="comment-time">방금 전</span>' +
+          '</div>' +
+          '<p class="comment-text">' + text.replace(/</g,'&lt;') + '</p>' +
+          '<div class="comment-edit-wrap" id="' + id + '">' +
+            '<textarea class="textarea" style="height:64px;">' + text.replace(/</g,'&lt;') + '</textarea>' +
+            '<div class="comment-edit-actions">' +
+              '<button class="btn btn-sm btn-weak-dark" onclick="cancelEdit(\'' + id + '\',\'' + text.replace(/'/g,"\\'") + '\')">취소</button>' +
+              '<button class="btn btn-sm btn-fill-primary" onclick="saveEdit(\'' + id + '\')">저장</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+        '<button class="icon-btn icon-btn-clear" onclick="openCommentMenu(this,\'' + id + '\')" aria-label="더보기">' +
+          '<i data-lucide="ellipsis" style="width:16px;height:16px;color:var(--color-text-muted)"></i>' +
+        '</button>' +
+      '</div>';
+    replies.insertAdjacentHTML('beforeend', html);
+    lucide.createIcons();
+    input.value = '';
+    var replyWrap = input.closest('.reply-input-wrap');
+    replyWrap.classList.remove('on');
+    replyWrap.previousElementSibling.textContent = '답글 달기';
+    replies.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
   function goTo(id) {
