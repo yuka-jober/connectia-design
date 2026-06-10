@@ -335,6 +335,18 @@
         </div>
       </div>
       <div class="logo-divider"></div>
+      <div class="logo-upload" style="margin-top:20px;">
+        <div class="avatar-edit" style="width:56px;height:56px;flex-shrink:0;">
+          <div class="avatar avatar-lg"></div>
+          <div class="avatar-hover-overlay">
+            <i data-lucide="pencil" style="width:16px;height:16px;color:var(--color-on-primary)"></i>
+          </div>
+        </div>
+        <div>
+          <p class="logo-upload-label">프로필 사진</p>
+          <p style="font-size:var(--fs-caption);color:var(--color-text-muted);margin-top:2px;">명함에 표시될 사진이에요</p>
+        </div>
+      </div>
     </div>
 
     <div class="banner-wrap" id="banner-wrap">
@@ -925,6 +937,7 @@
       var isCard = idx === 2;
       document.getElementById('banner-wrap').style.display = isCard ? 'none' : '';
       document.getElementById('logo-area').style.display = isCard ? 'block' : 'none';
+      document.querySelector('.profile-fields').style.paddingTop = isCard ? '20px' : '36px';
     }
 
     function selectBtnStyle(el) {
