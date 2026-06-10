@@ -63,8 +63,9 @@
     /* ── 명함 템플릿 로고 영역 ── */
     .logo-area {
       display: none;
-      padding: 24px 20px 20px;
+      padding: 52px 20px 20px;
       background: var(--color-surface);
+      position: relative;
     }
     .logo-upload {
       display: flex; align-items: center; gap: 12px; cursor: pointer;
@@ -325,6 +326,14 @@
     <!-- Banner + Avatar -->
     <!-- 명함 템플릿 로고 영역 -->
     <div class="logo-area" id="logo-area">
+      <button class="banner-autofill-btn" aria-label="자동 채우기" onclick="openSheet('sheet-autofill')">
+        <i data-lucide="sparkles" style="width:14px;height:14px"></i>
+        자동 채우기
+      </button>
+      <button class="banner-template-btn" aria-label="템플릿 선택" onclick="openSheet('sheet-template')">
+        <i data-lucide="layout-template" style="width:14px;height:14px"></i>
+        템플릿
+      </button>
       <div class="logo-upload">
         <div class="logo-placeholder">
           <i data-lucide="image" style="width:20px;height:20px"></i>
