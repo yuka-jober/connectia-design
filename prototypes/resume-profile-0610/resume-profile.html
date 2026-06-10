@@ -407,15 +407,7 @@
     }
 
     /* ─── Responsive ───────────────────────────────────────────── */
-    @media (hover: none) {
-      .pdf-download-btn .pdf-label {
-        max-width: 80px;
-        opacity: 1;
-        margin-left: 7px;
-      }
-    }
-
-    @media (max-width: 900px) {
+@media (max-width: 900px) {
       .split { flex-direction: column; padding: 0; gap: 0; }
       .resume-col { width: 100%; }
       .resume-page { padding: 40px 24px 56px; }
@@ -490,20 +482,11 @@
     }
     .pdf-download-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
     .pdf-download-btn .pdf-label {
-      max-width: 0;
-      opacity: 0;
-      overflow: hidden;
-      transition: max-width 220ms ease, opacity 180ms ease, margin-left 220ms ease;
-      margin-left: 0;
+      margin-left: 7px;
     }
     .pdf-download-btn:hover {
       background: rgba(255,255,255,0.8);
-      box-shadow: 0 6px 20px rgba(0,0,0,0.24);
-    }
-    .pdf-download-btn:hover .pdf-label {
-      max-width: 80px;
-      opacity: 1;
-      margin-left: 7px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.14);
     }
   </style>
 </head>
