@@ -332,7 +332,7 @@
       </button>
       <button class="banner-template-btn" aria-label="템플릿 선택" onclick="openSheet('sheet-template')">
         <i data-lucide="layout-template" style="width:14px;height:14px"></i>
-        템플릿
+        <span class="tpl-btn-label">템플릿 : <span class="tpl-btn-name" style="color:var(--color-primary);font-weight:var(--fw-semibold)">기본</span></span>
       </button>
       <div class="logo-upload">
         <div class="logo-placeholder">
@@ -371,7 +371,7 @@
       </button>
       <button class="banner-template-btn" aria-label="템플릿 선택" onclick="openSheet('sheet-template')">
         <i data-lucide="layout-template" style="width:14px;height:14px"></i>
-        템플릿
+        <span class="tpl-btn-label">템플릿 : <span class="tpl-btn-name" style="color:var(--color-primary);font-weight:var(--fw-semibold)">기본</span></span>
       </button>
       <div class="avatar-wrap">
         <div class="avatar-edit">
@@ -947,6 +947,8 @@
       document.getElementById('banner-wrap').style.display = isCard ? 'none' : '';
       document.getElementById('logo-area').style.display = isCard ? 'block' : 'none';
       document.querySelector('.profile-fields').style.paddingTop = isCard ? '20px' : '36px';
+      var tplNames = ['기본', '이력서', '명함'];
+      document.querySelectorAll('.tpl-btn-name').forEach(function(el) { el.textContent = tplNames[idx]; });
     }
 
     function selectBtnStyle(el) {
