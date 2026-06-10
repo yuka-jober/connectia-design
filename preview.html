@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Connectia Design System — Preview</title>
+  <link rel="stylesheet" href="tokens.css">
+  <link rel="stylesheet" href="components.css">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font-base);
+      background: var(--color-bg);
+      color: var(--color-text);
+      padding: 40px 24px 80px;
+    }
+
+    .page-title {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      margin-bottom: 4px;
+    }
+    .page-sub {
+      font-size: 14px;
+      color: var(--color-text-muted);
+      margin-bottom: 48px;
+    }
+
+    .section {
+      margin-bottom: 56px;
+    }
+    .section-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: var(--color-text-muted);
+      margin-bottom: 16px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .row-label {
+      font-size: 11px;
+      color: var(--color-text-muted);
+      width: 100%;
+      margin-bottom: -4px;
+    }
+
+    .card-demo {
+      background: var(--color-surface);
+      border-radius: var(--r-md);
+      padding: 20px;
+      border: 1px solid var(--color-border);
+    }
+
+    .type-row {
+      padding: 12px 0;
+      border-bottom: 1px solid var(--color-border);
+      display: flex;
+      align-items: baseline;
+      gap: 16px;
+    }
+    .type-row:last-child { border-bottom: none; }
+    .type-meta {
+      font-size: 10px;
+      color: var(--color-text-muted);
+      min-width: 120px;
+      flex-shrink: 0;
+    }
+
+    .color-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .color-swatch {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--r-sm);
+      border: 1px solid var(--color-border);
+      position: relative;
+    }
+    .color-swatch-label {
+      font-size: 9px;
+      color: var(--color-text-muted);
+      text-align: center;
+      margin-top: 4px;
+      word-break: break-all;
+    }
+    .swatch-item { display: flex; flex-direction: column; align-items: center; }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-width: 320px;
+    }
+
+    .icon-placeholder {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      background: currentColor;
+      border-radius: 4px;
+      opacity: 0.7;
+      flex-shrink: 0;
+    }
+    .icon-placeholder-sm {
+      width: 16px;
+      height: 16px;
+    }
+
+    .check-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .check-label {
+      font-size: 14px;
+      color: var(--color-text);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="page-title">Connectia Design System</div>
+  <div class="page-sub">tokens.css + components.css — 컴포넌트 미리보기</div>
+
+
+  <!-- ===================== COLORS ===================== -->
+  <div class="section">
+    <div class="section-title">Colors</div>
+    <div class="card-demo">
+      <div style="margin-bottom:16px;font-size:12px;font-weight:600;color:var(--color-text-sub)">Semantic</div>
+      <div class="color-grid" style="margin-bottom:24px">
+        <div class="swatch-item"><div class="color-swatch" style="background:var(--color-primary)"></div><div class="color-swatch-label">primary</div></div>
+        <div class="swatch-item"><div class="color-swatch" style="background:var(--color-primary-dark)"></div><div class="color-swatch-label">primary-dark</div></div>
+        <div class="swatch-item"><div class="color-swatch" style="background:var(--color-primary-light);border-color:var(--color-border)"></div><div class="color-swatch-label">primary-light</div></div>
+        <div class="swatch-item"><div class="color-swatch" style="background:var(--color-brand-gradient)"></div><div class="color-swatch-label">gradient</div></div>
+        <div class="swatch-item"><div class="color-swatch" style="background:var(--color-bg)"></div><div class="color-swatch-label">bg</div></div>
+        <div class="swatch-item"><div class="color-swatch" style="background:var(--color-surface)"></div><div class="color-swatch-label">surface</div></div>
+        <div class="swatch-item"><div class="color-swatch" style="background:var(--color-text)"></div><div class="color-swatch-label">text</div></div>
+        <div class="swatch-item"><div class="color-swatch" style="background:var(--color-text-sub)"></div><div class="color-swatch-label">text-sub</div></div>
+        <div class="swatch-item"><div class="color-swatch" style="background:var(--color-text-muted)"></div><div class="color-swatch-label">text-muted</div></div>
+        <div class="swatch-item"><div class="color-swatch" style="background:var(--color-border)"></div><div class="color-swatch-label">border</div></div>
+        <div class="swatch-item"><div class="color-swatch" style="background:var(--color-destructive)"></div><div class="color-swatch-label">destructive</div></div>
+        <div class="swatch-item"><div class="color-swatch" style="background:var(--color-star)"></div><div class="color-swatch-label">star</div></div>
+      </div>
+      <div style="margin-bottom:16px;font-size:12px;font-weight:600;color:var(--color-text-sub)">Purple Palette</div>
+      <div class="color-grid">
+        <div class="swatch-item"><div class="color-swatch" style="background:var(--palette-purple-50)"></div><div class="color-swatch-label">50</div></div>
+        <div class="swatch-item"><div class="color-swatch" style="background:var(--palette-purple-100)"></div><div class="color-swatch-label">100</div></div>
+        <div class="swatch-item"><div class="color-swatch" style="background:var(--palette-purple-200)"></div><div class="color-swatch-label">200</div></div>
+        <div class="swatch-item"><div class="color-swatch" style="background:var(--palette-purple-300)"></div><div class="color-swatch-label">300</div></div>
+        <div class="swatch-item"><div class="color-swatch" style="background:var(--palette-purple-400)"></div><div class="color-swatch-label">400</div></div>
+        <div class="swatch-item"><div class="color-swatch" style="background:var(--palette-purple-500)"></div><div class="color-swatch-label">500</div></div>
+        <div class="swatch-item"><div class="color-swatch" style="background:var(--palette-purple-600)"></div><div class="color-swatch-label">600</div></div>
+        <div class="swatch-item"><div class="color-swatch" style="background:var(--palette-purple-700)"></div><div class="color-swatch-label">700</div></div>
+        <div class="swatch-item"><div class="color-swatch" style="background:var(--palette-purple-800)"></div><div class="color-swatch-label">800</div></div>
+        <div class="swatch-item"><div class="color-swatch" style="background:var(--palette-purple-900)"></div><div class="color-swatch-label">900</div></div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ===================== TYPOGRAPHY ===================== -->
+  <div class="section">
+    <div class="section-title">Typography</div>
+    <div class="card-demo">
+      <div class="type-row">
+        <div class="type-meta">display · 26px · bold</div>
+        <div class="text-display">인기 아바타</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta">title · 19px · bold</div>
+        <div class="text-title">프로필 편집</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta">heading · 16px · semibold</div>
+        <div class="text-heading">대화 설정</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta">body-lg · 15px · regular</div>
+        <div class="text-body-lg">안녕하세요, 오늘 날씨가 정말 좋네요!</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta">body · 14px · regular</div>
+        <div class="text-body">카드 설명, 폼 입력 텍스트에 사용합니다.</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta">label · 13px · medium</div>
+        <div class="text-label">이름</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta">caption · 12px · regular</div>
+        <div class="text-caption">2분 전 · 최근 접속</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta">badge · 11px · medium</div>
+        <div class="text-badge">NEW</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta">link · 13px · medium</div>
+        <div class="text-link">더 보기</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta">metric · 32px · bold</div>
+        <div class="text-metric">1,284</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta">nav · 10px · medium</div>
+        <div class="text-nav">홈</div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ===================== LABEL ===================== -->
+  <div class="section">
+    <div class="section-title">Label</div>
+    <div class="row">
+      <label class="label">기본 라벨</label>
+      <label class="label label-required">필수 라벨</label>
+    </div>
+  </div>
+
+
+  <!-- ===================== BUTTON ===================== -->
+  <div class="section">
+    <div class="section-title">Button</div>
+
+    <div class="row-label">Fill variants</div>
+    <div class="row">
+      <button class="btn btn-md btn-fill-primary">Primary</button>
+      <button class="btn btn-md btn-fill-dark">Dark</button>
+      <button class="btn btn-md btn-fill-danger">Danger</button>
+      <button class="btn btn-md btn-fill-gradient">Gradient</button>
+    </div>
+
+    <div class="row-label">Weak variants</div>
+    <div class="row">
+      <button class="btn btn-md btn-weak-primary">Primary</button>
+      <button class="btn btn-md btn-weak-dark">Dark</button>
+      <button class="btn btn-md btn-weak-danger">Danger</button>
+    </div>
+
+    <div class="row-label">Sizes (fill-primary)</div>
+    <div class="row" style="align-items:flex-end">
+      <button class="btn btn-sm btn-fill-primary">Small</button>
+      <button class="btn btn-md btn-fill-primary">Medium</button>
+      <button class="btn btn-lg btn-fill-primary">Large</button>
+      <button class="btn btn-xl btn-fill-primary">XLarge</button>
+    </div>
+
+    <div class="row-label">Pill / Block</div>
+    <div class="row">
+      <button class="btn btn-md btn-fill-primary btn-pill">Pill</button>
+      <button class="btn btn-md btn-weak-primary btn-pill">Pill Weak</button>
+    </div>
+    <div class="row">
+      <button class="btn btn-lg btn-fill-gradient btn-block">Block — 대화하기</button>
+    </div>
+
+    <div class="row-label">Disabled / Loading</div>
+    <div class="row">
+      <button class="btn btn-md btn-fill-primary" disabled>Disabled</button>
+      <button class="btn btn-md btn-fill-primary is-loading">Loading</button>
+      <button class="btn btn-md btn-weak-primary is-loading">Loading</button>
+    </div>
+  </div>
+
+
+  <!-- ===================== ICON BUTTON ===================== -->
+  <div class="section">
+    <div class="section-title">Icon Button</div>
+
+    <div class="row-label">Variants (clear / fill / border)</div>
+    <div class="row">
+      <button class="icon-btn icon-btn-clear" aria-label="검색">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      </button>
+      <button class="icon-btn icon-btn-fill" aria-label="설정">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+      <button class="icon-btn icon-btn-border" aria-label="추가">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+      </button>
+    </div>
+
+    <div class="row-label">Sizes (sm / default / lg)</div>
+    <div class="row" style="align-items:center">
+      <button class="icon-btn icon-btn-sm icon-btn-border" aria-label="삭제">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+      <button class="icon-btn icon-btn-border" aria-label="닫기">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+      <button class="icon-btn icon-btn-lg icon-btn-border" aria-label="닫기">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+    </div>
+  </div>
+
+
+  <!-- ===================== INPUT ===================== -->
+  <div class="section">
+    <div class="section-title">Input</div>
+    <div style="display:flex;flex-direction:column;gap:12px;max-width:360px">
+      <div class="form-group">
+        <label class="label">기본</label>
+        <input class="input" type="text" placeholder="텍스트를 입력하세요">
+      </div>
+      <div class="form-group">
+        <label class="label label-required">에러 상태</label>
+        <input class="input is-error" type="text" value="잘못된 입력">
+        <span class="input-error-msg">올바른 형식으로 입력해주세요.</span>
+      </div>
+      <div class="form-group">
+        <label class="label">비활성화</label>
+        <input class="input" type="text" placeholder="입력 불가" disabled>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ===================== TEXTAREA ===================== -->
+  <div class="section">
+    <div class="section-title">Textarea</div>
+    <div style="display:flex;flex-direction:column;gap:12px;max-width:360px">
+      <div class="form-group">
+        <label class="label">고정 높이</label>
+        <textarea class="textarea" style="height:120px" placeholder="내용을 입력하세요."></textarea>
+      </div>
+      <div class="form-group">
+        <label class="label">에러 상태</label>
+        <textarea class="textarea is-error" style="height:80px">잘못된 내용</textarea>
+        <span class="input-error-msg">내용을 다시 확인해주세요.</span>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ===================== CHECKBOX ===================== -->
+  <div class="section">
+    <div class="section-title">Checkbox</div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="check-row">
+        <input class="checkbox" type="checkbox" id="cb1">
+        <label class="check-label" for="cb1">미체크 (기본)</label>
+      </div>
+      <div class="check-row">
+        <input class="checkbox" type="checkbox" id="cb2" checked>
+        <label class="check-label" for="cb2">체크됨</label>
+      </div>
+      <div class="check-row">
+        <input class="checkbox" type="checkbox" id="cb3" disabled>
+        <label class="check-label" for="cb3" style="opacity:0.4">비활성화</label>
+      </div>
+      <div class="check-row">
+        <input class="checkbox" type="checkbox" id="cb4" checked disabled>
+        <label class="check-label" for="cb4" style="opacity:0.4">체크 + 비활성화</label>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ===================== RADIO ===================== -->
+  <div class="section">
+    <div class="section-title">Radio</div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="check-row">
+        <input class="radio" type="radio" name="r1" id="r1a" checked>
+        <label class="check-label" for="r1a">선택됨</label>
+      </div>
+      <div class="check-row">
+        <input class="radio" type="radio" name="r1" id="r1b">
+        <label class="check-label" for="r1b">미선택</label>
+      </div>
+      <div class="check-row">
+        <input class="radio" type="radio" name="r1" id="r1c" disabled>
+        <label class="check-label" for="r1c" style="opacity:0.4">비활성화</label>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ===================== TOGGLE ===================== -->
+  <div class="section">
+    <div class="section-title">Toggle</div>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="check-row">
+        <input class="toggle" type="checkbox" id="t1">
+        <label class="check-label" for="t1">Off (기본)</label>
+      </div>
+      <div class="check-row">
+        <input class="toggle" type="checkbox" id="t2" checked>
+        <label class="check-label" for="t2">On</label>
+      </div>
+      <div class="check-row">
+        <input class="toggle" type="checkbox" id="t3" disabled>
+        <label class="check-label" for="t3" style="opacity:0.4">비활성화</label>
+      </div>
+      <div class="check-row">
+        <input class="toggle" type="checkbox" id="t4" checked disabled>
+        <label class="check-label" for="t4" style="opacity:0.4">On + 비활성화</label>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ===================== SELECT ===================== -->
+  <div class="section">
+    <div class="section-title">Select</div>
+    <div style="max-width:280px;display:flex;flex-direction:column;gap:10px">
+      <select class="select">
+        <option value="">카테고리를 선택하세요</option>
+        <option>라이프스타일</option>
+        <option>비즈니스</option>
+        <option>여행</option>
+        <option>음악</option>
+      </select>
+      <select class="select" disabled>
+        <option>비활성화 상태</option>
+      </select>
+    </div>
+  </div>
+
+
+  <!-- ===================== MENU ===================== -->
+  <div class="section">
+    <div class="section-title">Menu (Dropdown)</div>
+    <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start">
+      <div class="menu" style="position:relative">
+        <div class="menu-header">편집</div>
+        <div class="menu-item">
+          <span>프로필 수정</span>
+        </div>
+        <div class="menu-item is-selected">
+          <span>알림 설정</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+        </div>
+        <div class="menu-item">
+          <span>공유하기</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" x2="12" y1="2" y2="15"/></svg>
+        </div>
+        <div class="menu-item is-danger">
+          <span>계정 삭제</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ===================== BADGE ===================== -->
+  <div class="section">
+    <div class="section-title">Badge</div>
+
+    <div class="row-label">Fill</div>
+    <div class="row">
+      <span class="badge badge-md badge-fill-primary">Primary</span>
+      <span class="badge badge-md badge-fill-dark">Dark</span>
+      <span class="badge badge-md badge-fill-danger">Danger</span>
+      <span class="badge badge-md badge-fill-neutral">Neutral</span>
+    </div>
+
+    <div class="row-label">Weak</div>
+    <div class="row">
+      <span class="badge badge-md badge-weak-primary">Primary</span>
+      <span class="badge badge-md badge-weak-dark">Dark</span>
+      <span class="badge badge-md badge-weak-danger">Danger</span>
+      <span class="badge badge-md badge-weak-neutral">Neutral</span>
+    </div>
+
+    <div class="row-label">Sizes</div>
+    <div class="row" style="align-items:center">
+      <span class="badge badge-sm badge-fill-primary">SM</span>
+      <span class="badge badge-md badge-fill-primary">MD</span>
+      <span class="badge badge-lg badge-fill-primary">LG</span>
+    </div>
+  </div>
+
+
+  <!-- ===================== BOTTOM SHEET ===================== -->
+  <div class="section">
+    <div class="section-title">Bottom Sheet</div>
+    <button class="btn btn-md btn-weak-primary" onclick="openSheet()">바텀시트 열기</button>
+
+    <div class="bottom-sheet-overlay" id="sheet-overlay" onclick="closeSheet()"></div>
+    <div class="bottom-sheet" id="sheet">
+      <div class="bottom-sheet-handle"></div>
+      <div class="text-title" style="margin-bottom:8px">대화를 시작할까요?</div>
+      <div class="text-body" style="color:var(--color-text-muted);margin-bottom:24px">상대방이 수락하면 대화가 시작됩니다.</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button class="btn btn-lg btn-fill-gradient btn-block" onclick="closeSheet()">대화하기</button>
+        <button class="btn btn-lg btn-weak-dark btn-block" onclick="closeSheet()">취소</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ===================== TOAST ===================== -->
+  <div class="section">
+    <div class="section-title">Toast</div>
+    <div class="row">
+      <button class="btn btn-md btn-weak-dark" onclick="showToast('저장되었습니다.')">기본 토스트</button>
+      <button class="btn btn-md btn-weak-danger" onclick="showToast('삭제되었습니다.')">삭제 토스트</button>
+    </div>
+
+    <div class="toast-container" id="toast-container"></div>
+  </div>
+
+
+  <!-- ===================== DIALOG ===================== -->
+  <div class="section">
+    <div class="section-title">Dialog</div>
+    <button class="btn btn-md btn-weak-primary" onclick="openDialog()">다이얼로그 열기</button>
+
+    <div class="dialog-overlay" id="dialog" style="display:none" onclick="closeDialog(event)">
+      <div class="dialog">
+        <div class="dialog-title">대화를 종료하시겠어요?</div>
+        <div class="dialog-desc">종료하면 대화 내용이 모두 삭제되며 복구할 수 없어요.</div>
+        <div class="dialog-actions">
+          <button class="btn btn-md btn-weak-dark" onclick="closeDialogDirect()">취소</button>
+          <button class="btn btn-md btn-fill-danger" onclick="closeDialogDirect()">종료</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ===================== AVATAR ===================== -->
+  <div class="section">
+    <div class="section-title">Avatar</div>
+
+    <div class="row-label">Sizes (원형)</div>
+    <div class="row" style="align-items:center">
+      <div class="avatar avatar-xs"></div>
+      <div class="avatar avatar-sm"></div>
+      <div class="avatar avatar-md"></div>
+      <div class="avatar avatar-lg"></div>
+      <div class="avatar avatar-xl"></div>
+    </div>
+
+    <div class="row-label" style="margin-top:12px">Rounded (정방형)</div>
+    <div class="row" style="align-items:center">
+      <div class="avatar avatar-rounded avatar-xs"></div>
+      <div class="avatar avatar-rounded avatar-sm"></div>
+      <div class="avatar avatar-rounded avatar-md"></div>
+      <div class="avatar avatar-rounded avatar-lg"></div>
+      <div class="avatar avatar-rounded avatar-xl"></div>
+    </div>
+
+    <div class="row-label" style="margin-top:12px">실제 이미지 예시</div>
+    <div class="row" style="align-items:center">
+      <div class="avatar avatar-lg"><img src="https://i.pravatar.cc/56?img=1" alt="프로필"></div>
+      <div class="avatar avatar-lg"><img src="https://i.pravatar.cc/56?img=5" alt="프로필"></div>
+      <div class="avatar avatar-lg avatar-rounded"><img src="https://i.pravatar.cc/56?img=9" alt="프로필"></div>
+      <div class="avatar avatar-lg avatar-rounded"><img src="https://i.pravatar.cc/56?img=12" alt="프로필"></div>
+    </div>
+  </div>
+
+
+  <!-- ===================== SHADOWS ===================== -->
+  <div class="section">
+    <div class="section-title">Shadows</div>
+    <div class="row">
+      <div style="width:80px;height:80px;background:var(--color-surface);border-radius:var(--r-md);box-shadow:var(--shadow-1);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--color-text-muted)">shadow-1</div>
+      <div style="width:80px;height:80px;background:var(--color-surface);border-radius:var(--r-md);box-shadow:var(--shadow-2);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--color-text-muted)">shadow-2</div>
+      <div style="width:80px;height:80px;background:var(--color-surface);border-radius:var(--r-md);box-shadow:var(--shadow-3);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--color-text-muted)">shadow-3</div>
+      <div style="width:80px;height:80px;background:var(--color-surface);border-radius:var(--r-md);box-shadow:var(--shadow-4);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--color-text-muted)">shadow-4</div>
+    </div>
+  </div>
+
+
+  <!-- ===================== RADIUS ===================== -->
+  <div class="section">
+    <div class="section-title">Radius</div>
+    <div class="row">
+      <div style="width:64px;height:64px;background:var(--palette-purple-100);border-radius:var(--r-xs);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--color-primary)">r-xs<br>6px</div>
+      <div style="width:64px;height:64px;background:var(--palette-purple-100);border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--color-primary)">r-sm<br>10px</div>
+      <div style="width:64px;height:64px;background:var(--palette-purple-100);border-radius:var(--r-md);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--color-primary)">r-md<br>14px</div>
+      <div style="width:64px;height:64px;background:var(--palette-purple-100);border-radius:var(--r-lg);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--color-primary)">r-lg<br>20px</div>
+      <div style="width:64px;height:64px;background:var(--palette-purple-100);border-radius:var(--r-xl);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--color-primary)">r-xl<br>28px</div>
+      <div style="width:64px;height:64px;background:var(--palette-purple-100);border-radius:var(--r-full);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--color-primary)">r-full</div>
+    </div>
+  </div>
+
+
+  <script>
+    // Bottom Sheet
+    function openSheet() {
+      document.getElementById('sheet-overlay').classList.add('is-open');
+      document.getElementById('sheet').classList.add('is-open');
+    }
+    function closeSheet() {
+      document.getElementById('sheet-overlay').classList.remove('is-open');
+      document.getElementById('sheet').classList.remove('is-open');
+    }
+
+    // Toast
+    function showToast(msg) {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.textContent = msg;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.transition = 'opacity 0.3s, transform 0.3s';
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(8px)';
+        setTimeout(() => toast.remove(), 300);
+      }, 2200);
+    }
+
+    // Dialog
+    function openDialog() {
+      document.getElementById('dialog').style.display = 'flex';
+    }
+    function closeDialog(e) {
+      if (e.target === document.getElementById('dialog')) closeDialogDirect();
+    }
+    function closeDialogDirect() {
+      document.getElementById('dialog').style.display = 'none';
+    }
+  </script>
+
+</body>
+</html>
