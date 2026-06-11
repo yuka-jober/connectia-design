@@ -272,6 +272,22 @@ i[data-lucide] { display: inline-flex; flex-shrink: 0; }
   border-radius: var(--r-sm);
   line-height: var(--lh-caption);
 }
+
+/* Dialog — 프레임 내부에 위치 */
+.dialog-overlay { position: absolute; z-index: 300; display: none; }
+.dialog-overlay.is-open { display: flex; }
+.dialog { position: relative; }
+.dialog-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  padding: 4px;
+  display: flex;
+}
 </style>
 </head>
 <body>
@@ -408,6 +424,19 @@ i[data-lucide] { display: inline-flex; flex-shrink: 0; }
       <button class="btn btn-md btn-fill-primary" id="bsSend">답변 추가하기</button>
     </div>
   </div>
+
+  <!-- Confirm dialog -->
+  <div class="dialog-overlay" id="dlgOverlay">
+    <div class="dialog">
+      <button class="dialog-close" id="dlgClose"><i data-lucide="x" style="width:18px;height:18px"></i></button>
+      <div class="dialog-title">AI가 답변을 학습했어요</div>
+      <div class="dialog-desc">이 대화에도 보낼까요?</div>
+      <div class="dialog-actions">
+        <button class="btn btn-md btn-weak-dark" id="dlgSkip">보내지 않기</button>
+        <button class="btn btn-md btn-fill-primary" id="dlgSend">보내기</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -455,8 +484,18 @@ document.querySelectorAll('.unanswered-cta').forEach(btn => {
   });
 });
 
-document.getElementById('bsSend').addEventListener('click', closeSheet);
+const dlgOverlay = document.getElementById('dlgOverlay');
+function openDialog() { dlgOverlay.classList.add('is-open'); }
+function closeDialog() {
+  dlgOverlay.classList.remove('is-open');
+  closeSheet();
+}
+
+document.getElementById('bsSend').addEventListener('click', openDialog);
 document.getElementById('bsClose').addEventListener('click', closeSheet);
+document.getElementById('dlgClose').addEventListener('click', closeDialog);
+document.getElementById('dlgSkip').addEventListener('click', closeDialog);
+document.getElementById('dlgSend').addEventListener('click', closeDialog);
 
 const bsAttach = document.getElementById('bsAttach');
 const bsAnswerField = document.getElementById('bsAnswerField');
@@ -475,6 +514,15 @@ bsFileRemove.addEventListener('click', () => {
 });
 
 lucide.createIcons();
+
+/* 진입 시 ?q=q1 / ?q=q2 가 있으면 해당 질문으로 바로 시트 열기 */
+const qParam = new URLSearchParams(location.search).get('q');
+if (qParam) {
+  const btn = document.querySelector(`.unanswered-cta[data-anchor="${qParam}"]`);
+  if (btn) {
+    setTimeout(() => openSheet(btn.dataset.target, btn.dataset.anchor), 200);
+  }
+}
 </script>
 </body>
 </html>

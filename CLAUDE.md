@@ -24,7 +24,7 @@
 
 ## 사용 가능한 컴포넌트 (components.css)
 모두 클래스 조합 방식. **새로 만들기 전에 여기 있는지 먼저 확인한다.**
-- **Button:** `.btn` + 크기 `.btn-sm/md/lg/xl` + `.btn-block .btn-pill` + 스타일 `.btn-fill-primary/dark/danger/gradient`, `.btn-weak-primary/dark/danger` + 로딩 `.is-loading`
+- **Button:** `.btn` + 크기 `.btn-sm/md/lg/xl` + `.btn-block .btn-pill` + 스타일 `.btn-fill-primary/dark/danger/gradient`, `.btn-weak-primary/dark/danger`, `.btn-line-dark` + 로딩 `.is-loading`
 - **IconButton:** `.icon-btn` + `.icon-btn-sm/lg` + `.icon-btn-clear/fill/border`
 - **Label:** `.label`, 필수표시 `.label-required`
 - **Input:** `.input` (+ `.is-error`), 에러문구 `.input-error-msg`
