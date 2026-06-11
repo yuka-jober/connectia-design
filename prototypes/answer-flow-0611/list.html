@@ -196,6 +196,18 @@ i[data-lucide] { display: inline-flex; flex-shrink: 0; }
 .resolved-chev {
   color: var(--color-text-muted);
 }
+
+/* Dialog — 프레임 내부 */
+.dialog-overlay { position: absolute; z-index: 300; display: none; }
+.dialog-overlay.is-open { display: flex; }
+.dialog { position: relative; text-align: center; }
+.dialog-path {
+  font-size: var(--fs-body-lg);
+  color: var(--color-text);
+  line-height: var(--lh-body-lg);
+  font-weight: var(--fw-medium);
+  padding: 12px 0 4px;
+}
 </style>
 </head>
 <body>
@@ -285,7 +297,7 @@ i[data-lucide] { display: inline-flex; flex-shrink: 0; }
       </div>
 
       <!-- 처리됨 링크 -->
-      <div class="resolved-link">
+      <div class="resolved-link" onclick="document.getElementById('resolvedDlg').classList.add('is-open')">
         <div>
           <div class="resolved-text">처리됨 12개</div>
           <div class="resolved-meta">해결 8 · 무시 4</div>
@@ -293,6 +305,18 @@ i[data-lucide] { display: inline-flex; flex-shrink: 0; }
         <i data-lucide="chevron-right" class="resolved-chev" style="width:18px;height:18px"></i>
       </div>
 
+    </div>
+  </div>
+
+  <!-- 처리됨 안내 다이얼로그 -->
+  <div class="dialog-overlay" id="resolvedDlg">
+    <div class="dialog">
+      <div class="dialog-title">처리됨 항목 보기</div>
+      <div class="dialog-path">[고급설정] - [대화] - [답변못한질문] - [해결/무시]</div>
+      <div class="dialog-desc">위 경로에서 확인할 수 있어요</div>
+      <div class="dialog-actions">
+        <button class="btn btn-md btn-fill-primary" onclick="document.getElementById('resolvedDlg').classList.remove('is-open')">확인</button>
+      </div>
     </div>
   </div>
 </div>
