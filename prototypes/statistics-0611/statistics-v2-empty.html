@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>통계 v2 — 첫 사용 (빈 상태)</title>
+<link rel="stylesheet" href="../../tokens.css">
+<link rel="stylesheet" href="../../components.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-base);
+  background: #e0e0e0;
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.frame {
+  width: 390px;
+  height: 844px;
+  max-height: 100dvh;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 32px 80px -20px rgba(0,0,0,0.28);
+  background: var(--color-surface);
+  display: flex;
+  flex-direction: column;
+}
+@media (max-width: 439px) { .frame { width: 100vw; height: 100dvh; max-height: none; } }
+@media (min-width: 440px) { .frame { border-radius: 44px; max-height: calc(100dvh - 40px); } }
+
+i[data-lucide] { display: inline-flex; flex-shrink: 0; }
+
+/* ── Scroll body ── */
+.body { flex: 1; overflow-y: auto; background: var(--color-bg); }
+.inner { padding: 16px 16px 40px; display: flex; flex-direction: column; gap: 16px; }
+
+/* ── Period segmented control ── */
+.period-seg {
+  display: flex;
+  background: var(--color-surface-sub);
+  border-radius: var(--r-sm);
+  padding: 4px;
+  gap: 4px;
+}
+.period-seg-btn {
+  flex: 1;
+  padding: 8px 0;
+  font-size: var(--fs-label);
+  font-weight: var(--fw-medium);
+  color: var(--color-text-muted);
+  text-align: center;
+  border-radius: var(--r-xs);
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  font-family: var(--font-base);
+  transition: all var(--motion-fast) var(--ease-standard);
+}
+.period-seg-btn.is-active {
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-weight: var(--fw-semibold);
+  box-shadow: var(--shadow-1);
+}
+
+/* ── Card 공통 ── */
+.card {
+  background: var(--color-card);
+  border-radius: var(--r-md);
+  padding: 20px;
+}
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.card-title {
+  font-size: var(--fs-heading);
+  font-weight: var(--fw-bold);
+  color: var(--color-text);
+  letter-spacing: var(--ls-heading);
+}
+
+/* ──────────────────────────────────────────
+   HERO — 환영 + 시작 체크리스트
+   ────────────────────────────────────────── */
+.hero-card {
+  background: var(--color-card);
+  border-radius: var(--r-md);
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-welcome {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.hero-welcome-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--r-full);
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.hero-welcome-text { min-width: 0; }
+.hero-welcome-title {
+  font-size: var(--fs-title);
+  font-weight: var(--fw-bold);
+  color: var(--color-text);
+  line-height: var(--lh-title);
+  letter-spacing: var(--ls-title);
+  margin-bottom: 2px;
+}
+.hero-welcome-sub {
+  font-size: var(--fs-body);
+  color: var(--color-text-muted);
+  line-height: var(--lh-caption);
+}
+
+.setup-list { display: flex; flex-direction: column; gap: 8px; }
+.setup-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  background: var(--color-bg);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background var(--motion-fast) var(--ease-standard),
+              border-color var(--motion-fast) var(--ease-standard);
+}
+.setup-item:hover {
+  background: var(--color-primary-light);
+  border-color: var(--color-primary-subtle);
+}
+.setup-step {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--r-full);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-bold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.setup-content { flex: 1; min-width: 0; }
+.setup-q {
+  font-size: var(--fs-body);
+  color: var(--color-text);
+  font-weight: var(--fw-medium);
+  line-height: var(--lh-heading);
+  margin-bottom: 2px;
+}
+.setup-meta {
+  font-size: var(--fs-caption);
+  color: var(--color-text-muted);
+  line-height: var(--lh-caption);
+}
+.setup-cta { color: var(--color-primary); flex-shrink: 0; }
+
+/* HERO 하단 핵심 지표 */
+.hero-stats {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.hero-stat {
+  min-width: 0;
+  padding: 12px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-sm);
+}
+.hero-stat-label {
+  font-size: var(--fs-caption);
+  color: var(--color-text-muted);
+  line-height: var(--lh-label);
+  margin-bottom: 4px;
+}
+.hero-stat-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.hero-stat-value {
+  font-size: var(--fs-title);
+  font-weight: var(--fw-bold);
+  color: var(--color-text);
+  letter-spacing: var(--ls-title);
+  line-height: var(--lh-metric);
+}
+
+/* ──────────────────────────────────────────
+   섹션 빈 상태
+   ────────────────────────────────────────── */
+.empty-state {
+  padding: 12px 0 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+.empty-state-compact {
+  padding: 4px 0 0;
+  gap: 10px;
+}
+.empty-state-text {
+  font-size: var(--fs-body);
+  color: var(--color-text-muted);
+  text-align: center;
+  line-height: var(--lh-body);
+}
+
+/* Dialog: 프레임 내부로 제한 + 정사각형 프로토 안내용 */
+.dialog-overlay { position: absolute; }
+.dialog-square {
+  width: 280px;
+  height: 280px;
+  max-width: 280px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  text-align: center;
+}
+.dialog-square .dialog-title { margin-bottom: 0; }
+.dialog-square .dialog-actions { width: 100%; }
+
+/* Bottom Sheet: 프레임 내부로 제한 */
+.bottom-sheet-overlay, .bottom-sheet { position: absolute; }
+
+.bs-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+.bs-title {
+  font-size: var(--fs-heading);
+  font-weight: var(--fw-bold);
+  color: var(--color-text);
+  letter-spacing: var(--ls-heading);
+}
+.bs-desc {
+  font-size: var(--fs-caption);
+  color: var(--color-text-muted);
+  margin-bottom: 20px;
+  line-height: var(--lh-caption);
+}
+.bs-field { margin-bottom: 16px; }
+.bs-field .label { margin-bottom: 8px; }
+.bs-field .textarea { min-height: 72px; }
+</style>
+</head>
+<body>
+<div class="frame">
+
+  <!-- Scroll body -->
+  <div class="body">
+    <div class="inner">
+
+      <!-- 기간 선택 -->
+      <div class="period-seg" id="periodSeg">
+        <button class="period-seg-btn is-active" data-period="today">오늘</button>
+        <button class="period-seg-btn" data-period="week">이번 주</button>
+        <button class="period-seg-btn" data-period="month">이번 달</button>
+      </div>
+
+      <!-- 1. HERO — 환영 + 시작 체크리스트 -->
+      <div class="hero-card">
+        <div class="hero-welcome">
+          <div class="hero-welcome-icon">
+            <i data-lucide="sparkles" style="width:22px;height:22px"></i>
+          </div>
+          <div class="hero-welcome-text">
+            <div class="hero-welcome-title">환영합니다!</div>
+            <div class="hero-welcome-sub">아래 3가지만 마치면 준비 끝</div>
+          </div>
+        </div>
+
+        <div class="setup-list">
+          <div class="setup-item">
+            <div class="setup-step">1</div>
+            <div class="setup-content">
+              <div class="setup-q">정보 알려주기</div>
+              <div class="setup-meta">AI가 대화에 참고할 자료를 올려주세요</div>
+            </div>
+            <i data-lucide="chevron-right" class="setup-cta" style="width:18px;height:18px"></i>
+          </div>
+          <div class="setup-item">
+            <div class="setup-step">2</div>
+            <div class="setup-content">
+              <div class="setup-q">자주 묻는 답변 미리 등록</div>
+              <div class="setup-meta">미리 답을 채워두면 AI가 바로 답해요</div>
+            </div>
+            <i data-lucide="chevron-right" class="setup-cta" style="width:18px;height:18px"></i>
+          </div>
+          <div class="setup-item">
+            <div class="setup-step">3</div>
+            <div class="setup-content">
+              <div class="setup-q">페이지 공유하기</div>
+              <div class="setup-meta">사람들이 찾아올 수 있게 주소를 알려요</div>
+            </div>
+            <i data-lucide="chevron-right" class="setup-cta" style="width:18px;height:18px"></i>
+          </div>
+        </div>
+
+        <div class="hero-stats">
+          <div class="hero-stat">
+            <div class="hero-stat-label">받은 대화</div>
+            <div class="hero-stat-row">
+              <span class="hero-stat-value">0</span>
+            </div>
+          </div>
+          <div class="hero-stat">
+            <div class="hero-stat-label">페이지 조회수</div>
+            <div class="hero-stat-row">
+              <span class="hero-stat-value">0</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. 정보를 제출한 사람 -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">정보를 제출한 사람</span>
+        </div>
+        <div class="empty-state empty-state-compact">
+          <div class="empty-state-text">이벤트를 열어 고객 정보를 모아보세요</div>
+          <button class="btn btn-sm btn-weak-primary btn-pill">이벤트 만들기</button>
+        </div>
+      </div>
+
+      <!-- 3. 자주 묻는 질문 -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">자주 묻는 질문</span>
+        </div>
+        <div class="empty-state">
+          <div class="empty-state-text">질문이 충분히 쌓이면 보여드려요</div>
+        </div>
+      </div>
+
+      <!-- 4. 최근 대화 -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">최근 대화</span>
+        </div>
+        <div class="empty-state">
+          <div class="empty-state-text">방문자가 AI와 나눈 대화가 여기에 보여요<br>먼저 페이지를 공유해 방문자를 초대해보세요</div>
+          <button class="btn btn-sm btn-weak-primary btn-pill">페이지 공유하기</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Dialog: 자료 등록 -->
+  <div class="dialog-overlay" id="dialogInfo" style="display:none">
+    <div class="dialog dialog-square">
+      <div class="dialog-title">[자료 등록 화면이 나옵니다]</div>
+      <div class="dialog-actions">
+        <button class="btn btn-sm btn-fill-primary" id="dialogClose">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dialog: 페이지 공유 -->
+  <div class="dialog-overlay" id="dialogShare" style="display:none">
+    <div class="dialog dialog-square">
+      <div class="dialog-title">[공유 QR코드와 링크복사 기능 보여주기]</div>
+      <div class="dialog-actions">
+        <button class="btn btn-sm btn-fill-primary" id="dialogShareClose">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom sheet: 자주 묻는 질문 등록 -->
+  <div class="bottom-sheet-overlay" id="bsFaq"></div>
+  <div class="bottom-sheet" id="bsFaqSheet">
+    <div class="bottom-sheet-handle"></div>
+    <div class="bs-header">
+      <div class="bs-title">자주 묻는 질문을 등록하세요</div>
+      <button class="btn btn-sm btn-fill-primary" id="bsFaqDone">완료</button>
+    </div>
+    <div class="bs-desc">추천 질문에 등록됩니다.</div>
+
+    <div class="bs-field">
+      <label class="label">질문</label>
+      <textarea class="textarea" placeholder="예: 영업시간이 어떻게 되나요?"></textarea>
+    </div>
+
+    <div class="bs-field">
+      <label class="label">답변</label>
+      <textarea class="textarea" placeholder="답변을 입력해 주세요."></textarea>
+    </div>
+  </div>
+</div>
+
+<script>
+/* 기간 탭 시각적 전환만 (모든 기간이 빈 상태) */
+document.getElementById('periodSeg').addEventListener('click', e => {
+  const btn = e.target.closest('.period-seg-btn');
+  if (!btn) return;
+  document.querySelectorAll('.period-seg-btn').forEach(b => b.classList.remove('is-active'));
+  btn.classList.add('is-active');
+});
+
+/* 정보 알려주기 → 모달 */
+const dialogInfo = document.getElementById('dialogInfo');
+const setupItems = document.querySelectorAll('.setup-item');
+setupItems[0].addEventListener('click', () => { dialogInfo.style.display = 'flex'; });
+document.getElementById('dialogClose').addEventListener('click', () => { dialogInfo.style.display = 'none'; });
+dialogInfo.addEventListener('click', e => { if (e.target === dialogInfo) dialogInfo.style.display = 'none'; });
+
+/* 페이지 공유하기 → 모달 */
+const dialogShare = document.getElementById('dialogShare');
+setupItems[2].addEventListener('click', () => { dialogShare.style.display = 'flex'; });
+document.getElementById('dialogShareClose').addEventListener('click', () => { dialogShare.style.display = 'none'; });
+dialogShare.addEventListener('click', e => { if (e.target === dialogShare) dialogShare.style.display = 'none'; });
+
+/* 자주 묻는 답변 미리 등록 → 바텀시트 */
+const bsFaq = document.getElementById('bsFaq');
+const bsFaqSheet = document.getElementById('bsFaqSheet');
+function openBsFaq() { bsFaq.classList.add('is-open'); bsFaqSheet.classList.add('is-open'); }
+function closeBsFaq() { bsFaq.classList.remove('is-open'); bsFaqSheet.classList.remove('is-open'); }
+setupItems[1].addEventListener('click', openBsFaq);
+document.getElementById('bsFaqDone').addEventListener('click', closeBsFaq);
+bsFaq.addEventListener('click', closeBsFaq);
+
+lucide.createIcons();
+</script>
+</body>
+</html>

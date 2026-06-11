@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>통계 — Connectia</title>
+<link rel="stylesheet" href="../../tokens.css">
+<link rel="stylesheet" href="../../components.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-base);
+  background: #e0e0e0;
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.frame {
+  width: 390px;
+  height: 844px;
+  max-height: 100dvh;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 32px 80px -20px rgba(0,0,0,0.28);
+  background: var(--color-surface);
+  display: flex;
+  flex-direction: column;
+}
+@media (max-width: 439px) { .frame { width: 100vw; height: 100dvh; max-height: none; } }
+@media (min-width: 440px) { .frame { border-radius: 44px; max-height: calc(100dvh - 40px); } }
+
+i[data-lucide] { display: inline-flex; flex-shrink: 0; }
+
+/* ── Topbar ── */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px 8px;
+  flex-shrink: 0;
+  background: var(--color-surface);
+}
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+.topbar-title {
+  font-size: var(--fs-body-lg);
+  font-weight: var(--fw-semibold);
+  color: var(--color-text);
+  letter-spacing: var(--ls-body-lg);
+}
+.page-subtitle {
+  padding: 0 16px 12px;
+  flex-shrink: 0;
+}
+
+/* ── Tabs ── */
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+  background: var(--color-surface);
+  padding: 0 4px;
+}
+.tab {
+  flex: 1;
+  padding: 12px 0;
+  font-size: var(--fs-label);
+  font-weight: var(--fw-medium);
+  color: var(--color-text-muted);
+  text-align: center;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color var(--motion-fast) var(--ease-standard);
+}
+.tab.is-active {
+  color: var(--color-text);
+  font-weight: var(--fw-bold);
+  border-bottom-color: var(--color-text);
+}
+
+/* ── Scroll body ── */
+.body { flex: 1; overflow-y: auto; background: var(--color-bg); }
+.inner { padding: 16px 16px 40px; display: flex; flex-direction: column; gap: 12px; }
+
+/* ── Period segmented control ── */
+.period-seg {
+  display: flex;
+  background: var(--color-surface-sub);
+  border-radius: var(--r-sm);
+  padding: 3px;
+  gap: 2px;
+}
+.period-seg-btn {
+  flex: 1;
+  padding: 8px 0;
+  font-size: var(--fs-label);
+  font-weight: var(--fw-medium);
+  color: var(--color-text-muted);
+  text-align: center;
+  border-radius: var(--r-xs);
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  font-family: var(--font-base);
+  transition: all var(--motion-fast) var(--ease-standard);
+}
+.period-seg-btn.is-active {
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-weight: var(--fw-semibold);
+  box-shadow: var(--shadow-1);
+}
+
+/* ── AI 응대 현황 카드 ── */
+.status-card {
+  background: var(--color-card);
+  border-radius: var(--r-md);
+  border: 1px solid var(--color-border);
+  padding: 16px;
+  transition: border-color var(--motion-standard) var(--ease-standard),
+              background var(--motion-standard) var(--ease-standard);
+}
+.status-card.is-good    { border-color: rgba(34,197,94,0.35);  background: rgba(34,197,94,0.04); }
+.status-card.is-warning { border-color: rgba(245,158,11,0.35); background: rgba(245,158,11,0.04); }
+.status-card.is-danger  { border-color: rgba(201,64,34,0.3);   background: rgba(201,64,34,0.04); }
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.card-title {
+  font-size: var(--fs-heading);
+  font-weight: var(--fw-semibold);
+  color: var(--color-text);
+  letter-spacing: var(--ls-heading);
+}
+.card-more {
+  font-size: var(--fs-label);
+  font-weight: var(--fw-medium);
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.rate-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+.rate-number {
+  font-size: 52px;
+  font-weight: var(--fw-bold);
+  line-height: 1;
+  letter-spacing: -2px;
+  transition: color var(--motion-standard) var(--ease-standard);
+}
+.rate-pct {
+  font-size: var(--fs-title);
+  font-weight: var(--fw-semibold);
+  transition: color var(--motion-standard) var(--ease-standard);
+}
+.rate-number.is-good, .rate-pct.is-good   { color: var(--color-success); }
+.rate-number.is-warning, .rate-pct.is-warning { color: var(--color-star); }
+.rate-number.is-danger, .rate-pct.is-danger   { color: var(--color-destructive); }
+
+.rate-sub {
+  font-size: var(--fs-body);
+  color: var(--color-text-muted);
+  margin-bottom: 4px;
+}
+
+/* 추세 sparkline */
+.rate-sparkline { margin: 12px 0 8px; }
+.sparkline-label {
+  font-size: var(--fs-caption);
+  color: var(--color-text-muted);
+  margin-bottom: 4px;
+}
+svg.sparkline { width: 100%; height: 52px; display: block; }
+
+/* 액션 줄 */
+.rate-action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  background: rgba(201,64,34,0.08);
+  border-radius: var(--r-xs);
+  cursor: pointer;
+  margin-top: 12px;
+}
+.rate-action-text {
+  font-size: var(--fs-label);
+  color: var(--color-destructive);
+  font-weight: var(--fw-medium);
+}
+
+/* ── 인사이트 한 줄 ── */
+.insight-card {
+  background: var(--color-primary-light);
+  border-radius: var(--r-md);
+  padding: 12px 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.insight-icon { color: var(--color-primary); flex-shrink: 0; margin-top: 1px; }
+.insight-text {
+  font-size: var(--fs-label);
+  color: var(--color-primary);
+  font-weight: var(--fw-medium);
+  line-height: 1.5;
+}
+
+/* ── 일반 카드 ── */
+.card {
+  background: var(--color-card);
+  border-radius: var(--r-md);
+  border: 1px solid var(--color-border);
+  padding: 16px;
+}
+
+/* ── 핵심 지표 2열 ── */
+.metric-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.metric-card {
+  background: var(--color-surface-sub);
+  border-radius: var(--r-sm);
+  padding: 14px 14px 12px;
+}
+.metric-label {
+  font-size: var(--fs-caption);
+  color: var(--color-text-muted);
+  margin-bottom: 4px;
+  line-height: 1.4;
+}
+.metric-value {
+  font-size: var(--fs-metric);
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-metric);
+  letter-spacing: var(--ls-metric);
+  color: var(--color-text);
+  margin-bottom: 4px;
+}
+.metric-change {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-medium);
+  line-height: 1.3;
+}
+.metric-change.up   { color: var(--color-success); }
+.metric-change.down { color: var(--color-destructive); }
+.metric-change.flat { color: var(--color-text-muted); }
+
+/* ── 자주 묻는 질문 ── */
+.faq-list { display: flex; flex-direction: column; }
+.faq-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.faq-item:first-child { padding-top: 0; }
+.faq-item:last-child  { border-bottom: none; padding-bottom: 0; }
+.faq-q {
+  font-size: var(--fs-body);
+  color: var(--color-text);
+  flex: 1;
+  line-height: 1.45;
+}
+
+/* ── 최근 대화 ── */
+.chat-list { display: flex; flex-direction: column; }
+.chat-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--color-border);
+  cursor: pointer;
+}
+.chat-item:first-child { padding-top: 0; }
+.chat-item:last-child  { border-bottom: none; padding-bottom: 0; }
+.chat-info { flex: 1; min-width: 0; }
+.chat-name-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+.chat-name {
+  font-size: var(--fs-label);
+  font-weight: var(--fw-semibold);
+  color: var(--color-text);
+}
+.chat-time {
+  font-size: var(--fs-caption);
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+.chat-preview {
+  font-size: var(--fs-body);
+  color: var(--color-text-sub);
+  line-height: 1.45;
+}
+
+/* ── 빈 상태 ── */
+.empty-state {
+  padding: 16px 0 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+.empty-state-text {
+  font-size: var(--fs-body);
+  color: var(--color-text-muted);
+  text-align: center;
+  line-height: 1.6;
+}
+</style>
+</head>
+<body>
+<div class="frame">
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <i data-lucide="chevron-left" style="width:20px;height:20px;color:var(--color-text-muted)"></i>
+      <span class="topbar-title">자버 AI</span>
+    </div>
+    <button class="btn btn-sm btn-weak-dark">고급 설정</button>
+  </div>
+  <div class="page-subtitle">
+    <span class="text-caption">아바타 통계와 자료, 설정을 한곳에서 관리하세요</span>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <div class="tab is-active">통계</div>
+    <div class="tab">자료</div>
+    <div class="tab">정체성</div>
+    <div class="tab">대화</div>
+  </div>
+
+  <!-- Scroll body -->
+  <div class="body">
+    <div class="inner">
+
+      <!-- 기간 선택 -->
+      <div class="period-seg" id="periodSeg">
+        <button class="period-seg-btn is-active" data-period="today">오늘</button>
+        <button class="period-seg-btn" data-period="week">이번 주</button>
+        <button class="period-seg-btn" data-period="month">이번 달</button>
+      </div>
+
+      <!-- AI 응대 현황 -->
+      <div class="status-card is-good" id="responseCard">
+        <div class="card-header">
+          <span class="card-title">AI 응대 현황</span>
+          <span class="badge badge-md badge-weak-primary" id="statusBadge">양호</span>
+        </div>
+        <div class="rate-row">
+          <span class="rate-number is-good" id="rateNumber">85</span>
+          <span class="rate-pct is-good" id="ratePct">%</span>
+        </div>
+        <div class="rate-sub" id="rateSub">받은 대화 8건 중 7건 답변</div>
+
+        <!-- 추세 그래프 (이번 주 / 이번 달만) -->
+        <div class="rate-sparkline" id="sparklineWrap" style="display:none">
+          <div class="sparkline-label">답변율 추세</div>
+          <svg class="sparkline" id="sparklineSvg" viewBox="0 0 340 52" preserveAspectRatio="none"></svg>
+        </div>
+
+        <!-- 답변 못한 질문 액션 (1건 이상일 때) -->
+        <div class="rate-action" id="rateAction">
+          <span class="rate-action-text" id="rateActionText">답변 못한 질문 1건 확인하기</span>
+          <i data-lucide="arrow-right" style="width:16px;height:16px;color:var(--color-destructive)"></i>
+        </div>
+      </div>
+
+      <!-- 인사이트 한 줄 -->
+      <div class="insight-card">
+        <i data-lucide="lightbulb" class="insight-icon" style="width:15px;height:15px"></i>
+        <span class="insight-text" id="insightText">오늘 손님들이 가장 많이 물어본 건 '영업시간'이에요</span>
+      </div>
+
+      <!-- 핵심 지표 -->
+      <div class="card">
+        <div class="card-header" style="margin-bottom:8px">
+          <span class="card-title">핵심 지표</span>
+        </div>
+        <div class="metric-grid">
+          <div class="metric-card">
+            <div class="metric-label">받은 대화</div>
+            <div class="metric-value" id="metricChats">8</div>
+            <div class="metric-change up" id="metricChatsChange">
+              <i data-lucide="trending-up" style="width:12px;height:12px"></i>
+              어제보다 +2
+            </div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">페이지를 본 사람</div>
+            <div class="metric-value" id="metricViews">12</div>
+            <div class="metric-change up" id="metricViewsChange">
+              <i data-lucide="trending-up" style="width:12px;height:12px"></i>
+              어제보다 +3
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 자주 묻는 질문 -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">자주 묻는 질문</span>
+          <span class="card-more">더보기</span>
+        </div>
+        <div class="faq-list" id="faqList"></div>
+      </div>
+
+      <!-- 최근 대화 -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">최근 대화</span>
+          <span class="card-more">더보기</span>
+        </div>
+        <div class="chat-list" id="chatList"></div>
+      </div>
+
+      <!-- 정보를 제출한 사람 -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">정보를 제출한 사람</span>
+          <span class="card-more">더보기</span>
+        </div>
+        <div class="empty-state">
+          <div class="empty-state-text">이벤트를 열어 고객 정보를<br>모아보세요</div>
+          <button class="btn btn-sm btn-weak-primary btn-pill">이벤트 만들기</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+/* ── 데이터 ── */
+const DATA = {
+  today: {
+    rate: 85, status: 'good',
+    rateSub: '받은 대화 8건 중 7건 답변',
+    unanswered: 1,
+    insight: "오늘 손님들이 가장 많이 물어본 건 '영업시간'이에요",
+    chats: 8,  chatsChange: { dir: 'up',  label: '어제보다 +2' },
+    views: 12, viewsChange: { dir: 'up',  label: '어제보다 +3' },
+    faq: [
+      { count: 3, q: '영업시간이 언제예요?' },
+      { count: 2, q: '주차가 가능한가요?' },
+      { count: 2, q: '예약은 어떻게 하나요?' },
+    ],
+    chats_list: [
+      { name: '익명의 사용자', q: '영업시간이 어떻게 되나요?', time: '1시간 전' },
+      { name: '김민지', q: '주말에도 영업하시나요?', time: '3시간 전' },
+      { name: '익명의 사용자', q: '주차 공간이 있나요?', time: '5시간 전' },
+    ],
+    sparklines: null,
+  },
+  week: {
+    rate: 72, status: 'warning',
+    rateSub: '받은 대화 40건 중 29건 답변',
+    unanswered: 11,
+    insight: "이번 주 손님들이 가장 많이 물어본 건 '단체 예약'이에요",
+    chats: 40,  chatsChange: { dir: 'up',   label: '지난주보다 +8' },
+    views: 67,  viewsChange: { dir: 'down',  label: '지난주보다 −4' },
+    faq: [
+      { count: 14, q: '단체 예약이 가능한가요?' },
+      { count: 9,  q: '단체카톡을 발송하려면 필요한 게 무엇인지 알려주세요' },
+      { count: 7,  q: '전화번호만 있으면 단체 카톡이 발송 가능한가요?' },
+      { count: 5,  q: '자버로 발송할 수 있는 카톡 형태를 보여주세요' },
+    ],
+    chats_list: [
+      { name: '박지훈', q: '단체 카톡 발송 비용이 어떻게 되나요?', time: '2시간 전' },
+      { name: '익명의 사용자', q: '전화번호 없이도 발송이 가능한가요?', time: '5시간 전' },
+      { name: '이수진', q: '카카오 채널 연결 방법을 알려주세요', time: '어제' },
+      { name: '익명의 사용자', q: '무료로 사용할 수 있는 기간이 있나요?', time: '어제' },
+    ],
+    sparklines: [68, 75, 80, 65, 70, 72, 72],
+  },
+  month: {
+    rate: 55, status: 'danger',
+    rateSub: '받은 대화 142건 중 78건 답변',
+    unanswered: 64,
+    insight: "이번 달 손님들이 가장 많이 물어본 건 '가격'이에요",
+    chats: 142, chatsChange: { dir: 'up',  label: '지난달보다 +23' },
+    views: 234, viewsChange: { dir: 'up',  label: '지난달보다 +41' },
+    faq: [
+      { count: 47, q: '가격이 어떻게 되나요?' },
+      { count: 28, q: '단체카톡을 발송하려면 필요한 게 무엇인지 알려주세요' },
+      { count: 19, q: '무료 체험이 가능한가요?' },
+      { count: 13, q: '자버로 발송할 수 있는 카톡 형태를 보여주세요' },
+    ],
+    chats_list: [
+      { name: '최영호', q: '월정액 요금제가 어떻게 되나요?', time: '4시간 전' },
+      { name: '익명의 사용자', q: '무료 체험 기간이 있나요?', time: '어제' },
+      { name: '박서연', q: '카카오 비즈니스 채널 연결이 필수인가요?', time: '2일 전' },
+      { name: '익명의 사용자', q: '기업용 요금제도 있나요?', time: '3일 전' },
+    ],
+    sparklines: [40,52,60,58,65,62,55,70,68,72,65,55,48,60,58,62,68,55,50,45,55,60,58,55,52,48,55,58,55,55],
+  },
+};
+
+/* ── sparkline 렌더 ── */
+function renderSparkline(values, status) {
+  const svg = document.getElementById('sparklineSvg');
+  const W = 340, H = 52, pad = 4;
+  const n = values.length;
+  const min = Math.min(...values) - 8;
+  const max = Math.max(...values) + 8;
+  const toX = i => (i / (n - 1)) * (W - pad * 2) + pad;
+  const toY = v => H - pad - ((v - min) / (max - min)) * (H - pad * 2);
+
+  const colorMap = { good: 'var(--color-success)', warning: 'var(--color-star)', danger: 'var(--color-destructive)' };
+  const col = colorMap[status];
+
+  const pts = values.map((v, i) => `${toX(i)},${toY(v)}`).join(' ');
+  const fillPts = [
+    `${pad},${H}`,
+    ...values.map((v, i) => `${toX(i)},${toY(v)}`),
+    `${W - pad},${H}`,
+  ].join(' ');
+
+  svg.innerHTML = `
+    <polygon points="${fillPts}" fill="${col}" opacity="0.08"/>
+    <polyline points="${pts}" fill="none" stroke="${col}" stroke-width="2"
+      stroke-linecap="round" stroke-linejoin="round" opacity="0.7"/>
+    <circle cx="${toX(n-1)}" cy="${toY(values[n-1])}" r="3.5" fill="${col}"/>
+  `;
+}
+
+/* ── FAQ ── */
+function renderFaq(items) {
+  const el = document.getElementById('faqList');
+  if (!items.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-state-text">이 기간에는 자주 묻는 질문이 없어요</div></div>`;
+    return;
+  }
+  el.innerHTML = items.map(it => `
+    <div class="faq-item">
+      <span class="badge badge-md badge-weak-dark">${it.count}건</span>
+      <span class="faq-q">${it.q}</span>
+    </div>
+  `).join('');
+}
+
+/* ── 최근 대화 ── */
+function renderChats(items) {
+  const el = document.getElementById('chatList');
+  if (!items.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-state-text">이 기간에는 대화가 없었어요</div></div>`;
+    return;
+  }
+  el.innerHTML = items.map(it => `
+    <div class="chat-item">
+      <div class="avatar avatar-sm"></div>
+      <div class="chat-info">
+        <div class="chat-name-row">
+          <span class="chat-name">${it.name}</span>
+          <span class="chat-time">${it.time}</span>
+        </div>
+        <div class="chat-preview">${it.q}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+/* ── 메트릭 변화 아이콘 ── */
+function changeIcon(dir) {
+  if (dir === 'up')   return `<i data-lucide="trending-up" style="width:12px;height:12px"></i>`;
+  if (dir === 'down') return `<i data-lucide="trending-down" style="width:12px;height:12px"></i>`;
+  return `<i data-lucide="minus" style="width:12px;height:12px"></i>`;
+}
+
+/* ── 전체 화면 업데이트 ── */
+function update(period) {
+  const d = DATA[period];
+  const sc = d.status; // good | warning | danger
+  const badgeStyle = { good: 'badge-weak-primary', warning: 'badge-weak-dark', danger: 'badge-weak-danger' }[sc];
+  const badgeText  = { good: '양호', warning: '주의', danger: '경고' }[sc];
+  const statusCls  = 'is-' + sc;
+
+  // AI 응대 현황 카드
+  document.getElementById('responseCard').className = `status-card ${statusCls}`;
+  document.getElementById('statusBadge').className  = `badge badge-md ${badgeStyle}`;
+  document.getElementById('statusBadge').textContent = badgeText;
+  document.getElementById('rateNumber').className   = `rate-number ${statusCls}`;
+  document.getElementById('rateNumber').textContent  = d.rate;
+  document.getElementById('ratePct').className      = `rate-pct ${statusCls}`;
+  document.getElementById('rateSub').textContent    = d.rateSub;
+
+  // Sparkline
+  const sw = document.getElementById('sparklineWrap');
+  if (d.sparklines) {
+    sw.style.display = 'block';
+    renderSparkline(d.sparklines, sc);
+  } else {
+    sw.style.display = 'none';
+  }
+
+  // 액션 줄
+  const ra = document.getElementById('rateAction');
+  if (d.unanswered > 0) {
+    ra.style.display = 'flex';
+    document.getElementById('rateActionText').textContent = `답변 못한 질문 ${d.unanswered}건 확인하기`;
+  } else {
+    ra.style.display = 'none';
+  }
+
+  // 인사이트
+  document.getElementById('insightText').textContent = d.insight;
+
+  // 핵심 지표
+  document.getElementById('metricChats').textContent = d.chats;
+  const cc = document.getElementById('metricChatsChange');
+  cc.className = `metric-change ${d.chatsChange.dir}`;
+  cc.innerHTML = `${changeIcon(d.chatsChange.dir)} ${d.chatsChange.label}`;
+
+  document.getElementById('metricViews').textContent = d.views;
+  const vc = document.getElementById('metricViewsChange');
+  vc.className = `metric-change ${d.viewsChange.dir}`;
+  vc.innerHTML = `${changeIcon(d.viewsChange.dir)} ${d.viewsChange.label}`;
+
+  // 자주 묻는 질문 / 최근 대화
+  renderFaq(d.faq);
+  renderChats(d.chats_list);
+
+  lucide.createIcons();
+}
+
+/* ── 이벤트 ── */
+document.getElementById('periodSeg').addEventListener('click', e => {
+  const btn = e.target.closest('.period-seg-btn');
+  if (!btn) return;
+  document.querySelectorAll('.period-seg-btn').forEach(b => b.classList.remove('is-active'));
+  btn.classList.add('is-active');
+  update(btn.dataset.period);
+});
+
+// 초기 렌더
+update('today');
+</script>
+</body>
+</html>
