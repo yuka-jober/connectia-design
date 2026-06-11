@@ -447,8 +447,7 @@ const chatBody = document.getElementById('chatBody');
 
 function openSheet(qText, anchorId) {
   bsTargetQ.value = qText;
-  /* 시트 열 때 답변 모드로 리셋 */
-  document.getElementById('bsAnswerField').style.display = '';
+  /* 시트 열 때 첨부 리셋 (답변 필드는 항상 표시) */
   document.getElementById('bsFileField').style.display = 'none';
   document.getElementById('bsAttach').classList.remove('is-active');
   bsOverlay.classList.add('is-open');
@@ -503,13 +502,11 @@ const bsFileField = document.getElementById('bsFileField');
 const bsFileRemove = document.getElementById('bsFileRemove');
 
 bsAttach.addEventListener('click', () => {
-  bsAnswerField.style.display = 'none';
   bsFileField.style.display = '';
   bsAttach.classList.add('is-active');
 });
 bsFileRemove.addEventListener('click', () => {
   bsFileField.style.display = 'none';
-  bsAnswerField.style.display = '';
   bsAttach.classList.remove('is-active');
 });
 
