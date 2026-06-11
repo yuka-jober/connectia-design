@@ -515,13 +515,14 @@ bsFileRemove.addEventListener('click', () => {
 
 lucide.createIcons();
 
-/* 진입 시 ?q=q1 / ?q=q2 가 있으면 해당 질문으로 바로 시트 열기 */
+/* 진입 시 ?q=q1 / ?q=q2 가 있으면 해당 질문으로 바로 시트 열기 후 쿼리 제거 */
 const qParam = new URLSearchParams(location.search).get('q');
 if (qParam) {
   const btn = document.querySelector(`.unanswered-cta[data-anchor="${qParam}"]`);
   if (btn) {
     setTimeout(() => openSheet(btn.dataset.target, btn.dataset.anchor), 200);
   }
+  history.replaceState(null, '', location.pathname);
 }
 </script>
 </body>
