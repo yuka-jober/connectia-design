@@ -319,23 +319,21 @@
     <!-- 편집 모드 하단 액션바 -->
     <div class="action-bar">
       <button class="btn btn-lg btn-weak-dark" id="btn-mark-read" disabled>
-        <i data-lucide="check-check" style="width:18px;height:18px;"></i>
         읽음 처리
       </button>
       <button class="btn btn-lg btn-weak-danger" id="btn-leave" disabled>
-        <i data-lucide="log-out" style="width:18px;height:18px;"></i>
-        나가기
+        삭제
       </button>
     </div>
 
     <!-- 다이얼로그 -->
     <div class="dialog-overlay" id="dialog-leave">
       <div class="dialog">
-        <div class="dialog-title" id="dialog-title">선택한 채팅방에서 나가시겠습니까?</div>
-        <div class="dialog-desc">나간 채팅방의 대화 내용은 모두 삭제되며 복구할 수 없습니다.</div>
+        <div class="dialog-title" id="dialog-title">선택한 채팅방을 삭제하시겠습니까?</div>
+        <div class="dialog-desc">삭제한 채팅방의 대화 내용은 모두 사라지며 복구할 수 없습니다.</div>
         <div class="dialog-actions">
           <button class="btn btn-md btn-weak-dark" id="dialog-cancel">취소</button>
-          <button class="btn btn-md btn-fill-danger" id="dialog-confirm">나가기</button>
+          <button class="btn btn-md btn-fill-danger" id="dialog-confirm">삭제</button>
         </div>
       </div>
     </div>
@@ -477,7 +475,7 @@
   });
 
   btnLeave.addEventListener('click', () => {
-    dialogTitle.textContent = `선택한 ${selected.size}개 채팅방에서 나가시겠습니까?`;
+    dialogTitle.textContent = `선택한 ${selected.size}개 채팅방을 삭제하시겠습니까?`;
     dialogLeave.classList.add('is-open');
   });
 
@@ -492,7 +490,7 @@
       if(removeIds.has(chats[i].id)) chats.splice(i, 1);
     }
     dialogLeave.classList.remove('is-open');
-    toast(`${n}개 채팅방에서 나갔어요`);
+    toast(`${n}개 채팅방을 삭제했어요`);
     exitEdit();
   });
 
