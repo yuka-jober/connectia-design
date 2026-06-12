@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Connectia — 채팅 편집 모드</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<link rel="stylesheet" href="../../tokens.css">
+<link rel="stylesheet" href="../../components.css">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;height:100dvh;overflow:hidden;}
+  body{
+    font-family:'Pretendard',sans-serif;
+    background:#d8d8e8;
+    display:flex;align-items:center;justify-content:center;
+    overflow:hidden;
+  }
+  i[data-lucide]{display:inline-block;width:1em;height:1em;vertical-align:middle;stroke-width:2;}
+
+  .frame{
+    width:390px;
+    height:100dvh;
+    max-height:844px;
+    background:var(--color-bg);
+    position:relative;
+    overflow:hidden;
+    box-shadow:0 32px 80px -20px rgba(0,0,0,0.28);
+    display:flex;flex-direction:column;
+  }
+  @media(max-width:439px){.frame{width:100vw;box-shadow:none;}}
+  @media(min-width:440px){.frame{border-radius:44px;height:calc(100dvh - 32px);}}
+
+  /* ── 상단바 ── */
+  .topbar{
+    flex-shrink:0;
+    padding:12px 8px 12px 20px;
+    display:flex;align-items:center;justify-content:space-between;
+    gap:8px;
+    background:var(--color-bg);
+    min-height:56px;
+  }
+  .topbar-title{
+    display:flex;align-items:center;gap:4px;
+    font-size:20px;font-weight:700;letter-spacing:-0.3px;color:var(--color-text);
+    cursor:pointer;
+  }
+  .topbar-title i{width:20px;height:20px;color:var(--color-text);}
+  .topbar-actions{display:flex;align-items:center;gap:0;}
+
+  /* ── 탭 ── */
+  .tabs{
+    flex-shrink:0;
+    display:flex;align-items:center;
+    padding:0 20px;
+    background:var(--color-bg);
+    border-bottom:1px solid var(--color-border);
+    transition:opacity var(--motion-fast) var(--ease-standard);
+  }
+  .frame.is-edit .tabs{opacity:0.5;pointer-events:none;}
+  .tab{
+    flex:1;
+    display:flex;align-items:center;justify-content:center;gap:6px;
+    padding:14px 0 12px;
+    font-family:var(--font-base);
+    font-size:var(--fs-body-lg);
+    font-weight:var(--fw-semibold);
+    color:var(--color-text-muted);
+    cursor:pointer;
+    position:relative;
+  }
+  .tab.is-active{color:var(--color-text);}
+  .tab.is-active::after{
+    content:'';
+    position:absolute;
+    left:0;right:0;bottom:-1px;height:2px;
+    background:var(--color-primary);
+    border-radius:var(--r-full);
+  }
+  .tab-badge{
+    background:var(--color-destructive);
+    color:var(--color-on-primary);
+    font-size:var(--fs-badge);
+    font-weight:var(--fw-bold);
+    padding:2px 7px;
+    border-radius:var(--r-full);
+    min-width:20px;text-align:center;line-height:1.2;
+  }
+
+  /* ── 필터/액션 라인 ── */
+  .filter-row{
+    flex-shrink:0;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:12px 20px;
+    background:var(--color-bg);
+    min-height:56px;
+  }
+  /* 일반 모드 콘텐츠 */
+  .filter-chip{
+    background:var(--color-surface);
+    border:1px solid var(--color-border);
+    border-radius:var(--r-sm);
+    padding:6px 12px;
+    font-family:var(--font-base);
+    font-size:var(--fs-label);
+    font-weight:var(--fw-medium);
+    color:var(--color-text);
+    cursor:pointer;
+  }
+  /* 편집 모드 콘텐츠 */
+  .select-all-btn{
+    display:inline-flex;align-items:center;gap:10px;
+    background:transparent;border:none;
+    padding:4px 4px;
+    cursor:pointer;
+    font-family:var(--font-base);
+    font-size:var(--fs-body);
+    font-weight:var(--fw-semibold);
+    color:var(--color-text);
+  }
+  .select-all-btn .checkbox{width:22px;height:22px;pointer-events:none;}
+  .edit-toggle-btn{
+    background:transparent;
+    border:none;
+    color:var(--color-text-sub);
+    font-family:var(--font-base);
+    font-size:var(--fs-body);
+    font-weight:var(--fw-semibold);
+    padding:8px 12px;
+    cursor:pointer;
+    border-radius:var(--r-xs);
+    transition:background var(--motion-fast) var(--ease-standard), color var(--motion-fast) var(--ease-standard);
+  }
+  .edit-toggle-btn:hover{background:rgba(37,38,56,0.06);}
+  .frame.is-edit .edit-toggle-btn{
+    color:var(--color-primary);
+  }
+  .frame.is-edit .edit-toggle-btn:hover{background:var(--color-primary-light);}
+
+  .filter-edit{display:none;}
+  .frame.is-edit .filter-normal{display:none;}
+  .frame.is-edit .filter-edit{display:inline-flex;}
+
+  /* ── 채팅 리스트 ── */
+  .list{
+    flex:1;
+    overflow-y:auto;
+    background:var(--color-bg);
+    -webkit-overflow-scrolling:touch;
+  }
+  .list::-webkit-scrollbar{width:0;}
+
+  .item{
+    display:flex;align-items:center;gap:12px;
+    padding:12px 20px;
+    background:var(--color-bg);
+    border-bottom:1px solid var(--color-border);
+    cursor:pointer;
+    transition:background var(--motion-fast) var(--ease-standard);
+    position:relative;
+  }
+  .item:hover{background:rgba(37,38,56,0.03);}
+  .item:last-child{border-bottom:none;}
+
+  .item-check{
+    width:0;
+    overflow:hidden;
+    transition:width var(--motion-standard) var(--ease-standard);
+    flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .frame.is-edit .item-check{width:32px;}
+  .item-check .checkbox{
+    transform:scale(0);
+    transition:transform var(--motion-standard) var(--ease-standard);
+  }
+  .frame.is-edit .item-check .checkbox{transform:scale(1);}
+
+  .item-avatar{
+    width:48px;height:48px;border-radius:50%;
+    flex-shrink:0;
+    background:var(--palette-gray-700);
+    display:flex;align-items:center;justify-content:center;
+    color:var(--color-on-primary);
+    font-size:var(--fs-body);
+    font-weight:var(--fw-semibold);
+    overflow:hidden;
+  }
+  .item-avatar img{width:100%;height:100%;object-fit:cover;}
+
+  .item-body{
+    flex:1;min-width:0;
+    display:flex;flex-direction:column;gap:4px;
+  }
+  .item-name{
+    font-family:var(--font-base);
+    font-size:var(--fs-heading);
+    font-weight:var(--fw-bold);
+    color:var(--color-text);
+    line-height:1.3;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .item-preview{
+    font-family:var(--font-base);
+    font-size:var(--fs-body);
+    color:var(--color-text-muted);
+    line-height:1.3;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .item-meta{
+    display:flex;flex-direction:column;align-items:flex-end;gap:6px;
+    flex-shrink:0;
+  }
+  .item-time{
+    font-family:var(--font-base);
+    font-size:var(--fs-caption);
+    color:var(--color-text-muted);
+  }
+  .item-unread{
+    background:var(--color-primary);
+    color:var(--color-on-primary);
+    font-family:var(--font-base);
+    font-size:var(--fs-badge);
+    font-weight:var(--fw-bold);
+    padding:2px 7px;
+    border-radius:var(--r-full);
+    min-width:20px;text-align:center;line-height:1.2;
+  }
+  .item-unread.is-dot{
+    width:10px;height:10px;min-width:0;padding:0;
+  }
+
+  .item.is-selected{background:var(--color-primary-light);}
+  .item.is-selected:hover{background:var(--color-primary-subtle);}
+
+  /* ── 하단 액션바 (편집 모드) ── */
+  .action-bar{
+    flex-shrink:0;
+    display:flex;align-items:center;gap:8px;
+    padding:12px 20px calc(12px + env(safe-area-inset-bottom));
+    background:var(--color-surface);
+    border-top:1px solid var(--color-border);
+    transform:translateY(100%);
+    transition:transform var(--motion-standard) var(--ease-enter);
+    position:absolute;
+    left:0;right:0;bottom:0;
+    z-index:10;
+  }
+  .frame.is-edit .action-bar{transform:translateY(0);}
+  .action-bar .btn{flex:1;}
+
+  /* ── 토스트 ── */
+  .toast-wrap{
+    position:absolute;
+    bottom:calc(20px + env(safe-area-inset-bottom));
+    left:50%;
+    transform:translateX(-50%);
+    z-index:300;
+    pointer-events:none;
+  }
+
+  /* ── 다이얼로그 ── */
+  .dialog-overlay{
+    position:absolute;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity var(--motion-fast) var(--ease-standard);
+  }
+  .dialog-overlay.is-open{
+    opacity:1;
+    pointer-events:auto;
+  }
+</style>
+</head>
+<body>
+  <div class="frame" id="frame">
+
+    <!-- 상단바 -->
+    <div class="topbar">
+      <div class="topbar-title">
+        자버 김윤정 매니저
+        <i data-lucide="chevron-down"></i>
+      </div>
+      <div class="topbar-actions">
+        <button class="icon-btn icon-btn-clear" aria-label="검색">
+          <i data-lucide="search" style="width:22px;height:22px;color:var(--color-text);"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- 탭 -->
+    <div class="tabs">
+      <div class="tab">보냄 <span class="tab-badge">6</span></div>
+      <div class="tab is-active">받음 <span class="tab-badge">99+</span></div>
+      <div class="tab">답변 못함</div>
+    </div>
+
+    <!-- 필터/액션 라인 -->
+    <div class="filter-row">
+      <!-- 일반 모드: 안읽음 칩 -->
+      <button class="filter-chip filter-normal">안읽음</button>
+
+      <!-- 편집 모드: 모두 선택 -->
+      <button class="select-all-btn filter-edit" id="btn-select-all">
+        <input type="checkbox" class="checkbox" id="select-all-check" tabindex="-1">
+        <span id="select-all-label">모두 선택</span>
+      </button>
+
+      <!-- 편집 ↔ 완료 토글 (같은 자리) -->
+      <button class="edit-toggle-btn" id="btn-edit-toggle">편집</button>
+    </div>
+
+    <!-- 리스트 -->
+    <div class="list" id="list">
+      <!-- 아이템들 JS로 렌더 -->
+    </div>
+
+    <!-- 편집 모드 하단 액션바 -->
+    <div class="action-bar">
+      <button class="btn btn-lg btn-weak-dark" id="btn-mark-read" disabled>
+        <i data-lucide="check-check" style="width:18px;height:18px;"></i>
+        읽음 처리
+      </button>
+      <button class="btn btn-lg btn-weak-danger" id="btn-leave" disabled>
+        <i data-lucide="log-out" style="width:18px;height:18px;"></i>
+        나가기
+      </button>
+    </div>
+
+    <!-- 다이얼로그 -->
+    <div class="dialog-overlay" id="dialog-leave">
+      <div class="dialog">
+        <div class="dialog-title" id="dialog-title">선택한 채팅방에서 나가시겠습니까?</div>
+        <div class="dialog-desc">나간 채팅방의 대화 내용은 모두 삭제되며 복구할 수 없습니다.</div>
+        <div class="dialog-actions">
+          <button class="btn btn-md btn-weak-dark" id="dialog-cancel">취소</button>
+          <button class="btn btn-md btn-fill-danger" id="dialog-confirm">나가기</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 토스트 -->
+    <div class="toast-wrap" id="toast-wrap"></div>
+  </div>
+
+<script>
+  const chats = [
+    {id:1, name:'익명의 수달', preview:'바우처 관련 문의는 저보다 담당팀에서 직접 안내...', time:'오후 4:06', unread:9},
+    {id:2, name:'익명의 햄스터', preview:'아래 링크에서 업종별로 실제 카카오 알림톡을 테...', time:'오후 12:02', unread:0, hasNew:true},
+    {id:3, name:'자버 김윤정 매니저', preview:'전자계약만 사용하시는 경우 아래와 같습니다! 😊...', time:'오후 12:07', unread:1, isManager:true},
+    {id:4, name:'익명의 여우', preview:'https://joberio.channel.io/home 위 링크로 접...', time:'오전 10:15', unread:3},
+    {id:5, name:'익명의 사슴', preview:'아래 링크에서 업종별로 실제 카카오 알림톡을 테스트...', time:'어제', unread:3},
+    {id:6, name:'익명의 판다', preview:'자버 사용 가이드는 아래 링크에서 확인하실 수 있습니...', time:'어제', unread:3},
+    {id:7, name:'익명의 고슴도치', preview:'자버 사용 가이드는 아래 링크에서 확인하실 수 있습니...', time:'어제', unread:3},
+    {id:8, name:'익명의 코알라', preview:'https://joberio.channel.io/home 위 링크로 접속하...', time:'어제', unread:0, hasNew:true},
+    {id:9, name:'익명의 부엉이', preview:'https://joberio.channel.io/home 위 링크로 접속하...', time:'어제', unread:3},
+    {id:10, name:'익명의 강아지', preview:'안녕하세요. 자버 사용 관련해서 문의 드립니다...', time:'어제', unread:2},
+    {id:11, name:'익명의 토끼', preview:'결제 관련해서 궁금한 점이 있어 연락드립니다...', time:'2일 전', unread:0},
+    {id:12, name:'익명의 너구리', preview:'안녕하세요, 주말에도 답변 가능하신가요?', time:'2일 전', unread:1},
+  ];
+
+  const selected = new Set();
+  let isEdit = false;
+
+  const frame = document.getElementById('frame');
+  const list = document.getElementById('list');
+  const selectAllCheck = document.getElementById('select-all-check');
+  const selectAllLabel = document.getElementById('select-all-label');
+  const btnEditToggle = document.getElementById('btn-edit-toggle');
+  const btnMarkRead = document.getElementById('btn-mark-read');
+  const btnLeave = document.getElementById('btn-leave');
+  const dialogLeave = document.getElementById('dialog-leave');
+  const dialogTitle = document.getElementById('dialog-title');
+  const toastWrap = document.getElementById('toast-wrap');
+
+  function render(){
+    list.innerHTML = chats.map(c => {
+      const isSelected = selected.has(c.id);
+      const avatar = c.isManager
+        ? `<div class="item-avatar"><img src="https://i.pravatar.cc/100?img=47" alt=""></div>`
+        : `<div class="item-avatar">익</div>`;
+      const unreadBadge = c.unread > 0
+        ? `<span class="item-unread">${c.unread}</span>`
+        : (c.hasNew ? `<span class="item-unread is-dot"></span>` : `<span style="width:20px;height:18px;"></span>`);
+      return `
+        <div class="item ${isSelected?'is-selected':''}" data-id="${c.id}">
+          <div class="item-check">
+            <input type="checkbox" class="checkbox" ${isSelected?'checked':''} tabindex="-1">
+          </div>
+          ${avatar}
+          <div class="item-body">
+            <div class="item-name">${c.name}</div>
+            <div class="item-preview">${c.preview}</div>
+          </div>
+          <div class="item-meta">
+            <span class="item-time">${c.time}</span>
+            ${unreadBadge}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    list.querySelectorAll('.item').forEach(el => {
+      el.addEventListener('click', () => {
+        if(!isEdit) return;
+        const id = Number(el.dataset.id);
+        if(selected.has(id)) selected.delete(id);
+        else selected.add(id);
+        render();
+        updateEditUI();
+      });
+    });
+
+    lucide.createIcons();
+  }
+
+  function updateEditUI(){
+    const n = selected.size;
+    const all = n === chats.length && n > 0;
+    selectAllCheck.checked = all;
+    selectAllLabel.textContent = all ? '선택 해제' : (n > 0 ? `${n}개 선택` : '모두 선택');
+    btnMarkRead.disabled = n === 0;
+    btnLeave.disabled = n === 0;
+  }
+
+  function enterEdit(){
+    isEdit = true;
+    frame.classList.add('is-edit');
+    btnEditToggle.textContent = '완료';
+    updateEditUI();
+  }
+
+  function exitEdit(){
+    isEdit = false;
+    selected.clear();
+    frame.classList.remove('is-edit');
+    btnEditToggle.textContent = '편집';
+    render();
+  }
+
+  function toast(msg){
+    const el = document.createElement('div');
+    el.className = 'toast';
+    el.textContent = msg;
+    toastWrap.appendChild(el);
+    setTimeout(()=>{
+      el.style.transition = 'opacity 200ms';
+      el.style.opacity = '0';
+      setTimeout(()=>el.remove(), 220);
+    }, 1800);
+  }
+
+  btnEditToggle.addEventListener('click', () => {
+    if(isEdit) exitEdit();
+    else enterEdit();
+  });
+
+  document.getElementById('btn-select-all').addEventListener('click', () => {
+    if(selected.size === chats.length){
+      selected.clear();
+    } else {
+      chats.forEach(c => selected.add(c.id));
+    }
+    render();
+    updateEditUI();
+  });
+
+  btnMarkRead.addEventListener('click', () => {
+    const n = selected.size;
+    selected.forEach(id => {
+      const c = chats.find(x => x.id === id);
+      if(c){ c.unread = 0; c.hasNew = false; }
+    });
+    toast(`${n}개 채팅방을 읽음 처리했어요`);
+    exitEdit();
+  });
+
+  btnLeave.addEventListener('click', () => {
+    dialogTitle.textContent = `선택한 ${selected.size}개 채팅방에서 나가시겠습니까?`;
+    dialogLeave.classList.add('is-open');
+  });
+
+  document.getElementById('dialog-cancel').addEventListener('click', () => {
+    dialogLeave.classList.remove('is-open');
+  });
+
+  document.getElementById('dialog-confirm').addEventListener('click', () => {
+    const n = selected.size;
+    const removeIds = new Set(selected);
+    for(let i = chats.length - 1; i >= 0; i--){
+      if(removeIds.has(chats[i].id)) chats.splice(i, 1);
+    }
+    dialogLeave.classList.remove('is-open');
+    toast(`${n}개 채팅방에서 나갔어요`);
+    exitEdit();
+  });
+
+  render();
+  lucide.createIcons();
+</script>
+</body>
+</html>
