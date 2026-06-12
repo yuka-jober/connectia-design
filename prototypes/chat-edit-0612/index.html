@@ -260,17 +260,6 @@
     pointer-events:none;
   }
 
-  /* ── 다이얼로그 ── */
-  .dialog-overlay{
-    position:absolute;
-    opacity:0;
-    pointer-events:none;
-    transition:opacity var(--motion-fast) var(--ease-standard);
-  }
-  .dialog-overlay.is-open{
-    opacity:1;
-    pointer-events:auto;
-  }
 </style>
 </head>
 <body>
@@ -318,24 +307,9 @@
 
     <!-- 편집 모드 하단 액션바 -->
     <div class="action-bar">
-      <button class="btn btn-lg btn-weak-dark" id="btn-mark-read" disabled>
+      <button class="btn btn-lg btn-fill-primary btn-block" id="btn-mark-read" disabled>
         읽음 처리
       </button>
-      <button class="btn btn-lg btn-weak-danger" id="btn-leave" disabled>
-        삭제
-      </button>
-    </div>
-
-    <!-- 다이얼로그 -->
-    <div class="dialog-overlay" id="dialog-leave">
-      <div class="dialog">
-        <div class="dialog-title" id="dialog-title">선택한 채팅방을 삭제하시겠습니까?</div>
-        <div class="dialog-desc">삭제한 채팅방의 대화 내용은 모두 사라지며 복구할 수 없습니다.</div>
-        <div class="dialog-actions">
-          <button class="btn btn-md btn-weak-dark" id="dialog-cancel">취소</button>
-          <button class="btn btn-md btn-fill-danger" id="dialog-confirm">삭제</button>
-        </div>
-      </div>
     </div>
 
     <!-- 토스트 -->
@@ -367,9 +341,6 @@
   const selectAllLabel = document.getElementById('select-all-label');
   const btnEditToggle = document.getElementById('btn-edit-toggle');
   const btnMarkRead = document.getElementById('btn-mark-read');
-  const btnLeave = document.getElementById('btn-leave');
-  const dialogLeave = document.getElementById('dialog-leave');
-  const dialogTitle = document.getElementById('dialog-title');
   const toastWrap = document.getElementById('toast-wrap');
 
   function render(){
@@ -419,7 +390,6 @@
     selectAllCheck.checked = all;
     selectAllLabel.textContent = all ? '선택 해제' : (n > 0 ? `${n}개 선택` : '모두 선택');
     btnMarkRead.disabled = n === 0;
-    btnLeave.disabled = n === 0;
   }
 
   function enterEdit(){
@@ -471,26 +441,6 @@
       if(c){ c.unread = 0; c.hasNew = false; }
     });
     toast(`${n}개 채팅방을 읽음 처리했어요`);
-    exitEdit();
-  });
-
-  btnLeave.addEventListener('click', () => {
-    dialogTitle.textContent = `선택한 ${selected.size}개 채팅방을 삭제하시겠습니까?`;
-    dialogLeave.classList.add('is-open');
-  });
-
-  document.getElementById('dialog-cancel').addEventListener('click', () => {
-    dialogLeave.classList.remove('is-open');
-  });
-
-  document.getElementById('dialog-confirm').addEventListener('click', () => {
-    const n = selected.size;
-    const removeIds = new Set(selected);
-    for(let i = chats.length - 1; i >= 0; i--){
-      if(removeIds.has(chats[i].id)) chats.splice(i, 1);
-    }
-    dialogLeave.classList.remove('is-open');
-    toast(`${n}개 채팅방을 삭제했어요`);
     exitEdit();
   });
 
