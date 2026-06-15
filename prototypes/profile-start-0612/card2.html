@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>디지털 명함 — 미니멀</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500&display=swap">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<style>
+  :root{
+    --bg:#ffffff;--bg2:#f5f6f8;--bg3:#e8eaee;
+    --text:#111318;--text2:#6b7280;--text3:#9ca3af;
+    --line:rgba(17,19,24,0.1);--line2:rgba(17,19,24,0.16);
+    --accent:#111318;
+    --info:#6B6BE1;--info-bg:#eeeefb;
+    --star:#e0a100;--danger:#b3261e;
+    --r-sm:6px;--r-md:10px;--r-lg:14px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;height:100dvh;overflow:hidden;}
+  body{font-family:'Pretendard',sans-serif;background:var(--bg3);color:var(--text);display:flex;align-items:center;justify-content:center;overflow:hidden;}
+  .frame{width:390px;height:844px;max-height:100dvh;position:relative;overflow:hidden;box-shadow:0 32px 80px -20px rgba(0,0,0,0.28);background:#fff;}
+  @media(max-width:439px){.frame{width:100vw;max-width:100%;height:100vh;height:100dvh;max-height:none;overflow:hidden;}}
+  @media(min-width:440px){.frame{border-radius:44px;max-height:calc(100dvh - 40px);}}
+  .phone{position:relative;width:100%;height:100%;overflow:hidden;}
+  .lucide{width:1em;height:1em;vertical-align:-0.14em;stroke-width:2;flex:none;}
+  i[data-lucide]{display:inline-block;width:1em;height:1em;}
+  .screen{position:absolute;top:0;left:0;right:0;bottom:0;display:none;flex-direction:column;background:var(--bg);}
+  .screen.on{display:flex;}
+  .body{flex:1;overflow-y:auto;overflow-x:hidden;}
+  .body::-webkit-scrollbar{width:0;}
+
+  /* topbar */
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;padding-top:calc(10px + env(safe-area-inset-top));border-bottom:1px solid var(--line);flex-shrink:0;background:#fff;}
+  .backbtn{display:flex;align-items:center;gap:3px;font-size:13px;color:var(--text2);background:none;border:none;cursor:pointer;padding:4px 6px 4px 2px;font-weight:500;}
+  .subhead{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;padding-top:calc(12px + env(safe-area-inset-top));border-bottom:1px solid var(--line);flex-shrink:0;}
+  .subhead .title{font-size:16px;font-weight:600;}
+
+  /* overlay / sheet */
+  .overlay{position:absolute;inset:0;display:none;z-index:50;}
+  .scrim{position:absolute;inset:0;background:rgba(0,0,0,0.35);}
+  .sheet{position:absolute;bottom:0;left:0;right:0;background:#fff;border-radius:22px 22px 0 0;padding:8px 18px 36px;transform:translateY(100%);transition:transform .25s cubic-bezier(.4,0,.2,1);}
+  .grab{width:36px;height:4px;background:var(--line2);border-radius:99px;margin:0 auto 14px;}
+
+  /* 명함 헤더 */
+  .card-head{padding:52px 40px 36px;}
+  .co-type{font-size:10px;font-weight:600;letter-spacing:0.18em;color:var(--text3);text-transform:uppercase;margin-bottom:8px;}
+  .co-logo{margin-bottom:14px;}
+  .co-logo img{height:70px;width:auto;max-width:100%;object-fit:contain;}
+  .divider-bold{width:100%;height:1.5px;background:var(--text);margin:18px 0 20px;}
+  .person-role{font-size:12px;color:var(--text2);margin-bottom:5px;}
+  .person-name{font-size:26px;font-weight:800;letter-spacing:-0.02em;line-height:1.1;}
+  .person-avatar{width:64px;height:64px;border-radius:50%;object-fit:cover;margin-top:18px;}
+
+  /* 섹션 공통 */
+  .sec{padding:28px 40px;border-top:1px solid var(--line);}
+  .sec-label{font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--text3);margin-bottom:14px;}
+
+  /* 소개 */
+  .intro-text{font-size:14px;color:var(--text2);line-height:1.8;}
+
+  /* 연락처 */
+  .citem{display:flex;align-items:flex-start;gap:0;font-size:13px;line-height:1.6;margin-bottom:6px;}
+  .ckey{font-weight:700;width:24px;flex-shrink:0;}
+  .cval{color:var(--text2);}
+
+  /* 게시판 */
+  .post-item{display:flex;align-items:stretch;border-top:1px solid var(--line);cursor:pointer;min-height:60px;}
+  .post-item:first-child{border-top:none;}
+  .post-thumb{width:60px;background:var(--bg2);flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+  .post-body{flex:1;padding:14px 0;min-width:0;}
+  .post-title{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .badge-event{font-size:12px;font-weight:500;color:#6B6BE1;background:#EDEDFB;padding:2px 8px;border-radius:99px;display:inline-flex;height:20px;align-items:center;margin-bottom:4px;}
+  .badge-notice{font-size:12px;font-weight:500;color:var(--text2);background:var(--bg2);padding:2px 8px;border-radius:99px;display:inline-flex;height:20px;align-items:center;margin-bottom:4px;}
+  .more-btn{font-size:12px;color:var(--text3);background:none;border:none;cursor:pointer;padding:0;margin-top:12px;display:flex;align-items:center;gap:3px;}
+
+  /* 영상 */
+  .video-thumb{width:100%;height:150px;background:var(--bg2);border-radius:var(--r-lg);display:flex;align-items:center;justify-content:center;}
+  .yt-scroll::-webkit-scrollbar{display:none;}
+  .photo-scroll::-webkit-scrollbar{display:none;}
+
+  /* 리뷰 */
+  .rev-score{font-size:28px;font-weight:800;letter-spacing:-0.02em;}
+  .rev-sub{font-size:12px;color:var(--text2);margin-top:2px;}
+  .rev-item{border-top:1px solid var(--line);padding:16px 0;}
+  .rev-reviewer{font-size:12px;font-weight:600;margin-bottom:4px;}
+  .rev-text{font-size:13px;color:var(--text2);line-height:1.6;}
+
+  /* 채팅 */
+  .chat-btn{width:100%;border:1.5px solid var(--text);background:#fff;color:var(--text);font-size:14px;font-weight:700;padding:15px;border-radius:var(--r-sm);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;font-family:inherit;letter-spacing:0.01em;}
+
+  /* 액션 버튼 */
+  .action-row{display:flex;gap:8px;padding:28px 40px;border-top:1px solid var(--line);}
+  .btn-save{flex:1;height:44px;border-radius:var(--r-sm);background:var(--text);color:#fff;border:none;cursor:pointer;font-size:13px;font-weight:600;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px;}
+  .btn-share{width:36px;height:36px;border-radius:var(--r-sm);border:1.5px solid var(--line2);background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text2);}
+
+  /* 게시글 패널 */
+</style>
+<script>if(location.search.includes('embed=1')){document.write('<style>#home>.topbar{display:none!important}</style>');}</script>
+</head>
+<body>
+<div class="frame">
+<div class="phone">
+
+<!-- ============ HOME ============ -->
+<section id="home" class="screen on">
+
+
+  <div class="body">
+    <div style="padding-bottom:calc(100px + env(safe-area-inset-bottom));overflow-x:hidden;width:100%;">
+
+      <!-- 명함 헤더 -->
+      <div class="card-head">
+        <div class="co-logo"><img src="logo-company.png" alt="커넥트생명"></div>
+        <div class="divider-bold"></div>
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;position:relative;z-index:1;">
+          <img src="profile.svg" class="person-avatar" alt="프로필" style="margin-top:0;">
+          <div style="display:flex;gap:8px;">
+            <button onclick="toast('연락처가 저장됐어요')" style="display:flex;align-items:center;gap:6px;height:36px;padding:0 13px;border-radius:var(--r-sm);border:1.5px solid var(--line2);background:#fff;cursor:pointer;font-size:12px;font-weight:600;font-family:inherit;color:var(--text);"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg> 연락처 저장</button>
+            <button onclick="toast('공유 링크가 복사됐어요')" class="btn-share"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>
+          </div>
+        </div>
+        <p class="person-name" style="margin-top:14px;">김영희</p>
+        <button onclick="openChat()" style="margin-top:24px;display:none;align-items:center;justify-content:center;gap:7px;width:100%;height:44px;border-radius:var(--r-sm);border:none;background:var(--text);cursor:pointer;font-size:14px;font-weight:700;font-family:inherit;color:#fff;"><i data-lucide="message-circle" style="width:16px;height:16px;"></i>궁금한 점 질문하기</button>
+      </div>
+
+      <!-- 연락처 -->
+      <div class="sec">
+        <p class="sec-label">연락처</p>
+        <div class="citem"><span class="ckey">T.</span><span class="cval">010-1234-5678</span></div>
+        <div class="citem"><span class="ckey">E.</span><span class="cval">younghee.kim@connectlife.co.kr</span></div>
+        <div class="citem"><span class="ckey">A.</span><span class="cval">서울 영등포구 여의대로 108,<br>커넥트생명 여의도지점</span></div>
+        <button onclick="openChat()" style="margin-top:20px;display:flex;align-items:center;justify-content:center;gap:7px;width:100%;height:44px;border-radius:var(--r-sm);border:none;background:var(--text);cursor:pointer;font-size:14px;font-weight:700;font-family:inherit;color:#fff;"><i data-lucide="message-circle" style="width:16px;height:16px;"></i>질문하기</button>
+      </div>
+
+      <!-- 소개 -->
+      <div class="sec">
+        <p class="sec-label">About</p>
+        <p class="intro-text">안녕하세요, 커넥트생명 여의도지점 김영희 설계사입니다. 10년 이상의 현장 경험으로 고객님 상황에 꼭 맞는 보험 솔루션을 제안해드립니다. 언제든지 편하게 문의해 주세요.</p>
+      </div>
+
+      <!-- 유튜브 -->
+      <div class="sec" style="padding-right:0;">
+        <p class="sec-label" style="padding-right:40px;">Youtube</p>
+        <div style="display:flex;gap:10px;overflow-x:auto;padding-right:40px;padding-bottom:4px;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none;" class="yt-scroll">
+          <div style="flex-shrink:0;width:220px;position:relative;border-radius:var(--r-lg);overflow:hidden;background:var(--bg3);aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;">
+            <div style="width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.92);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(0,0,0,0.15);"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="var(--text)" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>
+            <div style="position:absolute;bottom:0;left:0;right:0;padding:10px 14px;background:linear-gradient(transparent,rgba(0,0,0,0.55));"><p style="font-size:12px;font-weight:600;color:#fff;">실손보험 2026 개정, 무엇이 바뀌었나</p></div>
+          </div>
+          <div style="flex-shrink:0;width:220px;position:relative;border-radius:var(--r-lg);overflow:hidden;background:var(--bg3);aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;">
+            <div style="width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.92);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(0,0,0,0.15);"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="var(--text)" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>
+            <div style="position:absolute;bottom:0;left:0;right:0;padding:10px 14px;background:linear-gradient(transparent,rgba(0,0,0,0.55));"><p style="font-size:12px;font-weight:600;color:#fff;">연금보험 vs IRP, 어떤 게 유리할까?</p></div>
+          </div>
+          <div style="flex-shrink:0;width:220px;position:relative;border-radius:var(--r-lg);overflow:hidden;background:var(--bg3);aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;">
+            <div style="width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.92);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(0,0,0,0.15);"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="var(--text)" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>
+            <div style="position:absolute;bottom:0;left:0;right:0;padding:10px 14px;background:linear-gradient(transparent,rgba(0,0,0,0.55));"><p style="font-size:12px;font-weight:600;color:#fff;">태아보험, 가입 전 꼭 확인하세요</p></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 사진 (라벨 없음) -->
+      <div class="sec" style="padding-right:0;border-top:1px solid var(--line);">
+        <div class="photo-scroll" style="display:flex;gap:10px;overflow-x:auto;padding-right:40px;padding-bottom:4px;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none;">
+          <div style="flex-shrink:0;width:220px;aspect-ratio:1/1;background:var(--bg3);border-radius:var(--r-lg);display:flex;align-items:center;justify-content:center;"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>
+          <div style="flex-shrink:0;width:220px;aspect-ratio:1/1;background:var(--bg2);border-radius:var(--r-lg);display:flex;align-items:center;justify-content:center;"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>
+          <div style="flex-shrink:0;width:220px;aspect-ratio:1/1;background:var(--bg2);border-radius:var(--r-lg);display:flex;align-items:center;justify-content:center;"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>
+          <div style="flex-shrink:0;width:220px;aspect-ratio:1/1;background:var(--bg3);border-radius:var(--r-lg);display:flex;align-items:center;justify-content:center;"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>
+        </div>
+      </div>
+
+      <!-- 정보 (Information) -->
+      <div class="sec">
+        <p class="sec-label">Information</p>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="display:flex;align-items:center;gap:14px;background:var(--bg2);border-radius:12px;padding:14px 16px;cursor:pointer;" onclick="toast('010-1234-5678')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text2)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.62 3.42 2 2 0 0 1 3.6 1.25h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.96a16 16 0 0 0 6.06 6.06l1.87-1.87a2 2 0 0 1 2.11-.45c.9.338 1.853.535 2.81.7a2 2 0 0 1 1.74 2z"/></svg>
+            <span style="flex:1;font-size:14px;font-weight:500;color:var(--text);">전화번호</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </div>
+          <div style="display:flex;align-items:center;gap:14px;background:var(--bg2);border-radius:12px;padding:14px 16px;cursor:pointer;" onclick="toast('younghee.kim@connectlife.co.kr')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text2)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            <span style="flex:1;font-size:14px;font-weight:500;color:var(--text);">이메일</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </div>
+          <div style="display:flex;align-items:center;gap:14px;background:var(--bg2);border-radius:12px;padding:14px 16px;cursor:pointer;" onclick="toast('홈페이지로 이동합니다')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text2)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            <span style="flex:1;font-size:14px;font-weight:500;color:var(--text);">홈페이지</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- 게시판 -->
+      <div class="sec">
+        <p class="sec-label">Board</p>
+        <div id="home-board"></div>
+        <button onclick="openBoardAll()" class="more-btn">더보기 <i data-lucide="chevron-right" style="font-size:12px;"></i></button>
+      </div>
+
+      <!-- 리뷰 -->
+      <div class="sec">
+        <p class="sec-label">Review</p>
+        <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:16px;">
+          <i data-lucide="star" style="width:14px;height:14px;fill:var(--star);stroke:var(--star);position:relative;top:2px;"></i>
+          <span class="rev-score">4.9</span>
+          <span style="font-size:14px;color:var(--text2);">(28)</span>
+        </div>
+        <div class="rev-item">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+            <p class="rev-reviewer" style="margin-bottom:0;">이<span style="color:var(--text3);font-weight:400;margin-left:6px;">2026.05.12</span></p>
+            <div style="display:flex;gap:2px;">
+              <i data-lucide="star" style="width:12px;height:12px;fill:var(--star);stroke:var(--star);"></i><i data-lucide="star" style="width:12px;height:12px;fill:var(--star);stroke:var(--star);"></i><i data-lucide="star" style="width:12px;height:12px;fill:var(--star);stroke:var(--star);"></i><i data-lucide="star" style="width:12px;height:12px;fill:var(--star);stroke:var(--star);"></i><i data-lucide="star" style="width:12px;height:12px;fill:var(--star);stroke:var(--star);"></i>
+            </div>
+          </div>
+          <p class="rev-text">처음 보험 가입이라 걱정이 많았는데 친절하게 설명해주셔서 이해하기 쉬웠어요. 덕분에 저에게 딱 맞는 상품을 선택할 수 있었습니다.</p>
+        </div>
+        <div class="rev-item">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+            <p class="rev-reviewer" style="margin-bottom:0;">박<span style="color:var(--text3);font-weight:400;margin-left:6px;">2026.04.28</span></p>
+            <div style="display:flex;gap:2px;">
+              <i data-lucide="star" style="width:12px;height:12px;fill:var(--star);stroke:var(--star);"></i><i data-lucide="star" style="width:12px;height:12px;fill:var(--star);stroke:var(--star);"></i><i data-lucide="star" style="width:12px;height:12px;fill:var(--star);stroke:var(--star);"></i><i data-lucide="star" style="width:12px;height:12px;fill:var(--star);stroke:var(--star);"></i><i data-lucide="star" style="width:12px;height:12px;fill:var(--star);stroke:var(--star);"></i>
+            </div>
+          </div>
+          <p class="rev-text">오랜 시간 여러 설계사를 만나봤는데 이렇게 꼼꼼하게 비교해주신 분은 처음이에요. 강력 추천합니다!</p>
+        </div>
+        <div class="rev-item">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+            <p class="rev-reviewer" style="margin-bottom:0;">최<span style="color:var(--text3);font-weight:400;margin-left:6px;">2026.03.15</span></p>
+            <div style="display:flex;gap:2px;">
+              <i data-lucide="star" style="width:12px;height:12px;fill:var(--star);stroke:var(--star);"></i><i data-lucide="star" style="width:12px;height:12px;fill:var(--star);stroke:var(--star);"></i><i data-lucide="star" style="width:12px;height:12px;fill:var(--star);stroke:var(--star);"></i><i data-lucide="star" style="width:12px;height:12px;fill:var(--star);stroke:var(--star);"></i><i data-lucide="star" style="width:12px;height:12px;fill:var(--star);stroke:var(--star);"></i>
+            </div>
+          </div>
+          <p class="rev-text">갱신 때마다 연락 주셔서 관리를 정말 잘 해주세요. 믿고 맡길 수 있어서 좋습니다.</p>
+        </div>
+      </div>
+
+      <!-- Made by -->
+      <p style="text-align:center;font-family:'Poppins',sans-serif;font-size:11px;font-weight:500;color:var(--text3);padding:28px 0 calc(28px + env(safe-area-inset-bottom));">Made by Connectia.</p>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============ 채팅 ============ -->
+<section id="chat" class="screen">
+  <div class="topbar">
+    <button onclick="show('home')" class="backbtn"><i data-lucide="chevron-left"></i> 뒤로</button>
+    <span style="font-size:15px;font-weight:600;">AI 채팅</span>
+    <span style="width:60px;"></span>
+  </div>
+  <div class="body" id="chatBody" style="padding:16px;display:flex;flex-direction:column;gap:12px;">
+    <div style="display:flex;gap:10px;">
+      <img src="profile.svg" style="width:34px;height:34px;border-radius:50%;flex-shrink:0;object-fit:cover;">
+      <div style="flex:1;">
+        <p style="font-size:12px;font-weight:600;margin-bottom:4px;">커넥트생명 AI <span style="font-size:10px;font-weight:400;color:var(--text3);">AI · 24시간 응대</span></p>
+        <div style="background:var(--bg2);border-radius:0 12px 12px 12px;padding:11px 13px;font-size:13px;color:var(--text);line-height:1.6;">안녕하세요! 보험 궁금한 점을 편하게 물어보세요.</div>
+      </div>
+    </div>
+  </div>
+  <div style="padding:10px 14px calc(16px + env(safe-area-inset-bottom));border-top:1px solid var(--line);display:flex;gap:8px;flex-shrink:0;">
+    <input id="chatInput" type="text" placeholder="메시지 입력..." style="flex:1;border:1px solid var(--line2);border-radius:var(--r-md);padding:11px 13px;font-size:14px;font-family:inherit;outline:none;" onkeydown="if(event.key==='Enter')sendMsg()"/>
+    <button onclick="sendMsg()" style="width:42px;height:44px;border:none;background:var(--text);color:#fff;border-radius:var(--r-md);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i data-lucide="send" style="font-size:17px;"></i></button>
+  </div>
+</section>
+
+<!-- 게시판 전체보기 -->
+<div id="boardAllPanel" style="position:absolute;inset:0;background:#fff;display:none;flex-direction:column;transform:translateX(100%);transition:transform .25s cubic-bezier(.4,0,.2,1);z-index:40;"></div>
+
+<!-- 게시글 상세 -->
+<div id="boardPostPanel" style="position:absolute;inset:0;background:#fff;display:none;flex-direction:column;transform:translateX(100%);transition:transform .25s cubic-bezier(.4,0,.2,1);z-index:41;"></div>
+
+
+</div><!-- /phone -->
+</div><!-- /frame -->
+
+<script>
+(function(){
+  function $(id){return document.getElementById(id);}
+  function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+  function icons(){lucide.createIcons();}
+  window.toast=function(msg){var el=document.querySelector('.toast-el');if(el)el.remove();var t=document.createElement('div');t.className='toast-el';t.style.cssText='position:fixed;bottom:calc(60px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);background:rgba(17,19,24,0.88);color:#fff;padding:10px 18px;border-radius:99px;font-size:13px;font-family:Pretendard,sans-serif;z-index:9999;white-space:nowrap;';t.textContent=msg;document.body.appendChild(t);setTimeout(function(){t.remove();},2000);};
+  window.show=function(id){document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('on');});var t=$(id);if(t)t.classList.add('on');icons();};
+  window.openChat=function(){show('chat');icons();};
+
+  /* ---- 데이터 ---- */
+  var posts=[
+    {type:'event',t:'무료 보험 리모델링 상담 이벤트',on:true,photos:['#dde5f0']},
+    {type:'post',t:'2026 실손보험 개정 핵심 정리',pinned:true,on:true},
+    {type:'post',t:'연금보험 vs IRP, 어떤 게 유리할까?',pinned:false,on:true},
+    {type:'post',t:'자녀 태아보험 가입 전 꼭 확인하세요',pinned:false,on:true}
+  ];
+
+  var BADGE_EVENT='<span class="badge-event">이벤트</span>';
+  var BADGE_NOTICE='<span class="badge-notice">공지</span>';
+  function getBadge(p){if(p.type==='event')return BADGE_EVENT;if(p.pinned)return BADGE_NOTICE;return '';}
+
+  /* ---- 홈 게시판 (최대 3개) ---- */
+  function renderHomeBoard(){
+    var visible=posts.filter(function(p){return p.on;}).slice(0,3);
+    var html='';
+    visible.forEach(function(it,i){
+      var badge=getBadge(it);
+      var hasPhoto=it.photos&&it.photos.length;
+      var border=i>0?'border-top:1px solid var(--line);':'';
+      if(hasPhoto){
+        html+='<div onclick="openPostDetail(posts.filter(function(p){return p.on;})['+i+'])" class="post-item" style="height:72px;'+border+'">'
+          +'<div class="post-thumb"><i data-lucide="image" style="font-size:16px;color:var(--text3);"></i></div>'
+          +'<div style="flex:1;padding:0 12px;min-width:0;display:flex;flex-direction:column;justify-content:center;">'+(badge?'<div style="margin-bottom:4px;">'+badge+'</div>':'')+'<p class="post-title">'+esc(it.t)+'</p></div>'
+          +'<div style="display:flex;align-items:center;padding-right:4px;"><i data-lucide="chevron-right" style="font-size:14px;color:var(--text3);"></i></div></div>';
+      }else{
+        html+='<div onclick="openPostDetail(posts.filter(function(p){return p.on;})['+i+'])" style="display:flex;align-items:center;height:72px;'+border+'cursor:pointer;">'
+          +'<div style="flex:1;min-width:0;">'+(badge?'<div style="margin-bottom:4px;">'+badge+'</div>':'')+'<p class="post-title">'+esc(it.t)+'</p></div>'
+          +'<i data-lucide="chevron-right" style="font-size:14px;color:var(--text3);flex-shrink:0;"></i></div>';
+      }
+    });
+    $('home-board').innerHTML=html;icons();
+  }
+
+  /* ---- 게시판 전체보기 ---- */
+  window.openBoardAll=function(){
+    var panel=$('boardAllPanel');
+    var html='<div style="display:flex;align-items:center;justify-content:space-between;padding:calc(12px + env(safe-area-inset-top)) 16px 12px;border-bottom:1px solid var(--line);flex-shrink:0;">'
+      +'<button onclick="closeBoardAll()" class="backbtn"><i data-lucide="chevron-left"></i> 뒤로</button>'
+      +'<span style="font-size:16px;font-weight:600;">게시판</span><span style="width:60px;"></span></div>';
+    html+='<div style="flex:1;overflow-y:auto;">';
+    posts.forEach(function(it,i){
+      var badge=getBadge(it);var hasPhoto=it.photos&&it.photos.length;var border=i>0?'border-top:1px solid var(--line);':'';
+      if(hasPhoto){
+        html+='<div onclick="openPostDetail(posts['+i+'])" style="display:flex;align-items:stretch;min-height:64px;'+border+'cursor:pointer;">'
+          +'<div style="width:72px;background:var(--bg2);flex-shrink:0;display:flex;align-items:center;justify-content:center;"><i data-lucide="image" style="font-size:18px;color:var(--text3);"></i></div>'
+          +'<div style="flex:1;padding:14px 12px;min-width:0;">'+(badge?'<div style="margin-bottom:4px;">'+badge+'</div>':'')+'<p class="post-title">'+esc(it.t)+'</p></div>'
+          +'<div style="display:flex;align-items:center;padding-right:14px;"><i data-lucide="chevron-right" style="font-size:14px;color:var(--text3);"></i></div></div>';
+      }else{
+        html+='<div onclick="openPostDetail(posts['+i+'])" style="display:flex;align-items:center;min-height:60px;padding:0 16px;'+border+'cursor:pointer;">'
+          +'<div style="flex:1;min-width:0;">'+(badge?'<div style="margin-bottom:4px;">'+badge+'</div>':'')+'<p class="post-title">'+esc(it.t)+'</p></div>'
+          +'<i data-lucide="chevron-right" style="font-size:14px;color:var(--text3);flex-shrink:0;"></i></div>';
+      }
+    });
+    html+='<div style="height:40px;"></div></div>';
+    panel.innerHTML=html;panel.style.display='flex';panel.style.flexDirection='column';
+    icons();requestAnimationFrame(function(){requestAnimationFrame(function(){panel.style.transform='translateX(0)';});});
+  };
+  window.closeBoardAll=function(){var p=$('boardAllPanel');p.style.transform='translateX(100%)';setTimeout(function(){p.style.display='none';},250);};
+
+  /* ---- 게시글 상세 ---- */
+  window.openPostDetail=function(it){
+    if(!it)return;
+    var panel=$('boardPostPanel');
+    var badge=getBadge(it);
+    var html='<div style="display:flex;align-items:center;justify-content:space-between;padding:calc(12px + env(safe-area-inset-top)) 16px 12px;border-bottom:1px solid var(--line);flex-shrink:0;">'
+      +'<button onclick="closePostDetail()" class="backbtn"><i data-lucide="chevron-left"></i> 뒤로</button><span></span><span style="width:60px;"></span></div>';
+    html+='<div style="flex:1;overflow-y:auto;">';
+    if(it.photos&&it.photos.length){html+='<div style="height:200px;background:var(--bg2);display:flex;align-items:center;justify-content:center;"><i data-lucide="image" style="font-size:36px;color:var(--text3);"></i></div>';}
+    html+='<div style="padding:28px 40px;">';
+    if(badge)html+='<div style="margin-bottom:12px;">'+badge+'</div>';
+    html+='<h2 style="font-size:20px;font-weight:800;line-height:1.4;margin-bottom:20px;letter-spacing:-0.01em;">'+esc(it.t)+'</h2>';
+    html+='<div style="border-top:1px solid var(--line);padding-top:20px;">'+(it.body?'<p style="font-size:14px;color:var(--text2);line-height:1.8;">'+esc(it.body).replace(/\n/g,'<br>')+'</p>':'<p style="font-size:14px;color:var(--text3);">본문이 없어요.</p>')+'</div>';
+    html+='</div><div style="height:40px;"></div></div>';
+    panel.innerHTML=html;panel.style.display='flex';panel.style.flexDirection='column';
+    icons();requestAnimationFrame(function(){requestAnimationFrame(function(){panel.style.transform='translateX(0)';});});
+  };
+  window.closePostDetail=function(){var p=$('boardPostPanel');p.style.transform='translateX(100%)';setTimeout(function(){p.style.display='none';},250);};
+
+  /* ---- 채팅 ---- */
+  function addU(t){var b=$('chatBody');b.insertAdjacentHTML('beforeend','<div style="display:flex;justify-content:flex-end;"><div style="background:var(--text);color:#fff;border-radius:12px 12px 0 12px;padding:10px 13px;font-size:13px;max-width:75%;line-height:1.6;">'+esc(t)+'</div></div>');b.scrollTop=b.scrollHeight;}
+  function addA(t){var b=$('chatBody');b.insertAdjacentHTML('beforeend','<div style="display:flex;gap:10px;"><img src="profile.svg" style="width:30px;height:30px;border-radius:50%;flex-shrink:0;object-fit:cover;"><div style="background:var(--bg2);border-radius:0 12px 12px 12px;padding:10px 13px;font-size:13px;max-width:75%;line-height:1.6;color:var(--text);">'+esc(t)+'</div></div>');b.scrollTop=b.scrollHeight;}
+  window.sendMsg=function(){var i=$('chatInput'),v=i.value.trim();if(!v)return;i.value='';addU(v);var b=$('chatBody');b.insertAdjacentHTML('beforeend','<div id="typing" style="display:flex;gap:10px;"><img src="profile.svg" style="width:30px;height:30px;border-radius:50%;flex-shrink:0;object-fit:cover;"><div style="background:var(--bg2);border-radius:0 12px 12px 12px;padding:11px 16px;font-size:13px;color:var(--text3);">...</div></div>');b.scrollTop=b.scrollHeight;setTimeout(function(){var ty=$('typing');if(ty)ty.remove();addA('등록된 자료를 바탕으로 답변드릴게요. (프로토타입에서는 예시 답변이에요.)');},650);};
+
+  /* ---- Init ---- */
+  renderHomeBoard();
+  icons();
+  /* create mode */
+  (function(){
+    var p=new URLSearchParams(location.search);
+    if(p.get('create')==='1'){
+      var name='[등록된 이름]';
+      document.querySelectorAll('.person-name').forEach(function(el){el.textContent=name;});
+      var tb=document.querySelector('#home .topbar button');if(tb)tb.childNodes[0].textContent=name+' ';
+      posts=[];renderHomeBoard();
+    }
+  })();
+})();
+
+function startOnboarding(){
+  var frame=document.querySelector('.phone')||document.querySelector('.frame');
+  var ov=document.createElement('div');
+  ov.id='onb-ov';
+  ov.innerHTML='<div id="onb-bd" style="position:absolute;inset:0;background:rgba(0,0,0,0.45);"></div>'
+    +'<div id="onb-tip" style="position:absolute;background:#fff;border-radius:16px;padding:18px 18px 14px;width:260px;box-shadow:0 8px 32px rgba(0,0,0,0.18);">'
+    +'<div id="onb-arr" style="position:absolute;top:-7px;width:14px;height:7px;"><div style="width:10px;height:10px;background:#fff;transform:rotate(45deg);margin:3px auto 0;border-radius:2px 0 0 0;box-shadow:-2px -2px 4px rgba(0,0,0,0.06);"></div></div>'
+    +'<p id="onb-desc" style="font-size:14px;font-weight:500;line-height:1.65;color:#111318;word-break:keep-all;"></p>'
+    +'<div style="text-align:right;margin-top:10px;"><button id="onb-next" style="background:none;border:none;cursor:pointer;font-size:14px;font-weight:600;color:#6b6be1;font-family:inherit;padding:4px 0;">다음</button></div>'
+    +'</div>';
+  ov.style.cssText='position:absolute;inset:0;z-index:600;';
+  frame.appendChild(ov);
+  var steps=[
+    {find:function(){return Array.from(document.querySelectorAll('#home .topbar button')).find(function(b){return b.textContent.includes('프로필 편집');});},
+     desc:'프로필 편집을 통해\n나에게 맞게 페이지를 구성하세요'},
+    {find:function(){return Array.from(document.querySelectorAll('#home .topbar button')).find(function(b){return b.textContent.includes('설정');});},
+     desc:'공개 여부, 도메인, 알림 등\n페이지 설정을 관리하세요.'},
+  ];
+  var step=0,prevBtn=null;
+  function show(i){
+    if(prevBtn){prevBtn.style.position='';prevBtn.style.zIndex='';prevBtn.style.outline='';}
+    if(i>=steps.length){ov.remove();return;}
+    var btn=steps[i].find();if(!btn){show(i+1);return;}
+    prevBtn=btn;
+    btn.style.position='relative';btn.style.zIndex='601';btn.style.outline='2.5px solid #6b6be1';btn.style.borderRadius='8px';
+    var fr=frame.getBoundingClientRect(),br=btn.getBoundingClientRect();
+    var tip=document.getElementById('onb-tip'),arr=document.getElementById('onb-arr');
+    var cx=br.left-fr.left+br.width/2,tl=Math.max(10,Math.min(cx-130,fr.width-270));
+    tip.style.left=tl+'px';tip.style.top=(br.bottom-fr.top+12)+'px';
+    arr.style.left=(cx-tl-7)+'px';
+    document.getElementById('onb-desc').textContent=steps[i].desc;
+    document.getElementById('onb-next').textContent=(i===steps.length-1)?'완료':'다음';
+  }
+  document.getElementById('onb-next').onclick=function(){step++;show(step);};
+  requestAnimationFrame(function(){requestAnimationFrame(function(){show(0);});});
+}
+</script>
+</body>
+</html>
