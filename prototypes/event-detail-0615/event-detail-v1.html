@@ -278,6 +278,15 @@
 
     /* hero 우측 상단 brand 라벨용 mini avatar inline */
     .post-host-row .avatar { flex-shrink: 0; }
+
+    /* ── 신청 폼 시트 ── */
+    .bottom-sheet { max-width: 430px; margin: 0 auto; }
+    .signup-sheet-title {
+      margin-bottom: 24px;
+    }
+    .signup-field { margin-bottom: 20px; }
+    .signup-field .label { margin-bottom: 8px; }
+    .signup-sheet .btn { margin-top: 8px; }
   </style>
 </head>
 <body>
@@ -347,7 +356,7 @@
         <p class="signup-msg text-body-lg">
           👀 안경이나 렌즈 때문에 불편했다면, 비용 부담으로 라식·라섹을 미루고 있었다면 — 아래에서 상담 안내를 먼저 받아보세요.
         </p>
-        <button class="btn btn-lg btn-fill-primary btn-block">
+        <button class="btn btn-lg btn-fill-primary btn-block" id="open-signup-sheet">
           상담 안내 신청
         </button>
       </div>
@@ -469,8 +478,44 @@
   </div>
 </div>
 
+<!-- 신청 폼 바텀시트 -->
+<div class="bottom-sheet-overlay" id="signup-overlay"></div>
+<div class="bottom-sheet signup-sheet" id="signup-sheet" role="dialog" aria-modal="true" aria-labelledby="signup-sheet-title">
+  <div class="bottom-sheet-handle"></div>
+  <h3 class="text-title signup-sheet-title" id="signup-sheet-title">내 정보</h3>
+  <form onsubmit="event.preventDefault(); closeSignupSheet();">
+    <div class="signup-field">
+      <label class="label label-required" for="signup-name">이름</label>
+      <input class="input" id="signup-name" type="text" placeholder="이름" required>
+    </div>
+    <div class="signup-field">
+      <label class="label label-required" for="signup-email">이메일</label>
+      <input class="input" id="signup-email" type="email" placeholder="you@email.com" required>
+    </div>
+    <button class="btn btn-lg btn-fill-primary btn-block" type="submit">참가 신청</button>
+  </form>
+</div>
+
 <script src="https://unpkg.com/lucide@latest"></script>
-<script>lucide.createIcons();</script>
+<script>
+  lucide.createIcons();
+
+  const overlay = document.getElementById('signup-overlay');
+  const sheet = document.getElementById('signup-sheet');
+  const openBtn = document.getElementById('open-signup-sheet');
+
+  function openSignupSheet() {
+    overlay.classList.add('is-open');
+    sheet.classList.add('is-open');
+  }
+  function closeSignupSheet() {
+    overlay.classList.remove('is-open');
+    sheet.classList.remove('is-open');
+  }
+
+  openBtn.addEventListener('click', openSignupSheet);
+  overlay.addEventListener('click', closeSignupSheet);
+</script>
 
 </body>
 </html>
