@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>이벤트 상세 — 첫눈애안과</title>
+  <link rel="stylesheet" href="../../tokens.css">
+  <link rel="stylesheet" href="../../components.css">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font-base);
+      background: var(--color-bg);
+      color: var(--color-text);
+      max-width: 430px;
+      margin: 0 auto;
+      min-height: 100dvh;
+      position: relative;
+    }
+
+    i[data-lucide] { display: inline-flex; flex-shrink: 0; }
+
+    /* ── 상단 네비 ── */
+    .topbar {
+      position: sticky; top: 0; z-index: 50;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 20px;
+      background: var(--color-surface);
+      border-bottom: 1px solid var(--color-border);
+    }
+    .topbar-logo {
+      display: inline-flex; align-items: center;
+      height: 16px;
+    }
+    .topbar-logo img { height: 100%; width: auto; display: block; }
+    .topbar-actions {
+      display: inline-flex; align-items: center; gap: 16px;
+    }
+    .topbar-link {
+      background: none; border: none; cursor: pointer;
+      color: var(--color-text-sub);
+      font-family: var(--font-base);
+      padding: 4px 0;
+    }
+
+    /* ── 상단 프로모 배너 (이미지) ── */
+    .promo-banner {
+      display: block;
+      border-bottom: 1px solid var(--color-border);
+      line-height: 0;
+    }
+    .promo-banner img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    /* ── 본문 ── */
+    .body { padding: 0 16px 24px; }
+    .body section { margin-top: 28px; }
+
+    /* ── 타이틀 영역 ── */
+    .post-title { line-height: 1.35; }
+    .post-host-row {
+      display: flex; align-items: center; gap: 8px;
+      margin-top: 12px;
+    }
+
+    /* ── 인포 카드 ── */
+    .info-card {
+      display: flex; align-items: center; gap: 14px;
+      padding: 12px;
+      border-radius: var(--r-md);
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+    }
+    .info-card + .info-card { margin-top: 8px; }
+    .info-icon-date {
+      width: 40px; height: 40px; flex-shrink: 0;
+      border-radius: var(--r-sm);
+      background: var(--color-surface-sub);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      line-height: 1.1;
+    }
+    .info-icon-date small { color: var(--color-text-muted); }
+    .info-icon-date strong { color: var(--color-text); }
+    .info-icon-pin {
+      width: 40px; height: 40px; flex-shrink: 0;
+      border-radius: var(--r-sm);
+      background: var(--color-surface-sub);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--color-text-sub);
+    }
+    .info-text { flex: 1; min-width: 0; }
+    .info-text-sub { margin-top: 4px; }
+
+    /* ── 등록 카드 ── */
+    .signup {
+      margin-top: 24px;
+      border-radius: var(--r-md);
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      overflow: hidden;
+    }
+    .signup-label {
+      padding: 12px 16px 8px;
+      color: var(--color-text-muted);
+      letter-spacing: 0.5px;
+    }
+    .signup-status {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 16px;
+      background: var(--color-surface-sub);
+    }
+    .signup-status-icon {
+      width: 36px; height: 36px;
+      border-radius: var(--r-full);
+      background: var(--color-surface);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--color-text-sub);
+      flex-shrink: 0;
+    }
+    .signup-status-text { flex: 1; }
+    .signup-status-desc { margin-top: 2px; }
+    .signup-body { padding: 16px; }
+    .signup-msg {
+      color: var(--color-text-sub);
+      line-height: var(--lh-body);
+      margin-bottom: 16px;
+    }
+
+    /* ── 섹션 라벨 ── */
+    .sec-label {
+      color: var(--color-text-muted);
+      letter-spacing: 0.5px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--color-border);
+      margin-bottom: 16px;
+    }
+
+    /* ── 이벤트 소개 본문 ── */
+    .intro h3 {
+      font-size: var(--fs-heading); font-weight: var(--fw-bold);
+      color: var(--color-text);
+      margin-top: 24px; margin-bottom: 12px;
+      line-height: 1.4;
+    }
+    .intro h3:first-child { margin-top: 0; }
+    .intro p {
+      color: var(--color-text-sub);
+      line-height: 1.7;
+      margin-bottom: 12px;
+    }
+    .intro .meta-line {
+      color: var(--color-text);
+      font-weight: var(--fw-medium);
+      margin-bottom: 20px;
+    }
+    .intro hr {
+      border: none;
+      border-top: 1px solid var(--color-border);
+      margin: 24px 0;
+    }
+    .intro ul {
+      list-style: none; padding: 0; margin-bottom: 16px;
+    }
+    .intro ul li {
+      color: var(--color-text-sub);
+      line-height: 1.9;
+    }
+    .intro .group-title {
+      font-weight: var(--fw-bold);
+      color: var(--color-text);
+      margin: 16px 0 8px;
+    }
+
+    /* ── 장소 ── */
+    .place-addr { font-weight: var(--fw-semibold); }
+    .place-addr-sub { margin-top: 4px; margin-bottom: 12px; }
+    .map-wrap {
+      position: relative;
+      border-radius: var(--r-md);
+      overflow: hidden;
+      height: 140px;
+      background: var(--color-surface-sub);
+      border: 1px solid var(--color-border);
+    }
+    .map-pin {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -100%);
+      color: var(--color-destructive);
+    }
+    .map-link {
+      position: absolute;
+      top: 8px; left: 8px;
+      padding: 6px 10px;
+      background: var(--color-surface);
+      border-radius: var(--r-xs);
+      color: var(--color-text);
+      display: inline-flex; align-items: center; gap: 4px;
+      box-shadow: var(--shadow-1);
+    }
+
+    /* ── 주최자 ── */
+    .host-row {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 0;
+    }
+    .host-row-name { flex: 1; }
+    .host-row-close {
+      color: var(--color-text-muted);
+      background: none; border: none;
+      cursor: pointer; padding: 4px;
+      display: inline-flex;
+    }
+
+    /* ── 참석자 ── */
+    .attendees-count { margin-bottom: 12px; }
+    .attendees-avatars {
+      display: inline-flex;
+      margin-bottom: 8px;
+    }
+    .attendees-avatars .avatar { margin-left: -8px; border: 2px solid var(--color-bg); }
+    .attendees-avatars .avatar:first-child { margin-left: 0; }
+    .attendees-more {
+      width: 32px; height: 32px;
+      border-radius: var(--r-full);
+      background: var(--color-surface-sub);
+      color: var(--color-text-sub);
+      display: inline-flex; align-items: center; justify-content: center;
+      margin-left: -8px;
+      border: 2px solid var(--color-bg);
+    }
+    .attendees-names {
+      display: block;
+      color: var(--color-text);
+    }
+
+    /* ── 빠른 액션 ── */
+    .quick-action {
+      display: block;
+      padding: 8px 0;
+      color: var(--color-text-muted);
+      text-decoration: none;
+    }
+    .quick-action:first-child { padding-top: 0; }
+
+    /* ── 푸터 ── */
+    .footer {
+      margin-top: 32px;
+      padding: 24px 16px 80px;
+      border-top: 1px solid var(--color-border);
+      background: var(--color-bg);
+    }
+    .footer-top {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .footer-brand {
+      display: inline-flex; align-items: center;
+      height: 16px;
+    }
+    .footer-brand img { height: 100%; width: auto; display: block; }
+    .footer-socials {
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    .footer-links {
+      display: flex; flex-wrap: wrap; gap: 16px;
+      color: var(--color-text-muted);
+    }
+    .footer-links a {
+      color: inherit; text-decoration: none;
+    }
+
+    /* hero 우측 상단 brand 라벨용 mini avatar inline */
+    .post-host-row .avatar { flex-shrink: 0; }
+  </style>
+</head>
+<body>
+
+<!-- 상단 네비 -->
+<div class="topbar">
+  <a class="topbar-logo" href="#" aria-label="Connectia 홈">
+    <img src="logo.svg" alt="Connectia">
+  </a>
+  <div class="topbar-actions">
+    <button class="topbar-link text-body">이벤트 탐색</button>
+    <button class="btn btn-sm btn-line-dark btn-pill">로그인</button>
+  </div>
+</div>
+
+<!-- 상단 프로모 배너 -->
+<a class="promo-banner" href="#" aria-label="라식·라섹 1명 전액지원 상담 안내받기">
+  <img src="banner.png" alt="라식·라섹 1명 전액지원 — 상담 안내 받고, 대상 여부 확인하세요! 서울시립대 재학생·졸업생이라면 지금 상담 안내받기. 첫눈애안과">
+</a>
+
+
+<!-- 본문 -->
+<div class="body">
+
+  <!-- 타이틀 -->
+  <section>
+    <h2 class="text-title post-title">[서울시립대 재학생·졸업생 대상] 라식·라섹 비용 부담 완화 상담 안내 신청</h2>
+    <div class="post-host-row">
+      <span class="avatar avatar-xs"></span>
+      <span class="text-body-lg" style="color:var(--color-text-sub);">첫눈애안과 주최</span>
+    </div>
+  </section>
+
+  <!-- 날짜 / 장소 -->
+  <section>
+    <div class="info-card">
+      <div class="info-icon-date">
+        <small class="text-caption">JUN</small>
+        <strong class="text-body">17</strong>
+      </div>
+      <div class="info-text">
+        <p class="text-body-lg" style="font-weight:var(--fw-semibold);">2026.06.15 – 06.22</p>
+        <p class="info-text-sub text-body" style="color:var(--color-text-muted);">상담 안내 신청 기간</p>
+      </div>
+    </div>
+    <div class="info-card">
+      <div class="info-icon-pin">
+        <i data-lucide="map-pin" style="width:18px;height:18px;"></i>
+      </div>
+      <div class="info-text">
+        <p class="text-body-lg" style="font-weight:var(--fw-semibold);">첫눈애안과 청담점</p>
+        <p class="info-text-sub text-body" style="color:var(--color-text-muted);">
+          서울특별시 강남구 청담동 83-17 ·
+          <a class="text-body" style="color:var(--color-primary);font-weight:var(--fw-medium);text-decoration:none;">
+            지도 보기 <i data-lucide="external-link" style="width:12px;height:12px;"></i>
+          </a>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 등록 카드 -->
+  <section>
+    <div class="signup">
+      <p class="signup-label text-body" style="font-weight:var(--fw-semibold);">등록</p>
+      <div class="signup-body">
+        <p class="signup-msg text-body-lg">
+          👀 안경이나 렌즈 때문에 불편했다면, 비용 부담으로 라식·라섹을 미루고 있었다면 — 아래에서 상담 안내를 먼저 받아보세요.
+        </p>
+        <button class="btn btn-lg btn-fill-primary btn-block">
+          상담 안내 신청
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 이벤트 소개 -->
+  <section>
+    <p class="sec-label text-body" style="font-weight:var(--fw-semibold);">이벤트 소개</p>
+    <div class="intro">
+      <h3>라식·라섹 비용 부담 완화 상담 안내</h3>
+      <p class="meta-line text-body">신청 기간 : 2026년 6월 15일 (월) ~ 6월 22일 (일)</p>
+
+      <p class="text-body-lg">👀 안경이나 렌즈 때문에 불편했던 순간이 많았다면? 비용 부담 때문에 라식·라섹을 계속 미루고 있었다면?</p>
+      <p class="text-body-lg">첫눈애안과의 라식·라섹 상담 안내를 먼저 받아보세요.</p>
+      <p class="text-body-lg">첫눈애안과는 서울시립대 재학생·졸업생을 대상으로 라식·라섹 상담 및 검사 절차 안내 사전 접수를 진행하고 있습니다.</p>
+
+      <hr>
+
+      <p class="group-title text-body-lg">[이런 분이라면 신청해보세요 🙋‍♀️🙋‍♂️]</p>
+      <ul>
+        <li class="text-body-lg">✅ 서울시립대 재학생 또는 졸업생</li>
+        <li class="text-body-lg">✅ 안경이나 렌즈 착용으로 일상에 불편을 느끼는 분</li>
+        <li class="text-body-lg">✅ 비용 부담으로 라식·라섹을 망설이고 있는 분</li>
+        <li class="text-body-lg">✅ 수술 가능 여부, 회복기간, 검사 절차가 궁금한 분</li>
+        <li class="text-body-lg">✅ 상담 및 검사 절차를 먼저 안내받아보고 싶은 분</li>
+      </ul>
+
+      <p class="group-title text-body-lg">[비용 부담 완화 안내 ✨]</p>
+      <p class="text-body-lg">
+        상담 안내를 신청하고 실제 상담 및 검사 절차를 진행한 분들 중, 경제적 부담, 신청 취지, 기본 요건, 의료진 상담 및 정밀검사 결과 등을 종합해
+        <strong>1명에 한해 시력교정 비용 전액 지원</strong> 대상 여부를 검토합니다.
+      </p>
+
+      <hr>
+
+      <p class="group-title text-body-lg">[유의사항]</p>
+      <ul>
+        <li class="text-body-lg">• 본 신청은 수술 또는 비용 지원 확정을 의미하지 않습니다.</li>
+        <li class="text-body-lg">• 실제 수술 가능 여부와 비용 지원 여부는 의료진 상담, 정밀검사 결과, 지원 취지 적합성 등을 종합해 첫눈애안과가 결정합니다.</li>
+        <li class="text-body-lg">• 입력하신 정보는 상담 및 검사 절차 안내, 비용 부담 완화 대상 여부 확인을 위해 사용됩니다.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 장소 -->
+  <section>
+    <p class="sec-label text-body" style="font-weight:var(--fw-semibold);">장소</p>
+    <p class="place-addr text-body-lg">83-17</p>
+    <p class="place-addr-sub text-body" style="color:var(--color-text-muted);">대한민국 서울특별시 강남구 청담동 83-17</p>
+    <div class="map-wrap">
+      <span class="map-link text-body" style="font-weight:var(--fw-semibold);">
+        지도 <i data-lucide="external-link" style="width:12px;height:12px;"></i>
+      </span>
+      <i data-lucide="map-pin" class="map-pin" style="width:28px;height:28px;"></i>
+    </div>
+  </section>
+
+  <!-- 주최자 -->
+  <section>
+    <p class="sec-label text-body" style="font-weight:var(--fw-semibold);">주최자</p>
+    <div class="host-row">
+      <span class="avatar avatar-xs"></span>
+      <span class="host-row-name text-body-lg" style="font-weight:var(--fw-medium);">첫눈애안과</span>
+    </div>
+    <div class="host-row">
+      <span class="avatar avatar-xs"></span>
+      <span class="host-row-name text-body-lg" style="font-weight:var(--fw-medium);">박원장 🌙</span>
+    </div>
+    <div class="host-row">
+      <span class="avatar avatar-xs"></span>
+      <span class="host-row-name text-body-lg" style="font-weight:var(--fw-medium);">이코디네이터</span>
+    </div>
+  </section>
+
+  <!-- 참석자 -->
+  <section>
+    <p class="attendees-count text-body-lg" style="font-weight:var(--fw-semibold);">23명 신청</p>
+    <div class="attendees-avatars">
+      <span class="avatar avatar-sm"></span>
+      <span class="avatar avatar-sm"></span>
+      <span class="avatar avatar-sm"></span>
+      <span class="avatar avatar-sm"></span>
+      <span class="attendees-more text-caption">+19</span>
+    </div>
+    <span class="attendees-names text-body-lg">시립이, 민서, 현지 외 20명</span>
+  </section>
+
+  <!-- 빠른 액션 -->
+  <section>
+    <a class="quick-action text-body-lg">호스트에게 연락하기</a>
+    <a class="quick-action text-body-lg">이벤트 신고</a>
+  </section>
+</div>
+
+<!-- 푸터 -->
+<div class="footer">
+  <div class="footer-top">
+    <a class="footer-brand" href="#" aria-label="Connectia 홈">
+      <img src="logo.svg" alt="Connectia">
+    </a>
+    <div class="footer-socials">
+      <a class="icon-btn icon-btn-clear icon-btn-sm" aria-label="Instagram">
+        <i data-lucide="instagram" style="width:18px;height:18px;"></i>
+      </a>
+      <a class="icon-btn icon-btn-clear icon-btn-sm" aria-label="X">
+        <i data-lucide="twitter" style="width:18px;height:18px;"></i>
+      </a>
+      <a class="icon-btn icon-btn-clear icon-btn-sm" aria-label="이메일">
+        <i data-lucide="mail" style="width:18px;height:18px;"></i>
+      </a>
+      <a class="btn btn-sm btn-line-dark btn-pill" style="margin-left:4px;">홈페이지 바로가기</a>
+    </div>
+  </div>
+  <div class="footer-links text-body">
+    <a>탐색</a>
+    <a>가격</a>
+    <a>도움말</a>
+  </div>
+</div>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>lucide.createIcons();</script>
+
+</body>
+</html>
