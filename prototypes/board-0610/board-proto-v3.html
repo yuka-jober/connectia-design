@@ -494,12 +494,12 @@
     display: flex; align-items: center; gap: 12px;
     padding: 20px;
     border-top: 1px solid var(--color-border);
-    background: var(--color-surface);
+    background: var(--color-primary-subtle);
     cursor: pointer; flex-shrink: 0;
   }
   .write-form-preview-label {
     font-size: var(--fs-label); font-weight: var(--fw-semibold);
-    color: var(--color-text); flex-shrink: 0;
+    color: var(--color-primary-dark); flex-shrink: 0;
   }
   .write-form-preview-chips {
     display: flex; gap: 4px; flex: 1; justify-content: flex-end;
@@ -508,7 +508,7 @@
   .write-form-preview-chips::-webkit-scrollbar { display: none; }
   .write-form-preview-chip {
     padding: 2px 8px; border-radius: var(--r-full);
-    background: var(--color-surface-sub); color: var(--color-text-sub);
+    background: var(--color-surface); color: var(--color-text-sub);
     font-size: var(--fs-caption); white-space: nowrap; flex-shrink: 0;
   }
   .write-form-preview-more {
@@ -516,7 +516,7 @@
     white-space: nowrap; flex-shrink: 0; align-self: center;
   }
   .write-form-preview-chevron {
-    width: 16px; height: 16px; color: var(--color-text-muted); flex-shrink: 0;
+    width: 16px; height: 16px; color: var(--color-primary); flex-shrink: 0;
   }
 
   /* ── 폼 설정 시트 ── */
@@ -581,6 +581,50 @@
     margin-top: 8px;
   }
   .sheet-kakao-label { flex: 1; font-size: var(--fs-body); font-weight: var(--fw-medium); color: var(--color-text); }
+
+  /* ── 이벤트 기간 입력 ── */
+  .event-period-row {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .event-period-row .input { flex: 1; min-width: 0; }
+  .event-period-sep {
+    color: var(--color-text-muted); font-size: var(--fs-body);
+    flex-shrink: 0;
+  }
+  .event-period-input {
+    padding: 8px 12px;
+    font-size: var(--fs-body);
+  }
+  .write-event-period {
+    display: flex; align-items: center; gap: 8px;
+    padding: 4px 20px;
+    flex-shrink: 0;
+  }
+  .write-event-period .event-period-input { flex: 1; min-width: 0; }
+
+  /* ── 설정 토글 카드 ── */
+  .setting-toggle-card {
+    border-radius: var(--r-md);
+    background: var(--color-surface-sub);
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .setting-toggle-row {
+    display: flex; align-items: center; gap: 16px;
+    padding: 20px;
+  }
+  .setting-toggle-row + .setting-toggle-row {
+    border-top: 1px solid var(--color-border);
+  }
+  .setting-toggle-text { flex: 1; }
+  .setting-toggle-title {
+    font-size: var(--fs-body); font-weight: var(--fw-semibold);
+    color: var(--color-text); margin-bottom: 4px;
+  }
+  .setting-toggle-desc {
+    font-size: var(--fs-caption); color: var(--color-text-muted);
+    line-height: 1.5;
+  }
 
   /* ══════════════════════════════ */
   /* 프로토타입 시점 전환 바          */
@@ -2307,6 +2351,12 @@
   <div class="write-divider"></div>
 
   <div class="write-body">
+    <div class="write-event-period" id="write-event-period" hidden>
+      <input class="input event-period-input" type="datetime-local" id="write-event-start">
+      <span class="event-period-sep">~</span>
+      <input class="input event-period-input" type="datetime-local" id="write-event-end">
+    </div>
+    <div class="write-divider" id="write-event-period-divider" hidden></div>
     <input class="write-title" type="text" placeholder="제목">
     <div class="write-divider"></div>
     <textarea class="write-content" placeholder="내용을 입력하세요"></textarea>
@@ -2399,6 +2449,24 @@
     <div class="sheet-kakao-row" style="margin:0;">
       <span class="sheet-kakao-label">카카오 알림톡으로 알림</span>
       <input type="checkbox" class="toggle">
+    </div>
+
+    <!-- 노출 설정 -->
+    <div class="setting-toggle-card">
+      <div class="setting-toggle-row">
+        <div class="setting-toggle-text">
+          <p class="setting-toggle-title">버튼으로 노출</p>
+          <p class="setting-toggle-desc">채팅 상단·말풍선에 참여 버튼을 띄워요</p>
+        </div>
+        <input type="checkbox" class="toggle" checked>
+      </div>
+      <div class="setting-toggle-row">
+        <div class="setting-toggle-text">
+          <p class="setting-toggle-title">AI 노출</p>
+          <p class="setting-toggle-desc">대화 흐름에 맞춰 AI 가 안내할 수 있어요</p>
+        </div>
+        <input type="checkbox" class="toggle">
+      </div>
     </div>
 
   </div>
@@ -2536,6 +2604,16 @@
   </div>
   <div class="body" style="padding:20px 20px 40px;display:flex;flex-direction:column;gap:16px;">
 
+    <!-- 이벤트 기간 -->
+    <div>
+      <p class="field-label" style="margin-bottom:8px;">이벤트 기간</p>
+      <div class="event-period-row">
+        <input class="input event-period-input" type="datetime-local" id="event-modify-start">
+        <span class="event-period-sep">~</span>
+        <input class="input event-period-input" type="datetime-local" id="event-modify-end">
+      </div>
+    </div>
+
     <div>
       <p class="field-label">제목</p>
       <input class="input" type="text" value="봄맞이 디저트 페어">
@@ -2582,6 +2660,24 @@
           </div>
           <input type="checkbox" class="toggle" id="toggle-modify-form" onchange="onModifyFormToggle(this)" onclick="event.stopPropagation();">
         </div>
+      </div>
+    </div>
+
+    <!-- 노출 설정 -->
+    <div class="setting-toggle-card">
+      <div class="setting-toggle-row">
+        <div class="setting-toggle-text">
+          <p class="setting-toggle-title">버튼으로 노출</p>
+          <p class="setting-toggle-desc">채팅 상단·말풍선에 참여 버튼을 띄워요</p>
+        </div>
+        <input type="checkbox" class="toggle" checked>
+      </div>
+      <div class="setting-toggle-row">
+        <div class="setting-toggle-text">
+          <p class="setting-toggle-title">AI 노출</p>
+          <p class="setting-toggle-desc">대화 흐름에 맞춰 AI 가 안내할 수 있어요</p>
+        </div>
+        <input type="checkbox" class="toggle">
       </div>
     </div>
 
@@ -2826,6 +2922,10 @@
       var t = document.getElementById('toggle-write-form');
       if (t) t.checked = false;
     }
+    var period = document.getElementById('write-event-period');
+    var periodDiv = document.getElementById('write-event-period-divider');
+    if (period) period.hidden = (type !== 'event');
+    if (periodDiv) periodDiv.hidden = (type !== 'event');
     updateWriteFormPreview();
   }
 
