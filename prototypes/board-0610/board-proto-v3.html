@@ -594,6 +594,15 @@
   .event-period-input {
     padding: 8px 12px;
     font-size: var(--fs-body);
+    text-align: left;
+  }
+  .event-period-input::-webkit-datetime-edit {
+    text-align: left;
+    display: block;
+    width: 100%;
+  }
+  .event-period-input::-webkit-date-and-time-value {
+    text-align: left;
   }
   .write-event-period {
     display: flex; align-items: center; gap: 8px;
