@@ -639,6 +639,33 @@
     font-size: var(--fs-caption); color: var(--color-text-muted);
     line-height: 1.5;
   }
+  .setting-toggle-header {
+    display: flex; align-items: center; gap: 16px;
+    padding: 20px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .setting-toggle-header-title {
+    flex: 1;
+    font-size: var(--fs-body); font-weight: var(--fw-semibold);
+    color: var(--color-text);
+  }
+  .setting-toggle-header-icon {
+    width: 20px; height: 20px;
+    color: var(--color-text-sub);
+    transition: transform var(--motion-fast) var(--ease-standard);
+    flex-shrink: 0;
+  }
+  .setting-toggle-card.is-open .setting-toggle-header-icon {
+    transform: rotate(180deg);
+  }
+  .setting-toggle-body {
+    display: none;
+    border-top: 1px solid var(--color-border);
+  }
+  .setting-toggle-card.is-open .setting-toggle-body {
+    display: block;
+  }
 
   /* ══════════════════════════════ */
   /* 프로토타입 시점 전환 바          */
@@ -2467,19 +2494,25 @@
 
     <!-- 노출 설정 -->
     <div class="setting-toggle-card">
-      <div class="setting-toggle-row">
-        <div class="setting-toggle-text">
-          <p class="setting-toggle-title">버튼으로 노출</p>
-          <p class="setting-toggle-desc">채팅 상단·말풍선에 참여 버튼을 띄워요</p>
-        </div>
-        <input type="checkbox" class="toggle" checked>
+      <div class="setting-toggle-header" onclick="toggleExposureCard(this)">
+        <p class="setting-toggle-header-title">채팅 내에서 노출</p>
+        <i data-lucide="chevron-down" class="setting-toggle-header-icon"></i>
       </div>
-      <div class="setting-toggle-row">
-        <div class="setting-toggle-text">
-          <p class="setting-toggle-title">AI 노출</p>
-          <p class="setting-toggle-desc">대화 흐름에 맞춰 AI 가 안내할 수 있어요</p>
+      <div class="setting-toggle-body">
+        <div class="setting-toggle-row">
+          <div class="setting-toggle-text">
+            <p class="setting-toggle-title">버튼으로 노출</p>
+            <p class="setting-toggle-desc">채팅 상단·말풍선에 참여 버튼을 띄워요</p>
+          </div>
+          <input type="checkbox" class="toggle" checked>
         </div>
-        <input type="checkbox" class="toggle">
+        <div class="setting-toggle-row">
+          <div class="setting-toggle-text">
+            <p class="setting-toggle-title">AI 노출</p>
+            <p class="setting-toggle-desc">대화 흐름에 맞춰 AI 가 안내할 수 있어요</p>
+          </div>
+          <input type="checkbox" class="toggle">
+        </div>
       </div>
     </div>
 
@@ -2679,19 +2712,25 @@
 
     <!-- 노출 설정 -->
     <div class="setting-toggle-card">
-      <div class="setting-toggle-row">
-        <div class="setting-toggle-text">
-          <p class="setting-toggle-title">버튼으로 노출</p>
-          <p class="setting-toggle-desc">채팅 상단·말풍선에 참여 버튼을 띄워요</p>
-        </div>
-        <input type="checkbox" class="toggle" checked>
+      <div class="setting-toggle-header" onclick="toggleExposureCard(this)">
+        <p class="setting-toggle-header-title">채팅 내에서 노출</p>
+        <i data-lucide="chevron-down" class="setting-toggle-header-icon"></i>
       </div>
-      <div class="setting-toggle-row">
-        <div class="setting-toggle-text">
-          <p class="setting-toggle-title">AI 노출</p>
-          <p class="setting-toggle-desc">대화 흐름에 맞춰 AI 가 안내할 수 있어요</p>
+      <div class="setting-toggle-body">
+        <div class="setting-toggle-row">
+          <div class="setting-toggle-text">
+            <p class="setting-toggle-title">버튼으로 노출</p>
+            <p class="setting-toggle-desc">채팅 상단·말풍선에 참여 버튼을 띄워요</p>
+          </div>
+          <input type="checkbox" class="toggle" checked>
         </div>
-        <input type="checkbox" class="toggle">
+        <div class="setting-toggle-row">
+          <div class="setting-toggle-text">
+            <p class="setting-toggle-title">AI 노출</p>
+            <p class="setting-toggle-desc">대화 흐름에 맞춰 AI 가 안내할 수 있어요</p>
+          </div>
+          <input type="checkbox" class="toggle">
+        </div>
       </div>
     </div>
 
@@ -2851,6 +2890,10 @@
     var isOn = wrap.classList.toggle('on');
     btn.textContent = isOn ? '취소' : '답글 달기';
     if (isOn) wrap.querySelector('input').focus();
+  }
+
+  function toggleExposureCard(header) {
+    header.closest('.setting-toggle-card').classList.toggle('is-open');
   }
 
   function addReply(input) {
