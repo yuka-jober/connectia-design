@@ -394,8 +394,8 @@
     width: 100%;
     margin-top: 4px;
   }
-  .chip-input.on { display: flex; gap: 8px; }
-  .chip-input .input { flex: 1; padding: 10px 14px; font-size: var(--fs-body); }
+  .chip-input.on { display: flex; gap: 8px; align-items: stretch; }
+  .chip-input .input { flex: 1; height: 40px; padding: 0 14px; font-size: var(--fs-body); }
   .chip-input .btn { flex-shrink: 0; }
 
   /* ── Locked notice ── */
@@ -763,12 +763,12 @@
 
         <div class="field">
           <div class="field-label-row">
-            <span class="field-label">관심 항목<span class="field-optional">(선택)</span></span>
+            <span class="field-label">추가 질문<span class="field-optional">(선택)</span></span>
           </div>
           <div class="intent-card">
             <div class="intent-sub">
               <span class="intent-sub-label">질문</span>
-              <input class="input" type="text" value="관심 시술" id="f-intent-label" oninput="updatePreview();">
+              <input class="input" type="text" placeholder="예) 관심 시술" id="f-intent-label" oninput="updatePreview();">
             </div>
             <div class="intent-sub">
               <span class="intent-sub-label">선택지</span>
