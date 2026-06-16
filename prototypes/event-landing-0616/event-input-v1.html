@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>이벤트 만들기 — 입력</title>
+<link rel="stylesheet" href="../../tokens.css">
+<link rel="stylesheet" href="../../components.css">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-base);
+    background: #e0e0e0;
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .frame {
+    width: 390px;
+    height: 844px;
+    max-height: 100dvh;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 32px 80px -20px rgba(0,0,0,0.28);
+    background: var(--color-surface);
+    border-radius: 44px;
+  }
+  @media (max-width: 439px) {
+    .frame { width: 100vw; height: 100dvh; max-height: none; border-radius: 0; }
+  }
+
+  /* ── 화면 전환 ── */
+  .screen { position: absolute; inset: 0; display: none; flex-direction: column; background: var(--color-surface); }
+  .screen.on { display: flex; }
+
+  /* ── Topbar ── */
+  .topbar {
+    position: relative;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 8px;
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    flex-shrink: 0;
+    gap: 4px;
+  }
+  .topbar-title {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text);
+    pointer-events: none;
+  }
+  .topbar .preview-btn {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 8px 12px;
+    background: transparent;
+    color: var(--color-primary);
+    border: none;
+    border-radius: var(--r-full);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-semibold);
+    cursor: pointer;
+    font-family: var(--font-base);
+  }
+  .topbar .preview-btn svg,
+  .topbar .preview-btn i[data-lucide] { width: 14px; height: 14px; }
+
+  /* ── Lucide ── */
+  i[data-lucide] { display: inline-flex; flex-shrink: 0; }
+  svg.lucide { flex-shrink: 0; }
+
+  /* ── Scroll body + sticky CTA ── */
+  .scroll-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 16px 120px;
+    display: flex; flex-direction: column; gap: 0;
+  }
+  .sticky-bar {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    padding: 12px 20px calc(20px + env(safe-area-inset-bottom));
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+    display: flex; flex-direction: column; gap: 8px;
+    z-index: 5;
+  }
+
+  /* ── 진행 상태 ── */
+  .progress-card {
+    background: var(--color-surface);
+    border-radius: var(--r-md);
+    padding: 16px 20px;
+    display: flex; flex-direction: column; gap: 12px;
+    border: 1px solid var(--color-border);
+    margin-bottom: 8px;
+  }
+  .progress-row {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px;
+  }
+  .progress-title {
+    font-size: var(--fs-body);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text);
+  }
+  .progress-count {
+    font-size: var(--fs-label);
+    font-weight: var(--fw-semibold);
+    color: var(--color-primary);
+  }
+  .progress-bar {
+    width: 100%;
+    height: 6px;
+    border-radius: var(--r-full);
+    background: var(--color-surface-sub);
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: var(--color-primary);
+    border-radius: var(--r-full);
+    width: 0%;
+    transition: width var(--motion-standard) var(--ease-standard);
+  }
+  .progress-hint {
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+  }
+
+  /* ── 섹션 카드 ── */
+  .section-card {
+    padding: 24px 4px;
+    display: flex; flex-direction: column; gap: 20px;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .section-card:last-child {
+    border-bottom: none;
+  }
+  .section-card:first-of-type {
+    padding-top: 16px;
+  }
+  .section-head {
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .section-head-row {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .section-step {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 22px; height: 22px;
+    border-radius: var(--r-full);
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+    font-size: var(--fs-badge);
+    font-weight: var(--fw-bold);
+  }
+  .section-title {
+    font-size: var(--fs-heading);
+    font-weight: var(--fw-bold);
+    color: var(--color-text);
+  }
+  .section-desc {
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+    margin-left: 30px;
+  }
+
+  /* ── Form group ── */
+  .field {
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .field-label-row {
+    display: flex; align-items: center; gap: 6px;
+    flex-wrap: wrap;
+  }
+  .field-label {
+    font-size: var(--fs-label);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text);
+  }
+  .field-required {
+    color: var(--color-destructive);
+    font-weight: var(--fw-semibold);
+    margin-left: 2px;
+  }
+  .field-tag {
+    font-size: 10px;
+    font-weight: var(--fw-semibold);
+    padding: 2px 6px;
+    border-radius: var(--r-xs);
+    line-height: 1.2;
+  }
+  .field-tag-required {
+    background: rgba(201,64,34,0.10);
+    color: var(--color-destructive);
+  }
+  .field-tag-default {
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+  }
+  .field-optional {
+    color: var(--color-text-muted);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-regular);
+    margin-left: 4px;
+  }
+  .field-tag-optional {
+    background: var(--color-surface-sub);
+    color: var(--color-text-muted);
+  }
+  .field-tag-locked {
+    background: var(--color-surface-sub);
+    color: var(--color-text-muted);
+    display: inline-flex; align-items: center; gap: 3px;
+  }
+  .field-tag-locked svg,
+  .field-tag-locked i[data-lucide] { width: 10px; height: 10px; }
+  .field-help {
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+    line-height: 1.5;
+  }
+
+  /* ── Date row ── */
+  .date-row {
+    display: flex; align-items: center; gap: 8px;
+    width: 100%;
+  }
+  .date-row .input {
+    flex: 1 1 0;
+    min-width: 0;
+    width: 100%;
+    padding: 12px 14px;
+    font-size: var(--fs-body);
+    box-sizing: border-box;
+  }
+  .date-row .input::-webkit-date-and-time-value { text-align: left; }
+  .date-row .date-sep {
+    font-size: var(--fs-body); color: var(--color-text-muted);
+    flex-shrink: 0;
+  }
+  .date-dday {
+    font-size: var(--fs-caption);
+    color: var(--color-primary);
+    font-weight: var(--fw-medium);
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .date-dday svg,
+  .date-dday i[data-lucide] { width: 12px; height: 12px; }
+
+  /* ── Image uploader ── */
+  .img-uploader {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .img-tile {
+    aspect-ratio: 4 / 3;
+    border-radius: var(--r-sm);
+    background: var(--color-surface-sub);
+    background-size: cover;
+    background-position: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .img-tile-add {
+    border: 1.5px dashed var(--color-border);
+    background: var(--color-surface);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 4px;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition: border-color var(--motion-fast) var(--ease-standard), background var(--motion-fast) var(--ease-standard);
+  }
+  .img-tile-add:hover { border-color: var(--color-primary); background: var(--color-primary-light); color: var(--color-primary); }
+  .img-tile-add svg,
+  .img-tile-add i[data-lucide] { width: 22px; height: 22px; }
+  .img-tile-add-label { font-size: var(--fs-caption); font-weight: var(--fw-medium); }
+  .img-tile-cover {
+    position: absolute; top: 6px; left: 6px;
+    padding: 2px 6px;
+    background: rgba(17,19,24,0.65);
+    color: var(--color-on-primary);
+    border-radius: var(--r-full);
+    font-size: 10px;
+    font-weight: var(--fw-semibold);
+  }
+  .img-tile-remove {
+    position: absolute; top: 6px; right: 6px;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: rgba(17,19,24,0.7);
+    color: var(--color-on-primary);
+    border: none;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+  }
+  .img-tile-remove svg,
+  .img-tile-remove i[data-lucide] { width: 12px; height: 12px; }
+  .img-tip {
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .img-tip svg,
+  .img-tip i[data-lucide] { width: 12px; height: 12px; color: var(--color-primary); }
+
+  /* ── Select chip (multi-select) ── */
+  .select-chip-list {
+    display: flex; flex-wrap: wrap; gap: 8px;
+  }
+  .select-chip {
+    display: inline-flex; align-items: center;
+    padding: 8px 14px;
+    border-radius: var(--r-full);
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-text-sub);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-medium);
+    font-family: var(--font-base);
+    cursor: pointer;
+    transition: background var(--motion-fast) var(--ease-standard), border-color var(--motion-fast) var(--ease-standard), color var(--motion-fast) var(--ease-standard);
+  }
+  .select-chip.is-selected {
+    background: var(--color-primary-light);
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+
+  /* ── Intent card ── */
+  .intent-card {
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-sm);
+    padding: 16px;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  .intent-sub {
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .intent-sub-label {
+    font-size: var(--fs-caption);
+    font-weight: var(--fw-medium);
+    color: var(--color-text-muted);
+  }
+
+  /* ── Chip editor ── */
+  .chip-list {
+    display: flex; flex-wrap: wrap; gap: 8px;
+  }
+  .chip-item {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 8px 8px 14px;
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+    border-radius: var(--r-full);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-medium);
+  }
+  .chip-remove {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+    border: none;
+    display: inline-flex; align-items: center; justify-content: center;
+    cursor: pointer;
+  }
+  .chip-remove svg,
+  .chip-remove i[data-lucide] { width: 10px; height: 10px; }
+  .chip-add {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 8px 14px;
+    background: var(--color-surface);
+    color: var(--color-text-sub);
+    border: 1px dashed var(--color-border);
+    border-radius: var(--r-full);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-medium);
+    font-family: var(--font-base);
+    cursor: pointer;
+  }
+  .chip-add:hover { border-color: var(--color-primary); color: var(--color-primary); }
+  .chip-add svg,
+  .chip-add i[data-lucide] { width: 14px; height: 14px; }
+  .chip-input {
+    display: none;
+    width: 100%;
+    margin-top: 4px;
+  }
+  .chip-input.on { display: flex; gap: 8px; }
+  .chip-input .input { flex: 1; padding: 10px 14px; font-size: var(--fs-body); }
+  .chip-input .btn { flex-shrink: 0; }
+
+  /* ── Locked notice ── */
+  .locked-card {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 16px;
+    background: var(--color-surface-sub);
+    border-radius: var(--r-sm);
+  }
+  .locked-card-icon {
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--color-text-sub);
+    flex-shrink: 0;
+  }
+  .locked-card-icon svg,
+  .locked-card-icon i[data-lucide] { width: 18px; height: 18px; }
+  .locked-card-body { flex: 1; }
+  .locked-card-title {
+    font-size: var(--fs-label);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text-sub);
+  }
+  .locked-card-desc {
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+    line-height: 1.5;
+  }
+
+  /* ── Auto info list (시스템 자동 처리) ── */
+  .auto-list {
+    display: flex; flex-direction: column; gap: 8px;
+    padding: 14px 16px;
+    background: var(--color-surface-sub);
+    border-radius: var(--r-sm);
+  }
+  .auto-list-title {
+    font-size: var(--fs-label);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text-sub);
+    display: inline-flex; align-items: center; gap: 6px;
+    margin-bottom: 4px;
+  }
+  .auto-list-title svg,
+  .auto-list-title i[data-lucide] { width: 14px; height: 14px; color: var(--color-primary); }
+  .auto-item {
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .auto-item svg,
+  .auto-item i[data-lucide] { width: 12px; height: 12px; color: var(--color-text-muted); }
+
+  /* ── 컴팩트한 input ── */
+  .field .input { padding: 12px 14px; font-size: var(--fs-body); }
+  .field .textarea { padding: 12px 14px; font-size: var(--fs-body); min-height: 80px; }
+
+  /* ============================================
+     PREVIEW SCREEN (랜딩 결과 미리보기, 압축)
+     ============================================ */
+  .preview-topbar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 12px 8px;
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    flex-shrink: 0;
+  }
+  .preview-topbar { position: relative; }
+  .preview-topbar .topbar-title {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+  }
+
+  .preview-body {
+    flex: 1; overflow-y: auto;
+    background: var(--color-surface);
+    padding-bottom: 16px;
+  }
+
+  .pv-hero {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    background-color: var(--color-primary-light);
+    overflow: hidden;
+  }
+  .pv-hero-track {
+    width: 100%; height: 100%;
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .pv-hero-track::-webkit-scrollbar { display: none; }
+  .pv-hero-slide {
+    flex: 0 0 100%;
+    width: 100%; height: 100%;
+    background-size: cover;
+    background-position: center;
+    scroll-snap-align: start;
+  }
+  .pv-hero-counter {
+    position: absolute;
+    right: 12px;
+    bottom: 12px;
+    padding: 4px 12px;
+    background: rgba(17,19,24,0.6);
+    color: var(--color-on-primary);
+    font-size: var(--fs-caption);
+    font-weight: var(--fw-semibold);
+    border-radius: var(--r-full);
+    z-index: 2;
+    display: none;
+  }
+  .pv-hero-empty {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 8px;
+    color: var(--color-text-muted);
+    width: 100%; height: 100%;
+  }
+  .pv-hero-empty svg,
+  .pv-hero-empty i[data-lucide] { width: 32px; height: 32px; }
+  .pv-info {
+    padding: 20px 20px 16px;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .pv-clinic {
+    font-size: var(--fs-label);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text-sub);
+  }
+  .pv-title {
+    font-size: 22px;
+    font-weight: var(--fw-bold);
+    line-height: 1.35;
+    letter-spacing: -0.4px;
+    color: var(--color-text);
+  }
+  .pv-target {
+    font-size: var(--fs-body-lg);
+    color: var(--color-text-sub);
+  }
+  .pv-trust {
+    display: flex; align-items: center; gap: 6px;
+    flex-wrap: wrap;
+    padding-top: 4px;
+  }
+  .pv-star-row { display: inline-flex; align-items: center; gap: 4px; }
+  .pv-star-row i[data-lucide],
+  .pv-star-row svg {
+    width: 14px; height: 14px;
+    color: var(--color-star);
+    fill: var(--color-star);
+  }
+  .pv-star-row strong {
+    font-size: var(--fs-label);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text);
+    margin-left: 2px;
+  }
+  .pv-trust-count { font-size: var(--fs-caption); color: var(--color-text-muted); }
+  .pv-trust-dot { font-size: var(--fs-caption); color: var(--color-text-muted); }
+  .pv-tag-official {
+    display: inline-flex; align-items: center; gap: 4px;
+    color: var(--color-primary);
+    font-size: var(--fs-caption);
+    font-weight: var(--fw-semibold);
+  }
+  .pv-tag-official i[data-lucide],
+  .pv-tag-official svg { width: 14px; height: 14px; }
+
+  .pv-divider {
+    height: 8px;
+    background: var(--color-bg);
+  }
+  .pv-section {
+    padding: 20px;
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .pv-section-title {
+    font-size: var(--fs-heading);
+    font-weight: var(--fw-bold);
+    color: var(--color-text);
+  }
+  .pv-date-card {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--color-surface-sub);
+    border-radius: var(--r-md);
+    padding: 14px 16px;
+  }
+  .pv-date-card svg,
+  .pv-date-card i[data-lucide] { width: 18px; height: 18px; color: var(--color-primary); }
+  .pv-date-card .pv-date-label { font-size: var(--fs-caption); color: var(--color-text-muted); }
+  .pv-date-card .pv-date-value { font-size: var(--fs-body); font-weight: var(--fw-semibold); color: var(--color-text); }
+  .pv-checklist { display: flex; flex-direction: column; gap: 10px; }
+  .pv-check-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-md);
+  }
+  .pv-check-circle {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--color-on-primary);
+    flex-shrink: 0;
+  }
+  .pv-check-circle svg,
+  .pv-check-circle i[data-lucide] { width: 10px; height: 10px; stroke-width: 3; }
+  .pv-check-text { font-size: var(--fs-body); color: var(--color-text); }
+
+  .pv-empty-line {
+    font-size: var(--fs-body);
+    color: var(--color-text-muted);
+    font-style: italic;
+  }
+
+  .pv-cta-bar {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    padding: 12px 20px calc(16px + env(safe-area-inset-bottom));
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+    z-index: 5;
+  }
+
+  /* ── Toast ── */
+  .toast-host {
+    position: absolute;
+    bottom: 88px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 600;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+
+<div class="frame">
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- SCREEN 1 — INPUT FORM                         -->
+  <!-- ════════════════════════════════════════════ -->
+  <div class="screen on" id="screen-form">
+
+    <!-- Topbar -->
+    <div class="topbar">
+      <button class="icon-btn icon-btn-clear" aria-label="뒤로">
+        <i data-lucide="chevron-left" style="width:22px;height:22px;color:var(--color-text);"></i>
+      </button>
+      <span class="topbar-title">이벤트 만들기</span>
+      <button class="preview-btn" onclick="navigate('screen-preview')">
+        <i data-lucide="eye"></i>미리보기
+      </button>
+    </div>
+
+    <div class="scroll-body">
+
+      <!-- 진행 상태 -->
+      <div class="progress-card">
+        <div class="progress-row">
+          <span class="progress-title">필수 항목 채우기</span>
+          <span class="progress-count"><span id="progress-current">0</span> / <span id="progress-total">6</span></span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-bar-fill" id="progress-fill"></div>
+        </div>
+        <div class="progress-hint">필수 항목만 채우면 이벤트를 발행할 수 있어요</div>
+      </div>
+
+      <!-- ── 섹션 1: 기본 정보 ── -->
+      <div class="section-card">
+        <div class="section-head">
+          <div class="section-head-row">
+            <span class="section-step">1</span>
+            <span class="section-title">기본 정보</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="field-label-row">
+            <span class="field-label">신청 기간<span class="field-required">*</span></span>
+          </div>
+          <div class="date-row">
+            <input class="input" type="date" data-required id="f-start" oninput="updateProgress();updateDday();updatePreview();">
+            <span class="date-sep">~</span>
+            <input class="input" type="date" data-required id="f-end" oninput="updateProgress();updateDday();updatePreview();">
+          </div>
+          <span class="date-dday" id="f-dday-hint" style="display:none;">
+            <i data-lucide="calendar-days"></i>
+            <span id="f-dday-text"></span>
+          </span>
+        </div>
+
+        <div class="field">
+          <div class="field-label-row">
+            <span class="field-label">대표 이미지<span class="field-required">*</span></span>
+          </div>
+          <div class="img-uploader" id="img-uploader">
+            <label class="img-tile img-tile-add" onclick="addImage(event)">
+              <i data-lucide="image-plus"></i>
+              <span class="img-tile-add-label">사진 추가</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="field-label-row">
+            <span class="field-label">이벤트 제목<span class="field-required">*</span></span>
+          </div>
+          <input class="input" type="text" placeholder="예) 라식·라섹 1명 전액지원" data-required id="f-title" oninput="updateProgress();updatePreview();">
+        </div>
+
+        <div class="field">
+          <div class="field-label-row">
+            <span class="field-label">누구를 위한 건가요?<span class="field-required">*</span></span>
+          </div>
+          <input class="input" type="text" placeholder="예) 서울시립대 재학생·졸업생 한정" data-required id="f-target" oninput="updateProgress();updatePreview();">
+        </div>
+
+        <div class="field">
+          <div class="field-label-row">
+            <span class="field-label">자격 조건<span class="field-optional">(선택)</span></span>
+          </div>
+          <div class="chip-list" id="cond-list">
+            <button class="chip-add" type="button" onclick="openChipInput('cond')">
+              <i data-lucide="plus"></i>조건 추가
+            </button>
+          </div>
+          <div class="chip-input" id="cond-input">
+            <input class="input" type="text" placeholder="예) 비용 부담으로 미뤄온 분" id="cond-input-text" onkeydown="if(event.key==='Enter'){event.preventDefault();confirmChip('cond');}">
+            <button class="btn btn-md btn-fill-primary" onclick="confirmChip('cond')">추가</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="field-label-row">
+            <span class="field-label">이벤트 설명<span class="field-optional">(선택)</span></span>
+          </div>
+          <textarea class="textarea" placeholder="이벤트 진행 절차나 안내사항을 적어주세요" id="f-desc" oninput="updatePreview();"></textarea>
+        </div>
+      </div>
+
+      <!-- ── 섹션 2: 신청 폼 구성 ── -->
+      <div class="section-card">
+        <div class="section-head">
+          <div class="section-head-row">
+            <span class="section-step">2</span>
+            <span class="section-title">신청 폼 구성</span>
+          </div>
+        </div>
+
+        <div class="locked-card">
+          <span class="locked-card-icon"><i data-lucide="info"></i></span>
+          <div class="locked-card-body">
+            <div class="locked-card-title">이름·연락처를 기본으로 받아요</div>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="field-label-row">
+            <span class="field-label">관심 항목<span class="field-optional">(선택)</span></span>
+          </div>
+          <div class="intent-card">
+            <div class="intent-sub">
+              <span class="intent-sub-label">질문</span>
+              <input class="input" type="text" value="관심 시술" id="f-intent-label" oninput="updatePreview();">
+            </div>
+            <div class="intent-sub">
+              <span class="intent-sub-label">선택지</span>
+              <div class="chip-list" id="intent-list">
+                <button class="chip-add" type="button" onclick="openChipInput('intent')">
+                  <i data-lucide="plus"></i>선택지 추가
+                </button>
+              </div>
+              <div class="chip-input" id="intent-input">
+                <input class="input" type="text" placeholder="예) 노안 교정" id="intent-input-text" onkeydown="if(event.key==='Enter'){event.preventDefault();confirmChip('intent');}">
+                <button class="btn btn-md btn-fill-primary" onclick="confirmChip('intent')">추가</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── 섹션 3: 신청 버튼 · 완료 화면 ── -->
+      <div class="section-card">
+        <div class="section-head">
+          <div class="section-head-row">
+            <span class="section-step">3</span>
+            <span class="section-title">신청 버튼 · 완료 화면</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="field-label-row">
+            <span class="field-label">신청 버튼 문구</span>
+          </div>
+          <input class="input" type="text" value="이벤트 신청" id="f-cta" oninput="updatePreview();">
+        </div>
+
+        <div class="field">
+          <div class="field-label-row">
+            <span class="field-label">예상 연락 시점</span>
+          </div>
+          <input class="input" type="text" value="1영업일 이내" id="f-done-eta" oninput="updatePreview();">
+        </div>
+
+        <div class="field">
+          <div class="field-label-row">
+            <span class="field-label">연락 방식</span>
+          </div>
+          <div class="select-chip-list" id="channel-list">
+            <button type="button" class="select-chip is-selected" data-value="전화" onclick="toggleChannel(this)">전화</button>
+            <button type="button" class="select-chip is-selected" data-value="카카오 알림톡" onclick="toggleChannel(this)">카카오 알림톡</button>
+            <button type="button" class="select-chip" data-value="문자" onclick="toggleChannel(this)">문자</button>
+            <button type="button" class="select-chip" data-value="이메일" onclick="toggleChannel(this)">이메일</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Sticky CTA -->
+    <div class="sticky-bar">
+      <button class="btn btn-xl btn-block btn-fill-primary" id="publish-btn" onclick="publishEvent()" disabled>
+        발행하기
+      </button>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- SCREEN 2 — PREVIEW (랜딩 결과 미리보기)         -->
+  <!-- ════════════════════════════════════════════ -->
+  <div class="screen" id="screen-preview">
+
+    <div class="preview-topbar">
+      <button class="icon-btn icon-btn-clear" aria-label="뒤로" onclick="navigate('screen-form')">
+        <i data-lucide="chevron-left" style="width:22px;height:22px;color:var(--color-text);"></i>
+      </button>
+      <span class="topbar-title">미리보기</span>
+    </div>
+
+    <div class="preview-body">
+
+      <div class="pv-hero" id="pv-hero">
+        <div class="pv-hero-empty" id="pv-hero-empty">
+          <i data-lucide="image"></i>
+          <span style="font-size:var(--fs-caption);">사진을 추가하면 여기에 보여요</span>
+        </div>
+        <div class="pv-hero-track" id="pv-hero-track" style="display:none;" onscroll="updateHeroCounter()"></div>
+        <div class="pv-hero-counter" id="pv-hero-counter"></div>
+      </div>
+
+      <div class="pv-info">
+        <div class="pv-clinic">첫눈애안과</div>
+        <h1 class="pv-title" id="pv-title">이벤트 제목</h1>
+        <p class="pv-target" id="pv-target">대상 문구</p>
+        <div class="pv-trust">
+          <div class="pv-star-row">
+            <i data-lucide="star"></i>
+            <strong>5.0</strong>
+            <span class="pv-trust-count">· 후기 28개</span>
+          </div>
+          <span class="pv-trust-dot">·</span>
+          <span class="pv-tag-official">
+            <i data-lucide="badge-check"></i>커넥티아 공식 이벤트
+          </span>
+        </div>
+      </div>
+
+      <div class="pv-divider"></div>
+
+      <div class="pv-section">
+        <div class="pv-date-card">
+          <i data-lucide="calendar-days"></i>
+          <div style="flex:1;">
+            <div class="pv-date-label">신청 기간</div>
+            <div class="pv-date-value" id="pv-date">기간을 선택해주세요</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pv-divider"></div>
+
+      <div class="pv-section" id="pv-cond-section">
+        <div class="pv-section-title">이런 분이라면 신청해보세요</div>
+        <div class="pv-checklist" id="pv-checklist">
+          <div class="pv-empty-line">자격 조건을 추가하면 여기에 표시돼요</div>
+        </div>
+      </div>
+
+      <div class="pv-divider"></div>
+
+      <div class="pv-section">
+        <div class="pv-section-title">이벤트 안내</div>
+        <p style="font-size:var(--fs-body);line-height:1.7;color:var(--color-text-sub);" id="pv-desc">설명을 입력하면 여기에 표시돼요</p>
+      </div>
+
+      <div style="height: 80px;"></div>
+    </div>
+
+    <div class="pv-cta-bar">
+      <button class="btn btn-xl btn-block btn-fill-primary" id="pv-cta" disabled>이벤트 신청</button>
+    </div>
+
+  </div>
+
+</div>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+  lucide.createIcons();
+
+  function navigate(id) {
+    document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('on'); });
+    var t = document.getElementById(id);
+    if (t) t.classList.add('on');
+    if (id === 'screen-preview') updatePreview();
+  }
+
+  /* ── 진행 상태 ── */
+  function updateProgress() {
+    var requireds = [
+      document.getElementById('f-start').value !== '' && document.getElementById('f-end').value !== '',
+      images.length > 0,
+      document.getElementById('f-title').value.trim() !== '',
+      document.getElementById('f-target').value.trim() !== ''
+    ];
+    var filled = requireds.filter(Boolean).length;
+    var total = requireds.length;
+    document.getElementById('progress-current').textContent = filled;
+    document.getElementById('progress-total').textContent = total;
+    document.getElementById('progress-fill').style.width = (filled / total * 100) + '%';
+    var btn = document.getElementById('publish-btn');
+    btn.disabled = (filled !== total);
+  }
+
+  /* ── D-Day 자동 계산 ── */
+  function updateDday() {
+    var start = document.getElementById('f-start').value;
+    var end = document.getElementById('f-end').value;
+    var hint = document.getElementById('f-dday-hint');
+    var text = document.getElementById('f-dday-text');
+    if (!start || !end) { hint.style.display = 'none'; return; }
+    var d1 = new Date(start), d2 = new Date(end);
+    var diff = Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
+    if (diff < 0) {
+      text.textContent = '종료일이 시작일보다 빨라요';
+      hint.style.color = 'var(--color-destructive)';
+    } else {
+      text.textContent = '총 ' + (diff + 1) + '일 동안 진행돼요';
+      hint.style.color = 'var(--color-primary)';
+    }
+    hint.style.display = 'inline-flex';
+  }
+
+  /* ── 이미지 업로드 (placeholder 색 박스) ── */
+  var images = [];
+  var stockColors = [
+    'linear-gradient(135deg,#a9a9ee,#5555cc)',
+    'linear-gradient(135deg,#fcd34d,#f59e0b)',
+    'linear-gradient(135deg,#93c5fd,#3b82f6)',
+    'linear-gradient(135deg,#f9a8d4,#ec4899)',
+    'linear-gradient(135deg,#34d399,#10b981)'
+  ];
+  function addImage(e) {
+    e.preventDefault();
+    if (images.length >= 5) return;
+    images.push({ bg: stockColors[images.length % stockColors.length] });
+    renderImages();
+    updateProgress();
+    updatePreview();
+  }
+  function removeImage(idx) {
+    images.splice(idx, 1);
+    renderImages();
+    updateProgress();
+    updatePreview();
+  }
+  function renderImages() {
+    var host = document.getElementById('img-uploader');
+    host.innerHTML = '';
+    images.forEach(function(img, i) {
+      var tile = document.createElement('div');
+      tile.className = 'img-tile';
+      tile.style.background = img.bg;
+      tile.style.backgroundSize = 'cover';
+      tile.innerHTML =
+        (i === 0 ? '<span class="img-tile-cover">대표</span>' : '') +
+        '<button class="img-tile-remove" onclick="removeImage(' + i + ')"><i data-lucide="x"></i></button>';
+      host.appendChild(tile);
+    });
+    if (images.length < 5) {
+      var add = document.createElement('label');
+      add.className = 'img-tile img-tile-add';
+      add.onclick = addImage;
+      add.innerHTML = '<i data-lucide="image-plus"></i><span class="img-tile-add-label">사진 추가</span>';
+      host.appendChild(add);
+    }
+    lucide.createIcons();
+  }
+
+  /* ── Chip editor (자격 조건 / 관심 항목 선택지) ── */
+  function openChipInput(kind) {
+    var box = document.getElementById(kind + '-input');
+    box.classList.add('on');
+    setTimeout(function(){ document.getElementById(kind + '-input-text').focus(); }, 0);
+  }
+  function confirmChip(kind) {
+    var input = document.getElementById(kind + '-input-text');
+    var val = input.value.trim();
+    if (!val) return;
+    var list = document.getElementById(kind + '-list');
+    var addBtn = list.querySelector('.chip-add');
+    var chip = document.createElement('span');
+    chip.className = 'chip-item';
+    chip.setAttribute('data-chip', '');
+    chip.innerHTML = val + '<button class="chip-remove" onclick="removeChip(this)"><i data-lucide="x"></i></button>';
+    list.insertBefore(chip, addBtn);
+    input.value = '';
+    document.getElementById(kind + '-input').classList.remove('on');
+    lucide.createIcons();
+    updateProgress();
+    updatePreview();
+  }
+  function removeChip(btn) {
+    btn.closest('[data-chip]').remove();
+    updateProgress();
+    updatePreview();
+  }
+
+  /* ── Preview 동기화 ── */
+  function updatePreview() {
+    // hero
+    var emptyEl = document.getElementById('pv-hero-empty');
+    var trackEl = document.getElementById('pv-hero-track');
+    var counterEl = document.getElementById('pv-hero-counter');
+    trackEl.innerHTML = '';
+    if (images.length > 0) {
+      emptyEl.style.display = 'none';
+      trackEl.style.display = 'flex';
+      images.forEach(function(img){
+        var slide = document.createElement('div');
+        slide.className = 'pv-hero-slide';
+        slide.style.background = img.bg;
+        slide.style.backgroundSize = 'cover';
+        slide.style.backgroundPosition = 'center';
+        trackEl.appendChild(slide);
+      });
+      trackEl.scrollLeft = 0;
+      if (images.length > 1) {
+        counterEl.style.display = 'inline-block';
+        counterEl.textContent = '1 / ' + images.length;
+      } else {
+        counterEl.style.display = 'none';
+      }
+    } else {
+      emptyEl.style.display = 'flex';
+      trackEl.style.display = 'none';
+      counterEl.style.display = 'none';
+    }
+
+    // title / target
+    var title = document.getElementById('f-title').value.trim();
+    var target = document.getElementById('f-target').value.trim();
+    var pvTitle = document.getElementById('pv-title');
+    var pvTarget = document.getElementById('pv-target');
+    pvTitle.textContent = title || '이벤트 제목';
+    pvTitle.style.color = title ? 'var(--color-text)' : 'var(--color-text-muted)';
+    pvTarget.textContent = target || '대상 문구';
+    pvTarget.style.color = target ? 'var(--color-text-sub)' : 'var(--color-text-muted)';
+
+    // 기간
+    var start = document.getElementById('f-start').value;
+    var end = document.getElementById('f-end').value;
+    var pvDate = document.getElementById('pv-date');
+    if (start && end) {
+      pvDate.textContent = formatDate(start) + ' ~ ' + formatDate(end);
+      pvDate.style.color = 'var(--color-text)';
+    } else {
+      pvDate.textContent = '기간을 선택해주세요';
+      pvDate.style.color = 'var(--color-text-muted)';
+    }
+
+    // 자격 조건
+    var conds = Array.from(document.querySelectorAll('#cond-list [data-chip]')).map(function(c){ return c.firstChild.nodeValue; });
+    var pvList = document.getElementById('pv-checklist');
+    pvList.innerHTML = '';
+    if (conds.length === 0) {
+      pvList.innerHTML = '<div class="pv-empty-line">자격 조건을 추가하면 여기에 표시돼요</div>';
+    } else {
+      conds.forEach(function(c){
+        var row = document.createElement('div');
+        row.className = 'pv-check-item';
+        row.innerHTML = '<span class="pv-check-circle"><i data-lucide="check"></i></span><span class="pv-check-text">' + escapeHtml(c) + '</span>';
+        pvList.appendChild(row);
+      });
+      lucide.createIcons();
+    }
+
+    // 설명
+    var desc = document.getElementById('f-desc').value.trim();
+    var pvDesc = document.getElementById('pv-desc');
+    pvDesc.textContent = desc || '설명을 입력하면 여기에 표시돼요';
+    pvDesc.style.color = desc ? 'var(--color-text-sub)' : 'var(--color-text-muted)';
+
+    // CTA
+    var cta = document.getElementById('f-cta').value.trim() || '이벤트 신청';
+    document.getElementById('pv-cta').textContent = cta;
+  }
+  function toggleChannel(btn) {
+    btn.classList.toggle('is-selected');
+    updatePreview();
+  }
+  function updateHeroCounter() {
+    var track = document.getElementById('pv-hero-track');
+    var counter = document.getElementById('pv-hero-counter');
+    if (images.length <= 1) return;
+    var idx = Math.round(track.scrollLeft / track.clientWidth);
+    counter.textContent = (idx + 1) + ' / ' + images.length;
+  }
+  function formatDate(s) {
+    var d = new Date(s);
+    return d.getFullYear() + '.' + pad(d.getMonth()+1) + '.' + pad(d.getDate());
+  }
+  function pad(n) { return n < 10 ? '0' + n : '' + n; }
+  function escapeHtml(s) {
+    return s.replace(/[&<>"]/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]; });
+  }
+
+  function publishEvent() {
+    if (document.getElementById('publish-btn').disabled) return;
+    alert('이벤트가 발행되었습니다 (목업)');
+  }
+
+  // 초기 호출
+  updateProgress();
+  updatePreview();
+</script>
+</body>
+</html>
