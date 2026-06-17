@@ -664,7 +664,7 @@
       <div class="progress-card">
         <div class="progress-row">
           <span class="progress-title">필수 항목 채우기</span>
-          <span class="progress-count"><span id="progress-current">0</span> / <span id="progress-total">6</span></span>
+          <span class="progress-count"><span id="progress-current">0</span> / <span id="progress-total">3</span></span>
         </div>
         <div class="progress-bar">
           <div class="progress-bar-fill" id="progress-fill"></div>
@@ -683,12 +683,12 @@
 
         <div class="field">
           <div class="field-label-row">
-            <span class="field-label">신청 기간<span class="field-required">*</span></span>
+            <span class="field-label">신청 기간<span class="field-optional">(선택)</span></span>
           </div>
           <div class="date-row">
-            <input class="input" type="date" data-required id="f-start" oninput="updateProgress();updateDday();updatePreview();">
+            <input class="input" type="date" id="f-start" oninput="updateProgress();updateDday();updatePreview();">
             <span class="date-sep">~</span>
-            <input class="input" type="date" data-required id="f-end" oninput="updateProgress();updateDday();updatePreview();">
+            <input class="input" type="date" id="f-end" oninput="updateProgress();updateDday();updatePreview();">
           </div>
           <span class="date-dday" id="f-dday-hint" style="display:none;">
             <i data-lucide="calendar-days"></i>
@@ -925,7 +925,6 @@
   /* ── 진행 상태 ── */
   function updateProgress() {
     var requireds = [
-      document.getElementById('f-start').value !== '' && document.getElementById('f-end').value !== '',
       images.length > 0,
       document.getElementById('f-title').value.trim() !== '',
       document.getElementById('f-target').value.trim() !== ''
