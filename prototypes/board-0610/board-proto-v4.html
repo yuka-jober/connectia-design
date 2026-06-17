@@ -1610,6 +1610,297 @@
     border-top: 1px solid var(--color-border);
     z-index: 5;
   }
+
+  /* 이벤트 예시 화면 (intro) — event-landing-v1 구조 그대로 + 글래스모피즘 카드 */
+  #s-event-intro { background: var(--color-surface); }
+
+  /* Glassmorphism intro card (상단바 아래에 떠 있는 카드) */
+  #s-event-intro .ew-intro-card {
+    position: absolute;
+    top: 80px;
+    left: 16px;
+    right: 16px;
+    z-index: 15;
+    background: rgba(255,255,255,0.55);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    border-radius: var(--r-md);
+    padding: 14px 16px;
+    text-align: center;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.14);
+    border: 1px solid rgba(255,255,255,0.6);
+  }
+  #s-event-intro .ew-intro-card-title {
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-bold);
+    color: var(--color-primary);
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  #s-event-intro .ew-intro-card-title svg,
+  #s-event-intro .ew-intro-card-title i[data-lucide] { width: 16px; height: 16px; }
+  #s-event-intro .ew-intro-card-desc {
+    font-size: var(--fs-caption);
+    color: var(--color-text-sub);
+    margin-top: 2px;
+  }
+
+  #s-event-intro .ew-intro-scroll {
+    flex: 1;
+    overflow-y: auto;
+    background: var(--color-surface);
+    padding-bottom: 140px;
+  }
+
+  /* Hero */
+  #s-event-intro .ew-intro-hero {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    background: var(--color-primary-light);
+  }
+  #s-event-intro .ew-intro-hero-slider {
+    width: 100%; height: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    display: flex;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  #s-event-intro .ew-intro-hero-slider::-webkit-scrollbar { display: none; }
+  #s-event-intro .ew-intro-hero-slide {
+    flex: 0 0 100%;
+    width: 100%; height: 100%;
+    scroll-snap-align: start;
+    background-size: cover;
+    background-position: center;
+    background-color: var(--color-primary-light);
+    position: relative;
+  }
+  #s-event-intro .ew-intro-hero-slide::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(0,0,0,0) 50%, rgba(0,0,0,0.35) 100%);
+    pointer-events: none;
+  }
+  #s-event-intro .ew-intro-hero-pagination {
+    position: absolute; bottom: 12px; right: 12px;
+    z-index: 2;
+    background: rgba(17,19,24,0.55); color: var(--color-on-primary);
+    border-radius: var(--r-full);
+    padding: 4px 10px;
+    font-size: var(--fs-badge); font-weight: var(--fw-medium);
+  }
+
+  /* Hero info */
+  #s-event-intro .ew-intro-hero-info {
+    padding: 24px 20px 16px;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  #s-event-intro .ew-intro-hero-clinic-row {
+    display: inline-flex; align-items: center; gap: 2px;
+    align-self: flex-start;
+  }
+  #s-event-intro .ew-intro-hero-clinic-name {
+    font-size: var(--fs-label); font-weight: var(--fw-semibold);
+    color: var(--color-text-sub);
+  }
+  #s-event-intro .ew-intro-hero-clinic-row i[data-lucide],
+  #s-event-intro .ew-intro-hero-clinic-row svg { width: 16px; height: 16px; color: var(--color-text-muted); }
+  #s-event-intro .ew-intro-hero-headline {
+    font-size: 24px; font-weight: var(--fw-bold);
+    line-height: 1.35; letter-spacing: -0.5px; color: var(--color-text);
+  }
+  #s-event-intro .ew-intro-hero-target {
+    font-size: var(--fs-body-lg); color: var(--color-text-sub);
+    line-height: 1.5;
+  }
+  #s-event-intro .ew-intro-trust-row {
+    display: flex; align-items: center; gap: 6px;
+    flex-wrap: wrap;
+    padding-top: 4px;
+  }
+  #s-event-intro .ew-intro-trust-dot { font-size: var(--fs-caption); color: var(--color-text-muted); }
+  #s-event-intro .ew-intro-star-row { display: inline-flex; align-items: center; gap: 4px; }
+  #s-event-intro .ew-intro-star-row i[data-lucide],
+  #s-event-intro .ew-intro-star-row svg { width: 14px; height: 14px; color: var(--color-star); fill: var(--color-star); }
+  #s-event-intro .ew-intro-star-score { font-size: var(--fs-label); font-weight: var(--fw-semibold); color: var(--color-text); margin-left: 2px; }
+  #s-event-intro .ew-intro-star-count { font-size: var(--fs-caption); color: var(--color-text-muted); }
+  #s-event-intro .ew-intro-tag-official {
+    display: inline-flex; align-items: center; gap: 4px;
+    color: var(--color-primary);
+    font-size: var(--fs-caption);
+    font-weight: var(--fw-semibold);
+  }
+  #s-event-intro .ew-intro-tag-official i[data-lucide],
+  #s-event-intro .ew-intro-tag-official svg { width: 14px; height: 14px; }
+
+  #s-event-intro .ew-intro-section-divider {
+    height: 8px;
+    background: var(--color-bg);
+    flex-shrink: 0;
+  }
+  #s-event-intro .ew-intro-section {
+    padding: 24px 20px;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  #s-event-intro .ew-intro-section-title {
+    font-size: var(--fs-heading);
+    font-weight: var(--fw-bold);
+    color: var(--color-text);
+    letter-spacing: -0.2px;
+  }
+
+  #s-event-intro .ew-intro-date-card {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--color-surface-sub);
+    border-radius: var(--r-md);
+    padding: 16px 20px;
+  }
+  #s-event-intro .ew-intro-date-card i[data-lucide],
+  #s-event-intro .ew-intro-date-card svg { width: 20px; height: 20px; color: var(--color-primary); }
+  #s-event-intro .ew-intro-date-card-text { flex: 1; }
+  #s-event-intro .ew-intro-date-card-label { font-size: var(--fs-caption); color: var(--color-text-muted); margin-bottom: 2px; }
+  #s-event-intro .ew-intro-date-card-value { font-size: var(--fs-body); font-weight: var(--fw-semibold); color: var(--color-text); }
+  #s-event-intro .ew-intro-date-card-tag {
+    font-size: var(--fs-badge); font-weight: var(--fw-semibold);
+    color: var(--color-destructive);
+    padding: 4px 8px;
+    background: rgba(201,64,34,0.10);
+    border-radius: var(--r-full);
+  }
+
+  #s-event-intro .ew-intro-checklist {
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  #s-event-intro .ew-intro-check-item {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-md);
+  }
+  #s-event-intro .ew-intro-check-circle {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    display: inline-flex;
+    align-items: center; justify-content: center;
+    color: var(--color-on-primary);
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  #s-event-intro .ew-intro-check-circle i[data-lucide],
+  #s-event-intro .ew-intro-check-circle svg {
+    width: 12px; height: 12px;
+    stroke-width: 3;
+  }
+  #s-event-intro .ew-intro-check-item-text {
+    font-size: var(--fs-body-lg); color: var(--color-text);
+    line-height: 1.5;
+  }
+
+  #s-event-intro .ew-intro-review-scroll {
+    display: flex; gap: 12px;
+    overflow-x: auto;
+    margin: 0 -20px;
+    padding: 0 20px 8px;
+    scrollbar-width: none;
+  }
+  #s-event-intro .ew-intro-review-scroll::-webkit-scrollbar { display: none; }
+  #s-event-intro .ew-intro-review-card {
+    width: 240px; flex-shrink: 0;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-md);
+    overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  #s-event-intro .ew-intro-review-img {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    background-size: cover; background-position: center;
+    background-color: var(--color-surface-sub);
+  }
+  #s-event-intro .ew-intro-review-body {
+    padding: 12px 14px 14px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  #s-event-intro .ew-intro-review-stars { display: inline-flex; align-items: center; gap: 2px; }
+  #s-event-intro .ew-intro-review-stars i[data-lucide],
+  #s-event-intro .ew-intro-review-stars svg { width: 12px; height: 12px; color: var(--color-star); fill: var(--color-star); }
+  #s-event-intro .ew-intro-review-text {
+    font-size: var(--fs-label); color: var(--color-text);
+    line-height: 1.5;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  #s-event-intro .ew-intro-review-meta {
+    font-size: 10px; color: var(--color-text-muted);
+    display: flex; align-items: center; gap: 4px;
+  }
+  #s-event-intro .ew-intro-review-meta .ew-intro-verified {
+    display: inline-flex; align-items: center; gap: 2px;
+    color: var(--color-primary);
+    font-weight: var(--fw-medium);
+  }
+  #s-event-intro .ew-intro-review-meta .ew-intro-verified i[data-lucide],
+  #s-event-intro .ew-intro-review-meta .ew-intro-verified svg { width: 10px; height: 10px; }
+
+  #s-event-intro .ew-intro-desc {
+    font-size: var(--fs-body); line-height: 1.7;
+    color: var(--color-text-sub);
+  }
+
+  #s-event-intro .ew-intro-clinic-link {
+    display: flex; align-items: center; gap: 12px;
+    padding: 16px;
+    background: var(--color-surface-sub);
+    border-radius: var(--r-md);
+    border: none;
+    width: 100%;
+    text-align: left;
+    font-family: var(--font-base);
+  }
+  #s-event-intro .ew-intro-clinic-link-thumb {
+    width: 44px; height: 44px;
+    border-radius: var(--r-sm);
+    background-color: var(--color-primary-light);
+    background-image: url('https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=300&auto=format&fit=crop');
+    background-size: cover; background-position: center;
+    flex-shrink: 0;
+  }
+  #s-event-intro .ew-intro-clinic-link-text { flex: 1; }
+  #s-event-intro .ew-intro-clinic-link-name {
+    font-size: var(--fs-body); font-weight: var(--fw-semibold);
+    color: var(--color-text);
+  }
+  #s-event-intro .ew-intro-clinic-link-sub {
+    font-size: var(--fs-caption); color: var(--color-text-muted);
+    margin-top: 2px;
+  }
+  #s-event-intro .ew-intro-clinic-link i.chev,
+  #s-event-intro .ew-intro-clinic-link svg.chev { width: 18px; height: 18px; color: var(--color-text-muted); }
+
+  /* Footer */
+  #s-event-intro .ew-intro-footer {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    padding: 12px 20px calc(16px + env(safe-area-inset-bottom));
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+    display: flex; flex-direction: row; gap: 12px;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 5;
+  }
+  #s-event-intro .ew-intro-skip {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: var(--fs-label);
+    color: var(--color-text-sub);
+    cursor: pointer;
+    user-select: none;
+    flex-shrink: 0;
+  }
+  #s-event-intro .ew-intro-footer .btn { padding-left: 28px; padding-right: 28px; }
 </style>
 </head>
 <body>
@@ -3241,6 +3532,183 @@
 </div>
 
 <!-- ══════════════════════════════ -->
+<!-- 화면: 이벤트 예시 (intro)         -->
+<!-- ══════════════════════════════ -->
+<div class="screen" id="s-event-intro">
+  <!-- Topbar (solid) -->
+  <div class="ew-preview-topbar">
+    <button class="icon-btn icon-btn-clear" aria-label="뒤로" onclick="goTo(_prevScreen)">
+      <i data-lucide="chevron-left" style="width:22px;height:22px;color:var(--color-text);"></i>
+    </button>
+    <span class="ew-topbar-title">이벤트 예시</span>
+  </div>
+
+  <!-- Floating glassmorphism intro card -->
+  <div class="ew-intro-card">
+    <div class="ew-intro-card-title">
+      <i data-lucide="sparkles"></i>이렇게 만들어져요
+    </div>
+    <div class="ew-intro-card-desc">고객이 보는 이벤트 랜딩 페이지 예시예요</div>
+  </div>
+
+  <!-- Scrollable landing example -->
+  <div class="ew-intro-scroll">
+    <!-- Hero slider -->
+    <div class="ew-intro-hero">
+      <div class="ew-intro-hero-slider" id="ew-intro-hero-slider">
+        <div class="ew-intro-hero-slide" style="background-image:url('../event-landing-0616/eye_banner.png');"></div>
+        <div class="ew-intro-hero-slide" style="background-image:url('../event-landing-0616/eye_banner2.png');"></div>
+      </div>
+      <div class="ew-intro-hero-pagination" id="ew-intro-hero-pagination">1 / 2</div>
+    </div>
+
+    <!-- Hero info -->
+    <div class="ew-intro-hero-info">
+      <div class="ew-intro-hero-clinic-row">
+        <span class="ew-intro-hero-clinic-name">첫눈애안과</span>
+        <i data-lucide="chevron-right"></i>
+      </div>
+      <h1 class="ew-intro-hero-headline">라식·라섹<br>1명 전액지원</h1>
+      <p class="ew-intro-hero-target">서울시립대 재학생·졸업생 한정</p>
+      <div class="ew-intro-trust-row">
+        <div class="ew-intro-star-row">
+          <i data-lucide="star"></i>
+          <span class="ew-intro-star-score">5.0</span>
+          <span class="ew-intro-star-count">· 후기 28개</span>
+        </div>
+        <span class="ew-intro-trust-dot">·</span>
+        <span class="ew-intro-tag-official">
+          <i data-lucide="badge-check"></i>커넥티아 공식 이벤트
+        </span>
+      </div>
+    </div>
+
+    <div class="ew-intro-section-divider"></div>
+
+    <!-- Date -->
+    <div class="ew-intro-section">
+      <div class="ew-intro-date-card">
+        <i data-lucide="calendar-days"></i>
+        <div class="ew-intro-date-card-text">
+          <div class="ew-intro-date-card-label">신청 기간</div>
+          <div class="ew-intro-date-card-value">2026.06.15 ~ 06.22</div>
+        </div>
+        <span class="ew-intro-date-card-tag">D-6</span>
+      </div>
+    </div>
+
+    <div class="ew-intro-section-divider"></div>
+
+    <!-- Checklist -->
+    <div class="ew-intro-section">
+      <div class="ew-intro-section-title">이런 분이라면 신청해보세요</div>
+      <div class="ew-intro-checklist">
+        <div class="ew-intro-check-item">
+          <span class="ew-intro-check-circle"><i data-lucide="check"></i></span>
+          <span class="ew-intro-check-item-text">비용 부담으로 시력교정을 미뤄온 분</span>
+        </div>
+        <div class="ew-intro-check-item">
+          <span class="ew-intro-check-circle"><i data-lucide="check"></i></span>
+          <span class="ew-intro-check-item-text">절차부터 차근차근 알고 싶은 분</span>
+        </div>
+        <div class="ew-intro-check-item">
+          <span class="ew-intro-check-circle"><i data-lucide="check"></i></span>
+          <span class="ew-intro-check-item-text">검사부터 받아보고 싶은 분</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="ew-intro-section-divider"></div>
+
+    <!-- Reviews -->
+    <div class="ew-intro-section">
+      <div class="ew-intro-section-title">실제 후기</div>
+      <div class="ew-intro-review-scroll">
+        <div class="ew-intro-review-card">
+          <div class="ew-intro-review-img" style="background-image:url('https://images.unsplash.com/photo-1559941707-c1bafc8c8f60?w=400&auto=format&fit=crop');"></div>
+          <div class="ew-intro-review-body">
+            <div class="ew-intro-review-stars">
+              <i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i>
+            </div>
+            <p class="ew-intro-review-text">상담부터 수술까지 친절하게 안내받았어요. 검사가 꼼꼼해서 안심하고 진행했습니다.</p>
+            <div class="ew-intro-review-meta">
+              <span class="ew-intro-verified"><i data-lucide="badge-check"></i>실제 후기</span>
+              <span>·</span>
+              <span>김○○ · 라식</span>
+            </div>
+          </div>
+        </div>
+        <div class="ew-intro-review-card">
+          <div class="ew-intro-review-img" style="background-image:url('https://images.unsplash.com/photo-1551601651-bc60f254d532?w=400&auto=format&fit=crop');"></div>
+          <div class="ew-intro-review-body">
+            <div class="ew-intro-review-stars">
+              <i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i>
+            </div>
+            <p class="ew-intro-review-text">렌즈 끼는 게 불편해서 미뤄왔는데, 진작 할 걸 그랬어요. 회복도 빨랐습니다.</p>
+            <div class="ew-intro-review-meta">
+              <span class="ew-intro-verified"><i data-lucide="badge-check"></i>실제 후기</span>
+              <span>·</span>
+              <span>이○○ · 라섹</span>
+            </div>
+          </div>
+        </div>
+        <div class="ew-intro-review-card">
+          <div class="ew-intro-review-img" style="background-image:url('https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&auto=format&fit=crop');"></div>
+          <div class="ew-intro-review-body">
+            <div class="ew-intro-review-stars">
+              <i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i>
+            </div>
+            <p class="ew-intro-review-text">검사 결과 설명을 알기 쉽게 해주셔서 좋았어요. 의료진이 다 친절했습니다.</p>
+            <div class="ew-intro-review-meta">
+              <span class="ew-intro-verified"><i data-lucide="badge-check"></i>실제 후기</span>
+              <span>·</span>
+              <span>박○○ · 라식</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ew-intro-section-divider"></div>
+
+    <!-- Description -->
+    <div class="ew-intro-section">
+      <div class="ew-intro-section-title">이벤트 안내</div>
+      <div class="ew-intro-desc">
+        <p>첫눈애안과는 시력교정 분야에서 20년 넘게 환자를 진료해온 안과 전문 병원입니다.</p>
+        <br>
+        <p>이번 이벤트는 서울시립대 재학생 및 졸업생을 대상으로, 라식 또는 라섹 비용 전액을 1명에게 지원해드리는 프로그램입니다. 신청자 중 안과 검사 결과를 토대로 적합한 분을 선정합니다.</p>
+      </div>
+    </div>
+
+    <div class="ew-intro-section-divider"></div>
+
+    <!-- Clinic link -->
+    <div class="ew-intro-section">
+      <button class="ew-intro-clinic-link" aria-label="병원 페이지 가기">
+        <div class="ew-intro-clinic-link-thumb"></div>
+        <div class="ew-intro-clinic-link-text">
+          <div class="ew-intro-clinic-link-name">첫눈애안과</div>
+          <div class="ew-intro-clinic-link-sub">병원 정보 · 의료진 · 위치 보기</div>
+        </div>
+        <i data-lucide="chevron-right" class="chev"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="ew-intro-footer">
+    <label class="ew-intro-skip">
+      <input type="checkbox" class="checkbox" id="ew-intro-skip-check">
+      <span>다시 보지 않기</span>
+    </label>
+    <button class="btn btn-xl btn-fill-primary" onclick="proceedToEventWrite()">
+      만들기
+    </button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════ -->
 <!-- 화면: 이벤트 글쓰기               -->
 <!-- ══════════════════════════════ -->
 <div class="screen" id="s-event-write">
@@ -3259,7 +3727,7 @@
     <div class="ew-progress-card">
       <div class="ew-progress-row">
         <span class="ew-progress-title">필수 항목 채우기</span>
-        <span class="ew-progress-count"><span id="ew-progress-current">0</span> / <span id="ew-progress-total">4</span></span>
+        <span class="ew-progress-count"><span id="ew-progress-current">0</span> / <span id="ew-progress-total">3</span></span>
       </div>
       <div class="ew-progress-bar">
         <div class="ew-progress-bar-fill" id="ew-progress-fill"></div>
@@ -3278,7 +3746,7 @@
 
       <div class="ew-field">
         <div class="ew-field-row">
-          <span class="ew-field-label">신청 기간<span class="ew-field-required">*</span></span>
+          <span class="ew-field-label">신청 기간<span class="ew-field-optional">(선택)</span></span>
         </div>
         <div class="ew-date-row">
           <input class="input" type="date" id="ew-f-start" oninput="ewUpdateProgress();ewUpdateDday();ewUpdatePreview();">
@@ -3700,9 +4168,56 @@
     goTo('s-write');
   }
 
-  // 이벤트 글쓰기 화면으로 이동
+  // 이벤트 글쓰기 진입 — 첫 진입이면 예시 화면, 이후엔 바로 편집
   function openEventWrite() {
     closeSheet('sheet-write-type');
+    var skip = false;
+    try { skip = localStorage.getItem('ew-intro-skip') === '1'; } catch(_) {}
+    if (skip) {
+      enterEventWriteForm();
+    } else {
+      goTo('s-event-intro');
+      setTimeout(function() {
+        var c = document.getElementById('ew-intro-skip-check');
+        if (c) c.checked = false;
+        var slider = document.getElementById('ew-intro-hero-slider');
+        if (slider) {
+          slider.scrollLeft = 0;
+          if (!slider._paginationBound) {
+            slider.addEventListener('scroll', updateIntroHeroPagination);
+            slider._paginationBound = true;
+          }
+        }
+        updateIntroHeroPagination();
+        if (window.lucide) lucide.createIcons();
+      }, 0);
+    }
+  }
+
+  function updateIntroHeroPagination() {
+    var slider = document.getElementById('ew-intro-hero-slider');
+    var counter = document.getElementById('ew-intro-hero-pagination');
+    if (!slider || !counter) return;
+    var slides = slider.querySelectorAll('.ew-intro-hero-slide');
+    var total = slides.length;
+    if (!total) return;
+    var w = slider.clientWidth || 1;
+    var idx = Math.round(slider.scrollLeft / w) + 1;
+    if (idx < 1) idx = 1;
+    if (idx > total) idx = total;
+    counter.textContent = idx + ' / ' + total;
+  }
+
+  // 예시 화면 → 편집 화면
+  function proceedToEventWrite() {
+    var c = document.getElementById('ew-intro-skip-check');
+    if (c && c.checked) {
+      try { localStorage.setItem('ew-intro-skip', '1'); } catch(_) {}
+    }
+    enterEventWriteForm();
+  }
+
+  function enterEventWriteForm() {
     goTo('s-event-write');
     setTimeout(function() {
       if (typeof ewUpdateProgress === 'function') ewUpdateProgress();
@@ -4416,13 +4931,10 @@
   ];
 
   function ewUpdateProgress() {
-    var start = document.getElementById('ew-f-start');
-    var end = document.getElementById('ew-f-end');
     var title = document.getElementById('ew-f-title');
     var target = document.getElementById('ew-f-target');
-    if (!start || !end || !title || !target) return;
+    if (!title || !target) return;
     var requireds = [
-      start.value !== '' && end.value !== '',
       ewImages.length > 0,
       title.value.trim() !== '',
       target.value.trim() !== ''
