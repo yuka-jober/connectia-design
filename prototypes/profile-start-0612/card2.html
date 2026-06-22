@@ -66,13 +66,13 @@
   .cval{color:var(--text2);}
 
   /* 게시판 */
-  .post-item{display:flex;align-items:stretch;border-top:1px solid var(--line);cursor:pointer;min-height:60px;}
+  .post-item{display:flex;align-items:center;gap:12px;border-top:1px solid var(--line);cursor:pointer;padding:16px 0;min-height:80px;box-sizing:border-box;}
   .post-item:first-child{border-top:none;}
-  .post-thumb{width:60px;background:var(--bg2);flex-shrink:0;display:flex;align-items:center;justify-content:center;}
-  .post-body{flex:1;padding:14px 0;min-width:0;}
-  .post-title{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .badge-event{font-size:12px;font-weight:500;color:#6B6BE1;background:#EDEDFB;padding:2px 8px;border-radius:99px;display:inline-flex;height:20px;align-items:center;margin-bottom:4px;}
-  .badge-notice{font-size:12px;font-weight:500;color:var(--text2);background:var(--bg2);padding:2px 8px;border-radius:99px;display:inline-flex;height:20px;align-items:center;margin-bottom:4px;}
+  .post-thumb{width:48px;height:48px;background:var(--bg2);flex-shrink:0;display:flex;align-items:center;justify-content:center;border-radius:8px;}
+  .post-body{flex:1;min-width:0;display:flex;align-items:center;gap:8px;}
+  .post-title{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;}
+  .badge-event{font-size:12px;font-weight:500;color:#6B6BE1;background:#EDEDFB;padding:2px 8px;border-radius:99px;display:inline-flex;height:20px;align-items:center;flex-shrink:0;}
+  .badge-notice{font-size:12px;font-weight:500;color:var(--text2);background:var(--bg2);padding:2px 8px;border-radius:99px;display:inline-flex;height:20px;align-items:center;flex-shrink:0;}
   .more-btn{font-size:12px;color:var(--text3);background:none;border:none;cursor:pointer;padding:0;margin-top:12px;display:flex;align-items:center;gap:3px;}
 
   /* 영상 */
@@ -302,17 +302,10 @@
     visible.forEach(function(it,i){
       var badge=getBadge(it);
       var hasPhoto=it.photos&&it.photos.length;
-      var border=i>0?'border-top:1px solid var(--line);':'';
-      if(hasPhoto){
-        html+='<div onclick="openPostDetail(posts.filter(function(p){return p.on;})['+i+'])" class="post-item" style="height:72px;'+border+'">'
-          +'<div class="post-thumb"><i data-lucide="image" style="font-size:16px;color:var(--text3);"></i></div>'
-          +'<div style="flex:1;padding:0 12px;min-width:0;display:flex;flex-direction:column;justify-content:center;">'+(badge?'<div style="margin-bottom:4px;">'+badge+'</div>':'')+'<p class="post-title">'+esc(it.t)+'</p></div>'
-          +'<div style="display:flex;align-items:center;padding-right:4px;"><i data-lucide="chevron-right" style="font-size:14px;color:var(--text3);"></i></div></div>';
-      }else{
-        html+='<div onclick="openPostDetail(posts.filter(function(p){return p.on;})['+i+'])" style="display:flex;align-items:center;height:72px;'+border+'cursor:pointer;">'
-          +'<div style="flex:1;min-width:0;">'+(badge?'<div style="margin-bottom:4px;">'+badge+'</div>':'')+'<p class="post-title">'+esc(it.t)+'</p></div>'
-          +'<i data-lucide="chevron-right" style="font-size:14px;color:var(--text3);flex-shrink:0;"></i></div>';
-      }
+      html+='<div onclick="openPostDetail(posts.filter(function(p){return p.on;})['+i+'])" class="post-item">'
+        +'<div class="post-body">'+(badge||'')+'<p class="post-title">'+esc(it.t)+'</p></div>'
+        +(hasPhoto?'<div class="post-thumb"><i data-lucide="image" style="width:18px;height:18px;color:var(--text3);"></i></div>':'')
+        +'</div>';
     });
     $('home-board').innerHTML=html;icons();
   }
@@ -323,19 +316,13 @@
     var html='<div style="display:flex;align-items:center;justify-content:space-between;padding:calc(12px + env(safe-area-inset-top)) 16px 12px;border-bottom:1px solid var(--line);flex-shrink:0;">'
       +'<button onclick="closeBoardAll()" class="backbtn"><i data-lucide="chevron-left"></i> 뒤로</button>'
       +'<span style="font-size:16px;font-weight:600;">게시판</span><span style="width:60px;"></span></div>';
-    html+='<div style="flex:1;overflow-y:auto;">';
+    html+='<div style="flex:1;overflow-y:auto;padding:0 16px;">';
     posts.forEach(function(it,i){
-      var badge=getBadge(it);var hasPhoto=it.photos&&it.photos.length;var border=i>0?'border-top:1px solid var(--line);':'';
-      if(hasPhoto){
-        html+='<div onclick="openPostDetail(posts['+i+'])" style="display:flex;align-items:stretch;min-height:64px;'+border+'cursor:pointer;">'
-          +'<div style="width:72px;background:var(--bg2);flex-shrink:0;display:flex;align-items:center;justify-content:center;"><i data-lucide="image" style="font-size:18px;color:var(--text3);"></i></div>'
-          +'<div style="flex:1;padding:14px 12px;min-width:0;">'+(badge?'<div style="margin-bottom:4px;">'+badge+'</div>':'')+'<p class="post-title">'+esc(it.t)+'</p></div>'
-          +'<div style="display:flex;align-items:center;padding-right:14px;"><i data-lucide="chevron-right" style="font-size:14px;color:var(--text3);"></i></div></div>';
-      }else{
-        html+='<div onclick="openPostDetail(posts['+i+'])" style="display:flex;align-items:center;min-height:60px;padding:0 16px;'+border+'cursor:pointer;">'
-          +'<div style="flex:1;min-width:0;">'+(badge?'<div style="margin-bottom:4px;">'+badge+'</div>':'')+'<p class="post-title">'+esc(it.t)+'</p></div>'
-          +'<i data-lucide="chevron-right" style="font-size:14px;color:var(--text3);flex-shrink:0;"></i></div>';
-      }
+      var badge=getBadge(it);var hasPhoto=it.photos&&it.photos.length;
+      html+='<div onclick="openPostDetail(posts['+i+'])" class="post-item">'
+        +'<div class="post-body">'+(badge||'')+'<p class="post-title">'+esc(it.t)+'</p></div>'
+        +(hasPhoto?'<div class="post-thumb"><i data-lucide="image" style="width:18px;height:18px;color:var(--text3);"></i></div>':'')
+        +'</div>';
     });
     html+='<div style="height:40px;"></div></div>';
     panel.innerHTML=html;panel.style.display='flex';panel.style.flexDirection='column';

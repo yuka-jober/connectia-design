@@ -652,15 +652,27 @@
         </div>
 
         <!-- 유튜브 영상 -->
-        <div class="section-row">
-          <input type="checkbox" class="toggle toggle-sm" checked>
-          <div class="section-row-info">
-            <p class="section-row-type">유튜브 영상</p>
-            <p class="section-row-name">Youtube</p>
+        <div class="section-row" style="flex-direction:column; align-items:stretch; gap:12px;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <input type="checkbox" class="toggle toggle-sm" checked>
+            <div class="section-row-info">
+              <p class="section-row-type">유튜브 영상</p>
+              <p class="section-row-name">Youtube</p>
+            </div>
+            <div class="section-row-actions">
+              <button class="icon-btn icon-btn-sm icon-btn-clear"><i data-lucide="pencil" style="width:14px;height:14px"></i></button>
+              <button class="icon-btn icon-btn-sm icon-btn-clear"><i data-lucide="grip-vertical" style="width:16px;height:16px"></i></button>
+            </div>
           </div>
-          <div class="section-row-actions">
-            <button class="icon-btn icon-btn-sm icon-btn-clear"><i data-lucide="pencil" style="width:14px;height:14px"></i></button>
-            <button class="icon-btn icon-btn-sm icon-btn-clear"><i data-lucide="grip-vertical" style="width:16px;height:16px"></i></button>
+          <div class="btn-style-group">
+            <button class="btn-style-opt is-active" onclick="selectBtnStyle(this)">
+              <i data-lucide="rows-3" style="width:16px;height:16px"></i>
+              세로 배치
+            </button>
+            <button class="btn-style-opt" onclick="selectBtnStyle(this)">
+              <i data-lucide="gallery-horizontal" style="width:16px;height:16px"></i>
+              가로 배치
+            </button>
           </div>
         </div>
 
