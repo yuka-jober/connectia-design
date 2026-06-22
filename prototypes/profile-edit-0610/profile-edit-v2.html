@@ -70,6 +70,29 @@
     .logo-upload {
       display: flex; align-items: center; gap: 12px; cursor: pointer;
     }
+    .logo-size-wrap { position: relative; margin-left: auto; }
+    .logo-size-trigger {
+      display: flex; align-items: center; gap: 4px; height: 32px; padding: 0 10px 0 12px;
+      background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--r-full);
+      font-family: var(--font-base); font-size: var(--fs-label); font-weight: var(--fw-medium);
+      color: var(--color-text); cursor: pointer;
+    }
+    .logo-size-menu {
+      position: absolute; top: calc(100% + 6px); right: 0; min-width: 100px;
+      background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--r-md);
+      box-shadow: var(--shadow-2); padding: 4px; z-index: 5;
+      display: none; flex-direction: column;
+    }
+    .logo-size-wrap.is-open .logo-size-menu { display: flex; }
+    .logo-size-menu button {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      height: 36px; padding: 0 10px; background: none; border: none; cursor: pointer;
+      font-family: var(--font-base); font-size: var(--fs-label); font-weight: var(--fw-medium);
+      color: var(--color-text); border-radius: var(--r-sm); text-align: left;
+    }
+    .logo-size-menu button:hover { background: var(--color-surface-sub); }
+    .logo-size-menu button.is-active { color: var(--color-primary); }
+    .logo-size-menu button.is-active::after { content: ''; }
     .logo-placeholder {
       width: 48px; height: 48px; border-radius: var(--r-sm);
       border: 1.5px dashed var(--color-border);
@@ -339,8 +362,17 @@
           <i data-lucide="image" style="width:20px;height:20px"></i>
         </div>
         <div>
-          <p class="logo-upload-label">로고 이미지 업로드</p>
-          <p style="font-size:var(--fs-caption);color:var(--color-text-muted);margin-top:2px;">브랜드 로고를 넣어주세요</p>
+          <p class="logo-upload-label">로고/명함 이미지 업로드</p>
+        </div>
+        <div class="logo-size-wrap" id="logo-size-wrap" onclick="event.stopPropagation();">
+          <button type="button" class="logo-size-trigger" onclick="toggleLogoSize(event)">
+            <span id="logo-size-value">작게(로고)</span>
+            <i data-lucide="chevron-down" style="width:14px;height:14px"></i>
+          </button>
+          <div class="logo-size-menu">
+            <button type="button" class="is-active" onclick="selectLogoSize(this,'작게(로고)')">작게(로고)</button>
+            <button type="button" onclick="selectLogoSize(this,'크게(명함)')">크게(명함)</button>
+          </div>
         </div>
       </div>
       <div class="logo-divider"></div>
@@ -975,6 +1007,21 @@
       var isFloating = el === opts[0];
       document.querySelector('.chat-btn-section').style.display = isFloating ? 'none' : '';
     }
+
+    function toggleLogoSize(e) {
+      e.stopPropagation();
+      document.getElementById('logo-size-wrap').classList.toggle('is-open');
+    }
+    function selectLogoSize(el, label) {
+      el.parentNode.querySelectorAll('button').forEach(function(b){ b.classList.remove('is-active'); });
+      el.classList.add('is-active');
+      document.getElementById('logo-size-value').textContent = label;
+      document.getElementById('logo-size-wrap').classList.remove('is-open');
+    }
+    document.addEventListener('click', function(){
+      var w = document.getElementById('logo-size-wrap');
+      if (w) w.classList.remove('is-open');
+    });
 
     function aiToggleRow(indent) {
       var style = indent ? 'padding-left:24px;' : '';
