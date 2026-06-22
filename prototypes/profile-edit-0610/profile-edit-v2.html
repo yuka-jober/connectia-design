@@ -100,6 +100,16 @@
       display: flex; align-items: center; justify-content: center;
       color: var(--color-text-muted); flex-shrink: 0;
     }
+    .namecard-preview {
+      width: 180px; aspect-ratio: 9/5; border-radius: var(--r-sm);
+      border: 1.5px dashed var(--color-border);
+      background: var(--color-surface-sub);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--color-text-muted); margin-top: 16px; cursor: pointer;
+    }
+    .logo-area.is-big-card .namecard-preview {
+      width: 100%; border-radius: var(--r-md);
+    }
     .logo-upload-label {
       font-size: var(--fs-body); font-weight: var(--fw-medium); color: var(--color-text-muted);
     }
@@ -358,9 +368,6 @@
         <span class="tpl-btn-label">템플릿 : <span class="tpl-btn-name" style="color:var(--color-primary-light);font-weight:var(--fw-semibold)">기본</span></span>
       </button>
       <div class="logo-upload">
-        <div class="logo-placeholder">
-          <i data-lucide="image" style="width:20px;height:20px"></i>
-        </div>
         <div>
           <p class="logo-upload-label">로고/명함 이미지 업로드</p>
         </div>
@@ -374,6 +381,9 @@
             <button type="button" onclick="selectLogoSize(this,'크게(명함)')">크게(명함)</button>
           </div>
         </div>
+      </div>
+      <div class="namecard-preview">
+        <i data-lucide="image" style="width:32px;height:32px"></i>
       </div>
       <div class="logo-divider"></div>
       <div class="logo-upload" style="margin-top:20px;">
@@ -1017,6 +1027,8 @@
       el.classList.add('is-active');
       document.getElementById('logo-size-value').textContent = label;
       document.getElementById('logo-size-wrap').classList.remove('is-open');
+      document.getElementById('logo-area').classList.toggle('is-big-card', label === '크게(명함)');
+      if (window.lucide) lucide.createIcons();
     }
     document.addEventListener('click', function(){
       var w = document.getElementById('logo-size-wrap');
