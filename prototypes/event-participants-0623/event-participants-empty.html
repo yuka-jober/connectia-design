@@ -562,22 +562,21 @@
   <!-- LANDING                                       -->
   <!-- ════════════════════════════════════════════ -->
   <div class="screen on" id="screen-landing">
-      <div class="scroll-body">
-
-        <!-- Floating topbar -->
-        <div class="topbar">
-          <button class="icon-btn icon-btn-clear" aria-label="뒤로">
-            <i data-lucide="chevron-left" style="width:22px;height:22px;color:var(--color-text);"></i>
+      <div class="topbar-solid">
+        <button class="icon-btn icon-btn-clear" aria-label="뒤로">
+          <i data-lucide="chevron-left" style="width:22px;height:22px;color:var(--color-text);"></i>
+        </button>
+        <span class="topbar-title">내 이벤트 (관리자 화면)</span>
+        <div class="topbar-right">
+          <button class="icon-btn icon-btn-clear" aria-label="공유">
+            <i data-lucide="share-2" style="width:20px;height:20px;color:var(--color-text);"></i>
           </button>
-          <div class="topbar-right">
-            <button class="icon-btn icon-btn-clear" aria-label="공유">
-              <i data-lucide="share-2" style="width:20px;height:20px;color:var(--color-text);"></i>
-            </button>
-            <button class="icon-btn icon-btn-clear" aria-label="더보기" onclick="openSheet()">
-              <i data-lucide="more-vertical" style="width:20px;height:20px;color:var(--color-text);"></i>
-            </button>
-          </div>
+          <button class="icon-btn icon-btn-clear" aria-label="더보기" onclick="openSheet()">
+            <i data-lucide="more-vertical" style="width:20px;height:20px;color:var(--color-text);"></i>
+          </button>
         </div>
+      </div>
+      <div class="scroll-body">
 
         <!-- Slot: 썸네일 (4:3 슬라이드) -->
         <div class="hero">
@@ -764,7 +763,15 @@
       <button class="icon-btn icon-btn-clear" aria-label="뒤로" onclick="navigate('screen-landing')">
         <i data-lucide="chevron-left" style="width:22px;height:22px;color:var(--color-text);"></i>
       </button>
-      <span class="topbar-title">신청자 리스트</span>
+      <span class="topbar-title">내 이벤트 (관리자 화면)</span>
+      <div class="topbar-right">
+        <button class="icon-btn icon-btn-clear" aria-label="공유">
+          <i data-lucide="share-2" style="width:20px;height:20px;color:var(--color-text);"></i>
+        </button>
+        <button class="icon-btn icon-btn-clear" aria-label="더보기" onclick="openSheet()">
+          <i data-lucide="more-vertical" style="width:20px;height:20px;color:var(--color-text);"></i>
+        </button>
+      </div>
     </div>
 
     <div class="list-body">
