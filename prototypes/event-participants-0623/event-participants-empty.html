@@ -191,14 +191,27 @@
   }
   .list-count strong { color: var(--color-text); font-weight: var(--fw-semibold); }
 
-  /* 빈 상태 */
+  /* 빈 상태 — 뒤에 연한 리스트 미리보기 + 가운데 메시지 카드 */
+  .empty-container {
+    position: relative;
+  }
+  .empty-preview {
+    opacity: 0.4;
+    pointer-events: none;
+    -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.1) 100%);
+            mask-image: linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.1) 100%);
+  }
   .empty-state {
+    position: absolute;
+    left: 16px; right: 16px;
+    top: 56px;
     background: var(--color-surface);
     border-radius: var(--r-md);
-    padding: 40px 24px 32px;
+    padding: 32px 24px 28px;
     display: flex; flex-direction: column; align-items: center;
     text-align: center;
     gap: 12px;
+    box-shadow: var(--shadow-2);
   }
   .empty-title {
     font-size: var(--fs-body-lg);
@@ -738,7 +751,7 @@
       <!-- Sticky CTA (소유자 전용) -->
       <div class="sticky-bar">
         <button class="btn btn-xl btn-block btn-fill-primary" onclick="navigate('screen-list')">
-          신청자 0명 보기
+          신청 현황 보기
         </button>
       </div>
   </div>
@@ -766,17 +779,61 @@
         </div>
       </div>
 
-      <!-- 빈 상태 -->
-      <div class="empty-state">
-        <h3 class="empty-title">아직 첫 신청자를 기다리고 있어요</h3>
-        <div class="empty-notice">
-          <i data-lucide="bell"></i>
-          신청이 오면 카카오 알림톡으로 알려드려요
+      <!-- 빈 상태 (배경에 연한 리스트 미리보기 + 가운데 메시지) -->
+      <div class="empty-container">
+        <div class="empty-preview applicant-rows" aria-hidden="true">
+          <div class="applicant-row">
+            <div class="applicant-top">
+              <span class="applicant-name">○○○</span>
+              <span class="applicant-date">2026.06.23 14:32</span>
+            </div>
+            <div class="applicant-intent">관심 시술</div>
+            <div class="applicant-contact"><span class="applicant-phone">010-XXXX-XXXX</span></div>
+          </div>
+          <div class="applicant-row">
+            <div class="applicant-top">
+              <span class="applicant-name">○○○</span>
+              <span class="applicant-date">2026.06.23 11:08</span>
+            </div>
+            <div class="applicant-intent">관심 시술</div>
+            <div class="applicant-contact"><span class="applicant-phone">010-XXXX-XXXX</span></div>
+          </div>
+          <div class="applicant-row">
+            <div class="applicant-top">
+              <span class="applicant-name">○○○</span>
+              <span class="applicant-date">2026.06.22 22:45</span>
+            </div>
+            <div class="applicant-intent">관심 시술</div>
+            <div class="applicant-contact"><span class="applicant-phone">010-XXXX-XXXX</span></div>
+          </div>
+          <div class="applicant-row">
+            <div class="applicant-top">
+              <span class="applicant-name">○○○</span>
+              <span class="applicant-date">2026.06.22 19:20</span>
+            </div>
+            <div class="applicant-intent">관심 시술</div>
+            <div class="applicant-contact"><span class="applicant-phone">010-XXXX-XXXX</span></div>
+          </div>
+          <div class="applicant-row">
+            <div class="applicant-top">
+              <span class="applicant-name">○○○</span>
+              <span class="applicant-date">2026.06.22 16:11</span>
+            </div>
+            <div class="applicant-intent">관심 시술</div>
+            <div class="applicant-contact"><span class="applicant-phone">010-XXXX-XXXX</span></div>
+          </div>
         </div>
-        <button class="btn btn-md btn-weak-primary btn-pill empty-cta" onclick="shareEvent()">
-          <i data-lucide="share-2" style="width:14px;height:14px"></i>
-          이벤트 공유하기
-        </button>
+        <div class="empty-state">
+          <h3 class="empty-title">아직 첫 신청자를 기다리고 있어요</h3>
+          <div class="empty-notice">
+            <i data-lucide="bell"></i>
+            신청이 오면 카카오 알림톡으로 알려드려요
+          </div>
+          <button class="btn btn-md btn-weak-primary btn-pill empty-cta" onclick="shareEvent()">
+            <i data-lucide="share-2" style="width:14px;height:14px"></i>
+            이벤트 공유하기
+          </button>
+        </div>
       </div>
 
     </div>
