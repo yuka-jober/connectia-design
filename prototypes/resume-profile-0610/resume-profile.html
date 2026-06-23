@@ -449,7 +449,7 @@
       }
     }
 
-    /* ─── PDF 다운로드 플로팅 버튼 ──────────────────────────────────── */
+    /* ─── PDF 다운로드 / 공유 플로팅 버튼 ──────────────────────────────────── */
     .pdf-btn-wrap {
       position: sticky;
       top: 20px;
@@ -458,6 +458,9 @@
       text-align: right;
       z-index: 100;
       padding-right: 20px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
     }
     .pdf-download-btn {
       display: inline-flex;
@@ -490,14 +493,20 @@
       background: rgba(255,255,255,0.8);
       box-shadow: 0 6px 20px rgba(0,0,0,0.14);
     }
+    .pdf-download-btn.is-copied {
+      background: rgba(107,107,225,0.92);
+      color: #fff;
+      border-color: rgba(107,107,225,0.5);
+    }
     @media (hover: hover) and (pointer: fine) {
       .pdf-download-btn .pdf-label {
         max-width: 0;
         opacity: 0;
         margin-left: 0;
       }
-      .pdf-download-btn:hover .pdf-label {
-        max-width: 80px;
+      .pdf-download-btn:hover .pdf-label,
+      .pdf-download-btn.is-copied .pdf-label {
+        max-width: 120px;
         opacity: 1;
         margin-left: 7px;
       }
@@ -511,8 +520,15 @@
   <!-- ── Left: 이력서 ────────────────────────────────────────────── -->
   <div class="resume-col">
 
-    <!-- PDF 다운로드 플로팅 버튼 -->
+    <!-- PDF 다운로드 / 공유 플로팅 버튼 -->
     <div class="pdf-btn-wrap">
+      <button class="pdf-download-btn" id="shareLinkBtn" onclick="copyShareLink(this)" title="공유링크 복사">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+        </svg>
+        <span class="pdf-label" id="shareLinkLabel">공유링크 복사</span>
+      </button>
       <button class="pdf-download-btn" onclick="window.print()" title="PDF 저장">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -856,6 +872,28 @@
 </button>
 
 <script>
+  /* 공유링크 복사 */
+  function copyShareLink(btn) {
+    const url = window.location.href;
+    const label = document.getElementById('shareLinkLabel');
+    const original = label.textContent;
+    const done = () => {
+      label.textContent = '복사 완료';
+      btn.classList.add('is-copied');
+      setTimeout(() => {
+        label.textContent = original;
+        btn.classList.remove('is-copied');
+      }, 1600);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(done).catch(() => {
+        prompt('아래 링크를 복사하세요', url);
+      });
+    } else {
+      prompt('아래 링크를 복사하세요', url);
+    }
+  }
+
   const input          = document.getElementById('chatInput');
   const messages       = document.getElementById('chatMessages');
   const chipsWrap      = document.getElementById('chipsWrap');
