@@ -151,8 +151,8 @@
 
   /* ── Info (clinic + editable title/target) ── */
   .pv-info {
-    padding: 24px 20px 16px;
-    display: flex; flex-direction: column; gap: 12px;
+    padding: 16px 20px 8px;
+    display: flex; flex-direction: column; gap: 8px;
   }
   .pv-clinic-row {
     display: inline-flex; align-items: center; gap: 2px;
@@ -222,12 +222,13 @@
   .pv-divider {
     height: 8px;
     background: var(--color-bg);
+    margin: 16px 0;
   }
 
   /* ── Section ── */
   .pv-section {
-    padding: 24px 20px;
-    display: flex; flex-direction: column; gap: 16px;
+    padding: 12px 20px;
+    display: flex; flex-direction: column; gap: 12px;
   }
   .pv-section-title {
     font-size: var(--fs-heading);
@@ -246,10 +247,23 @@
   }
   .pv-timeline-row {
     display: grid;
-    grid-template-columns: 16px auto 1fr 1fr;
+    grid-template-columns: 16px auto 1fr;
     align-items: center;
     column-gap: 12px;
     min-height: 36px;
+  }
+  .pv-date-time-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px;
+  }
+  .pv-date-time-group > .pv-date-pill:first-child {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+  .pv-date-time-group > .pv-date-pill:last-child {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
   }
   .pv-timeline-marker {
     position: relative;
@@ -352,7 +366,8 @@
     z-index: 20;
   }
   .pv-calendar[hidden],
-  .pv-timepick[hidden] { display: none !important; }
+  .pv-timepick[hidden],
+  .pv-mc-editor[hidden] { display: none !important; }
   .pv-cal-header {
     display: flex;
     align-items: center;
@@ -621,31 +636,425 @@
     white-space: pre-wrap;
   }
 
-  /* ── CTA config (button text inline edit) ── */
-  .pv-cta-config {
+  /* ── Options block ── */
+  .pv-options {
+    background: var(--color-surface);
+  }
+  .pv-options .pv-section {
+    gap: 20px;
+  }
+  .pv-option-block {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .pv-option-label {
+    font-size: var(--fs-body);
+    font-weight: var(--fw-medium);
+    color: var(--color-text);
+  }
+  .pv-option-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-md);
     padding: 16px 20px;
-    background: var(--color-surface-sub);
-    display: flex; flex-direction: column; gap: 6px;
   }
-  .pv-cta-config-label {
-    font-size: var(--fs-caption);
-    color: var(--color-text-muted);
-  }
-  .pv-cta-config input {
+  .pv-option-card input {
+    width: 100%;
     background: transparent;
     border: none;
     font-family: var(--font-base);
-    font-size: var(--fs-body);
-    font-weight: var(--fw-semibold);
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-medium);
     color: var(--color-text);
     outline: none;
-    padding: 4px 6px;
-    margin: 0 -6px;
+    padding: 0;
+  }
+  .pv-option-card input::placeholder { color: var(--color-text-muted); }
+
+  /* 신청폼 구성 — default + added questions */
+  .pv-form-card {
+    background: var(--color-surface);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .pv-form-notice {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--color-surface-sub);
+    border-radius: var(--r-md);
+    padding: 12px 16px;
+    color: var(--color-text);
+    font-size: var(--fs-body);
+    font-weight: var(--fw-semibold);
+    margin: 4px 0 8px;
+  }
+  .pv-form-notice i[data-lucide], .pv-form-notice svg {
+    width: 16px; height: 16px;
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+  }
+  .pv-form-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 4px;
+    color: var(--color-text);
+    font-size: var(--fs-body);
+  }
+  .pv-form-row + .pv-form-row {
+    border-top: 1px solid var(--color-border);
+  }
+  .pv-form-row-label { flex: 1; }
+  .pv-form-row-badge {
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+  }
+  .pv-form-row svg, .pv-form-row i[data-lucide] {
+    width: 16px; height: 16px;
+    color: var(--color-text-muted);
+  }
+  .pv-form-row .pv-form-row-remove {
+    background: transparent;
+    border: none;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    padding: 4px;
+    display: flex; align-items: center; justify-content: center;
     border-radius: var(--r-xs);
+  }
+  .pv-form-row .pv-form-row-remove:hover { background: var(--color-surface-sub); }
+  .pv-form-row .pv-form-question-text {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: var(--font-base);
+    font-size: var(--fs-body);
+    color: var(--color-text);
+    padding: 0;
+  }
+  .pv-form-row .pv-form-question-text::placeholder { color: var(--color-text-muted); }
+  .pv-form-mc-options {
+    display: flex; flex-direction: column;
+    gap: 6px;
+    padding: 6px 4px 10px 28px;
+  }
+  .pv-form-mc-option {
+    display: flex; align-items: center; gap: 8px;
+    font-size: var(--fs-label);
+    color: var(--color-text);
+  }
+  .pv-form-mc-option-circle {
+    width: 14px; height: 14px;
+    border: 1.5px solid var(--color-text-muted);
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .pv-form-mc-option input {
+    background: transparent;
+    border: none;
+    outline: none;
+    flex: 1;
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    color: var(--color-text);
+    padding: 2px 0;
+  }
+  .pv-form-mc-option input::placeholder { color: var(--color-text-muted); }
+  .pv-form-mc-option .pv-form-mc-remove {
+    background: transparent; border: none;
+    color: var(--color-text-muted);
+    cursor: pointer; padding: 2px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .pv-form-mc-option .pv-form-mc-remove svg,
+  .pv-form-mc-option .pv-form-mc-remove i[data-lucide] { width: 14px; height: 14px; }
+  .pv-form-mc-add {
+    margin-left: 28px;
+    margin-top: 4px;
+    background: transparent;
+    border: none;
+    color: var(--color-text-sub);
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    cursor: pointer;
+    align-self: flex-start;
+    padding: 4px 0;
+  }
+  /* 추가된 질문 카드 */
+  .pv-questions-list {
+    display: flex; flex-direction: column;
+    gap: 8px;
+  }
+  .pv-questions-list:empty { display: none; }
+  .pv-question-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-md);
+    padding: 12px 16px;
+    display: flex; flex-direction: column;
+    gap: 8px;
+  }
+  .pv-question-head {
+    display: flex; align-items: center;
+    gap: 8px;
+  }
+  .pv-question-type-badge {
+    font-size: var(--fs-caption);
+    font-weight: var(--fw-medium);
+    color: var(--color-primary);
+    background: var(--color-primary-light);
+    padding: 2px 8px;
+    border-radius: var(--r-full);
+    flex-shrink: 0;
+  }
+  .pv-question-text {
+    flex: 1;
+    font-size: var(--fs-body);
+    color: var(--color-text);
+    word-break: break-word;
+  }
+  .pv-question-remove {
+    background: transparent; border: none;
+    color: var(--color-text-muted);
+    cursor: pointer; padding: 4px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .pv-question-remove i[data-lucide], .pv-question-remove svg { width: 16px; height: 16px; }
+  .pv-question-options {
+    list-style: none;
+    padding: 0; margin: 0;
+    display: flex; flex-direction: column;
+    gap: 4px;
+  }
+  .pv-question-options li {
+    font-size: var(--fs-label);
+    color: var(--color-text-sub);
+    padding-left: 16px;
+    position: relative;
+  }
+  .pv-question-options li::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 8px;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--color-text-muted);
+  }
+
+  /* 추가 질문 모달 내부 */
+  .pv-qtype-row {
+    display: flex; gap: 8px;
+  }
+  .pv-qtype-row .pv-chip { flex: 1; justify-content: center; display: flex; }
+  .pv-mc-editor {
+    display: flex; flex-direction: column;
+    gap: 8px;
+  }
+  .pv-mc-editor-row {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .pv-mc-editor-row .pv-form-mc-option-circle {
+    width: 14px; height: 14px;
+    border: 1.5px solid var(--color-text-muted);
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .pv-mc-editor-row input {
+    flex: 1;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-sm);
+    padding: 10px 12px;
+    font-family: var(--font-base);
+    font-size: var(--fs-body);
+    color: var(--color-text);
+    outline: none;
+  }
+  .pv-mc-editor-row input:focus { border-color: var(--color-primary); }
+  .pv-mc-editor-row .pv-mc-editor-remove {
+    background: transparent; border: none;
+    color: var(--color-text-muted);
+    cursor: pointer; padding: 4px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .pv-mc-editor-add {
+    align-self: flex-start;
+    background: transparent;
+    border: none;
+    color: var(--color-primary);
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-medium);
+    cursor: pointer;
+    padding: 4px 0;
+  }
+  .pv-sheet-actions {
+    display: flex; gap: 8px;
+  }
+  .pv-sheet-actions .btn { flex: 1; }
+  .pv-sheet-link-danger {
+    align-self: center;
+    background: transparent;
+    border: none;
+    color: var(--color-destructive);
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-medium);
+    cursor: pointer;
+    padding: 4px 8px;
+  }
+  .pv-sheet-link-danger[hidden] { display: none !important; }
+
+  /* 옵션 리스트 (luma-style) */
+  .pv-opt-list {
+    background: var(--color-surface-sub);
+    border-radius: var(--r-md);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  .pv-opt-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 16px;
+    background: transparent;
+    border: none;
+    font-family: var(--font-base);
+    color: var(--color-text);
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
     transition: background var(--motion-fast) var(--ease-standard);
   }
-  .pv-cta-config input:hover { background: var(--color-surface); }
-  .pv-cta-config input:focus { outline: none; }
+  .pv-opt-row:hover { background: rgba(0,0,0,0.02); }
+  .pv-opt-row.pv-opt-row-static { cursor: default; }
+  .pv-opt-row.pv-opt-row-static:hover { background: transparent; }
+  .pv-opt-row.pv-opt-row-static .pv-opt-row-label {
+    color: var(--color-text-muted);
+    font-weight: var(--fw-regular);
+  }
+  .pv-opt-row + .pv-opt-row {
+    border-top: 1px solid var(--color-border);
+  }
+  .pv-opt-row i[data-lucide], .pv-opt-row svg.lucide {
+    width: 16px; height: 16px;
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+  }
+  .pv-opt-row .pv-opt-icon-edit {
+    width: 14px; height: 14px;
+    color: var(--color-text-muted);
+    opacity: 0.6;
+    margin-left: 4px;
+  }
+  .pv-opt-row-label {
+    flex: 1;
+    font-size: var(--fs-body);
+    font-weight: var(--fw-medium);
+    color: var(--color-text);
+  }
+  .pv-opt-row-value {
+    font-size: var(--fs-body);
+    color: var(--color-text-muted);
+    display: inline-flex; align-items: center; gap: 0;
+  }
+
+  /* 옵션 편집 모달 (frame-scoped) */
+  .pv-sheet-overlay {
+    position: absolute; inset: 0;
+    background: rgba(17,19,24,0.5);
+    z-index: 50;
+    opacity: 0; pointer-events: none;
+    transition: opacity var(--motion-standard) var(--ease-enter);
+  }
+  .pv-sheet-overlay.is-open { opacity: 1; pointer-events: auto; }
+  .pv-sheet {
+    position: absolute;
+    top: 50%; left: 20px; right: 20px;
+    background: var(--color-surface);
+    border-radius: var(--r-lg);
+    padding: 24px 20px 20px;
+    z-index: 51;
+    box-shadow: var(--shadow-4);
+    opacity: 0;
+    transform: translateY(-50%) scale(0.96);
+    transition: opacity var(--motion-standard) var(--ease-enter),
+                transform var(--motion-standard) var(--ease-enter);
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .pv-sheet.is-open {
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+    pointer-events: auto;
+  }
+  .pv-sheet-handle { display: none; }
+  .pv-sheet-title {
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-bold);
+    color: var(--color-text);
+  }
+  .pv-sheet-input {
+    width: 100%;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-md);
+    padding: 14px 16px;
+    font-family: var(--font-base);
+    font-size: var(--fs-body);
+    color: var(--color-text);
+    outline: none;
+  }
+  .pv-sheet-input:focus { border-color: var(--color-primary); }
+  .pv-sheet-suggestions {
+    display: flex; flex-wrap: wrap; gap: 8px;
+  }
+  .pv-sheet-suggestion {
+    background: var(--color-surface-sub);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-full);
+    padding: 8px 14px;
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    color: var(--color-text-sub);
+    cursor: pointer;
+  }
+  .pv-sheet-suggestion:hover {
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+  }
+
+  /* 연락 방식 chips */
+  .pv-channel-chips {
+    display: flex; flex-wrap: wrap; gap: 8px;
+  }
+  .pv-chip {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-full);
+    padding: 10px 18px;
+    font-family: var(--font-base);
+    font-size: var(--fs-body);
+    font-weight: var(--fw-medium);
+    color: var(--color-text);
+    cursor: pointer;
+    transition: background var(--motion-fast) var(--ease-standard);
+  }
+  .pv-chip:hover { background: var(--color-surface-sub); }
+  .pv-chip.is-selected {
+    background: var(--color-primary-light);
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+    font-weight: var(--fw-bold);
+  }
 
   /* ── Sticky bar ── */
   .sticky-bar {
@@ -716,26 +1125,30 @@
         <div class="pv-timeline-row is-start">
           <div class="pv-timeline-marker"><span class="pv-timeline-dot is-filled"></span></div>
           <span class="pv-timeline-label">시작</span>
-          <button type="button" class="pv-date-pill is-empty" id="pill-start-date" onclick="openCalendar('start', event)">
-            <span class="pv-date-pill-text" id="disp-start-date">날짜</span>
-            <input type="hidden" id="f-start">
-          </button>
-          <button type="button" class="pv-date-pill is-empty" id="pill-start-time" onclick="openTimepick('start', event)">
-            <span class="pv-date-pill-text" id="disp-start-time">시간</span>
-            <input type="hidden" id="f-start-time">
-          </button>
+          <div class="pv-date-time-group">
+            <button type="button" class="pv-date-pill is-empty" id="pill-start-date" onclick="openCalendar('start', event)">
+              <span class="pv-date-pill-text" id="disp-start-date">날짜</span>
+              <input type="hidden" id="f-start">
+            </button>
+            <button type="button" class="pv-date-pill is-empty" id="pill-start-time" onclick="openTimepick('start', event)">
+              <span class="pv-date-pill-text" id="disp-start-time">시간</span>
+              <input type="hidden" id="f-start-time">
+            </button>
+          </div>
         </div>
         <div class="pv-timeline-row is-end">
           <div class="pv-timeline-marker"><span class="pv-timeline-dot"></span></div>
           <span class="pv-timeline-label">종료</span>
-          <button type="button" class="pv-date-pill is-empty" id="pill-end-date" onclick="openCalendar('end', event)">
-            <span class="pv-date-pill-text" id="disp-end-date">날짜</span>
-            <input type="hidden" id="f-end">
-          </button>
-          <button type="button" class="pv-date-pill is-empty" id="pill-end-time" onclick="openTimepick('end', event)">
-            <span class="pv-date-pill-text" id="disp-end-time">시간</span>
-            <input type="hidden" id="f-end-time">
-          </button>
+          <div class="pv-date-time-group">
+            <button type="button" class="pv-date-pill is-empty" id="pill-end-date" onclick="openCalendar('end', event)">
+              <span class="pv-date-pill-text" id="disp-end-date">날짜</span>
+              <input type="hidden" id="f-end">
+            </button>
+            <button type="button" class="pv-date-pill is-empty" id="pill-end-time" onclick="openTimepick('end', event)">
+              <span class="pv-date-pill-text" id="disp-end-time">시간</span>
+              <input type="hidden" id="f-end-time">
+            </button>
+          </div>
         </div>
         <div class="pv-calendar" id="pv-calendar" hidden>
           <div class="pv-cal-header">
@@ -757,8 +1170,6 @@
       </div>
     </div>
 
-    <div class="pv-divider"></div>
-
     <!-- 자격 조건 -->
     <div class="pv-section">
       <div class="pv-section-title">이런 분이라면 신청해보세요</div>
@@ -770,20 +1181,123 @@
       </div>
     </div>
 
-    <div class="pv-divider"></div>
-
     <!-- 이벤트 안내 -->
     <div class="pv-section">
       <div class="pv-section-title">이벤트 안내</div>
       <div class="editable pv-desc" id="f-desc" contenteditable="true" data-placeholder="이벤트 진행 방식이나 안내사항을 적어주세요"></div>
     </div>
 
-    <!-- CTA 문구 -->
-    <div class="pv-cta-config">
-      <span class="pv-cta-config-label">신청 버튼 문구</span>
-      <input type="text" id="f-cta" value="이벤트 신청">
+    <div class="pv-divider"></div>
+
+    <!-- 신청폼 구성 -->
+    <div class="pv-section">
+      <div class="pv-section-title">신청폼 구성</div>
+      <div class="pv-form-card" id="f-form-card">
+        <div class="pv-opt-list">
+          <div class="pv-opt-row pv-opt-row-static">
+            <i data-lucide="info"></i>
+            <span class="pv-opt-row-label">이름·연락처를 기본으로 받아요</span>
+          </div>
+          <button type="button" class="pv-opt-row" onclick="openAddQuestion()">
+            <i data-lucide="circle-plus"></i>
+            <span class="pv-opt-row-label">추가 질문</span>
+            <span class="pv-opt-row-value" id="disp-addq"></span>
+            <i data-lucide="chevron-right" class="pv-opt-icon-edit"></i>
+          </button>
+        </div>
+      </div>
     </div>
 
+    <!-- 이벤트 옵션 -->
+    <div class="pv-section">
+      <div class="pv-section-title">이벤트 옵션</div>
+      <div class="pv-opt-list">
+        <button type="button" class="pv-opt-row" onclick="openSheet('cta')">
+          <i data-lucide="mouse-pointer-click"></i>
+          <span class="pv-opt-row-label">신청 버튼 문구</span>
+          <span class="pv-opt-row-value" id="disp-cta">이벤트 신청</span>
+          <i data-lucide="chevron-right" class="pv-opt-icon-edit"></i>
+        </button>
+        <button type="button" class="pv-opt-row" onclick="openSheet('eta')">
+          <i data-lucide="clock"></i>
+          <span class="pv-opt-row-label">예상 연락 시점</span>
+          <span class="pv-opt-row-value" id="disp-eta">1영업일 이내</span>
+          <i data-lucide="chevron-right" class="pv-opt-icon-edit"></i>
+        </button>
+        <button type="button" class="pv-opt-row" onclick="openSheet('channels')">
+          <i data-lucide="message-circle"></i>
+          <span class="pv-opt-row-label">연락 방식</span>
+          <span class="pv-opt-row-value" id="disp-channels">전화, 카카오 알림톡</span>
+          <i data-lucide="chevron-right" class="pv-opt-icon-edit"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sheets -->
+  <div class="pv-sheet-overlay" id="sheet-overlay" onclick="closeSheet()"></div>
+
+  <div class="pv-sheet" id="sheet-cta">
+    <div class="pv-sheet-handle"></div>
+    <div class="pv-sheet-title">신청 버튼 문구</div>
+    <input type="text" class="pv-sheet-input" id="f-cta" value="이벤트 신청" placeholder="예) 이벤트 신청" oninput="onSheetInput('cta')">
+    <div class="pv-sheet-suggestions">
+      <button type="button" class="pv-sheet-suggestion" onclick="pickSuggestion('cta','이벤트 신청')">이벤트 신청</button>
+      <button type="button" class="pv-sheet-suggestion" onclick="pickSuggestion('cta','지금 신청하기')">지금 신청하기</button>
+      <button type="button" class="pv-sheet-suggestion" onclick="pickSuggestion('cta','참여 신청')">참여 신청</button>
+      <button type="button" class="pv-sheet-suggestion" onclick="pickSuggestion('cta','상담 신청')">상담 신청</button>
+    </div>
+    <button class="btn btn-lg btn-block btn-fill-primary" onclick="closeSheet()">완료</button>
+  </div>
+
+  <div class="pv-sheet" id="sheet-eta">
+    <div class="pv-sheet-handle"></div>
+    <div class="pv-sheet-title">예상 연락 시점</div>
+    <input type="text" class="pv-sheet-input" id="f-contact-eta" value="1영업일 이내" placeholder="예) 1영업일 이내" oninput="onSheetInput('eta')">
+    <div class="pv-sheet-suggestions">
+      <button type="button" class="pv-sheet-suggestion" onclick="pickSuggestion('eta','당일 연락')">당일 연락</button>
+      <button type="button" class="pv-sheet-suggestion" onclick="pickSuggestion('eta','1영업일 이내')">1영업일 이내</button>
+      <button type="button" class="pv-sheet-suggestion" onclick="pickSuggestion('eta','2~3영업일 이내')">2~3영업일 이내</button>
+      <button type="button" class="pv-sheet-suggestion" onclick="pickSuggestion('eta','신청 마감 후 일괄 연락')">신청 마감 후 일괄 연락</button>
+    </div>
+    <button class="btn btn-lg btn-block btn-fill-primary" onclick="closeSheet()">완료</button>
+  </div>
+
+  <div class="pv-sheet" id="sheet-addq">
+    <div class="pv-sheet-title" id="addq-title">추가 질문</div>
+    <div class="pv-qtype-row" id="addq-qtype">
+      <button type="button" class="pv-chip is-selected" data-qtype="short" onclick="setQType('short')">주관식</button>
+      <button type="button" class="pv-chip" data-qtype="mc" onclick="setQType('mc')">객관식</button>
+    </div>
+    <input type="text" class="pv-sheet-input" id="addq-text" placeholder="질문을 입력하세요">
+    <div class="pv-mc-editor" id="addq-mc-editor" hidden>
+      <div class="pv-mc-editor-row">
+        <input type="text" placeholder="보기 1">
+        <button type="button" class="pv-mc-editor-remove" onclick="removeMcEditorRow(this)"><i data-lucide="x"></i></button>
+      </div>
+      <div class="pv-mc-editor-row">
+        <input type="text" placeholder="보기 2">
+        <button type="button" class="pv-mc-editor-remove" onclick="removeMcEditorRow(this)"><i data-lucide="x"></i></button>
+      </div>
+      <button type="button" class="pv-mc-editor-add" onclick="addMcEditorRow()">+ 보기 추가</button>
+    </div>
+    <div class="pv-sheet-actions">
+      <button class="btn btn-lg btn-weak-dark" onclick="closeSheet()">취소</button>
+      <button class="btn btn-lg btn-fill-primary" id="addq-submit" onclick="submitQuestion()">추가</button>
+    </div>
+    <button type="button" class="pv-sheet-link-danger" id="addq-delete" onclick="deleteQuestion()" hidden>질문 삭제</button>
+  </div>
+
+  <div class="pv-sheet" id="sheet-channels">
+    <div class="pv-sheet-handle"></div>
+    <div class="pv-sheet-title">연락 방식</div>
+    <div class="pv-channel-chips" id="f-channels">
+      <button type="button" class="pv-chip is-selected" data-channel="phone" onclick="toggleChannel(this)">전화</button>
+      <button type="button" class="pv-chip is-selected" data-channel="kakao" onclick="toggleChannel(this)">카카오 알림톡</button>
+      <button type="button" class="pv-chip" data-channel="sms" onclick="toggleChannel(this)">문자</button>
+      <button type="button" class="pv-chip" data-channel="email" onclick="toggleChannel(this)">이메일</button>
+    </div>
+    <button class="btn btn-lg btn-block btn-fill-primary" onclick="closeSheet()">완료</button>
   </div>
 
   <!-- Publish -->
@@ -898,6 +1412,149 @@
     list.insertBefore(row, addBtn);
     lucide.createIcons();
     setTimeout(function(){ row.querySelector('.pv-check-text').focus(); }, 0);
+  }
+
+  /* ── 추가 질문 (modal, 단일 질문) ── */
+  var addedQuestion = null;
+
+  function resetMcEditor(values) {
+    var editor = document.getElementById('addq-mc-editor');
+    var addBtn = editor.querySelector('.pv-mc-editor-add');
+    editor.querySelectorAll('.pv-mc-editor-row').forEach(function(r){ r.remove(); });
+    var defaults = values && values.length ? values : ['', ''];
+    if (defaults.length < 2) defaults.push('');
+    defaults.forEach(function(v, idx){
+      var row = document.createElement('div');
+      row.className = 'pv-mc-editor-row';
+      row.innerHTML =
+        '<input type="text" placeholder="보기 ' + (idx + 1) + '" value="">' +
+        '<button type="button" class="pv-mc-editor-remove" onclick="removeMcEditorRow(this)"><i data-lucide="x"></i></button>';
+      editor.insertBefore(row, addBtn);
+      row.querySelector('input').value = v;
+    });
+    lucide.createIcons();
+  }
+
+  function openAddQuestion() {
+    var editing = !!addedQuestion;
+    if (editing) {
+      setQType(addedQuestion.type);
+      document.getElementById('addq-text').value = addedQuestion.text;
+      resetMcEditor(addedQuestion.type === 'mc' ? addedQuestion.options : null);
+    } else {
+      setQType('short');
+      document.getElementById('addq-text').value = '';
+      resetMcEditor(null);
+    }
+    document.getElementById('addq-title').textContent = editing ? '질문 편집' : '추가 질문';
+    document.getElementById('addq-submit').textContent = editing ? '저장' : '추가';
+    document.getElementById('addq-delete').hidden = !editing;
+    openSheet('addq');
+    setTimeout(function(){ document.getElementById('addq-text').focus(); }, 100);
+  }
+
+  function deleteQuestion() {
+    addedQuestion = null;
+    updateAddqDisplay();
+    closeSheet();
+  }
+
+  function updateAddqDisplay() {
+    var disp = document.getElementById('disp-addq');
+    if (!disp) return;
+    disp.textContent = addedQuestion ? addedQuestion.text : '';
+  }
+
+  function setQType(type) {
+    document.querySelectorAll('#addq-qtype .pv-chip').forEach(function(c){
+      c.classList.toggle('is-selected', c.dataset.qtype === type);
+    });
+    document.getElementById('addq-mc-editor').hidden = type !== 'mc';
+    document.getElementById('addq-text').placeholder = type === 'mc'
+      ? '객관식 질문을 입력하세요' : '주관식 질문을 입력하세요';
+  }
+
+  function addMcEditorRow() {
+    var editor = document.getElementById('addq-mc-editor');
+    var addBtn = editor.querySelector('.pv-mc-editor-add');
+    var rows = editor.querySelectorAll('.pv-mc-editor-row');
+    var idx = rows.length + 1;
+    var row = document.createElement('div');
+    row.className = 'pv-mc-editor-row';
+    row.innerHTML =
+      '<input type="text" placeholder="보기 ' + idx + '">' +
+      '<button type="button" class="pv-mc-editor-remove" onclick="removeMcEditorRow(this)"><i data-lucide="x"></i></button>';
+    editor.insertBefore(row, addBtn);
+    lucide.createIcons();
+    row.querySelector('input').focus();
+  }
+
+  function removeMcEditorRow(btn) {
+    var editor = document.getElementById('addq-mc-editor');
+    if (editor.querySelectorAll('.pv-mc-editor-row').length <= 2) return;
+    btn.closest('.pv-mc-editor-row').remove();
+  }
+
+  function submitQuestion() {
+    var type = document.querySelector('#addq-qtype .pv-chip.is-selected').dataset.qtype;
+    var text = document.getElementById('addq-text').value.trim();
+    if (!text) { document.getElementById('addq-text').focus(); return; }
+    var options = [];
+    if (type === 'mc') {
+      document.querySelectorAll('#addq-mc-editor .pv-mc-editor-row input').forEach(function(i){
+        var v = i.value.trim();
+        if (v) options.push(v);
+      });
+      if (options.length < 2) return;
+    }
+    addedQuestion = { type: type, text: text, options: options };
+    updateAddqDisplay();
+    closeSheet();
+  }
+
+  /* ── Contact channel chips ── */
+  var CHANNEL_LABELS = { phone: '전화', kakao: '카카오 알림톡', sms: '문자', email: '이메일' };
+  function toggleChannel(btn) {
+    btn.classList.toggle('is-selected');
+    refreshChannelDisplay();
+  }
+  function refreshChannelDisplay() {
+    var picks = [];
+    document.querySelectorAll('#f-channels .pv-chip.is-selected').forEach(function(c){
+      picks.push(CHANNEL_LABELS[c.dataset.channel] || c.textContent.trim());
+    });
+    var disp = document.getElementById('disp-channels');
+    if (disp) disp.textContent = picks.length ? picks.join(', ') : '없음';
+  }
+
+  /* ── Option bottom sheets ── */
+  function openSheet(key) {
+    var sheet = document.getElementById('sheet-' + key);
+    var overlay = document.getElementById('sheet-overlay');
+    if (!sheet || !overlay) return;
+    document.querySelectorAll('.pv-sheet').forEach(function(s){ s.classList.remove('is-open'); });
+    sheet.classList.add('is-open');
+    overlay.classList.add('is-open');
+  }
+  function closeSheet() {
+    document.querySelectorAll('.pv-sheet').forEach(function(s){ s.classList.remove('is-open'); });
+    var overlay = document.getElementById('sheet-overlay');
+    if (overlay) overlay.classList.remove('is-open');
+  }
+  function onSheetInput(key) {
+    if (key === 'cta') {
+      var v = document.getElementById('f-cta').value.trim();
+      document.getElementById('disp-cta').textContent = v || '이벤트 신청';
+    } else if (key === 'eta') {
+      var v2 = document.getElementById('f-contact-eta').value.trim();
+      document.getElementById('disp-eta').textContent = v2 || '미입력';
+    }
+  }
+  function pickSuggestion(key, text) {
+    var inputId = key === 'cta' ? 'f-cta' : 'f-contact-eta';
+    var input = document.getElementById(inputId);
+    if (input) input.value = text;
+    onSheetInput(key);
   }
 
   /* ── Date/Time pill formatters ── */
