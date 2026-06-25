@@ -189,6 +189,29 @@
     .yt-row .input { flex: 1; }
 
     .info-list { display: flex; flex-direction: column; gap: 12px; }
+
+    /* ── 배너 게시글 리스트 ── */
+    .banner-list {
+      background: var(--color-surface-sub);
+      border-radius: var(--r-sm);
+      overflow: hidden;
+    }
+    .banner-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-top: 1px solid var(--color-border);
+    }
+    .banner-row:first-child { border-top: none; }
+    .banner-row-title {
+      flex: 1; min-width: 0;
+      font-size: var(--fs-body);
+      color: var(--color-text);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
     .info-group {
       display: grid;
       grid-template-columns: auto 1fr auto;
@@ -349,9 +372,9 @@
 <body>
 
   <nav class="navbar">
-    <button class="navbar-action">취소</button>
+    <button class="navbar-action" onclick="history.back()">취소</button>
     <span class="navbar-title">프로필 편집</span>
-    <button class="navbar-action primary">적용</button>
+    <button class="navbar-action primary" onclick="history.back()">적용</button>
   </nav>
 
   <div class="scroll-area">
@@ -505,6 +528,33 @@
           <input type="checkbox" class="toggle toggle-sm" checked onchange="confirmAiToggle(this)">
         </div>
       </div>
+    </div>
+
+    <!-- 배너 -->
+    <div class="section">
+      <div class="section-title">배너</div>
+      <div class="section-desc" style="margin-bottom:12px">프로필 상단에 표시될 게시글이에요. 드래그해서 순서를 바꿀 수 있어요.</div>
+      <div class="banner-list" id="banner-list">
+        <div class="banner-row">
+          <button class="drag-handle" aria-label="순서 변경"><i data-lucide="grip-vertical" style="width:16px;height:16px"></i></button>
+          <span class="banner-row-title">수면 리쥬베룩 이벤트 — 맑고 탄력 있는 피부를 위한 한정 케어 프로그램 신청 받습니다</span>
+          <button class="icon-btn icon-btn-sm icon-btn-clear" aria-label="삭제" onclick="this.closest('.banner-row').remove()"><i data-lucide="trash-2" style="width:16px;height:16px"></i></button>
+        </div>
+        <div class="banner-row">
+          <button class="drag-handle" aria-label="순서 변경"><i data-lucide="grip-vertical" style="width:16px;height:16px"></i></button>
+          <span class="banner-row-title">물광 스킨부스터 이벤트</span>
+          <button class="icon-btn icon-btn-sm icon-btn-clear" aria-label="삭제" onclick="this.closest('.banner-row').remove()"><i data-lucide="trash-2" style="width:16px;height:16px"></i></button>
+        </div>
+        <div class="banner-row">
+          <button class="drag-handle" aria-label="순서 변경"><i data-lucide="grip-vertical" style="width:16px;height:16px"></i></button>
+          <span class="banner-row-title">모공·잡티 케어 이벤트</span>
+          <button class="icon-btn icon-btn-sm icon-btn-clear" aria-label="삭제" onclick="this.closest('.banner-row').remove()"><i data-lucide="trash-2" style="width:16px;height:16px"></i></button>
+        </div>
+      </div>
+      <button style="display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:12px;background:none;border:none;font-size:var(--fs-label);font-weight:var(--fw-medium);color:var(--color-primary);cursor:pointer;font-family:var(--font-base);" onclick="location.href='../board-profile-0625/board-banner.html#lp-tab-board'">
+        <i data-lucide="chevron-right" style="width:16px;height:16px"></i>
+        게시판에서 핀 추가하기
+      </button>
     </div>
 
     <!-- 대표 사진 -->
