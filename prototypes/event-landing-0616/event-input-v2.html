@@ -591,65 +591,34 @@
     font-weight: var(--fw-semibold);
     color: var(--color-text-sub);
   }
-  .pv-timeline-row {
-    display: grid;
-    grid-template-columns: 16px auto 1fr;
-    align-items: center;
-    column-gap: 12px;
-    min-height: 36px;
-  }
-  .pv-date-time-group {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 2px;
-  }
-  .pv-date-time-group > .pv-date-pill:first-child {
-    border-top-right-radius: 0;
-    border-bottom-right-radius: 0;
-  }
-  .pv-date-time-group > .pv-date-pill:last-child {
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 0;
-  }
-  .pv-timeline-marker {
-    position: relative;
-    width: 16px;
-    height: 100%;
-    min-height: 36px;
+  .pv-date-row {
     display: flex;
     align-items: center;
-    justify-content: center;
+    gap: 8px;
   }
-  .pv-timeline-dot {
-    width: 10px; height: 10px;
-    border-radius: 50%;
-    border: 1.5px solid var(--color-text-muted);
-    background: var(--color-surface-sub);
-    z-index: 1;
+  .pv-date-group {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
   }
-  .pv-timeline-dot.is-filled {
-    background: var(--color-text-muted);
-  }
-  .pv-timeline-row.is-start .pv-timeline-marker::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 1.5px;
-    height: 40px;
-    background-image: linear-gradient(var(--color-border) 60%, transparent 0);
-    background-size: 1.5px 6px;
-    z-index: 0;
+  .pv-date-sep {
+    color: var(--color-text-muted);
+    font-size: var(--fs-body);
+    flex-shrink: 0;
   }
   .pv-timeline-label {
-    font-size: var(--fs-body);
+    font-size: var(--fs-label);
     color: var(--color-text-sub);
     font-weight: var(--fw-medium);
+    flex-shrink: 0;
   }
   .pv-date-pill {
     position: relative;
-    background: var(--color-surface);
+    flex: 1;
+    min-width: 0;
+    background: var(--color-border);
     border: none;
     border-radius: var(--r-sm);
     padding: 8px 12px;
@@ -661,7 +630,6 @@
     text-align: center;
     transition: background var(--motion-fast) var(--ease-standard);
   }
-  .pv-date-pill:hover { background: var(--color-bg); }
   .pv-date-pill-text {
     pointer-events: none;
     display: inline-block;
@@ -699,9 +667,8 @@
   }
   .pv-date-dday.on { display: block; }
 
-  /* ── Picker overlay (calendar / time) ── */
-  .pv-calendar,
-  .pv-timepick {
+  /* ── Picker overlay (calendar) ── */
+  .pv-calendar {
     position: absolute;
     left: 8px;
     right: 8px;
@@ -712,7 +679,6 @@
     z-index: 20;
   }
   .pv-calendar[hidden],
-  .pv-timepick[hidden],
   .pv-mc-editor[hidden] { display: none !important; }
   .pv-cal-header {
     display: flex;
@@ -786,54 +752,7 @@
   }
   .pv-cal-footer button.is-strong { font-weight: var(--fw-bold); }
 
-  /* Time picker — scrollable list */
-  .pv-timepick {
-    left: auto;
-    right: auto;
-    width: auto;
-    padding: 4px 0;
-    max-height: 280px;
-    display: flex;
-    flex-direction: column;
-  }
-  .pv-tp-list {
-    flex: 1;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    overflow-y: auto;
-    padding: 4px 8px;
-    scroll-behavior: smooth;
-  }
-  .pv-timepick .pv-cal-footer {
-    margin: 0 16px;
-    margin-top: 8px;
-    padding-top: 8px;
-  }
-  .pv-tp-item {
-    background: transparent;
-    border: none;
-    padding: 10px 16px;
-    border-radius: var(--r-sm);
-    font-family: var(--font-base);
-    font-size: var(--fs-body);
-    font-weight: var(--fw-medium);
-    color: var(--color-text);
-    cursor: pointer;
-    text-align: center;
-    width: 100%;
-    white-space: nowrap;
-  }
-  .pv-tp-item:hover { background: var(--color-surface-sub); }
-  .pv-tp-item.is-selected {
-    background: var(--color-primary);
-    color: var(--color-on-primary);
-    font-weight: var(--fw-bold);
-  }
-  .pv-tp-item.is-selected:hover { background: var(--color-primary); }
-
-  /* Shared bits used by both pickers */
+  /* Shared bits used by the calendar picker */
   .pv-cal-nav {
     display: flex;
     align-items: center;
@@ -1666,31 +1585,20 @@
     <div class="pv-section">
       <div class="pv-date-card">
         <div class="pv-date-card-title">신청 기간</div>
-        <div class="pv-timeline-row is-start">
-          <div class="pv-timeline-marker"><span class="pv-timeline-dot is-filled"></span></div>
-          <span class="pv-timeline-label">시작</span>
-          <div class="pv-date-time-group">
+        <div class="pv-date-row">
+          <div class="pv-date-group">
+            <span class="pv-timeline-label">시작</span>
             <button type="button" class="pv-date-pill is-empty" id="pill-start-date" onclick="openCalendar('start', event)">
               <span class="pv-date-pill-text" id="disp-start-date">날짜</span>
               <input type="hidden" id="f-start">
             </button>
-            <button type="button" class="pv-date-pill is-empty" id="pill-start-time" onclick="openTimepick('start', event)">
-              <span class="pv-date-pill-text" id="disp-start-time">시간</span>
-              <input type="hidden" id="f-start-time">
-            </button>
           </div>
-        </div>
-        <div class="pv-timeline-row is-end">
-          <div class="pv-timeline-marker"><span class="pv-timeline-dot"></span></div>
-          <span class="pv-timeline-label">종료</span>
-          <div class="pv-date-time-group">
+          <span class="pv-date-sep">~</span>
+          <div class="pv-date-group">
+            <span class="pv-timeline-label">종료</span>
             <button type="button" class="pv-date-pill is-empty" id="pill-end-date" onclick="openCalendar('end', event)">
               <span class="pv-date-pill-text" id="disp-end-date">날짜</span>
               <input type="hidden" id="f-end">
-            </button>
-            <button type="button" class="pv-date-pill is-empty" id="pill-end-time" onclick="openTimepick('end', event)">
-              <span class="pv-date-pill-text" id="disp-end-time">시간</span>
-              <input type="hidden" id="f-end-time">
             </button>
           </div>
         </div>
@@ -1706,9 +1614,6 @@
             <span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span>
           </div>
           <div class="pv-cal-grid" id="pv-cal-grid"></div>
-        </div>
-        <div class="pv-timepick" id="pv-timepick" hidden>
-          <div class="pv-tp-list" id="pv-tp-list"></div>
         </div>
         <div class="pv-date-dday" id="f-dday"></div>
       </div>
@@ -2394,28 +2299,6 @@
     var d = new Date(val + 'T00:00:00');
     return (d.getMonth()+1) + '월 ' + d.getDate() + '일 (' + WEEKDAYS[d.getDay()] + ')';
   }
-  function formatTime(val) {
-    var parts = val.split(':');
-    var h = parseInt(parts[0], 10);
-    var m = parts[1];
-    var period = h < 12 ? '오전' : '오후';
-    var h12 = h % 12 === 0 ? 12 : h % 12;
-    return period + ' ' + h12 + ':' + m;
-  }
-  function updatePillDisplay(input) {
-    var display = document.getElementById(input.dataset.display);
-    var pill = input.closest('.pv-date-pill');
-    var val = input.value;
-    if (!val) {
-      display.textContent = input.type === 'date' ? '날짜' : '시간';
-      pill.classList.add('is-empty');
-    } else {
-      display.textContent = input.type === 'date' ? formatDate(val) : formatTime(val);
-      pill.classList.remove('is-empty');
-    }
-    onInput();
-  }
-
   /* ── Custom calendar ── */
   var calState = { field: null, viewYear: 0, viewMonth: 0 };
   function pad2(n) { return n < 10 ? '0' + n : '' + n; }
@@ -2427,7 +2310,6 @@
 
   function openCalendar(field, e) {
     if (e) e.stopPropagation();
-    closeTimepick();
     var input = document.getElementById('f-' + field);
     var ref;
     if (input.value) ref = parseISO(input.value);
@@ -2452,10 +2334,6 @@
     var cardRect = card.getBoundingClientRect();
     var pillRect = anchorPill.getBoundingClientRect();
     picker.style.top = (pillRect.bottom - cardRect.top + 8) + 'px';
-    if (picker.classList.contains('pv-timepick')) {
-      picker.style.left = (pillRect.left - cardRect.left) + 'px';
-      picker.style.width = pillRect.width + 'px';
-    }
   }
 
   function closeCalendar() {
@@ -2556,88 +2434,6 @@
     onInput();
   }
 
-  /* ── Time picker (scrollable list at 30-min steps) ── */
-  var timeState = { field: null, slot: null };
-
-  function timeSlotLabel(slot) {
-    var h24 = Math.floor(slot / 2);
-    var m = (slot % 2) * 30;
-    var period = h24 < 12 ? '오전' : '오후';
-    var h12 = h24 % 12 === 0 ? 12 : h24 % 12;
-    return period + ' ' + pad2(h12) + ':' + pad2(m);
-  }
-  function timeSlotIso(slot) {
-    var h24 = Math.floor(slot / 2);
-    var m = (slot % 2) * 30;
-    return pad2(h24) + ':' + pad2(m);
-  }
-  function slotFromIso(iso) {
-    var parts = iso.split(':');
-    var h24 = parseInt(parts[0], 10);
-    var m = parseInt(parts[1], 10);
-    return h24 * 2 + (m >= 30 ? 1 : 0);
-  }
-
-  function openTimepick(field, e) {
-    if (e) e.stopPropagation();
-    closeCalendar();
-    var input = document.getElementById('f-' + field + '-time');
-    timeState.slot = input.value ? slotFromIso(input.value) : null;
-    timeState.field = field;
-    var pill = document.getElementById('pill-' + field + '-time');
-    document.querySelectorAll('.pv-date-pill').forEach(function(p) { p.classList.remove('is-active'); });
-    pill.classList.add('is-active');
-    var tp = document.getElementById('pv-timepick');
-    tp.hidden = false;
-    placePicker(tp, pill);
-    renderTimepick();
-  }
-
-  function closeTimepick() {
-    document.getElementById('pv-timepick').hidden = true;
-    document.querySelectorAll('.pv-date-pill').forEach(function(p) { p.classList.remove('is-active'); });
-    timeState.field = null;
-  }
-
-  function renderTimepick() {
-    var list = document.getElementById('pv-tp-list');
-    list.innerHTML = '';
-    var selectedBtn = null;
-    for (var s = 0; s < 48; s++) {
-      (function(s) {
-        var btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'pv-tp-item';
-        if (timeState.slot === s) {
-          btn.classList.add('is-selected');
-          selectedBtn = btn;
-        }
-        btn.textContent = timeSlotLabel(s);
-        btn.onclick = function(ev) { ev.stopPropagation(); selectTimeSlot(s); };
-        list.appendChild(btn);
-      })(s);
-    }
-    requestAnimationFrame(function() {
-      var target = selectedBtn || list.children[18];
-      if (target) {
-        list.scrollTop = target.offsetTop - list.clientHeight / 2 + target.offsetHeight / 2;
-      }
-    });
-  }
-
-  function selectTimeSlot(s) {
-    timeState.slot = s;
-    var iso = timeSlotIso(s);
-    var input = document.getElementById('f-' + timeState.field + '-time');
-    input.value = iso;
-    var display = document.getElementById('disp-' + timeState.field + '-time');
-    var pill = document.getElementById('pill-' + timeState.field + '-time');
-    display.textContent = formatTime(iso);
-    pill.classList.remove('is-empty');
-    closeTimepick();
-    onInput();
-  }
-
   document.addEventListener('click', function(e) {
     var cal = document.getElementById('pv-calendar');
     if (cal && !cal.hidden) {
@@ -2645,15 +2441,6 @@
         var pill = e.target.closest('.pv-date-pill');
         if (!pill || (pill.id !== 'pill-start-date' && pill.id !== 'pill-end-date')) {
           closeCalendar();
-        }
-      }
-    }
-    var tp = document.getElementById('pv-timepick');
-    if (tp && !tp.hidden) {
-      if (!tp.contains(e.target)) {
-        var pill2 = e.target.closest('.pv-date-pill');
-        if (!pill2 || (pill2.id !== 'pill-start-time' && pill2.id !== 'pill-end-time')) {
-          closeTimepick();
         }
       }
     }
@@ -2731,16 +2518,12 @@
 
     var startDate = document.getElementById('f-start').value;
     var endDate = document.getElementById('f-end').value;
-    var startTime = document.getElementById('f-start-time').value;
-    var endTime = document.getElementById('f-end-time').value;
     var periodEl = document.getElementById('pv-prev-period');
     var ddayEl = document.getElementById('pv-prev-dday');
     var dateSection = document.getElementById('pv-prev-date-section');
     var dateDivider = document.getElementById('pv-prev-date-divider');
     if (startDate && endDate) {
-      var sStr = formatDate(startDate) + (startTime ? ' ' + formatTime(startTime) : '');
-      var eStr = formatDate(endDate) + (endTime ? ' ' + formatTime(endTime) : '');
-      periodEl.textContent = sStr + ' ~ ' + eStr;
+      periodEl.textContent = formatDate(startDate) + ' ~ ' + formatDate(endDate);
       var today = new Date(); today.setHours(0,0,0,0);
       var endD = new Date(endDate + 'T00:00:00');
       var diff = Math.ceil((endD - today) / (1000 * 60 * 60 * 24));
