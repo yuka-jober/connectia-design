@@ -3515,16 +3515,14 @@
 
   function applyVisibilityRules() {
     var effectiveViewer = (viewerState === 'owner-empty') ? 'owner' : viewerState;
-    ['owner','member','visitor'].forEach(function(v) {
-      document.querySelectorAll('.' + v + '-only').forEach(function(el) {
-        el.hidden = effectiveViewer !== v;
-      });
-    });
-    document.querySelectorAll('.banner-filled-only').forEach(function(el) {
-      el.hidden = viewerState === 'owner-empty';
-    });
-    document.querySelectorAll('.banner-empty-only').forEach(function(el) {
-      el.hidden = viewerState !== 'owner-empty';
+    document.querySelectorAll('.owner-only, .member-only, .visitor-only, .banner-filled-only, .banner-empty-only').forEach(function(el) {
+      var hide = false;
+      if (el.classList.contains('owner-only') && effectiveViewer !== 'owner') hide = true;
+      if (el.classList.contains('member-only') && effectiveViewer !== 'member') hide = true;
+      if (el.classList.contains('visitor-only') && effectiveViewer !== 'visitor') hide = true;
+      if (el.classList.contains('banner-filled-only') && viewerState === 'owner-empty') hide = true;
+      if (el.classList.contains('banner-empty-only') && viewerState !== 'owner-empty') hide = true;
+      el.hidden = hide;
     });
     document.querySelectorAll('.write-btn-target').forEach(function(el) {
       el.hidden = !canPostWrite();
