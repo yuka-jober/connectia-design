@@ -218,23 +218,24 @@
     font-weight: var(--fw-semibold);
   }
 
-  /* ── Divider ── */
+  /* ── Divider (visual divider removed; keeps top-only spacing) ── */
   .pv-divider {
-    height: 8px;
-    background: var(--color-bg);
-    margin: 16px 0;
+    height: 0;
+    background: transparent;
+    margin: 16px 0 0;
   }
 
   /* ── Section ── */
   .pv-section {
-    padding: 12px 20px;
+    padding: 6px 20px;
     display: flex; flex-direction: column; gap: 12px;
   }
   .pv-section-title {
-    font-size: var(--fs-heading);
-    font-weight: var(--fw-bold);
-    color: var(--color-text);
-    letter-spacing: -0.2px;
+    font-size: var(--fs-label);
+    font-weight: var(--fw-medium);
+    color: var(--color-text-sub);
+    letter-spacing: -0.1px;
+    margin-top: 8px;
   }
 
   /* ── Date timeline (시작 / 종료) ── */
@@ -244,6 +245,12 @@
     border-radius: var(--r-md);
     padding: 16px 20px;
     display: flex; flex-direction: column;
+    gap: 12px;
+  }
+  .pv-date-card-title {
+    font-size: var(--fs-label);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text-sub);
   }
   .pv-timeline-row {
     display: grid;
@@ -634,6 +641,111 @@
     color: var(--color-text-sub);
     min-height: 24px;
     white-space: pre-wrap;
+    flex: 1;
+  }
+  .pv-desc-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    cursor: text;
+  }
+  .pv-desc-row i[data-lucide], .pv-desc-row svg.lucide {
+    width: 18px; height: 18px;
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+    margin-top: 4px;
+  }
+
+  /* ── Luma-style content card (자격 조건 · 이벤트 안내) ── */
+  .pv-luma-card {
+    background: var(--color-surface-sub);
+    border-radius: var(--r-md);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  .pv-luma-head {
+    display: flex; align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 16px 16px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-family: var(--font-base);
+    text-align: left;
+  }
+  .pv-luma-head i[data-lucide], .pv-luma-head svg.lucide {
+    width: 16px; height: 16px;
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+  }
+  .pv-luma-label {
+    flex: 1;
+    font-size: var(--fs-body);
+    font-weight: var(--fw-medium);
+    color: var(--color-text);
+  }
+  .pv-luma-action { color: var(--color-text-muted); }
+  .pv-luma-card .pv-checklist {
+    width: 100%;
+    padding: 0 16px 16px;
+    gap: 8px;
+  }
+  .pv-luma-card .pv-check-item {
+    background: var(--color-surface);
+  }
+
+  /* 이벤트 안내 card */
+  #desc-card {
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 16px;
+    cursor: text;
+  }
+  #desc-card > i[data-lucide], #desc-card > svg.lucide {
+    width: 16px; height: 16px;
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+  }
+  #desc-card .pv-desc { flex: 1; }
+  .pv-luma-card .pv-desc {
+    background: transparent;
+    border: none;
+    padding: 0;
+    color: var(--color-text);
+  }
+  .pv-luma-card .pv-desc:hover:not(:focus) { background: transparent; }
+  .pv-luma-card .pv-desc:empty::before {
+    color: var(--color-text-muted);
+    font-weight: var(--fw-regular);
+  }
+  .pv-luma-card[hidden],
+  .pv-checklist[hidden] { display: none !important; }
+
+  /* ── Inline add (자격 조건 빈 상태 등) ── */
+  .pv-inline-add {
+    display: flex; align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 4px 0;
+    background: transparent;
+    border: none;
+    color: var(--color-text-sub);
+    font-family: var(--font-base);
+    font-size: var(--fs-body);
+    font-weight: var(--fw-medium);
+    cursor: pointer;
+    text-align: left;
+  }
+  .pv-inline-add:hover { color: var(--color-primary); }
+  .pv-inline-add i[data-lucide], .pv-inline-add svg.lucide {
+    width: 18px; height: 18px;
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+  }
+  .pv-inline-add:hover i[data-lucide], .pv-inline-add:hover svg.lucide {
+    color: var(--color-primary);
   }
 
   /* ── Options block ── */
@@ -1120,8 +1232,8 @@
 
     <!-- 신청 기간 -->
     <div class="pv-section">
-      <div class="pv-section-title">신청 기간</div>
       <div class="pv-date-card">
+        <div class="pv-date-card-title">신청 기간</div>
         <div class="pv-timeline-row is-start">
           <div class="pv-timeline-marker"><span class="pv-timeline-dot is-filled"></span></div>
           <span class="pv-timeline-label">시작</span>
@@ -1170,21 +1282,24 @@
       </div>
     </div>
 
-    <!-- 자격 조건 -->
+    <!-- 이벤트 안내 -->
     <div class="pv-section">
-      <div class="pv-section-title">이런 분이라면 신청해보세요</div>
-      <div class="pv-checklist" id="pv-checklist">
-        <button class="pv-check-add" type="button" onclick="addCondition()">
-          <span class="pv-check-add-circle"><i data-lucide="plus"></i></span>
-          <span>조건 추가</span>
-        </button>
+      <div class="pv-luma-card" id="desc-card" onclick="document.getElementById('f-desc').focus()">
+        <i data-lucide="file-text"></i>
+        <div class="editable pv-desc" id="f-desc" contenteditable="true" data-placeholder="이벤트 설명" oninput="onInput()"></div>
       </div>
     </div>
 
-    <!-- 이벤트 안내 -->
+    <!-- 자격 조건 -->
     <div class="pv-section">
-      <div class="pv-section-title">이벤트 안내</div>
-      <div class="editable pv-desc" id="f-desc" contenteditable="true" data-placeholder="이벤트 진행 방식이나 안내사항을 적어주세요"></div>
+      <div class="pv-luma-card" id="cond-card">
+        <button type="button" class="pv-luma-head" onclick="addCondition()">
+          <i data-lucide="user-check"></i>
+          <span class="pv-luma-label">이런 분께 추천해요</span>
+          <i data-lucide="plus" class="pv-luma-action"></i>
+        </button>
+        <div class="pv-checklist" id="pv-checklist" hidden></div>
+      </div>
     </div>
 
     <div class="pv-divider"></div>
@@ -1402,16 +1517,23 @@
   /* ── Conditions ── */
   function addCondition() {
     var list = document.getElementById('pv-checklist');
-    var addBtn = list.querySelector('.pv-check-add');
     var row = document.createElement('div');
     row.className = 'pv-check-item';
     row.innerHTML =
       '<span class="pv-check-circle"><i data-lucide="check"></i></span>' +
       '<span class="pv-check-text" contenteditable="true" data-placeholder="예) 비용 부담으로 미뤄온 분" oninput="onInput()" onkeydown="blockEnter(event)"></span>' +
-      '<button class="pv-check-remove" aria-label="삭제" onclick="this.closest(\'.pv-check-item\').remove();onInput();"><i data-lucide="x"></i></button>';
-    list.insertBefore(row, addBtn);
+      '<button class="pv-check-remove" aria-label="삭제" onclick="removeCondition(this)"><i data-lucide="x"></i></button>';
+    list.appendChild(row);
+    list.hidden = false;
     lucide.createIcons();
     setTimeout(function(){ row.querySelector('.pv-check-text').focus(); }, 0);
+  }
+
+  function removeCondition(btn) {
+    var list = document.getElementById('pv-checklist');
+    btn.closest('.pv-check-item').remove();
+    if (list.children.length === 0) list.hidden = true;
+    onInput();
   }
 
   /* ── 추가 질문 (modal, 단일 질문) ── */
