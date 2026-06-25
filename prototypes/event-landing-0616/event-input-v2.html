@@ -61,6 +61,283 @@
     pointer-events: none;
   }
   .topbar-spacer { width: 40px; height: 40px; }
+  .topbar-preview-btn {
+    height: 40px;
+    padding: 0 14px;
+    background: transparent;
+    border: none;
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-semibold);
+    color: var(--color-primary);
+    cursor: pointer;
+  }
+  .topbar-preview-btn:hover { color: var(--color-primary-dark); }
+
+  /* ── 미리보기 화면 (frame-scoped overlay) ── */
+  .pv-preview {
+    position: absolute; inset: 0;
+    z-index: 80;
+    background: var(--color-surface);
+    display: none;
+    flex-direction: column;
+  }
+  .pv-preview.is-open { display: flex; }
+  .pv-preview [hidden] { display: none !important; }
+  .pv-preview-topbar {
+    position: sticky; top: 0; z-index: 10;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 8px;
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    flex-shrink: 0;
+  }
+  .pv-preview-topbar-title {
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text);
+    padding-left: 8px;
+  }
+  .pv-preview-body {
+    flex: 1;
+    overflow-y: auto;
+    background: var(--color-surface);
+    padding-bottom: 96px;
+  }
+  .pv-prev-hero {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    background: var(--color-surface-sub);
+  }
+  .pv-prev-hero-slider {
+    width: 100%; height: 100%;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    display: flex;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .pv-prev-hero-slider::-webkit-scrollbar { display: none; }
+  .pv-prev-hero-slide {
+    flex: 0 0 100%;
+    width: 100%; height: 100%;
+    scroll-snap-align: start;
+    background-size: cover;
+    background-position: center;
+    position: relative;
+  }
+  .pv-prev-hero-slide::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(0,0,0,0) 50%, rgba(0,0,0,0.35) 100%);
+    pointer-events: none;
+  }
+  .pv-prev-hero-pagination {
+    position: absolute; bottom: 12px; right: 12px;
+    z-index: 2;
+    background: rgba(17,19,24,0.55); color: var(--color-on-primary);
+    border-radius: var(--r-full);
+    padding: 4px 10px;
+    font-size: var(--fs-badge); font-weight: var(--fw-medium);
+  }
+  .pv-prev-info {
+    padding: 24px 20px 16px;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .pv-prev-clinic-row {
+    display: inline-flex; align-items: center; gap: 2px; cursor: pointer; align-self: flex-start;
+  }
+  .pv-prev-clinic-name {
+    font-size: var(--fs-label); color: var(--color-text-sub); font-weight: var(--fw-medium);
+  }
+  .pv-prev-clinic-row i[data-lucide],
+  .pv-prev-clinic-row svg { width: 16px; height: 16px; color: var(--color-text-muted); }
+  .pv-prev-headline {
+    font-size: 24px; font-weight: var(--fw-bold);
+    line-height: 1.35; letter-spacing: -0.5px; color: var(--color-text);
+    word-break: keep-all;
+  }
+  .pv-prev-target {
+    font-size: var(--fs-body-lg); color: var(--color-text-sub);
+    line-height: 1.5; word-break: keep-all;
+  }
+  .pv-prev-trust-row {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    margin-top: 4px;
+  }
+  .pv-prev-trust-dot { font-size: var(--fs-caption); color: var(--color-text-muted); }
+  .pv-prev-star-row { display: inline-flex; align-items: center; gap: 4px; }
+  .pv-prev-star-row i[data-lucide],
+  .pv-prev-star-row svg { width: 14px; height: 14px; color: var(--color-star); fill: var(--color-star); }
+  .pv-prev-star-score { font-size: var(--fs-label); font-weight: var(--fw-semibold); color: var(--color-text); margin-left: 2px; }
+  .pv-prev-star-count { font-size: var(--fs-caption); color: var(--color-text-muted); }
+  .pv-prev-tag-official {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: var(--fs-label); font-weight: var(--fw-medium);
+    color: var(--color-primary);
+  }
+  .pv-prev-tag-official i[data-lucide],
+  .pv-prev-tag-official svg { width: 14px; height: 14px; }
+  .pv-prev-divider {
+    height: 8px;
+    background: var(--color-bg);
+    flex-shrink: 0;
+  }
+  .pv-prev-section {
+    padding: 24px 20px;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  .pv-prev-section-title {
+    font-size: var(--fs-heading);
+    font-weight: var(--fw-bold);
+    color: var(--color-text);
+    letter-spacing: -0.2px;
+  }
+  .pv-prev-date-card {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--color-surface-sub);
+    border-radius: var(--r-md);
+    padding: 16px 20px;
+  }
+  .pv-prev-date-card i[data-lucide], .pv-prev-date-card svg.lucide {
+    width: 20px; height: 20px; color: var(--color-primary);
+  }
+  .pv-prev-date-card-text { flex: 1; }
+  .pv-prev-date-label {
+    font-size: var(--fs-caption); color: var(--color-text-muted); margin-bottom: 2px;
+  }
+  .pv-prev-date-value {
+    font-size: var(--fs-body); font-weight: var(--fw-semibold); color: var(--color-text);
+  }
+  .pv-prev-date-tag {
+    font-size: var(--fs-badge); font-weight: var(--fw-semibold);
+    color: var(--color-destructive);
+    padding: 4px 8px;
+    background: rgba(201,64,34,0.10);
+    border-radius: var(--r-full);
+  }
+  .pv-prev-desc {
+    font-size: var(--fs-body); line-height: 1.7;
+    color: var(--color-text-sub);
+    white-space: pre-wrap;
+    word-break: keep-all;
+  }
+  .pv-prev-checklist {
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .pv-prev-check-item {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-md);
+  }
+  .pv-prev-check-circle {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--color-on-primary);
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .pv-prev-check-circle i[data-lucide], .pv-prev-check-circle svg.lucide {
+    width: 12px; height: 12px;
+    stroke-width: 3;
+  }
+  .pv-prev-check-text {
+    font-size: var(--fs-body-lg); color: var(--color-text);
+    line-height: 1.5; word-break: keep-all;
+  }
+  .pv-prev-empty-section {
+    font-size: var(--fs-label); color: var(--color-text-muted);
+    text-align: center;
+    padding: 8px 0;
+  }
+  .pv-prev-review-scroll {
+    display: flex; gap: 12px;
+    overflow-x: auto;
+    margin: 0 -20px;
+    padding: 0 20px 8px;
+    scrollbar-width: none;
+  }
+  .pv-prev-review-scroll::-webkit-scrollbar { display: none; }
+  .pv-prev-review-card {
+    width: 240px; flex-shrink: 0;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-md);
+    overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .pv-prev-review-img {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    background-size: cover; background-position: center;
+    background-color: var(--color-surface-sub);
+  }
+  .pv-prev-review-body {
+    padding: 12px 14px 14px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .pv-prev-review-stars { display: inline-flex; align-items: center; gap: 2px; }
+  .pv-prev-review-stars i[data-lucide],
+  .pv-prev-review-stars svg { width: 12px; height: 12px; color: var(--color-star); fill: var(--color-star); }
+  .pv-prev-review-text {
+    font-size: var(--fs-label); color: var(--color-text);
+    line-height: 1.5;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .pv-prev-review-meta {
+    font-size: 10px; color: var(--color-text-muted);
+    display: flex; align-items: center; gap: 4px;
+  }
+  .pv-prev-review-meta .verified {
+    display: inline-flex; align-items: center; gap: 2px;
+    color: var(--color-primary);
+    font-weight: var(--fw-medium);
+  }
+  .pv-prev-review-meta .verified i[data-lucide],
+  .pv-prev-review-meta .verified svg { width: 10px; height: 10px; }
+  .pv-prev-clinic-link {
+    display: flex; align-items: center; gap: 12px;
+    padding: 16px;
+    background: var(--color-surface-sub);
+    border-radius: var(--r-md);
+    cursor: pointer;
+    border: none;
+    width: 100%;
+    text-align: left;
+    font-family: var(--font-base);
+  }
+  .pv-prev-clinic-link:hover { background: var(--color-border); }
+  .pv-prev-clinic-link-thumb {
+    width: 44px; height: 44px;
+    border-radius: var(--r-sm);
+    background-color: var(--color-primary-light);
+    background-size: cover; background-position: center;
+    flex-shrink: 0;
+  }
+  .pv-prev-clinic-link-text { flex: 1; }
+  .pv-prev-clinic-link-name {
+    font-size: var(--fs-body); font-weight: var(--fw-semibold);
+    color: var(--color-text);
+  }
+  .pv-prev-clinic-link-sub {
+    font-size: var(--fs-caption); color: var(--color-text-muted);
+    margin-top: 2px;
+  }
+  .pv-prev-clinic-link i.chev,
+  .pv-prev-clinic-link svg.chev { width: 18px; height: 18px; color: var(--color-text-muted); }
+  .pv-prev-sticky {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    padding: 12px 20px calc(20px + env(safe-area-inset-bottom));
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+    display: flex; flex-direction: column; gap: 8px;
+    z-index: 5;
+  }
 
   /* ── Edit body ── */
   .edit-body {
@@ -306,8 +583,9 @@
     border-radius: var(--r-md);
     padding: 16px 20px;
     display: flex; flex-direction: column;
-    gap: 12px;
+    gap: 4px;
   }
+  .pv-date-card-title { margin-bottom: 8px; }
   .pv-date-card-title {
     font-size: var(--fs-label);
     font-weight: var(--fw-semibold);
@@ -359,7 +637,7 @@
     left: 50%;
     transform: translateX(-50%);
     width: 1.5px;
-    height: 36px;
+    height: 40px;
     background-image: linear-gradient(var(--color-border) 60%, transparent 0);
     background-size: 1.5px 6px;
     z-index: 0;
@@ -781,6 +1059,11 @@
   .pv-luma-card .pv-desc:empty::before {
     color: var(--color-text-muted);
     font-weight: var(--fw-regular);
+    font-size: var(--fs-body);
+  }
+  .pv-luma-card .pv-desc:empty {
+    line-height: 1.5;
+    min-height: 21px;
   }
   .pv-luma-card[hidden],
   .pv-checklist[hidden] { display: none !important; }
@@ -1109,8 +1392,8 @@
   .pv-opt-row.pv-opt-row-static { cursor: default; }
   .pv-opt-row.pv-opt-row-static:hover { background: transparent; }
   .pv-opt-row.pv-opt-row-static .pv-opt-row-label {
-    color: var(--color-text-muted);
-    font-weight: var(--fw-regular);
+    color: var(--color-text);
+    font-weight: var(--fw-medium);
   }
   .pv-opt-row + .pv-opt-row {
     border-top: 1px solid var(--color-border);
@@ -1348,7 +1631,7 @@
       <i data-lucide="chevron-left" style="width:22px;height:22px;color:var(--color-text);"></i>
     </button>
     <span class="topbar-title">이벤트 만들기</span>
-    <span class="topbar-spacer"></span>
+    <button class="topbar-preview-btn" type="button" onclick="openPreview()">미리보기</button>
   </div>
 
   <!-- Editable body -->
@@ -1587,6 +1870,125 @@
   <!-- Publish -->
   <div class="sticky-bar">
     <button class="btn btn-xl btn-block btn-fill-primary" id="publish-btn" onclick="publishEvent()" disabled>발행하기</button>
+  </div>
+
+  <!-- 미리보기 -->
+  <div class="pv-preview" id="pv-preview">
+    <div class="pv-preview-topbar">
+      <span class="pv-preview-topbar-title">미리보기</span>
+      <button class="icon-btn icon-btn-clear" type="button" aria-label="미리보기 닫기" onclick="closePreview()">
+        <i data-lucide="x" style="width:22px;height:22px;color:var(--color-text);"></i>
+      </button>
+    </div>
+    <div class="pv-preview-body" id="pv-preview-body">
+      <div class="pv-prev-hero" id="pv-prev-hero" hidden>
+        <div class="pv-prev-hero-slider" id="pv-prev-slider"></div>
+        <div class="pv-prev-hero-pagination" id="pv-prev-pagination" hidden></div>
+      </div>
+
+      <div class="pv-prev-info">
+        <div class="pv-prev-clinic-row">
+          <span class="pv-prev-clinic-name">병원명</span>
+          <i data-lucide="chevron-right"></i>
+        </div>
+        <h1 class="pv-prev-headline" id="pv-prev-title"></h1>
+        <p class="pv-prev-target" id="pv-prev-target" hidden></p>
+        <div class="pv-prev-trust-row">
+          <div class="pv-prev-star-row">
+            <i data-lucide="star"></i>
+            <span class="pv-prev-star-score">5.0</span>
+            <span class="pv-prev-star-count">· 후기 28개</span>
+          </div>
+          <span class="pv-prev-trust-dot">·</span>
+          <span class="pv-prev-tag-official">
+            <i data-lucide="badge-check"></i>커넥티아 공식 이벤트
+          </span>
+        </div>
+      </div>
+
+      <div class="pv-prev-divider" id="pv-prev-date-divider" hidden></div>
+      <div class="pv-prev-section" id="pv-prev-date-section" hidden>
+        <div class="pv-prev-date-card">
+          <i data-lucide="calendar-days"></i>
+          <div class="pv-prev-date-card-text">
+            <div class="pv-prev-date-label">신청 기간</div>
+            <div class="pv-prev-date-value" id="pv-prev-period"></div>
+          </div>
+          <span class="pv-prev-date-tag" id="pv-prev-dday" hidden></span>
+        </div>
+      </div>
+
+      <div class="pv-prev-divider" id="pv-prev-desc-divider" hidden></div>
+      <div class="pv-prev-section" id="pv-prev-desc-section" hidden>
+        <div class="pv-prev-section-title">이벤트 안내</div>
+        <div class="pv-prev-desc" id="pv-prev-desc"></div>
+      </div>
+
+      <div class="pv-prev-divider" id="pv-prev-cond-divider" hidden></div>
+      <div class="pv-prev-section" id="pv-prev-cond-section" hidden>
+        <div class="pv-prev-section-title">이런 분께 추천해요</div>
+        <div class="pv-prev-checklist" id="pv-prev-checklist"></div>
+      </div>
+
+      <div class="pv-prev-divider"></div>
+      <div class="pv-prev-section">
+        <div class="pv-prev-section-title">실제 후기</div>
+        <div class="pv-prev-review-scroll">
+          <div class="pv-prev-review-card">
+            <div class="pv-prev-review-img" style="background-image:url('https://images.unsplash.com/photo-1559941707-c1bafc8c8f60?w=400&auto=format&fit=crop');"></div>
+            <div class="pv-prev-review-body">
+              <div class="pv-prev-review-stars">
+                <i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i>
+              </div>
+              <p class="pv-prev-review-text">상담부터 시술까지 친절하게 안내받았어요. 검사가 꼼꼼해서 안심하고 진행했습니다.</p>
+              <div class="pv-prev-review-meta">
+                <span class="verified"><i data-lucide="badge-check"></i>실제 후기</span><span>·</span><span>김○○</span>
+              </div>
+            </div>
+          </div>
+          <div class="pv-prev-review-card">
+            <div class="pv-prev-review-img" style="background-image:url('https://images.unsplash.com/photo-1551601651-bc60f254d532?w=400&auto=format&fit=crop');"></div>
+            <div class="pv-prev-review-body">
+              <div class="pv-prev-review-stars">
+                <i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i>
+              </div>
+              <p class="pv-prev-review-text">미뤄왔는데 진작 할 걸 그랬어요. 결과도 만족스럽고 회복도 빨랐습니다.</p>
+              <div class="pv-prev-review-meta">
+                <span class="verified"><i data-lucide="badge-check"></i>실제 후기</span><span>·</span><span>이○○</span>
+              </div>
+            </div>
+          </div>
+          <div class="pv-prev-review-card">
+            <div class="pv-prev-review-img" style="background-image:url('https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&auto=format&fit=crop');"></div>
+            <div class="pv-prev-review-body">
+              <div class="pv-prev-review-stars">
+                <i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i>
+              </div>
+              <p class="pv-prev-review-text">설명을 알기 쉽게 해주셔서 좋았어요. 의료진이 다 친절했습니다.</p>
+              <div class="pv-prev-review-meta">
+                <span class="verified"><i data-lucide="badge-check"></i>실제 후기</span><span>·</span><span>박○○</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pv-prev-divider"></div>
+      <div class="pv-prev-section">
+        <button class="pv-prev-clinic-link" type="button" aria-label="병원 페이지 가기">
+          <div class="pv-prev-clinic-link-thumb" style="background-image:url('https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=300&auto=format&fit=crop');"></div>
+          <div class="pv-prev-clinic-link-text">
+            <div class="pv-prev-clinic-link-name">병원 페이지</div>
+            <div class="pv-prev-clinic-link-sub">병원 정보 · 의료진 · 위치 보기</div>
+          </div>
+          <i data-lucide="chevron-right" class="chev"></i>
+        </button>
+      </div>
+    </div>
+
+    <div class="pv-prev-sticky">
+      <button class="btn btn-xl btn-block btn-fill-primary" id="pv-prev-cta">이벤트 신청</button>
+    </div>
   </div>
 
 </div>
@@ -2282,6 +2684,119 @@
   function publishEvent() {
     if (document.getElementById('publish-btn').disabled) return;
     alert('이벤트가 발행되었습니다 (목업)');
+  }
+
+  /* ── Preview ── */
+  function openPreview() {
+    var hero = document.getElementById('pv-prev-hero');
+    var slider = document.getElementById('pv-prev-slider');
+    var pagination = document.getElementById('pv-prev-pagination');
+    slider.innerHTML = '';
+    if (images.length === 0) {
+      hero.hidden = true;
+      pagination.hidden = true;
+    } else {
+      hero.hidden = false;
+      images.forEach(function(img) {
+        var slide = document.createElement('div');
+        slide.className = 'pv-prev-hero-slide';
+        if (img.src) slide.style.backgroundImage = 'url("' + encodeURI(img.src) + '")';
+        else if (img.bg) slide.style.background = img.bg + ' center/cover';
+        slider.appendChild(slide);
+      });
+      slider.scrollLeft = 0;
+      if (images.length > 1) {
+        pagination.hidden = false;
+        pagination.textContent = '1 / ' + images.length;
+        slider.onscroll = function() {
+          var idx = Math.round(slider.scrollLeft / slider.clientWidth) + 1;
+          pagination.textContent = idx + ' / ' + images.length;
+        };
+      } else {
+        pagination.hidden = true;
+      }
+    }
+
+    var title = document.getElementById('f-title').textContent.trim();
+    document.getElementById('pv-prev-title').textContent = title || '이벤트 이름';
+
+    var targetEl = document.getElementById('pv-prev-target');
+    var target = document.getElementById('f-target').textContent.trim();
+    if (target) { targetEl.textContent = target; targetEl.hidden = false; }
+    else { targetEl.hidden = true; }
+
+    var startDate = document.getElementById('f-start').value;
+    var endDate = document.getElementById('f-end').value;
+    var startTime = document.getElementById('f-start-time').value;
+    var endTime = document.getElementById('f-end-time').value;
+    var periodEl = document.getElementById('pv-prev-period');
+    var ddayEl = document.getElementById('pv-prev-dday');
+    var dateSection = document.getElementById('pv-prev-date-section');
+    var dateDivider = document.getElementById('pv-prev-date-divider');
+    if (startDate && endDate) {
+      var sStr = formatDate(startDate) + (startTime ? ' ' + formatTime(startTime) : '');
+      var eStr = formatDate(endDate) + (endTime ? ' ' + formatTime(endTime) : '');
+      periodEl.textContent = sStr + ' ~ ' + eStr;
+      var today = new Date(); today.setHours(0,0,0,0);
+      var endD = new Date(endDate + 'T00:00:00');
+      var diff = Math.ceil((endD - today) / (1000 * 60 * 60 * 24));
+      if (diff > 0) { ddayEl.textContent = 'D-' + diff; ddayEl.hidden = false; }
+      else if (diff === 0) { ddayEl.textContent = 'D-DAY'; ddayEl.hidden = false; }
+      else { ddayEl.hidden = true; }
+      dateSection.hidden = false;
+      dateDivider.hidden = false;
+    } else {
+      dateSection.hidden = true;
+      dateDivider.hidden = true;
+    }
+
+    var descText = document.getElementById('f-desc').textContent.trim();
+    var descSection = document.getElementById('pv-prev-desc-section');
+    var descDivider = document.getElementById('pv-prev-desc-divider');
+    if (descText) {
+      document.getElementById('pv-prev-desc').textContent = descText;
+      descSection.hidden = false;
+      descDivider.hidden = false;
+    } else {
+      descSection.hidden = true;
+      descDivider.hidden = true;
+    }
+
+    var condList = document.getElementById('pv-prev-checklist');
+    var condSection = document.getElementById('pv-prev-cond-section');
+    var condDivider = document.getElementById('pv-prev-cond-divider');
+    condList.innerHTML = '';
+    var conds = [];
+    document.querySelectorAll('.pv-check-text').forEach(function(el) {
+      var t = el.textContent.trim();
+      if (t) conds.push(t);
+    });
+    if (conds.length > 0) {
+      conds.forEach(function(t) {
+        var item = document.createElement('div');
+        item.className = 'pv-prev-check-item';
+        item.innerHTML = '<span class="pv-prev-check-circle"><i data-lucide="check"></i></span>' +
+                         '<div class="pv-prev-check-text"></div>';
+        item.querySelector('.pv-prev-check-text').textContent = t;
+        condList.appendChild(item);
+      });
+      condSection.hidden = false;
+      condDivider.hidden = false;
+    } else {
+      condSection.hidden = true;
+      condDivider.hidden = true;
+    }
+
+    var ctaText = document.getElementById('disp-cta').textContent.trim() || '이벤트 신청';
+    document.getElementById('pv-prev-cta').textContent = ctaText;
+
+    document.getElementById('pv-preview').classList.add('is-open');
+    document.getElementById('pv-preview-body').scrollTop = 0;
+    lucide.createIcons();
+  }
+
+  function closePreview() {
+    document.getElementById('pv-preview').classList.remove('is-open');
   }
 
   // 초기 호출
