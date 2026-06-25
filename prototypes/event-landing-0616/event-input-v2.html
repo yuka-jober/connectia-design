@@ -99,7 +99,7 @@
     gap: 8px;
     color: var(--color-text-muted);
     background: var(--color-surface-sub);
-    border: 1.5px dashed var(--color-border);
+    border: none;
     cursor: pointer;
     font-family: var(--font-base);
   }
@@ -132,29 +132,87 @@
     z-index: 3;
     display: none;
   }
-  .pv-hero-actions {
-    position: absolute;
-    top: 12px; right: 12px;
-    display: none;
-    gap: 8px;
-    z-index: 3;
+
+  /* ── Thumbnail strip ── */
+  .pv-thumb-strip {
+    display: flex; gap: 8px;
+    padding: 12px 16px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
   }
-  .pv-hero-actions.on { display: flex; }
-  .pv-hero-action-btn {
-    width: 32px; height: 32px;
+  .pv-thumb-strip::-webkit-scrollbar { display: none; }
+  .pv-thumb {
+    position: relative;
+    flex-shrink: 0;
+    width: 56px; height: 56px;
+    border-radius: var(--r-sm);
+    background: var(--color-surface-sub);
+    background-size: cover;
+    background-position: center;
+    cursor: pointer;
+    border: none;
+    padding: 0;
+    overflow: visible;
+  }
+  .pv-thumb-remove {
+    position: absolute;
+    top: -4px; right: -4px;
+    width: 16px; height: 16px;
     border-radius: 50%;
-    background: rgba(17,19,24,0.7);
+    background: var(--color-text);
     color: var(--color-on-primary);
     border: none;
     display: inline-flex; align-items: center; justify-content: center;
     cursor: pointer;
+    padding: 0;
   }
-  .pv-hero-action-btn svg,
-  .pv-hero-action-btn i[data-lucide] { width: 14px; height: 14px; }
+  .pv-thumb-remove i[data-lucide], .pv-thumb-remove svg.lucide {
+    width: 10px; height: 10px;
+    stroke-width: 2.5;
+  }
+  .pv-thumb-add {
+    flex-shrink: 0;
+    width: 56px; height: 56px;
+    border-radius: var(--r-sm);
+    background: var(--color-surface-sub);
+    border: 1.5px dashed var(--color-border);
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    padding: 0;
+  }
+  .pv-thumb-add:hover { border-color: var(--color-primary); color: var(--color-primary); }
+  .pv-thumb-add i[data-lucide] { width: 18px; height: 18px; }
+
+  /* ── 업로드 영역 (템플릿 모달 상단) ── */
+  .pv-upload-zone {
+    margin: 12px 16px 0;
+    padding: 16px;
+    background: var(--color-surface-sub);
+    border: 1.5px dashed var(--color-border);
+    border-radius: var(--r-md);
+    text-align: center;
+    cursor: pointer;
+    transition: border-color var(--motion-fast) var(--ease-standard);
+  }
+  .pv-upload-zone:hover { border-color: var(--color-primary); }
+  .pv-upload-title {
+    font-size: var(--fs-body);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text);
+  }
+  .pv-upload-sub {
+    margin-top: 4px;
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+  }
+  .pv-upload-input { display: none; }
 
   /* ── Info (clinic + editable title/target) ── */
   .pv-info {
-    padding: 16px 20px 8px;
+    padding: 32px 20px 8px;
     display: flex; flex-direction: column; gap: 8px;
   }
   .pv-clinic-row {
@@ -1148,6 +1206,93 @@
     border-color: var(--color-primary);
   }
 
+  /* ── 이미지 템플릿 선택 모달 ── */
+  .pv-sheet.sheet-template {
+    top: 24px; bottom: 24px;
+    left: 16px; right: 16px;
+    transform: translateY(0) scale(0.96);
+    padding: 0;
+    overflow: hidden;
+  }
+  .pv-sheet.sheet-template.is-open {
+    transform: translateY(0) scale(1);
+  }
+  .pv-tmpl-head {
+    display: flex; align-items: center;
+    padding: 16px 16px 12px;
+    border-bottom: 1px solid var(--color-border);
+    flex-shrink: 0;
+  }
+  .pv-tmpl-title {
+    flex: 1;
+    text-align: center;
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-bold);
+    color: var(--color-text);
+  }
+  .pv-tmpl-close {
+    width: 32px; height: 32px;
+    border: none; background: transparent;
+    color: var(--color-text-sub);
+    cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .pv-tmpl-tabs {
+    display: flex; gap: 8px;
+    padding: 8px 16px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .pv-tmpl-tabs::-webkit-scrollbar { display: none; }
+  .pv-tmpl-tab {
+    flex-shrink: 0;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-full);
+    padding: 8px 16px;
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-medium);
+    color: var(--color-text-sub);
+    cursor: pointer;
+  }
+  .pv-tmpl-tab.is-selected {
+    background: var(--color-text);
+    border-color: var(--color-text);
+    color: var(--color-on-primary);
+  }
+  .pv-tmpl-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+  }
+  .pv-tmpl-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .pv-tmpl-card {
+    aspect-ratio: 4 / 3;
+    background: var(--color-surface-sub);
+    border-radius: var(--r-md);
+    overflow: hidden;
+    cursor: pointer;
+    border: none;
+    padding: 0;
+    background-size: cover;
+    background-position: center;
+    position: relative;
+  }
+  .pv-tmpl-empty {
+    grid-column: 1 / -1;
+    padding: 48px 20px;
+    text-align: center;
+    color: var(--color-text-muted);
+    font-size: var(--fs-label);
+  }
+
   /* 연락 방식 chips */
   .pv-channel-chips {
     display: flex; flex-wrap: wrap; gap: 8px;
@@ -1215,19 +1360,16 @@
       <button type="button" class="pv-hero-empty" id="pv-hero-empty" onclick="addImage(event)">
         <i data-lucide="image-plus"></i>
         <span class="label">대표 사진을 추가하세요</span>
-        <span class="sub">최대 5장까지 등록할 수 있어요</span>
       </button>
       <span class="pv-hero-cover" id="pv-hero-cover">대표</span>
       <span class="pv-hero-counter" id="pv-hero-counter"></span>
-      <div class="pv-hero-actions" id="pv-hero-actions">
-        <button type="button" class="pv-hero-action-btn" aria-label="사진 추가" onclick="addImage(event)"><i data-lucide="plus"></i></button>
-        <button type="button" class="pv-hero-action-btn" aria-label="현재 사진 삭제" onclick="removeCurrentImage()"><i data-lucide="trash-2"></i></button>
-      </div>
     </div>
+
+    <!-- Thumbnail strip -->
+    <div class="pv-thumb-strip" id="pv-thumb-strip"></div>
 
     <!-- Title + target -->
     <div class="pv-info">
-      <div class="pv-clinic">첫눈애안과</div>
       <div class="editable pv-title pv-required" id="f-title" contenteditable="true" data-placeholder="이벤트 이름" oninput="onInput()" onkeydown="blockEnter(event)"></div>
       <div class="editable pv-target" id="f-target" contenteditable="true" data-placeholder="이벤트 대상자 입력 (예: 00대학교 학생 한정)" oninput="onInput()" onkeydown="blockEnter(event)"></div>
     </div>
@@ -1407,6 +1549,29 @@
     <button type="button" class="pv-sheet-link-danger" id="addq-delete" onclick="deleteQuestion()" hidden>질문 삭제</button>
   </div>
 
+  <!-- 이미지 템플릿 선택 -->
+  <div class="pv-sheet sheet-template" id="sheet-template">
+    <div class="pv-tmpl-head">
+      <span style="width:32px"></span>
+      <div class="pv-tmpl-title">이미지 선택</div>
+      <button type="button" class="pv-tmpl-close" aria-label="닫기" onclick="closeSheet()"><i data-lucide="x"></i></button>
+    </div>
+    <label class="pv-upload-zone" for="tmpl-upload">
+      <div class="pv-upload-title">여기를 탭하여 업로드하세요</div>
+      <div class="pv-upload-sub">이미지를 선택해 사진 목록에 추가됩니다 (4:3 권장)</div>
+      <input class="pv-upload-input" type="file" id="tmpl-upload" accept="image/*" multiple onchange="onUploadFiles(event)">
+    </label>
+    <div class="pv-tmpl-tabs" id="tmpl-tabs">
+      <button type="button" class="pv-tmpl-tab is-selected" data-cat="hospital" onclick="selectTmplTab('hospital')">병원</button>
+      <button type="button" class="pv-tmpl-tab" data-cat="eye" onclick="selectTmplTab('eye')">안과</button>
+      <button type="button" class="pv-tmpl-tab" data-cat="derma" onclick="selectTmplTab('derma')">피부과</button>
+      <button type="button" class="pv-tmpl-tab" data-cat="oriental" onclick="selectTmplTab('oriental')">한의원</button>
+    </div>
+    <div class="pv-tmpl-body">
+      <div class="pv-tmpl-grid" id="tmpl-grid"></div>
+    </div>
+  </div>
+
   <div class="pv-sheet" id="sheet-channels">
     <div class="pv-sheet-handle"></div>
     <div class="pv-sheet-title">연락 방식</div>
@@ -1430,8 +1595,8 @@
 <script>
   lucide.createIcons();
 
-  /* ── Image uploader (placeholder color blocks) ── */
-  var images = [];
+  /* ── Image uploader ── */
+  var images = [{ src: 'event_thumbnail.png' }];
   var stockColors = [
     'linear-gradient(135deg,#a9a9ee,#5555cc)',
     'linear-gradient(135deg,#fcd34d,#f59e0b)',
@@ -1439,6 +1604,35 @@
     'linear-gradient(135deg,#f9a8d4,#ec4899)',
     'linear-gradient(135deg,#34d399,#10b981)'
   ];
+
+  /* ── 이미지 템플릿 카탈로그 ── */
+  var TMPL_DIR = 'event_thumbnail_image/';
+  var TEMPLATES = {
+    hospital: [
+      TMPL_DIR + 'event_hospital_1.png',
+      TMPL_DIR + 'event_basic_1.png',
+      TMPL_DIR + 'event_basic_2.png',
+      TMPL_DIR + 'event_basic_3.png'
+    ],
+    eye: [
+      TMPL_DIR + 'event_eye clinic_1.png',
+      TMPL_DIR + 'event_eye clinic_2.png'
+    ],
+    derma: [
+      TMPL_DIR + 'event_dermatology_1.png',
+      TMPL_DIR + 'event_dermatology_2.png',
+      TMPL_DIR + 'event_dermatology_3.png',
+      TMPL_DIR + 'event_dermatology_4.png'
+    ],
+    oriental: [
+      TMPL_DIR + 'event_oriental_1.png',
+      TMPL_DIR + 'event_oriental_2.png',
+      TMPL_DIR + 'event_oriental_3.png',
+      TMPL_DIR + 'event_oriental_4.png',
+      TMPL_DIR + 'event_oriental_5.png'
+    ]
+  };
+  var tmplCat = 'hospital';
 
   function blockEnter(e) {
     if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); }
@@ -1454,17 +1648,44 @@
   function addImage(e) {
     if (e) e.preventDefault();
     if (images.length >= 5) return;
-    images.push({ bg: stockColors[images.length % stockColors.length] });
-    renderImages();
-    onInput();
+    openTemplatePicker();
   }
 
-  function removeCurrentImage() {
-    if (images.length === 0) return;
-    var track = document.getElementById('pv-hero-track');
-    var idx = Math.round(track.scrollLeft / track.clientWidth);
-    images.splice(idx, 1);
+  function openTemplatePicker() {
+    selectTmplTab(tmplCat);
+    openSheet('template');
+  }
+
+  function selectTmplTab(cat) {
+    tmplCat = cat;
+    document.querySelectorAll('#tmpl-tabs .pv-tmpl-tab').forEach(function(t){
+      t.classList.toggle('is-selected', t.dataset.cat === cat);
+    });
+    var grid = document.getElementById('tmpl-grid');
+    grid.innerHTML = '';
+    var items = TEMPLATES[cat] || [];
+    if (items.length === 0) {
+      var empty = document.createElement('div');
+      empty.className = 'pv-tmpl-empty';
+      empty.textContent = '준비 중인 카테고리예요';
+      grid.appendChild(empty);
+      return;
+    }
+    items.forEach(function(src){
+      var card = document.createElement('button');
+      card.type = 'button';
+      card.className = 'pv-tmpl-card';
+      card.style.backgroundImage = 'url("' + encodeURI(src) + '")';
+      card.onclick = function(){ selectTemplate(src); };
+      grid.appendChild(card);
+    });
+  }
+
+  function selectTemplate(src) {
+    if (images.length >= 5) { closeSheet(); return; }
+    images.push({ src: src });
     renderImages();
+    closeSheet();
     onInput();
   }
 
@@ -1472,7 +1693,6 @@
     var emptyEl = document.getElementById('pv-hero-empty');
     var trackEl = document.getElementById('pv-hero-track');
     var counterEl = document.getElementById('pv-hero-counter');
-    var actionsEl = document.getElementById('pv-hero-actions');
     var coverEl = document.getElementById('pv-hero-cover');
 
     trackEl.innerHTML = '';
@@ -1480,19 +1700,22 @@
       emptyEl.style.display = 'flex';
       trackEl.style.display = 'none';
       counterEl.style.display = 'none';
-      actionsEl.classList.remove('on');
       coverEl.style.display = 'none';
+      renderThumbStrip(0);
       return;
     }
     emptyEl.style.display = 'none';
     trackEl.style.display = 'flex';
-    actionsEl.classList.add('on');
     coverEl.style.display = 'block';
 
     images.forEach(function(img) {
       var slide = document.createElement('div');
       slide.className = 'pv-hero-slide';
-      slide.style.background = img.bg;
+      if (img.src) {
+        slide.style.backgroundImage = 'url("' + encodeURI(img.src) + '")';
+      } else if (img.bg) {
+        slide.style.background = img.bg;
+      }
       slide.style.backgroundSize = 'cover';
       slide.style.backgroundPosition = 'center';
       trackEl.appendChild(slide);
@@ -1505,17 +1728,93 @@
     } else {
       counterEl.style.display = 'none';
     }
+    renderThumbStrip(0);
     lucide.createIcons();
+  }
+
+  function renderThumbStrip(activeIdx) {
+    var strip = document.getElementById('pv-thumb-strip');
+    if (!strip) return;
+    strip.innerHTML = '';
+    if (images.length === 0) { strip.style.display = 'none'; return; }
+    strip.style.display = 'flex';
+    images.forEach(function(img, idx) {
+      var thumb = document.createElement('button');
+      thumb.type = 'button';
+      thumb.className = 'pv-thumb' + (idx === activeIdx ? ' is-active' : '');
+      if (img.src) thumb.style.backgroundImage = 'url("' + encodeURI(img.src) + '")';
+      else if (img.bg) thumb.style.background = img.bg + ' center/cover';
+      thumb.onclick = function(){ scrollHeroToIndex(idx); };
+      var remove = document.createElement('button');
+      remove.type = 'button';
+      remove.className = 'pv-thumb-remove';
+      remove.setAttribute('aria-label', '사진 삭제');
+      remove.innerHTML = '<i data-lucide="x"></i>';
+      remove.onclick = function(e){ e.stopPropagation(); removeImageAt(idx); };
+      thumb.appendChild(remove);
+      strip.appendChild(thumb);
+    });
+    if (images.length < 5) {
+      var add = document.createElement('button');
+      add.type = 'button';
+      add.className = 'pv-thumb-add';
+      add.setAttribute('aria-label', '사진 추가');
+      add.innerHTML = '<i data-lucide="plus"></i>';
+      add.onclick = function(e){ addImage(e); };
+      strip.appendChild(add);
+    }
+    lucide.createIcons();
+  }
+
+  function scrollHeroToIndex(idx) {
+    var track = document.getElementById('pv-hero-track');
+    if (!track || images.length === 0) return;
+    track.scrollTo({ left: idx * track.clientWidth, behavior: 'smooth' });
+  }
+
+  function removeImageAt(idx) {
+    if (idx < 0 || idx >= images.length) return;
+    images.splice(idx, 1);
+    renderImages();
+    onInput();
+  }
+
+  function onUploadFiles(e) {
+    var files = e.target.files;
+    if (!files || files.length === 0) return;
+    var remaining = 5 - images.length;
+    var slice = Array.prototype.slice.call(files, 0, Math.max(0, remaining));
+    if (slice.length === 0) { e.target.value = ''; closeSheet(); return; }
+    var pending = slice.length;
+    slice.forEach(function(file){
+      var reader = new FileReader();
+      reader.onload = function(){
+        images.push({ src: reader.result });
+        pending -= 1;
+        if (pending === 0) {
+          renderImages();
+          closeSheet();
+          onInput();
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+    e.target.value = '';
   }
 
   function updateHeroCounter() {
     var track = document.getElementById('pv-hero-track');
     var counter = document.getElementById('pv-hero-counter');
     var coverEl = document.getElementById('pv-hero-cover');
-    if (images.length <= 1) return;
+    if (images.length === 0) return;
     var idx = Math.round(track.scrollLeft / track.clientWidth);
-    counter.textContent = (idx + 1) + ' / ' + images.length;
+    if (images.length > 1) {
+      counter.textContent = (idx + 1) + ' / ' + images.length;
+    }
     coverEl.style.display = idx === 0 ? 'block' : 'none';
+    document.querySelectorAll('#pv-thumb-strip .pv-thumb').forEach(function(el, i){
+      el.classList.toggle('is-active', i === idx);
+    });
   }
 
   /* ── Conditions ── */
@@ -1986,6 +2285,7 @@
   }
 
   // 초기 호출
+  renderImages();
   onInput();
 </script>
 </body>
