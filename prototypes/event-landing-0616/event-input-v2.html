@@ -2,12 +2,15 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>이벤트 만들기 — 미리보기 작성</title>
 <link rel="stylesheet" href="../../tokens.css">
 <link rel="stylesheet" href="../../components.css">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* iOS Safari: prevent auto-zoom on focus by ensuring editable font-size ≥ 16px */
+  input, textarea, [contenteditable] { font-size: 16px !important; }
 
   body {
     font-family: var(--font-base);
@@ -698,7 +701,7 @@
   /* 이벤트 안내 card */
   #desc-card {
     flex-direction: row;
-    align-items: center;
+    align-items: flex-start;
     gap: 12px;
     padding: 16px 16px;
     cursor: text;
@@ -707,6 +710,7 @@
     width: 16px; height: 16px;
     color: var(--color-text-muted);
     flex-shrink: 0;
+    margin-top: 4px;
   }
   #desc-card .pv-desc { flex: 1; }
   .pv-luma-card .pv-desc {
