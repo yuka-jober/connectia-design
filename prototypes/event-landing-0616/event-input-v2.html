@@ -1025,6 +1025,12 @@
     color: var(--color-text);
   }
   .pv-luma-action { color: var(--color-text-muted); }
+  .pv-luma-action-label {
+    font-size: var(--fs-label);
+    color: var(--color-text-muted);
+    font-weight: var(--fw-medium);
+    margin-right: 4px;
+  }
   .pv-luma-card .pv-checklist {
     width: 100%;
     padding: 0 16px 16px;
@@ -1600,13 +1606,11 @@
     font-weight: var(--fw-bold);
   }
 
-  /* ── Sticky bar ── */
-  .sticky-bar {
-    padding: 12px 20px calc(20px + env(safe-area-inset-bottom));
+  /* ── Publish bar (scrolls with content) ── */
+  .publish-bar {
+    padding: 16px 20px calc(24px + env(safe-area-inset-bottom));
     background: var(--color-surface);
-    border-top: 1px solid var(--color-border);
     display: flex; flex-direction: column;
-    flex-shrink: 0;
   }
 
   /* ── Required asterisk ── */
@@ -1725,6 +1729,7 @@
         <button type="button" class="pv-luma-head" onclick="addCondition()">
           <i data-lucide="user-check"></i>
           <span class="pv-luma-label">이런 분께 추천해요</span>
+          <span class="pv-luma-action-label">추가</span>
           <i data-lucide="plus" class="pv-luma-action"></i>
         </button>
         <div class="pv-checklist" id="pv-checklist" hidden></div>
@@ -1775,6 +1780,11 @@
           <i data-lucide="chevron-right" class="pv-opt-icon-edit"></i>
         </button>
       </div>
+    </div>
+
+    <!-- Publish -->
+    <div class="publish-bar">
+      <button class="btn btn-xl btn-block btn-fill-primary" id="publish-btn" onclick="publishEvent()" disabled>발행하기</button>
     </div>
   </div>
 
@@ -1865,11 +1875,6 @@
       <button type="button" class="pv-chip" data-channel="email" onclick="toggleChannel(this)">이메일</button>
     </div>
     <button class="btn btn-lg btn-block btn-fill-primary" onclick="closeSheet()">완료</button>
-  </div>
-
-  <!-- Publish -->
-  <div class="sticky-bar">
-    <button class="btn btn-xl btn-block btn-fill-primary" id="publish-btn" onclick="publishEvent()" disabled>발행하기</button>
   </div>
 
   <!-- 미리보기 -->
