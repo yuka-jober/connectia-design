@@ -706,6 +706,18 @@
     height: 100%;
     cursor: pointer;
   }
+  .pv-date-toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 0;
+    margin-top: 8px;
+    cursor: pointer;
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-medium);
+    color: var(--color-text-sub);
+  }
   .pv-time-toggle {
     align-self: flex-start;
     display: inline-flex;
@@ -1759,36 +1771,28 @@
       <div class="pv-date-card">
         <div class="pv-date-card-title">행사 일정</div>
         <div class="pv-date-row">
-          <div class="pv-date-group">
-            <span class="pv-timeline-label">시작</span>
-            <button type="button" class="pv-date-pill is-empty" id="pill-event-start-date" onclick="openNativeDate('event-start')">
-              <span class="pv-date-pill-text" id="disp-event-start-date">날짜</span>
-              <input type="date" class="pv-native-date" id="f-event-start" onchange="onNativeDateChange('event-start')">
-            </button>
-          </div>
-          <span class="pv-date-sep">~</span>
-          <div class="pv-date-group">
-            <span class="pv-timeline-label">종료</span>
-            <button type="button" class="pv-date-pill is-empty" id="pill-event-end-date" onclick="openNativeDate('event-end')">
-              <span class="pv-date-pill-text" id="disp-event-end-date">날짜</span>
-              <input type="date" class="pv-native-date" id="f-event-end" onchange="onNativeDateChange('event-end')">
-            </button>
-          </div>
+          <button type="button" class="pv-date-pill is-empty" id="pill-event-start-date" onclick="openNativeDate('event-start')">
+            <span class="pv-date-pill-text" id="disp-event-start-date">날짜 선택</span>
+            <input type="date" class="pv-native-date" id="f-event-start" onchange="onNativeDateChange('event-start')">
+          </button>
+          <span class="pv-date-sep" id="event-end-sep" hidden>~</span>
+          <button type="button" class="pv-date-pill is-empty" id="pill-event-end-date" onclick="openNativeDate('event-end')" hidden>
+            <span class="pv-date-pill-text" id="disp-event-end-date">종료일</span>
+            <input type="date" class="pv-native-date" id="f-event-end" onchange="onNativeDateChange('event-end')">
+          </button>
         </div>
+        <label class="pv-date-toggle-row">
+          <span>종료일</span>
+          <input type="checkbox" class="toggle toggle-sm" id="event-end-toggle" onchange="toggleEventEnd()">
+        </label>
         <button type="button" class="pv-time-toggle" id="event-time-toggle" onclick="toggleEventTime()">
           <i data-lucide="clock"></i>
           <span>시간 추가</span>
         </button>
         <div class="pv-date-row" id="event-time-row" hidden>
-          <div class="pv-date-group">
-            <span class="pv-timeline-label">시작</span>
-            <input type="time" class="pv-date-pill pv-time-input" id="f-event-start-time" oninput="onInput()">
-          </div>
-          <span class="pv-date-sep">~</span>
-          <div class="pv-date-group">
-            <span class="pv-timeline-label">종료</span>
-            <input type="time" class="pv-date-pill pv-time-input" id="f-event-end-time" oninput="onInput()">
-          </div>
+          <input type="time" class="pv-date-pill pv-time-input" id="f-event-start-time" oninput="onInput()">
+          <span class="pv-date-sep" id="event-end-time-sep" hidden>~</span>
+          <input type="time" class="pv-date-pill pv-time-input" id="f-event-end-time" oninput="onInput()" hidden>
         </div>
       </div>
     </div>
@@ -2520,6 +2524,22 @@
     }
     onInput();
   }
+  function toggleEventEnd() {
+    var on = document.getElementById('event-end-toggle').checked;
+    document.getElementById('event-end-sep').hidden = !on;
+    document.getElementById('pill-event-end-date').hidden = !on;
+    var timeRowVisible = !document.getElementById('event-time-row').hidden;
+    document.getElementById('event-end-time-sep').hidden = !(on && timeRowVisible);
+    document.getElementById('f-event-end-time').hidden = !(on && timeRowVisible);
+    if (!on) {
+      var endDate = document.getElementById('f-event-end');
+      endDate.value = '';
+      document.getElementById('pill-event-end-date').classList.add('is-empty');
+      document.getElementById('disp-event-end-date').textContent = '종료일';
+      document.getElementById('f-event-end-time').value = '';
+    }
+    onInput();
+  }
   function toggleEventTime() {
     var row = document.getElementById('event-time-row');
     var toggle = document.getElementById('event-time-toggle');
@@ -2527,6 +2547,9 @@
     row.hidden = !on;
     toggle.classList.toggle('is-on', on);
     toggle.querySelector('span').textContent = on ? '시간 제거' : '시간 추가';
+    var endOn = document.getElementById('event-end-toggle').checked;
+    document.getElementById('event-end-time-sep').hidden = !(on && endOn);
+    document.getElementById('f-event-end-time').hidden = !(on && endOn);
     if (!on) {
       document.getElementById('f-event-start-time').value = '';
       document.getElementById('f-event-end-time').value = '';
