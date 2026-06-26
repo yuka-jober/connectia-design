@@ -92,6 +92,21 @@
     font-size: var(--fs-caption); color: var(--color-text-muted);
   }
   .sticky-meta strong { color: var(--color-text-sub); font-weight: var(--fw-semibold); }
+  .sticky-actions { display: flex; align-items: stretch; gap: 8px; }
+  .sticky-chat {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    border-radius: var(--r-md);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    color: var(--color-primary);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: background var(--motion-fast) var(--ease-standard);
+  }
+  .sticky-chat:hover { background: var(--color-surface-sub); }
+  .sticky-chat i[data-lucide], .sticky-chat svg { width: 22px; height: 22px; }
 
   /* ============================================
      LANDING SCREEN
@@ -751,9 +766,14 @@
           <i data-lucide="users" style="width:14px;height:14px;color:var(--color-text-muted);"></i>
           지금까지 <strong>324명</strong>이 신청했어요
         </div>
-        <button class="btn btn-xl btn-block btn-fill-primary" onclick="navigate('screen-apply')">
-          상담 안내 신청
-        </button>
+        <div class="sticky-actions">
+          <button class="sticky-chat" type="button" aria-label="AI 상담">
+            <i data-lucide="message-circle-question"></i>
+          </button>
+          <button class="btn btn-lg btn-block btn-fill-primary" onclick="navigate('screen-apply')">
+            상담 안내 신청
+          </button>
+        </div>
       </div>
   </div>
 
