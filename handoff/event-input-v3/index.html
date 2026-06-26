@@ -1807,8 +1807,8 @@
         </button>
         <div class="pv-date-row" id="event-time-row" hidden>
           <input type="time" class="pv-date-pill pv-time-input" id="f-event-start-time" oninput="onInput()">
-          <span class="pv-date-sep" id="event-end-time-sep" hidden>~</span>
-          <input type="time" class="pv-date-pill pv-time-input" id="f-event-end-time" oninput="onInput()" hidden>
+          <span class="pv-date-sep">~</span>
+          <input type="time" class="pv-date-pill pv-time-input" id="f-event-end-time" oninput="onInput()">
         </div>
       </div>
     </div>
@@ -2524,9 +2524,6 @@
     var on = document.getElementById('event-end-toggle').checked;
     document.getElementById('event-end-sep').hidden = !on;
     document.getElementById('pill-event-end-date').hidden = !on;
-    var timeRowVisible = !document.getElementById('event-time-row').hidden;
-    document.getElementById('event-end-time-sep').hidden = !(on && timeRowVisible);
-    document.getElementById('f-event-end-time').hidden = !(on && timeRowVisible);
     var endInput = document.getElementById('f-event-end');
     var endDisp = document.getElementById('disp-event-end-date');
     var endPill = document.getElementById('pill-event-end-date');
@@ -2541,7 +2538,6 @@
       endInput.value = '';
       endPill.classList.add('is-empty');
       endDisp.textContent = '종료일';
-      document.getElementById('f-event-end-time').value = '';
     }
     if (calState.field === 'event-start' || calState.field === 'event-end') {
       renderCalendar();
@@ -2555,9 +2551,6 @@
     row.hidden = !on;
     toggle.classList.toggle('is-on', on);
     toggle.querySelector('span').textContent = on ? '시간 제거' : '시간 추가';
-    var endOn = document.getElementById('event-end-toggle').checked;
-    document.getElementById('event-end-time-sep').hidden = !(on && endOn);
-    document.getElementById('f-event-end-time').hidden = !(on && endOn);
     if (!on) {
       document.getElementById('f-event-start-time').value = '';
       document.getElementById('f-event-end-time').value = '';
