@@ -1166,6 +1166,7 @@
   .pv-form-card .pv-field-row { border-top: 1px solid var(--color-border); }
   .pv-form-card > .pv-field-row:first-child { border-top: none; }
   .pv-field-row > .checkbox { cursor: pointer; }
+  .pv-field-row-q { padding-left: 36px; }
   .pv-field-label {
     flex: 1;
     font-size: var(--fs-body);
@@ -1984,13 +1985,6 @@
       <span>복수 선택 허용</span>
       <input type="checkbox" class="toggle toggle-sm" id="addq-multi">
     </label>
-    <div class="pv-sheet-toggle">
-      <span>필수 응답</span>
-      <div class="pv-req-seg" data-field="addq">
-        <button type="button" class="pv-req-seg-btn" onclick="setAddqRequired(true)">필수</button>
-        <button type="button" class="pv-req-seg-btn is-selected" onclick="setAddqRequired(false)">선택</button>
-      </div>
-    </div>
     <div class="pv-sheet-actions">
       <button class="btn btn-lg btn-weak-dark" onclick="closeSheet()">취소</button>
       <button class="btn btn-lg btn-fill-primary" id="addq-submit" onclick="submitQuestion()">추가</button>
@@ -2410,23 +2404,13 @@
     lucide.createIcons();
   }
 
-  function setAddqRequired(required) {
-    var seg = document.querySelector('.pv-req-seg[data-field="addq"]');
-    if (!seg) return;
-    var btns = seg.querySelectorAll('.pv-req-seg-btn');
-    btns[0].classList.toggle('is-selected', required);
-    btns[1].classList.toggle('is-selected', !required);
-  }
-  function getAddqRequired() {
-    var seg = document.querySelector('.pv-req-seg[data-field="addq"]');
-    return seg && seg.querySelectorAll('.pv-req-seg-btn')[0].classList.contains('is-selected');
-  }
+  var addqRequired = false;
 
   function openAddQuestion() {
     editingIdx = -1;
     setQType('short');
     document.getElementById('addq-text').value = '';
-    setAddqRequired(false);
+    addqRequired = false;
     document.getElementById('addq-multi').checked = false;
     resetMcEditor(null);
     document.getElementById('addq-title').textContent = '질문 추가';
@@ -2442,7 +2426,7 @@
     editingIdx = idx;
     setQType(q.type);
     document.getElementById('addq-text').value = q.text;
-    setAddqRequired(!!q.required);
+    addqRequired = !!q.required;
     document.getElementById('addq-multi').checked = !!q.multi;
     resetMcEditor(q.type === 'mc' ? q.options : null);
     document.getElementById('addq-title').textContent = '질문 편집';
@@ -2495,7 +2479,7 @@
     var type = document.querySelector('#addq-qtype .pv-chip.is-selected').dataset.qtype;
     var text = document.getElementById('addq-text').value.trim();
     if (!text) { document.getElementById('addq-text').focus(); return; }
-    var required = getAddqRequired();
+    var required = addqRequired;
     var multi = document.getElementById('addq-multi').checked;
     var options = [];
     if (type === 'mc') {
@@ -2517,21 +2501,15 @@
     list.innerHTML = '';
     questions.forEach(function(q, idx){
       var row = document.createElement('div');
-      row.className = 'pv-field-row';
+      row.className = 'pv-field-row pv-field-row-q';
       var typeLabel = q.type === 'mc' ? (q.multi ? '객관식 · 복수' : '객관식') : '주관식';
-      var cbId = 'field-q-' + idx + '-enabled';
       row.innerHTML =
-        '<input type="checkbox" class="checkbox" id="' + cbId + '" checked>' +
-        '<label class="pv-field-label" for="' + cbId + '"><span class="pv-q-text">' + escapeHTML(q.text) + '</span><span class="pv-q-meta">' + typeLabel + '</span></label>' +
+        '<span class="pv-field-label"><span class="pv-q-text">' + escapeHTML(q.text) + '</span><span class="pv-q-meta">' + typeLabel + '</span></span>' +
         '<div class="pv-req-seg" data-field="q-' + idx + '">' +
           '<button type="button" class="pv-req-seg-btn ' + (q.required ? 'is-selected' : '') + '" onclick="setQuestionRequired(' + idx + ', true, event)">필수</button>' +
           '<button type="button" class="pv-req-seg-btn ' + (q.required ? '' : 'is-selected') + '" onclick="setQuestionRequired(' + idx + ', false, event)">선택</button>' +
         '</div>';
-      row.querySelector('.pv-field-label').onclick = function(e){
-        if (e.target.closest('.checkbox')) return;
-        e.preventDefault();
-        editQuestion(idx);
-      };
+      row.querySelector('.pv-field-label').onclick = function(){ editQuestion(idx); };
       list.appendChild(row);
     });
     lucide.createIcons();
