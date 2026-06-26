@@ -28,7 +28,7 @@
     position: relative;
     overflow: hidden;
     box-shadow: 0 32px 80px -20px rgba(0,0,0,0.28);
-    background: var(--color-bg);
+    background: var(--color-surface);
     border-radius: 44px;
     display: flex;
     flex-direction: column;
@@ -343,7 +343,7 @@
   .edit-body {
     flex: 1;
     overflow-y: auto;
-    background: var(--color-bg);
+    background: var(--color-surface);
   }
 
   /* ── Hero / image uploader ── */
@@ -1415,6 +1415,7 @@
   }
   .pv-mc-editor-row input {
     flex: 1;
+    min-width: 0;
     background: var(--color-surface);
     border: 1px solid var(--color-border);
     border-radius: var(--r-sm);
@@ -1429,6 +1430,7 @@
     background: transparent; border: none;
     color: var(--color-text-muted);
     cursor: pointer; padding: 4px;
+    flex-shrink: 0;
     display: flex; align-items: center; justify-content: center;
   }
   .pv-mc-editor-add {
@@ -1450,7 +1452,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 12px 0;
+    padding: 4px 0;
     font-size: var(--fs-body);
     color: var(--color-text);
     font-weight: var(--fw-medium);
@@ -1982,10 +1984,13 @@
       <span>복수 선택 허용</span>
       <input type="checkbox" class="toggle toggle-sm" id="addq-multi">
     </label>
-    <label class="pv-sheet-toggle">
+    <div class="pv-sheet-toggle">
       <span>필수 응답</span>
-      <input type="checkbox" class="toggle toggle-sm" id="addq-required">
-    </label>
+      <div class="pv-req-seg" data-field="addq">
+        <button type="button" class="pv-req-seg-btn" onclick="setAddqRequired(true)">필수</button>
+        <button type="button" class="pv-req-seg-btn is-selected" onclick="setAddqRequired(false)">선택</button>
+      </div>
+    </div>
     <div class="pv-sheet-actions">
       <button class="btn btn-lg btn-weak-dark" onclick="closeSheet()">취소</button>
       <button class="btn btn-lg btn-fill-primary" id="addq-submit" onclick="submitQuestion()">추가</button>
@@ -2405,11 +2410,23 @@
     lucide.createIcons();
   }
 
+  function setAddqRequired(required) {
+    var seg = document.querySelector('.pv-req-seg[data-field="addq"]');
+    if (!seg) return;
+    var btns = seg.querySelectorAll('.pv-req-seg-btn');
+    btns[0].classList.toggle('is-selected', required);
+    btns[1].classList.toggle('is-selected', !required);
+  }
+  function getAddqRequired() {
+    var seg = document.querySelector('.pv-req-seg[data-field="addq"]');
+    return seg && seg.querySelectorAll('.pv-req-seg-btn')[0].classList.contains('is-selected');
+  }
+
   function openAddQuestion() {
     editingIdx = -1;
     setQType('short');
     document.getElementById('addq-text').value = '';
-    document.getElementById('addq-required').checked = false;
+    setAddqRequired(false);
     document.getElementById('addq-multi').checked = false;
     resetMcEditor(null);
     document.getElementById('addq-title').textContent = '질문 추가';
@@ -2425,7 +2442,7 @@
     editingIdx = idx;
     setQType(q.type);
     document.getElementById('addq-text').value = q.text;
-    document.getElementById('addq-required').checked = !!q.required;
+    setAddqRequired(!!q.required);
     document.getElementById('addq-multi').checked = !!q.multi;
     resetMcEditor(q.type === 'mc' ? q.options : null);
     document.getElementById('addq-title').textContent = '질문 편집';
@@ -2478,7 +2495,7 @@
     var type = document.querySelector('#addq-qtype .pv-chip.is-selected').dataset.qtype;
     var text = document.getElementById('addq-text').value.trim();
     if (!text) { document.getElementById('addq-text').focus(); return; }
-    var required = document.getElementById('addq-required').checked;
+    var required = getAddqRequired();
     var multi = document.getElementById('addq-multi').checked;
     var options = [];
     if (type === 'mc') {
