@@ -590,11 +590,21 @@
     display: flex; flex-direction: column;
     gap: 4px;
   }
-  .pv-date-card-title { margin-bottom: 8px; }
   .pv-date-card-title {
     font-size: var(--fs-label);
     font-weight: var(--fw-semibold);
     color: var(--color-text-sub);
+    flex-shrink: 0;
+  }
+  .pv-date-card-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .pv-date-card-row .pv-date-row {
+    flex: 1;
+    min-width: 0;
+    justify-content: flex-end;
   }
   .pv-date-row {
     display: flex;
@@ -1733,20 +1743,16 @@
     <!-- 신청 기간 -->
     <div class="pv-section">
       <div class="pv-date-card">
-        <div class="pv-date-card-title">신청 기간</div>
-        <div class="pv-date-row">
-          <div class="pv-date-group">
-            <span class="pv-timeline-label">시작</span>
+        <div class="pv-date-card-row">
+          <div class="pv-date-card-title">신청 기간</div>
+          <div class="pv-date-row">
             <button type="button" class="pv-date-pill is-empty" id="pill-start-date" onclick="openCalendar('start', event)">
-              <span class="pv-date-pill-text" id="disp-start-date">날짜</span>
+              <span class="pv-date-pill-text" id="disp-start-date">시작일</span>
               <input type="hidden" id="f-start">
             </button>
-          </div>
-          <span class="pv-date-sep">~</span>
-          <div class="pv-date-group">
-            <span class="pv-timeline-label">종료</span>
+            <span class="pv-date-sep">~</span>
             <button type="button" class="pv-date-pill is-empty" id="pill-end-date" onclick="openCalendar('end', event)">
-              <span class="pv-date-pill-text" id="disp-end-date">날짜</span>
+              <span class="pv-date-pill-text" id="disp-end-date">종료일</span>
               <input type="hidden" id="f-end">
             </button>
           </div>
@@ -1771,17 +1777,19 @@
     <!-- 행사 일정 -->
     <div class="pv-section">
       <div class="pv-date-card">
-        <div class="pv-date-card-title">행사 일정</div>
-        <div class="pv-date-row">
-          <button type="button" class="pv-date-pill is-empty" id="pill-event-start-date" onclick="openCalendar('event-start', event)">
-            <span class="pv-date-pill-text" id="disp-event-start-date">날짜 선택</span>
-            <input type="hidden" id="f-event-start">
-          </button>
-          <span class="pv-date-sep" id="event-end-sep" hidden>~</span>
-          <button type="button" class="pv-date-pill is-empty" id="pill-event-end-date" onclick="openCalendar('event-end', event)" hidden>
-            <span class="pv-date-pill-text" id="disp-event-end-date">종료일</span>
-            <input type="hidden" id="f-event-end">
-          </button>
+        <div class="pv-date-card-row">
+          <div class="pv-date-card-title">행사 일정</div>
+          <div class="pv-date-row">
+            <button type="button" class="pv-date-pill is-empty" id="pill-event-start-date" onclick="openCalendar('event-start', event)">
+              <span class="pv-date-pill-text" id="disp-event-start-date">날짜 선택</span>
+              <input type="hidden" id="f-event-start">
+            </button>
+            <span class="pv-date-sep" id="event-end-sep" hidden>~</span>
+            <button type="button" class="pv-date-pill is-empty" id="pill-event-end-date" onclick="openCalendar('event-end', event)" hidden>
+              <span class="pv-date-pill-text" id="disp-event-end-date">종료일</span>
+              <input type="hidden" id="f-event-end">
+            </button>
+          </div>
         </div>
         <div class="pv-calendar" id="pv-calendar-event" hidden>
           <div class="pv-cal-header">
