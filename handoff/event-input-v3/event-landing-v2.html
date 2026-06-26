@@ -402,6 +402,9 @@
   .apply-body {
     flex: 1; overflow-y: auto;
     padding: 20px 20px 120px;
+    display: flex; flex-direction: column; gap: 32px;
+  }
+  #apply-form-fields {
     display: flex; flex-direction: column; gap: 24px;
   }
   .apply-header {
@@ -789,7 +792,19 @@
 
         <!-- Dynamic fields (rebuilt from localStorage on load) -->
         <div id="apply-form-fields">
-          <!-- Intent -->
+          <!-- Name -->
+          <div class="form-group">
+            <label class="form-label form-label-required">이름</label>
+            <input class="input" type="text" placeholder="실명을 입력해주세요">
+          </div>
+
+          <!-- Phone -->
+          <div class="form-group">
+            <label class="form-label form-label-required">전화번호</label>
+            <input class="input" type="tel" placeholder="010-0000-0000" inputmode="tel">
+          </div>
+
+          <!-- Intent (custom question) -->
           <div class="form-group">
             <label class="form-label form-label-required">시술 경험</label>
             <div class="intent-grid">
@@ -806,18 +821,6 @@
                 <span class="intent-chip-label">고민 중</span>
               </label>
             </div>
-          </div>
-
-          <!-- Name -->
-          <div class="form-group">
-            <label class="form-label form-label-required">이름</label>
-            <input class="input" type="text" placeholder="실명을 입력해주세요">
-          </div>
-
-          <!-- Phone -->
-          <div class="form-group">
-            <label class="form-label form-label-required">전화번호</label>
-            <input class="input" type="tel" placeholder="010-0000-0000" inputmode="tel">
           </div>
         </div>
 
