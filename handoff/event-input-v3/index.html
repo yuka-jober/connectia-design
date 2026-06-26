@@ -703,25 +703,14 @@
     margin: 0;
     opacity: 0;
   }
-  .pv-time-pill {
-    flex: 1;
-    min-width: 0;
-    background: var(--color-border);
-    border: none;
-    border-radius: var(--r-sm);
-    padding: 8px 12px;
-    font-family: var(--font-base);
-    font-size: var(--fs-label);
-    font-weight: var(--fw-medium);
-    color: var(--color-text);
+  .pv-time-input {
     -webkit-appearance: none;
     appearance: none;
     text-align: center;
     cursor: pointer;
   }
-  .pv-time-pill::-webkit-calendar-picker-indicator {
+  .pv-time-input::-webkit-calendar-picker-indicator {
     opacity: 0;
-    width: 100%;
     cursor: pointer;
   }
   .pv-date-toggle-row {
@@ -1822,9 +1811,9 @@
           <span>시간 추가</span>
         </button>
         <div class="pv-date-row" id="event-time-row" hidden>
-          <input type="time" class="pv-time-pill" id="f-event-start-time" oninput="onInput()">
+          <input type="time" class="pv-date-pill pv-time-input" id="f-event-start-time" oninput="onInput()">
           <span class="pv-date-sep">~</span>
-          <input type="time" class="pv-time-pill" id="f-event-end-time" oninput="onInput()">
+          <input type="time" class="pv-date-pill pv-time-input" id="f-event-end-time" oninput="onInput()">
         </div>
       </div>
     </div>
