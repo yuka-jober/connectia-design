@@ -28,7 +28,7 @@
     position: relative;
     overflow: hidden;
     box-shadow: 0 32px 80px -20px rgba(0,0,0,0.28);
-    background: var(--color-surface);
+    background: var(--color-bg);
     border-radius: 44px;
     display: flex;
     flex-direction: column;
@@ -155,7 +155,7 @@
   .pv-prev-clinic-row svg { width: 16px; height: 16px; color: var(--color-text-muted); }
   .pv-prev-headline {
     font-size: 24px; font-weight: var(--fw-bold);
-    line-height: 1.35; letter-spacing: -0.5px; color: var(--color-text);
+    line-height: var(--lh-display); letter-spacing: var(--ls-display); color: var(--color-text);
     word-break: keep-all;
   }
   .pv-prev-target {
@@ -289,7 +289,7 @@
     display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
   }
   .pv-prev-review-meta {
-    font-size: 10px; color: var(--color-text-muted);
+    font-size: var(--fs-nav); color: var(--color-text-muted);
     display: flex; align-items: center; gap: 4px;
   }
   .pv-prev-review-meta .verified {
@@ -343,7 +343,7 @@
   .edit-body {
     flex: 1;
     overflow-y: auto;
-    background: var(--color-surface);
+    background: var(--color-bg);
   }
 
   /* ── Hero / image uploader ── */
@@ -404,7 +404,7 @@
     background: rgba(17,19,24,0.65);
     color: var(--color-on-primary);
     border-radius: var(--r-full);
-    font-size: 10px;
+    font-size: var(--fs-nav);
     font-weight: var(--fw-semibold);
     z-index: 3;
     display: none;
@@ -525,8 +525,8 @@
   .pv-title {
     font-size: 24px;
     font-weight: var(--fw-bold);
-    line-height: 1.35;
-    letter-spacing: -0.5px;
+    line-height: var(--lh-display);
+    letter-spacing: var(--ls-display);
     color: var(--color-text);
     min-height: 34px;
   }
@@ -711,11 +711,19 @@
     appearance: none;
     text-align: center;
     cursor: pointer;
+    font-size: var(--fs-label) !important;
   }
   .pv-time-input::-webkit-calendar-picker-indicator {
     opacity: 0;
     cursor: pointer;
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
   }
+  .pv-time-input::-webkit-date-and-time-value { text-align: center; }
   .pv-date-toggle-row {
     display: flex;
     align-items: center;
@@ -1145,57 +1153,60 @@
   .pv-form-card {
     background: var(--color-surface-sub);
     border-radius: var(--r-md);
-    padding: 8px;
+    padding: 16px 20px;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 0;
   }
   .pv-field-row {
     display: flex; align-items: center;
     gap: 12px;
-    background: var(--color-surface);
-    border-radius: var(--r-sm);
-    padding: 12px 14px;
+    padding: 12px 0;
   }
-  .pv-field-row > i[data-lucide],
-  .pv-field-row > svg.lucide {
-    width: 16px; height: 16px;
-    color: var(--color-text-muted);
-    flex-shrink: 0;
-  }
+  .pv-form-card .pv-field-row { border-top: 1px solid var(--color-border); }
+  .pv-form-card > .pv-field-row:first-child { border-top: none; }
+  .pv-field-row > .checkbox { cursor: pointer; }
   .pv-field-label {
     flex: 1;
     font-size: var(--fs-body);
     color: var(--color-text);
-    font-weight: var(--fw-medium);
+    font-weight: var(--fw-semibold);
     min-width: 0;
     word-break: break-word;
     display: flex;
     flex-direction: column;
     gap: 2px;
+    cursor: pointer;
   }
-  .pv-q-text { font-weight: var(--fw-medium); }
+  .pv-q-text { font-weight: var(--fw-semibold); }
   .pv-q-meta {
     font-size: var(--fs-caption);
     color: var(--color-text-muted);
     font-weight: var(--fw-regular);
   }
-  .pv-req-chip {
+  .pv-req-seg {
+    display: flex;
+    gap: 6px;
     flex-shrink: 0;
-    background: var(--color-surface-sub);
-    border: none;
+  }
+  .pv-req-seg-btn {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
     border-radius: var(--r-full);
-    padding: 4px 10px;
+    padding: 4px 14px;
     font-family: var(--font-base);
     font-size: var(--fs-caption);
     font-weight: var(--fw-semibold);
     color: var(--color-text-muted);
     cursor: pointer;
+    transition: background var(--motion-fast) var(--ease-standard), color var(--motion-fast) var(--ease-standard), border-color var(--motion-fast) var(--ease-standard);
   }
-  .pv-req-chip.is-required {
-    background: var(--color-primary-light);
-    color: var(--color-primary);
+  .pv-req-seg-btn.is-selected {
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+    border-color: var(--color-primary);
   }
+  .pv-req-seg.is-disabled .pv-req-seg-btn { opacity: 0.4; pointer-events: none; }
   .pv-field-add {
     display: flex; align-items: center; justify-content: center;
     gap: 6px;
@@ -1208,7 +1219,7 @@
     font-weight: var(--fw-medium);
     color: var(--color-text-sub);
     cursor: pointer;
-    margin-top: 4px;
+    margin-top: 12px;
   }
   .pv-field-add:hover {
     color: var(--color-primary);
@@ -1750,6 +1761,14 @@
 
     <div class="pv-divider"></div>
 
+    <!-- 이벤트 설명 -->
+    <div class="pv-section">
+      <div class="pv-luma-card" id="desc-card" onclick="document.getElementById('f-desc').focus()">
+        <div class="pv-desc-label">이벤트 설명</div>
+        <div class="editable pv-desc" id="f-desc" contenteditable="true" data-placeholder="어떤 이벤트인지 자유롭게 적어보세요.&#10;예) 진행 일정, 참여 방법, 혜택, 유의 사항 등" oninput="onInput()"></div>
+      </div>
+    </div>
+
     <!-- 신청 기간 -->
     <div class="pv-section">
       <div class="pv-date-card">
@@ -1826,18 +1845,10 @@
           <span>시간 추가</span>
         </button>
         <div class="pv-date-row" id="event-time-row" hidden>
-          <input type="time" class="pv-date-pill pv-time-input" id="f-event-start-time" oninput="onInput()">
+          <input type="time" class="pv-date-pill pv-time-input" id="f-event-start-time" oninput="onInput()" onclick="this.showPicker && this.showPicker()">
           <span class="pv-date-sep">~</span>
-          <input type="time" class="pv-date-pill pv-time-input" id="f-event-end-time" oninput="onInput()">
+          <input type="time" class="pv-date-pill pv-time-input" id="f-event-end-time" oninput="onInput()" onclick="this.showPicker && this.showPicker()">
         </div>
-      </div>
-    </div>
-
-    <!-- 이벤트 설명 -->
-    <div class="pv-section">
-      <div class="pv-luma-card" id="desc-card" onclick="document.getElementById('f-desc').focus()">
-        <div class="pv-desc-label">이벤트 설명</div>
-        <div class="editable pv-desc" id="f-desc" contenteditable="true" data-placeholder="어떤 이벤트인지 자유롭게 적어보세요.&#10;&#10;예) 진행 일정, 참여 방법, 혜택, 유의 사항 등" oninput="onInput()"></div>
       </div>
     </div>
 
@@ -1848,19 +1859,28 @@
       <div class="pv-section-title">신청폼 구성</div>
       <div class="pv-form-card" id="f-form-card">
         <div class="pv-field-row">
-          <i data-lucide="user"></i>
-          <span class="pv-field-label">이름</span>
-          <button type="button" class="pv-req-chip is-required" data-field="name" onclick="toggleFieldRequired(this)">필수</button>
+          <input type="checkbox" class="checkbox" id="field-name-enabled" checked onchange="toggleFieldEnabled('name')">
+          <label class="pv-field-label" for="field-name-enabled">이름</label>
+          <div class="pv-req-seg" data-field="name">
+            <button type="button" class="pv-req-seg-btn is-selected" onclick="setFieldRequired('name', true)">필수</button>
+            <button type="button" class="pv-req-seg-btn" onclick="setFieldRequired('name', false)">선택</button>
+          </div>
         </div>
         <div class="pv-field-row">
-          <i data-lucide="phone"></i>
-          <span class="pv-field-label">연락처</span>
-          <button type="button" class="pv-req-chip is-required" data-field="phone" onclick="toggleFieldRequired(this)">필수</button>
+          <input type="checkbox" class="checkbox" id="field-phone-enabled" checked onchange="toggleFieldEnabled('phone')">
+          <label class="pv-field-label" for="field-phone-enabled">연락처</label>
+          <div class="pv-req-seg" data-field="phone">
+            <button type="button" class="pv-req-seg-btn is-selected" onclick="setFieldRequired('phone', true)">필수</button>
+            <button type="button" class="pv-req-seg-btn" onclick="setFieldRequired('phone', false)">선택</button>
+          </div>
         </div>
         <div class="pv-field-row">
-          <i data-lucide="mail"></i>
-          <span class="pv-field-label">이메일</span>
-          <button type="button" class="pv-req-chip" data-field="email" onclick="toggleFieldRequired(this)">선택</button>
+          <input type="checkbox" class="checkbox" id="field-email-enabled" checked onchange="toggleFieldEnabled('email')">
+          <label class="pv-field-label" for="field-email-enabled">이메일</label>
+          <div class="pv-req-seg" data-field="email">
+            <button type="button" class="pv-req-seg-btn" onclick="setFieldRequired('email', true)">필수</button>
+            <button type="button" class="pv-req-seg-btn is-selected" onclick="setFieldRequired('email', false)">선택</button>
+          </div>
         </div>
         <div class="pv-questions-list" id="pv-questions-list"></div>
         <button type="button" class="pv-field-add" onclick="openAddQuestion()">
@@ -2352,9 +2372,19 @@
   var questions = [];
   var editingIdx = -1;
 
-  function toggleFieldRequired(btn) {
-    var required = btn.classList.toggle('is-required');
-    btn.textContent = required ? '필수' : '선택';
+  function setFieldRequired(field, required) {
+    var seg = document.querySelector('.pv-req-seg[data-field="' + field + '"]');
+    if (!seg) return;
+    var btns = seg.querySelectorAll('.pv-req-seg-btn');
+    btns[0].classList.toggle('is-selected', required);
+    btns[1].classList.toggle('is-selected', !required);
+  }
+
+  function toggleFieldEnabled(field) {
+    var cb = document.getElementById('field-' + field + '-enabled');
+    var seg = document.querySelector('.pv-req-seg[data-field="' + field + '"]');
+    if (!seg) return;
+    seg.classList.toggle('is-disabled', !cb.checked);
   }
 
   function resetMcEditor(values) {
@@ -2472,14 +2502,29 @@
       var row = document.createElement('div');
       row.className = 'pv-field-row';
       var typeLabel = q.type === 'mc' ? (q.multi ? '객관식 · 복수' : '객관식') : '주관식';
+      var cbId = 'field-q-' + idx + '-enabled';
       row.innerHTML =
-        '<i data-lucide="circle-help"></i>' +
-        '<span class="pv-field-label"><span class="pv-q-text">' + escapeHTML(q.text) + '</span><span class="pv-q-meta">' + typeLabel + '</span></span>' +
-        '<button type="button" class="pv-req-chip ' + (q.required ? 'is-required' : '') + '">' + (q.required ? '필수' : '선택') + '</button>';
-      row.onclick = function(){ editQuestion(idx); };
+        '<input type="checkbox" class="checkbox" id="' + cbId + '" checked>' +
+        '<label class="pv-field-label" for="' + cbId + '"><span class="pv-q-text">' + escapeHTML(q.text) + '</span><span class="pv-q-meta">' + typeLabel + '</span></label>' +
+        '<div class="pv-req-seg" data-field="q-' + idx + '">' +
+          '<button type="button" class="pv-req-seg-btn ' + (q.required ? 'is-selected' : '') + '" onclick="setQuestionRequired(' + idx + ', true, event)">필수</button>' +
+          '<button type="button" class="pv-req-seg-btn ' + (q.required ? '' : 'is-selected') + '" onclick="setQuestionRequired(' + idx + ', false, event)">선택</button>' +
+        '</div>';
+      row.querySelector('.pv-field-label').onclick = function(e){
+        if (e.target.closest('.checkbox')) return;
+        e.preventDefault();
+        editQuestion(idx);
+      };
       list.appendChild(row);
     });
     lucide.createIcons();
+  }
+
+  function setQuestionRequired(idx, required, e) {
+    if (e) e.stopPropagation();
+    if (!questions[idx]) return;
+    questions[idx].required = required;
+    renderQuestions();
   }
 
   function escapeHTML(s) {
