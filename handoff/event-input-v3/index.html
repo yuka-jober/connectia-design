@@ -158,6 +158,18 @@
     line-height: var(--lh-display); letter-spacing: var(--ls-display); color: var(--color-text);
     word-break: keep-all;
   }
+  .pv-prev-schedule {
+    display: inline-flex; align-items: center; gap: 6px;
+    align-self: flex-start;
+    font-size: var(--fs-label);
+    color: var(--color-text-sub);
+    font-weight: var(--fw-medium);
+  }
+  .pv-prev-schedule i[data-lucide],
+  .pv-prev-schedule svg { width: 16px; height: 16px; color: var(--color-text-muted); }
+  .pv-prev-schedule-label { color: var(--color-text-muted); margin-right: 2px; }
+  .pv-prev-schedule-date { color: var(--color-text-sub); font-weight: var(--fw-semibold); }
+  .pv-prev-schedule-time { color: var(--color-text-sub); font-weight: var(--fw-semibold); }
   .pv-prev-target {
     font-size: var(--fs-body-lg); color: var(--color-text-sub);
     line-height: 1.5; word-break: keep-all;
@@ -2009,16 +2021,18 @@
           <i data-lucide="chevron-right"></i>
         </div>
         <h1 class="pv-prev-headline" id="pv-prev-title"></h1>
+        <p class="pv-prev-schedule" id="pv-prev-schedule" hidden>
+          <i data-lucide="calendar-check"></i>
+          <span class="pv-prev-schedule-label">일정</span>
+          <span class="pv-prev-schedule-date" id="pv-prev-schedule-date"></span>
+          <span class="pv-prev-schedule-time" id="pv-prev-schedule-time"></span>
+        </p>
         <div class="pv-prev-trust-row">
           <div class="pv-prev-star-row">
             <i data-lucide="star"></i>
             <span class="pv-prev-star-score">5.0</span>
             <span class="pv-prev-star-count">· 후기 28개</span>
           </div>
-          <span class="pv-prev-trust-dot">·</span>
-          <span class="pv-prev-tag-official">
-            <i data-lucide="badge-check"></i>커넥티아 공식 이벤트
-          </span>
         </div>
       </div>
 
@@ -2040,8 +2054,8 @@
         <div class="pv-prev-desc" id="pv-prev-desc"></div>
       </div>
 
-      <div class="pv-prev-divider"></div>
-      <div class="pv-prev-section">
+      <div class="pv-prev-divider" id="pv-prev-review-divider"></div>
+      <div class="pv-prev-section" id="pv-prev-review-section">
         <div class="pv-prev-section-title">실제 후기</div>
         <div class="pv-prev-review-scroll">
           <div class="pv-prev-review-card">
@@ -2789,7 +2803,9 @@
         phone: { enabled: document.getElementById('field-phone-enabled').checked, required: reqSelected('phone') },
         email: { enabled: document.getElementById('field-email-enabled').checked, required: reqSelected('email') }
       },
-      questions: questions
+      questions: questions,
+      reviews:  document.getElementById('opt-reviews').checked,
+      comments: document.getElementById('opt-comments').checked
     };
     try { localStorage.setItem('connectia.event', JSON.stringify(data)); } catch(e) {}
     window.location.href = 'event-landing-v2.html';
@@ -2828,6 +2844,45 @@
 
     var title = document.getElementById('f-title').textContent.trim();
     document.getElementById('pv-prev-title').textContent = title || '이벤트 이름';
+
+    var evStart = document.getElementById('f-event-start').value;
+    var evEnd = document.getElementById('f-event-end').value;
+    var evStartTime = document.getElementById('f-event-start-time').value;
+    var evEndTime = document.getElementById('f-event-end-time').value;
+    var schedEl = document.getElementById('pv-prev-schedule');
+    var schedDateEl = document.getElementById('pv-prev-schedule-date');
+    var schedTimeEl = document.getElementById('pv-prev-schedule-time');
+    if (evStart || evEnd || evStartTime || evEndTime) {
+      var dateStr = '';
+      if (evStart && evEnd) {
+        var s = new Date(evStart + 'T00:00:00');
+        var e = new Date(evEnd + 'T00:00:00');
+        var sStr = s.getFullYear() + '.' + String(s.getMonth()+1).padStart(2,'0') + '.' + String(s.getDate()).padStart(2,'0');
+        var eStr;
+        if (s.getFullYear() === e.getFullYear()) {
+          eStr = String(e.getMonth()+1).padStart(2,'0') + '.' + String(e.getDate()).padStart(2,'0');
+        } else {
+          eStr = e.getFullYear() + '.' + String(e.getMonth()+1).padStart(2,'0') + '.' + String(e.getDate()).padStart(2,'0');
+        }
+        dateStr = sStr + ' ~ ' + eStr;
+      } else if (evStart) {
+        var s2 = new Date(evStart + 'T00:00:00');
+        dateStr = s2.getFullYear() + '.' + String(s2.getMonth()+1).padStart(2,'0') + '.' + String(s2.getDate()).padStart(2,'0');
+      }
+      var timeStr = '';
+      if (evStartTime && evEndTime) timeStr = evStartTime + ' ~ ' + evEndTime;
+      else if (evStartTime) timeStr = evStartTime;
+      schedDateEl.textContent = dateStr;
+      schedTimeEl.textContent = timeStr;
+      schedTimeEl.hidden = !timeStr;
+      schedEl.hidden = false;
+    } else {
+      schedEl.hidden = true;
+    }
+
+    var reviewsOn = document.getElementById('opt-reviews').checked;
+    document.getElementById('pv-prev-review-section').hidden = !reviewsOn;
+    document.getElementById('pv-prev-review-divider').hidden = !reviewsOn;
 
     var startDate = document.getElementById('f-start').value;
     var endDate = document.getElementById('f-end').value;

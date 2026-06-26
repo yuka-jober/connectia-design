@@ -1082,6 +1082,19 @@
       if (ctaBtn) ctaBtn.textContent = d.cta;
     }
 
+    // 리뷰 노출 토글
+    if (d.reviews !== true) {
+      var reviewSection = document.querySelector('.review-scroll');
+      if (reviewSection) {
+        var sec = reviewSection.closest('.section');
+        if (sec) {
+          sec.style.display = 'none';
+          var prev = sec.previousElementSibling;
+          if (prev && prev.classList.contains('section-divider')) prev.style.display = 'none';
+        }
+      }
+    }
+
     // 신청 폼 필드 재구성
     var fieldsWrap = document.getElementById('apply-form-fields');
     fieldsWrap.innerHTML = '';
