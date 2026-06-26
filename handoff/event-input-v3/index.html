@@ -703,25 +703,13 @@
     margin: 0;
     opacity: 0;
   }
-  .pv-date-cell {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 4px;
-    flex: 1 1 0;
-    min-width: 0;
-  }
-  .pv-date-cell[hidden] { display: none; }
-  .pv-date-cell .pv-date-pill {
-    flex: none;
-    width: 100%;
-    min-width: 0;
-  }
   .pv-time-pill {
+    flex: 1;
+    min-width: 0;
     background: var(--color-border);
     border: none;
     border-radius: var(--r-sm);
-    padding: 8px 4px;
+    padding: 8px 12px;
     font-family: var(--font-base);
     font-size: var(--fs-label);
     font-weight: var(--fw-medium);
@@ -730,15 +718,12 @@
     appearance: none;
     text-align: center;
     cursor: pointer;
-    width: 100%;
-    min-width: 0;
   }
   .pv-time-pill::-webkit-calendar-picker-indicator {
     opacity: 0;
     width: 100%;
     cursor: pointer;
   }
-  .pv-time-pill[hidden] { display: none; }
   .pv-date-toggle-row {
     display: flex;
     align-items: center;
@@ -1802,21 +1787,15 @@
         <div class="pv-date-card-row">
           <div class="pv-date-card-title">행사 일정</div>
           <div class="pv-date-row">
-            <div class="pv-date-cell">
-              <button type="button" class="pv-date-pill is-empty" id="pill-event-start-date" onclick="openCalendar('event-start', event)">
-                <span class="pv-date-pill-text" id="disp-event-start-date">날짜 선택</span>
-                <input type="hidden" id="f-event-start">
-              </button>
-              <input type="time" class="pv-time-pill" id="f-event-start-time" oninput="onInput()" hidden>
-            </div>
+            <button type="button" class="pv-date-pill is-empty" id="pill-event-start-date" onclick="openCalendar('event-start', event)">
+              <span class="pv-date-pill-text" id="disp-event-start-date">날짜 선택</span>
+              <input type="hidden" id="f-event-start">
+            </button>
             <span class="pv-date-sep" id="event-end-sep" hidden>~</span>
-            <div class="pv-date-cell" id="event-end-cell" hidden>
-              <button type="button" class="pv-date-pill is-empty" id="pill-event-end-date" onclick="openCalendar('event-end', event)">
-                <span class="pv-date-pill-text" id="disp-event-end-date">종료일</span>
-                <input type="hidden" id="f-event-end">
-              </button>
-              <input type="time" class="pv-time-pill" id="f-event-end-time" oninput="onInput()" hidden>
-            </div>
+            <button type="button" class="pv-date-pill is-empty" id="pill-event-end-date" onclick="openCalendar('event-end', event)" hidden>
+              <span class="pv-date-pill-text" id="disp-event-end-date">종료일</span>
+              <input type="hidden" id="f-event-end">
+            </button>
           </div>
         </div>
         <div class="pv-calendar" id="pv-calendar-event" hidden>
@@ -1842,6 +1821,11 @@
           <i data-lucide="plus"></i>
           <span>시간 추가</span>
         </button>
+        <div class="pv-date-row" id="event-time-row" hidden>
+          <input type="time" class="pv-time-pill" id="f-event-start-time" oninput="onInput()">
+          <span class="pv-date-sep">~</span>
+          <input type="time" class="pv-time-pill" id="f-event-end-time" oninput="onInput()">
+        </div>
       </div>
     </div>
 
@@ -2555,7 +2539,7 @@
   function toggleEventEnd() {
     var on = document.getElementById('event-end-toggle').checked;
     document.getElementById('event-end-sep').hidden = !on;
-    document.getElementById('event-end-cell').hidden = !on;
+    document.getElementById('pill-event-end-date').hidden = !on;
     var endInput = document.getElementById('f-event-end');
     var endDisp = document.getElementById('disp-event-end-date');
     var endPill = document.getElementById('pill-event-end-date');
@@ -2577,12 +2561,10 @@
     onInput();
   }
   function toggleEventTime() {
-    var startTime = document.getElementById('f-event-start-time');
-    var endTime = document.getElementById('f-event-end-time');
+    var row = document.getElementById('event-time-row');
     var toggle = document.getElementById('event-time-toggle');
-    var on = startTime.hidden;
-    startTime.hidden = !on;
-    endTime.hidden = !on;
+    var on = row.hidden;
+    row.hidden = !on;
     toggle.classList.toggle('is-on', on);
     var iconEl = toggle.querySelector('i, svg');
     if (iconEl) {
@@ -2593,8 +2575,8 @@
     toggle.querySelector('span').textContent = on ? '시간 제거' : '시간 추가';
     if (window.lucide) lucide.createIcons();
     if (!on) {
-      startTime.value = '';
-      endTime.value = '';
+      document.getElementById('f-event-start-time').value = '';
+      document.getElementById('f-event-end-time').value = '';
     }
     onInput();
   }
