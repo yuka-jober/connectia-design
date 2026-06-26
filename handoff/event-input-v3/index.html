@@ -2671,7 +2671,8 @@
     }
     var nextMonth = m === 11 ? 0 : m + 1;
     var nextYear = m === 11 ? y + 1 : y;
-    var trailing = 42 - cells.length;
+    var remainder = cells.length % 7;
+    var trailing = remainder === 0 ? 0 : 7 - remainder;
     for (var t = 1; t <= trailing; t++) {
       cells.push({ day: t, outside: true, year: nextYear, month: nextMonth });
     }
