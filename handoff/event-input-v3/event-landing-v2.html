@@ -1152,6 +1152,7 @@
 
   (function init(){
     try {
+      if (!location.search.includes('from=publish')) return;
       var raw = localStorage.getItem('connectia.event');
       if (!raw) return;
       var data = JSON.parse(raw);
