@@ -1048,11 +1048,17 @@
   #desc-card {
     flex-direction: column;
     align-items: stretch;
-    padding: 16px;
+    padding: 16px 20px;
+    gap: 12px;
     cursor: text;
     min-height: 200px;
   }
   #desc-card .pv-desc { flex: 1; }
+  .pv-desc-label {
+    font-size: var(--fs-label);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text-sub);
+  }
   .pv-luma-card .pv-desc {
     background: transparent;
     border: none;
@@ -1829,8 +1835,8 @@
 
     <!-- 이벤트 설명 -->
     <div class="pv-section">
-      <div class="pv-section-title">이벤트 설명</div>
       <div class="pv-luma-card" id="desc-card" onclick="document.getElementById('f-desc').focus()">
+        <div class="pv-desc-label">이벤트 설명</div>
         <div class="editable pv-desc" id="f-desc" contenteditable="true" data-placeholder="어떤 이벤트인지 자유롭게 적어보세요.&#10;&#10;예) 진행 일정, 참여 방법, 혜택, 유의 사항 등" oninput="onInput()"></div>
       </div>
     </div>
