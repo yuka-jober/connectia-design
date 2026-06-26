@@ -1978,8 +1978,8 @@
       <input class="pv-upload-input" type="file" id="tmpl-upload" accept="image/*" multiple onchange="onUploadFiles(event)">
     </label>
     <div class="pv-tmpl-tabs" id="tmpl-tabs">
-      <button type="button" class="pv-tmpl-tab is-selected" data-cat="hospital" onclick="selectTmplTab('hospital')">병원</button>
-      <button type="button" class="pv-tmpl-tab" data-cat="event" onclick="selectTmplTab('event')">이벤트</button>
+      <button type="button" class="pv-tmpl-tab is-selected" data-cat="event" onclick="selectTmplTab('event')">이벤트</button>
+      <button type="button" class="pv-tmpl-tab" data-cat="hospital" onclick="selectTmplTab('hospital')">병원</button>
       <button type="button" class="pv-tmpl-tab" data-cat="eye" onclick="selectTmplTab('eye')">안과</button>
       <button type="button" class="pv-tmpl-tab" data-cat="derma" onclick="selectTmplTab('derma')">피부과</button>
       <button type="button" class="pv-tmpl-tab" data-cat="oriental" onclick="selectTmplTab('oriental')">한의원</button>
@@ -2120,13 +2120,13 @@
   /* ── 이미지 템플릿 카탈로그 ── */
   var TMPL_DIR = 'event_thumbnail_image/';
   var TEMPLATES = {
-    hospital: [
-      TMPL_DIR + 'event_hospital_1.png'
-    ],
     event: [
       TMPL_DIR + 'event_basic_1.png',
       TMPL_DIR + 'event_basic_2.png',
       TMPL_DIR + 'event_basic_3.png'
+    ],
+    hospital: [
+      TMPL_DIR + 'event_hospital_1.png'
     ],
     eye: [
       TMPL_DIR + 'event_eye clinic_1.png',
@@ -2146,7 +2146,7 @@
       TMPL_DIR + 'event_oriental_5.png'
     ]
   };
-  var tmplCat = 'hospital';
+  var tmplCat = 'event';
 
   function blockEnter(e) {
     if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); }
