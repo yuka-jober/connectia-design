@@ -705,14 +705,16 @@
   }
   .pv-date-cell {
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    align-items: stretch;
     gap: 4px;
-    flex: 1;
+    flex: 1 1 0;
     min-width: 0;
   }
   .pv-date-cell[hidden] { display: none; }
   .pv-date-cell .pv-date-pill {
-    flex: 1;
+    flex: none;
+    width: 100%;
     min-width: 0;
   }
   .pv-time-pill {
@@ -728,15 +730,12 @@
     appearance: none;
     text-align: center;
     cursor: pointer;
-    flex-shrink: 0;
-    width: auto;
+    width: 100%;
     min-width: 0;
   }
   .pv-time-pill::-webkit-calendar-picker-indicator {
     opacity: 0;
-    position: absolute;
     width: 100%;
-    height: 100%;
     cursor: pointer;
   }
   .pv-time-pill[hidden] { display: none; }
