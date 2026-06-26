@@ -601,6 +601,7 @@
     align-items: center;
     gap: 8px;
   }
+  .pv-date-row[hidden] { display: none; }
   .pv-date-group {
     flex: 1;
     display: flex;
@@ -1802,7 +1803,7 @@
           </div>
         </div>
         <button type="button" class="pv-time-toggle" id="event-time-toggle" onclick="toggleEventTime()">
-          <i data-lucide="clock"></i>
+          <i data-lucide="plus"></i>
           <span>시간 추가</span>
         </button>
         <div class="pv-date-row" id="event-time-row" hidden>
@@ -2550,7 +2551,14 @@
     var on = row.hidden;
     row.hidden = !on;
     toggle.classList.toggle('is-on', on);
+    var iconEl = toggle.querySelector('i, svg');
+    if (iconEl) {
+      var newIcon = document.createElement('i');
+      newIcon.setAttribute('data-lucide', on ? 'x' : 'plus');
+      iconEl.replaceWith(newIcon);
+    }
     toggle.querySelector('span').textContent = on ? '시간 제거' : '시간 추가';
+    if (window.lucide) lucide.createIcons();
     if (!on) {
       document.getElementById('f-event-start-time').value = '';
       document.getElementById('f-event-end-time').value = '';
