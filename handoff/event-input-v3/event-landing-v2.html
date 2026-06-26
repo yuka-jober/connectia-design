@@ -596,7 +596,7 @@
 
         <!-- Floating topbar -->
         <div class="topbar">
-          <button class="icon-btn icon-btn-clear" aria-label="뒤로">
+          <button class="icon-btn icon-btn-clear" aria-label="뒤로" onclick="goEdit()">
             <i data-lucide="chevron-left" style="width:22px;height:22px;color:var(--color-text);"></i>
           </button>
           <button class="icon-btn icon-btn-clear" aria-label="공유">
@@ -787,35 +787,38 @@
           <div class="apply-header-sub">엘린 피부과 · 2026.06.26 ~ 07.05</div>
         </div>
 
-        <!-- Intent -->
-        <div class="form-group">
-          <label class="form-label form-label-required">시술 경험</label>
-          <div class="intent-grid">
-            <label class="intent-chip is-selected" onclick="selectIntent(this)">
-              <input type="radio" name="intent" value="first" checked>
-              <span class="intent-chip-label">처음이에요</span>
-            </label>
-            <label class="intent-chip" onclick="selectIntent(this)">
-              <input type="radio" name="intent" value="experienced">
-              <span class="intent-chip-label">경험있어요</span>
-            </label>
-            <label class="intent-chip" onclick="selectIntent(this)">
-              <input type="radio" name="intent" value="undecided">
-              <span class="intent-chip-label">고민 중</span>
-            </label>
+        <!-- Dynamic fields (rebuilt from localStorage on load) -->
+        <div id="apply-form-fields">
+          <!-- Intent -->
+          <div class="form-group">
+            <label class="form-label form-label-required">시술 경험</label>
+            <div class="intent-grid">
+              <label class="intent-chip is-selected" onclick="selectIntent(this)">
+                <input type="radio" name="intent" value="first" checked>
+                <span class="intent-chip-label">처음이에요</span>
+              </label>
+              <label class="intent-chip" onclick="selectIntent(this)">
+                <input type="radio" name="intent" value="experienced">
+                <span class="intent-chip-label">경험있어요</span>
+              </label>
+              <label class="intent-chip" onclick="selectIntent(this)">
+                <input type="radio" name="intent" value="undecided">
+                <span class="intent-chip-label">고민 중</span>
+              </label>
+            </div>
           </div>
-        </div>
 
-        <!-- Name -->
-        <div class="form-group">
-          <label class="form-label form-label-required">이름</label>
-          <input class="input" type="text" placeholder="실명을 입력해주세요">
-        </div>
+          <!-- Name -->
+          <div class="form-group">
+            <label class="form-label form-label-required">이름</label>
+            <input class="input" type="text" placeholder="실명을 입력해주세요">
+          </div>
 
-        <!-- Phone -->
-        <div class="form-group">
-          <label class="form-label form-label-required">전화번호</label>
-          <input class="input" type="tel" placeholder="010-0000-0000" inputmode="tel">
+          <!-- Phone -->
+          <div class="form-group">
+            <label class="form-label form-label-required">전화번호</label>
+            <input class="input" type="tel" placeholder="010-0000-0000" inputmode="tel">
+          </div>
         </div>
 
         <!-- Consent -->
@@ -941,6 +944,206 @@
       if (scroller) scroller.scrollTop = 0;
     }
   }
+
+  // ── 입력폼에서 발행한 이벤트 데이터 적용 ──
+  function goEdit() { window.location.href = 'index.html'; }
+
+  function escapeHTML(s) {
+    return String(s).replace(/[&<>"']/g, function(c) {
+      return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+    });
+  }
+  function fmtDate(iso) {
+    if (!iso) return '';
+    var p = iso.split('-');
+    return p[0] + '.' + p[1] + '.' + p[2];
+  }
+  function fmtDateShort(iso) {
+    if (!iso) return '';
+    var p = iso.split('-');
+    return p[1] + '.' + p[2];
+  }
+  function fmtRange(start, end) {
+    if (start && end) return fmtDate(start) + ' ~ ' + fmtDateShort(end);
+    if (start) return fmtDate(start);
+    return '';
+  }
+  function fmtTimeRange(start, end) {
+    if (start && end) return start + ' ~ ' + end;
+    if (start) return start;
+    return '';
+  }
+
+  function applyEventData(d) {
+    // 타이틀
+    if (d.title) {
+      document.querySelector('.hero-headline').textContent = d.title;
+      document.querySelector('.apply-header-title').textContent = d.title;
+      var doneVal = document.querySelector('#screen-done .done-info-value');
+      if (doneVal) doneVal.textContent = d.title;
+    }
+
+    // 일정 (행사 일정)
+    var sched = d.eventSchedule || {};
+    var dateStr = fmtRange(sched.start, sched.end);
+    var timeStr = fmtTimeRange(sched.startTime, sched.endTime);
+    var schedEl = document.querySelector('.hero-schedule');
+    if (!dateStr && !timeStr) {
+      if (schedEl) schedEl.style.display = 'none';
+    } else {
+      document.querySelector('.hero-schedule-date').textContent = dateStr;
+      var timeNode = document.querySelector('.hero-schedule-time');
+      if (timeStr) timeNode.textContent = timeStr;
+      else timeNode.style.display = 'none';
+    }
+
+    // 신청 기간
+    var ap = d.applyPeriod || {};
+    var dateCardSection = document.querySelector('.date-card').closest('.section');
+    if (ap.start && ap.end) {
+      var periodStr = fmtRange(ap.start, ap.end);
+      document.querySelector('.date-card-value').textContent = periodStr;
+      var tag = document.querySelector('.date-card-tag');
+      var today = new Date(); today.setHours(0,0,0,0);
+      var endD = new Date(ap.end + 'T00:00:00');
+      var diff = Math.ceil((endD - today) / 86400000);
+      if (diff > 0) { tag.textContent = 'D-' + diff; tag.style.display = ''; }
+      else if (diff === 0) { tag.textContent = 'D-DAY'; tag.style.display = ''; }
+      else { tag.style.display = 'none'; }
+      // apply header sub
+      var sub = document.querySelector('.apply-header-sub');
+      if (sub) {
+        var clinic = sub.textContent.split(' · ')[0] || '엘린 피부과';
+        sub.textContent = clinic + ' · ' + periodStr;
+      }
+    } else {
+      if (dateCardSection) {
+        dateCardSection.style.display = 'none';
+        var div = dateCardSection.nextElementSibling;
+        if (div && div.classList.contains('section-divider')) div.style.display = 'none';
+      }
+    }
+
+    // 설명
+    var descBlock = document.getElementById('desc-block');
+    var descSection = descBlock.closest('.section');
+    if (d.description) {
+      descBlock.innerHTML = '';
+      var lines = d.description.split(/\n+/).filter(function(l){ return l.trim(); });
+      lines.forEach(function(line, i){
+        if (i > 0) descBlock.appendChild(document.createElement('br'));
+        var p = document.createElement('p');
+        p.textContent = line;
+        descBlock.appendChild(p);
+      });
+      requestAnimationFrame(function(){
+        if (descBlock.scrollHeight <= descBlock.clientHeight + 4) {
+          var fade = document.getElementById('desc-fade');
+          var toggle = document.getElementById('desc-toggle');
+          if (fade) fade.style.display = 'none';
+          if (toggle) toggle.style.display = 'none';
+        }
+      });
+    } else if (descSection) {
+      descSection.style.display = 'none';
+      var divNext = descSection.nextElementSibling;
+      if (divNext && divNext.classList.contains('section-divider')) divNext.style.display = 'none';
+    }
+
+    // 이미지
+    if (d.images && d.images.length) {
+      var slider = document.getElementById('hero-slider');
+      slider.innerHTML = '';
+      d.images.forEach(function(img){
+        var slide = document.createElement('div');
+        slide.className = 'hero-slide';
+        if (img.src) slide.style.backgroundImage = 'url("' + encodeURI(img.src) + '")';
+        else if (img.bg) slide.style.background = img.bg + ' center/cover';
+        slider.appendChild(slide);
+      });
+      var existingPage = document.getElementById('hero-pagination');
+      if (existingPage) existingPage.remove();
+      if (d.images.length > 1) {
+        var page = document.createElement('div');
+        page.className = 'hero-pagination';
+        page.id = 'hero-pagination';
+        page.textContent = '1 / ' + d.images.length;
+        slider.parentElement.appendChild(page);
+        slider.addEventListener('scroll', function(){
+          var idx = Math.round(slider.scrollLeft / slider.clientWidth);
+          page.textContent = (idx + 1) + ' / ' + d.images.length;
+        });
+      }
+    }
+
+    // CTA
+    if (d.cta) {
+      var ctaBtn = document.querySelector('.sticky-actions .btn-fill-primary');
+      if (ctaBtn) ctaBtn.textContent = d.cta;
+    }
+
+    // 신청 폼 필드 재구성
+    var fieldsWrap = document.getElementById('apply-form-fields');
+    fieldsWrap.innerHTML = '';
+    var f = d.fields || {};
+    if (f.name && f.name.enabled) {
+      fieldsWrap.appendChild(buildField('이름', 'text', '실명을 입력해주세요', f.name.required));
+    }
+    if (f.phone && f.phone.enabled) {
+      fieldsWrap.appendChild(buildField('전화번호', 'tel', '010-0000-0000', f.phone.required));
+    }
+    if (f.email && f.email.enabled) {
+      fieldsWrap.appendChild(buildField('이메일', 'email', 'example@email.com', f.email.required));
+    }
+    (d.questions || []).forEach(function(q){
+      fieldsWrap.appendChild(buildQuestion(q));
+    });
+  }
+
+  function buildField(labelText, inputType, placeholder, required) {
+    var group = document.createElement('div');
+    group.className = 'form-group';
+    var labelCls = 'form-label' + (required ? ' form-label-required' : '');
+    var optMark = required ? '' : ' <span style="color:var(--color-text-muted); font-weight:var(--fw-regular);">(선택)</span>';
+    var inputmode = inputType === 'tel' ? ' inputmode="tel"' : '';
+    group.innerHTML =
+      '<label class="' + labelCls + '">' + escapeHTML(labelText) + optMark + '</label>' +
+      '<input class="input" type="' + inputType + '" placeholder="' + escapeHTML(placeholder) + '"' + inputmode + '>';
+    return group;
+  }
+
+  function buildQuestion(q) {
+    var group = document.createElement('div');
+    group.className = 'form-group';
+    var labelCls = 'form-label' + (q.required ? ' form-label-required' : '');
+    var optMark = q.required ? '' : ' <span style="color:var(--color-text-muted); font-weight:var(--fw-regular);">(선택)</span>';
+    var label = '<label class="' + labelCls + '">' + escapeHTML(q.text) + optMark + '</label>';
+    if (q.type === 'short') {
+      group.innerHTML = label + '<input class="input" type="text" placeholder="답변 입력">';
+    } else {
+      var name = 'q-' + Math.random().toString(36).slice(2, 8);
+      var inputType = q.multi ? 'checkbox' : 'radio';
+      var optsHTML = (q.options || []).map(function(opt){
+        return '<label style="display:flex; align-items:center; gap:10px; padding:8px 0; cursor:pointer;">' +
+          '<input type="' + inputType + '" name="' + name + '" class="' + inputType + '">' +
+          '<span style="font-size:var(--fs-label); color:var(--color-text);">' + escapeHTML(opt) + '</span>' +
+          '</label>';
+      }).join('');
+      group.innerHTML = label +
+        '<div style="display:flex; flex-direction:column; background:var(--color-surface-sub); padding:8px 16px; border-radius:var(--r-md);">' + optsHTML + '</div>';
+    }
+    return group;
+  }
+
+  (function init(){
+    try {
+      var raw = localStorage.getItem('connectia.event');
+      if (!raw) return;
+      var data = JSON.parse(raw);
+      applyEventData(data);
+      lucide.createIcons();
+    } catch(e) {}
+  })();
 </script>
 </body>
 </html>

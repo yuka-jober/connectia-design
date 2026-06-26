@@ -2763,7 +2763,36 @@
       setTimeout(function(){ titleEl.focus(); }, 250);
       return;
     }
-    alert('이벤트가 발행되었습니다 (목업)');
+    function reqSelected(field) {
+      var seg = document.querySelector('.pv-req-seg[data-field="' + field + '"]');
+      if (!seg) return false;
+      var btns = seg.querySelectorAll('.pv-req-seg-btn');
+      return btns[0].classList.contains('is-selected');
+    }
+    var data = {
+      title: titleEl.textContent.trim(),
+      description: document.getElementById('f-desc').textContent.trim(),
+      images: images,
+      applyPeriod: {
+        start: document.getElementById('f-start').value,
+        end: document.getElementById('f-end').value
+      },
+      eventSchedule: {
+        start: document.getElementById('f-event-start').value,
+        end: document.getElementById('f-event-end').value,
+        startTime: document.getElementById('f-event-start-time').value,
+        endTime: document.getElementById('f-event-end-time').value
+      },
+      cta: (document.getElementById('disp-cta').textContent.trim() || '이벤트 참여하기'),
+      fields: {
+        name:  { enabled: document.getElementById('field-name-enabled').checked,  required: reqSelected('name')  },
+        phone: { enabled: document.getElementById('field-phone-enabled').checked, required: reqSelected('phone') },
+        email: { enabled: document.getElementById('field-email-enabled').checked, required: reqSelected('email') }
+      },
+      questions: questions
+    };
+    try { localStorage.setItem('connectia.event', JSON.stringify(data)); } catch(e) {}
+    window.location.href = 'event-landing-v2.html';
   }
 
   /* ── Preview ── */
