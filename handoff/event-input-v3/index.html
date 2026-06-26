@@ -565,13 +565,17 @@
   .pv-divider {
     height: 0;
     background: transparent;
-    margin: 16px 0 0;
+    margin: 4px 0 0;
   }
 
   /* ── Section ── */
   .pv-section {
     padding: 6px 20px;
     display: flex; flex-direction: column; gap: 12px;
+  }
+  .pv-section-title-meta {
+    color: var(--color-text-muted);
+    font-weight: var(--fw-regular);
   }
   .pv-section-title {
     font-size: var(--fs-label);
@@ -1768,8 +1772,47 @@
       </div>
     </div>
 
-    <!-- 신청 기간 -->
+    <!-- 신청폼 구성 -->
     <div class="pv-section">
+      <div class="pv-section-title">신청폼 구성</div>
+      <div class="pv-form-card" id="f-form-card">
+        <div class="pv-field-row">
+          <input type="checkbox" class="checkbox" id="field-name-enabled" checked onchange="toggleFieldEnabled('name')">
+          <label class="pv-field-label" for="field-name-enabled">이름</label>
+          <div class="pv-req-seg" data-field="name">
+            <button type="button" class="pv-req-seg-btn is-selected" onclick="setFieldRequired('name', true)">필수</button>
+            <button type="button" class="pv-req-seg-btn" onclick="setFieldRequired('name', false)">선택</button>
+          </div>
+        </div>
+        <div class="pv-field-row">
+          <input type="checkbox" class="checkbox" id="field-phone-enabled" checked onchange="toggleFieldEnabled('phone')">
+          <label class="pv-field-label" for="field-phone-enabled">연락처</label>
+          <div class="pv-req-seg" data-field="phone">
+            <button type="button" class="pv-req-seg-btn is-selected" onclick="setFieldRequired('phone', true)">필수</button>
+            <button type="button" class="pv-req-seg-btn" onclick="setFieldRequired('phone', false)">선택</button>
+          </div>
+        </div>
+        <div class="pv-field-row">
+          <input type="checkbox" class="checkbox" id="field-email-enabled" checked onchange="toggleFieldEnabled('email')">
+          <label class="pv-field-label" for="field-email-enabled">이메일</label>
+          <div class="pv-req-seg" data-field="email">
+            <button type="button" class="pv-req-seg-btn" onclick="setFieldRequired('email', true)">필수</button>
+            <button type="button" class="pv-req-seg-btn is-selected" onclick="setFieldRequired('email', false)">선택</button>
+          </div>
+        </div>
+        <div class="pv-questions-list" id="pv-questions-list"></div>
+        <button type="button" class="pv-field-add" onclick="openAddQuestion()">
+          <i data-lucide="plus"></i>
+          <span>질문 추가</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="pv-divider"></div>
+
+    <!-- 일정 -->
+    <div class="pv-section">
+      <div class="pv-section-title">일정 <span class="pv-section-title-meta">(선택)</span></div>
       <div class="pv-date-card">
         <div class="pv-date-card-row">
           <div class="pv-date-card-title">신청 기간</div>
@@ -1800,10 +1843,7 @@
         </div>
         <div class="pv-date-dday" id="f-dday"></div>
       </div>
-    </div>
 
-    <!-- 행사 일정 -->
-    <div class="pv-section">
       <div class="pv-date-card">
         <div class="pv-date-card-row">
           <div class="pv-date-card-title">행사 일정</div>
@@ -1848,44 +1888,6 @@
           <span class="pv-date-sep">~</span>
           <input type="time" class="pv-date-pill pv-time-input" id="f-event-end-time" oninput="onInput()" onclick="this.showPicker && this.showPicker()">
         </div>
-      </div>
-    </div>
-
-    <div class="pv-divider"></div>
-
-    <!-- 신청폼 구성 -->
-    <div class="pv-section">
-      <div class="pv-section-title">신청폼 구성</div>
-      <div class="pv-form-card" id="f-form-card">
-        <div class="pv-field-row">
-          <input type="checkbox" class="checkbox" id="field-name-enabled" checked onchange="toggleFieldEnabled('name')">
-          <label class="pv-field-label" for="field-name-enabled">이름</label>
-          <div class="pv-req-seg" data-field="name">
-            <button type="button" class="pv-req-seg-btn is-selected" onclick="setFieldRequired('name', true)">필수</button>
-            <button type="button" class="pv-req-seg-btn" onclick="setFieldRequired('name', false)">선택</button>
-          </div>
-        </div>
-        <div class="pv-field-row">
-          <input type="checkbox" class="checkbox" id="field-phone-enabled" checked onchange="toggleFieldEnabled('phone')">
-          <label class="pv-field-label" for="field-phone-enabled">연락처</label>
-          <div class="pv-req-seg" data-field="phone">
-            <button type="button" class="pv-req-seg-btn is-selected" onclick="setFieldRequired('phone', true)">필수</button>
-            <button type="button" class="pv-req-seg-btn" onclick="setFieldRequired('phone', false)">선택</button>
-          </div>
-        </div>
-        <div class="pv-field-row">
-          <input type="checkbox" class="checkbox" id="field-email-enabled" checked onchange="toggleFieldEnabled('email')">
-          <label class="pv-field-label" for="field-email-enabled">이메일</label>
-          <div class="pv-req-seg" data-field="email">
-            <button type="button" class="pv-req-seg-btn" onclick="setFieldRequired('email', true)">필수</button>
-            <button type="button" class="pv-req-seg-btn is-selected" onclick="setFieldRequired('email', false)">선택</button>
-          </div>
-        </div>
-        <div class="pv-questions-list" id="pv-questions-list"></div>
-        <button type="button" class="pv-field-add" onclick="openAddQuestion()">
-          <i data-lucide="plus"></i>
-          <span>질문 추가</span>
-        </button>
       </div>
     </div>
 
