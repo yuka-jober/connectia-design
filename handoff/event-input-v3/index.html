@@ -821,6 +821,7 @@
     padding: 6px 4px;
   }
   .pv-cal-footer button.is-strong { font-weight: var(--fw-bold); }
+  .pv-cal-footer .pv-date-toggle-row { flex: 1; margin-top: 0; padding: 4px 0; }
 
   /* Shared bits used by the calendar picker */
   .pv-cal-nav {
@@ -1771,20 +1772,35 @@
       <div class="pv-date-card">
         <div class="pv-date-card-title">행사 일정</div>
         <div class="pv-date-row">
-          <button type="button" class="pv-date-pill is-empty" id="pill-event-start-date" onclick="openNativeDate('event-start')">
+          <button type="button" class="pv-date-pill is-empty" id="pill-event-start-date" onclick="openCalendar('event-start', event)">
             <span class="pv-date-pill-text" id="disp-event-start-date">날짜 선택</span>
-            <input type="date" class="pv-native-date" id="f-event-start" onchange="onNativeDateChange('event-start')">
+            <input type="hidden" id="f-event-start">
           </button>
           <span class="pv-date-sep" id="event-end-sep" hidden>~</span>
-          <button type="button" class="pv-date-pill is-empty" id="pill-event-end-date" onclick="openNativeDate('event-end')" hidden>
+          <button type="button" class="pv-date-pill is-empty" id="pill-event-end-date" onclick="openCalendar('event-end', event)" hidden>
             <span class="pv-date-pill-text" id="disp-event-end-date">종료일</span>
-            <input type="date" class="pv-native-date" id="f-event-end" onchange="onNativeDateChange('event-end')">
+            <input type="hidden" id="f-event-end">
           </button>
         </div>
-        <label class="pv-date-toggle-row">
-          <span>종료일</span>
-          <input type="checkbox" class="toggle toggle-sm" id="event-end-toggle" onchange="toggleEventEnd()">
-        </label>
+        <div class="pv-calendar" id="pv-calendar-event" hidden>
+          <div class="pv-cal-header">
+            <button type="button" class="pv-cal-month" id="pv-cal-event-month">2026년 6월<i data-lucide="chevron-right"></i></button>
+            <div class="pv-cal-nav">
+              <button type="button" onclick="changeMonth(-1)" aria-label="이전 달"><i data-lucide="chevron-left"></i></button>
+              <button type="button" onclick="changeMonth(1)" aria-label="다음 달"><i data-lucide="chevron-right"></i></button>
+            </div>
+          </div>
+          <div class="pv-cal-weekdays">
+            <span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span>
+          </div>
+          <div class="pv-cal-grid" id="pv-cal-event-grid"></div>
+          <div class="pv-cal-footer">
+            <label class="pv-date-toggle-row">
+              <span>종료일</span>
+              <input type="checkbox" class="toggle toggle-sm" id="event-end-toggle" onchange="toggleEventEnd()">
+            </label>
+          </div>
+        </div>
         <button type="button" class="pv-time-toggle" id="event-time-toggle" onclick="toggleEventTime()">
           <i data-lucide="clock"></i>
           <span>시간 추가</span>
@@ -2504,26 +2520,6 @@
     return (d.getMonth()+1) + '월 ' + d.getDate() + '일 (' + WEEKDAYS[d.getDay()] + ')';
   }
 
-  /* ── Native date (행사 일정) ── */
-  function openNativeDate(field) {
-    var input = document.getElementById('f-' + field);
-    if (!input) return;
-    if (input.showPicker) { try { input.showPicker(); } catch (e) {} }
-    else input.focus();
-  }
-  function onNativeDateChange(field) {
-    var input = document.getElementById('f-' + field);
-    var pill = document.getElementById('pill-' + field + '-date');
-    var disp = document.getElementById('disp-' + field + '-date');
-    if (input.value) {
-      pill.classList.remove('is-empty');
-      disp.textContent = formatDate(input.value);
-    } else {
-      pill.classList.add('is-empty');
-      disp.textContent = '날짜';
-    }
-    onInput();
-  }
   function toggleEventEnd() {
     var on = document.getElementById('event-end-toggle').checked;
     document.getElementById('event-end-sep').hidden = !on;
@@ -2531,12 +2527,24 @@
     var timeRowVisible = !document.getElementById('event-time-row').hidden;
     document.getElementById('event-end-time-sep').hidden = !(on && timeRowVisible);
     document.getElementById('f-event-end-time').hidden = !(on && timeRowVisible);
-    if (!on) {
-      var endDate = document.getElementById('f-event-end');
-      endDate.value = '';
-      document.getElementById('pill-event-end-date').classList.add('is-empty');
-      document.getElementById('disp-event-end-date').textContent = '종료일';
+    var endInput = document.getElementById('f-event-end');
+    var endDisp = document.getElementById('disp-event-end-date');
+    var endPill = document.getElementById('pill-event-end-date');
+    if (on) {
+      var startVal = document.getElementById('f-event-start').value;
+      if (startVal && !endInput.value) {
+        endInput.value = startVal;
+        endDisp.textContent = formatDate(startVal);
+        endPill.classList.remove('is-empty');
+      }
+    } else {
+      endInput.value = '';
+      endPill.classList.add('is-empty');
+      endDisp.textContent = '종료일';
       document.getElementById('f-event-end-time').value = '';
+    }
+    if (calState.field === 'event-start' || calState.field === 'event-end') {
+      renderCalendar();
     }
     onInput();
   }
@@ -2556,17 +2564,25 @@
     }
     onInput();
   }
-  /* ── Custom calendar ── */
-  var calState = { field: null, viewYear: 0, viewMonth: 0 };
+  /* ── Custom calendar (reusable across cards) ── */
+  var calState = { field: null, pair: null, calId: null, monthId: null, gridId: null, viewYear: 0, viewMonth: 0 };
   function pad2(n) { return n < 10 ? '0' + n : '' + n; }
   function toISO(y, m, d) { return y + '-' + pad2(m + 1) + '-' + pad2(d); }
   function parseISO(s) {
     var p = s.split('-');
     return { y: +p[0], m: +p[1] - 1, d: +p[2] };
   }
+  function getCalCtx(field) {
+    if (field === 'start' || field === 'end') {
+      return { pair: ['start', 'end'], calId: 'pv-calendar', monthId: 'pv-cal-month', gridId: 'pv-cal-grid' };
+    }
+    return { pair: ['event-start', 'event-end'], calId: 'pv-calendar-event', monthId: 'pv-cal-event-month', gridId: 'pv-cal-event-grid' };
+  }
 
   function openCalendar(field, e) {
     if (e) e.stopPropagation();
+    closeCalendar();
+    var ctx = getCalCtx(field);
     var input = document.getElementById('f-' + field);
     var ref;
     if (input.value) ref = parseISO(input.value);
@@ -2575,26 +2591,30 @@
       ref = { y: t.getFullYear(), m: t.getMonth(), d: t.getDate() };
     }
     calState.field = field;
+    calState.pair = ctx.pair;
+    calState.calId = ctx.calId;
+    calState.monthId = ctx.monthId;
+    calState.gridId = ctx.gridId;
     calState.viewYear = ref.y;
     calState.viewMonth = ref.m;
     document.querySelectorAll('.pv-date-pill').forEach(function(p) { p.classList.remove('is-active'); });
     var pill = document.getElementById('pill-' + field + '-date');
     pill.classList.add('is-active');
-    var cal = document.getElementById('pv-calendar');
+    var cal = document.getElementById(ctx.calId);
     cal.hidden = false;
     placePicker(cal, pill);
     renderCalendar();
   }
 
   function placePicker(picker, anchorPill) {
-    var card = document.querySelector('.pv-date-card');
+    var card = picker.closest('.pv-date-card');
     var cardRect = card.getBoundingClientRect();
     var pillRect = anchorPill.getBoundingClientRect();
     picker.style.top = (pillRect.bottom - cardRect.top + 8) + 'px';
   }
 
   function closeCalendar() {
-    document.getElementById('pv-calendar').hidden = true;
+    document.querySelectorAll('.pv-calendar').forEach(function(c){ c.hidden = true; });
     document.querySelectorAll('.pv-date-pill').forEach(function(p) { p.classList.remove('is-active'); });
     calState.field = null;
   }
@@ -2618,7 +2638,7 @@
 
   function renderCalendar() {
     var y = calState.viewYear, m = calState.viewMonth;
-    var monthBtn = document.getElementById('pv-cal-month');
+    var monthBtn = document.getElementById(calState.monthId);
     monthBtn.innerHTML = y + '년 ' + (m + 1) + '월<i data-lucide="chevron-right"></i>';
     if (window.lucide) lucide.createIcons();
 
@@ -2630,11 +2650,16 @@
     var input = document.getElementById('f-' + calState.field);
     if (input && input.value) selected = parseISO(input.value);
 
-    var otherField = calState.field === 'start' ? 'end' : 'start';
-    var otherVal = document.getElementById('f-' + otherField).value;
-    var otherDate = otherVal ? parseISO(otherVal) : null;
+    var otherField = calState.pair[0] === calState.field ? calState.pair[1] : calState.pair[0];
+    var otherInput = document.getElementById('f-' + otherField);
+    var otherVal = otherInput ? otherInput.value : '';
+    var endEnabled = true;
+    if (calState.pair[0] === 'event-start') {
+      endEnabled = document.getElementById('event-end-toggle').checked;
+    }
+    var otherDate = (otherVal && endEnabled) ? parseISO(otherVal) : null;
 
-    var grid = document.getElementById('pv-cal-grid');
+    var grid = document.getElementById(calState.gridId);
     grid.innerHTML = '';
 
     var cells = [];
@@ -2663,8 +2688,9 @@
       if (otherDate) {
         var cellTs = new Date(c.year, c.month, c.day).getTime();
         var otherTs = new Date(otherDate.y, otherDate.m, otherDate.d).getTime();
-        if (calState.field === 'start' && cellTs > otherTs) disabled = true;
-        if (calState.field === 'end' && cellTs < otherTs) disabled = true;
+        var isStartField = calState.field === calState.pair[0];
+        if (isStartField && cellTs > otherTs) disabled = true;
+        if (!isStartField && cellTs < otherTs) disabled = true;
       }
       if (disabled) {
         btn.classList.add('is-disabled');
@@ -2692,15 +2718,8 @@
   }
 
   document.addEventListener('click', function(e) {
-    var cal = document.getElementById('pv-calendar');
-    if (cal && !cal.hidden) {
-      if (!cal.contains(e.target)) {
-        var pill = e.target.closest('.pv-date-pill');
-        if (!pill || (pill.id !== 'pill-start-date' && pill.id !== 'pill-end-date')) {
-          closeCalendar();
-        }
-      }
-    }
+    if (e.target.closest('.pv-calendar')) return;
+    closeCalendar();
   });
 
   /* ── Validation + D-Day ── */
