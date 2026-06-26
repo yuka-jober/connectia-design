@@ -2027,7 +2027,7 @@
           <span class="pv-prev-schedule-date" id="pv-prev-schedule-date"></span>
           <span class="pv-prev-schedule-time" id="pv-prev-schedule-time"></span>
         </p>
-        <div class="pv-prev-trust-row">
+        <div class="pv-prev-trust-row" id="pv-prev-trust-row">
           <div class="pv-prev-star-row">
             <i data-lucide="star"></i>
             <span class="pv-prev-star-score">5.0</span>
@@ -2883,6 +2883,7 @@
     var reviewsOn = document.getElementById('opt-reviews').checked;
     document.getElementById('pv-prev-review-section').hidden = !reviewsOn;
     document.getElementById('pv-prev-review-divider').hidden = !reviewsOn;
+    document.getElementById('pv-prev-trust-row').hidden = !reviewsOn;
 
     var startDate = document.getElementById('f-start').value;
     var endDate = document.getElementById('f-end').value;
