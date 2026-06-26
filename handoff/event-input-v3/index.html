@@ -2807,7 +2807,7 @@
       reviews:  document.getElementById('opt-reviews').checked,
       comments: document.getElementById('opt-comments').checked
     };
-    try { localStorage.setItem('connectia.event', JSON.stringify(data)); } catch(e) {}
+    try { sessionStorage.setItem('connectia.event', JSON.stringify(data)); } catch(e) {}
     window.location.href = 'event-landing-v2.html?from=publish';
   }
 
