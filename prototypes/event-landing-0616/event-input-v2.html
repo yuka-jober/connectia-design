@@ -530,6 +530,11 @@
     color: var(--color-text);
     min-height: 34px;
   }
+  .pv-title.is-error {
+    background: var(--color-destructive-subtle);
+    box-shadow: 0 0 0 4px var(--color-destructive-subtle);
+    border-radius: var(--r-xs);
+  }
   .pv-target {
     font-size: var(--fs-body-lg);
     color: var(--color-text-sub);
@@ -1688,7 +1693,7 @@
 
     <!-- Publish -->
     <div class="publish-bar">
-      <button class="btn btn-xl btn-block btn-fill-primary" id="publish-btn" onclick="publishEvent()" disabled>발행하기</button>
+      <button class="btn btn-xl btn-block btn-fill-primary" id="publish-btn" onclick="publishEvent()">발행하기</button>
     </div>
   </div>
 
@@ -2448,11 +2453,12 @@
 
   /* ── Validation + D-Day ── */
   function onInput() {
-    var titleOK = document.getElementById('f-title').textContent.trim() !== '';
+    var titleEl = document.getElementById('f-title');
+    var titleOK = titleEl.textContent.trim() !== '';
     var start = document.getElementById('f-start').value;
     var end = document.getElementById('f-end').value;
 
-    document.getElementById('publish-btn').disabled = !titleOK;
+    if (titleOK) titleEl.classList.remove('is-error');
 
     /* D-Day */
     var dday = document.getElementById('f-dday');
@@ -2473,7 +2479,13 @@
   }
 
   function publishEvent() {
-    if (document.getElementById('publish-btn').disabled) return;
+    var titleEl = document.getElementById('f-title');
+    if (titleEl.textContent.trim() === '') {
+      titleEl.classList.add('is-error');
+      titleEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setTimeout(function(){ titleEl.focus(); }, 250);
+      return;
+    }
     alert('이벤트가 발행되었습니다 (목업)');
   }
 

@@ -45,6 +45,7 @@
   --palette-gray-900: #111318;
 
   /* Red */
+  --palette-red-100: #fde2dc;
   --palette-red-400: #f87171;
   --palette-red-500: #c94022;
 
@@ -138,7 +139,8 @@
   --color-input:  var(--palette-gray-200);
 
   /* Status */
-  --color-destructive: var(--palette-red-500);
+  --color-destructive:        var(--palette-red-500);
+  --color-destructive-subtle: var(--palette-red-100);
   --color-success:     var(--palette-green-500);
   --color-star:        var(--palette-amber-400);
   --color-star-empty:  var(--palette-gray-200);

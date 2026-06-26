@@ -18,7 +18,7 @@
 - `components.css` — tokens.css에 의존. 그다음 로드.
 
 ## 사용 가능한 토큰 (tokens.css)
-- **색상(semantic):** `--color-primary / -dark / -light / -subtle`, `--color-brand-gradient / -banner-gradient`, `--color-bg / -surface / -surface-sub / -card`, `--color-text / -sub / -muted`, `--color-border / -input`, `--color-destructive / -success / -star / -star-empty`, `--color-on-primary / -on-primary-sub / -on-primary-faint`, `--color-scrim`
+- **색상(semantic):** `--color-primary / -dark / -light / -subtle`, `--color-brand-gradient / -banner-gradient`, `--color-bg / -surface / -surface-sub / -card`, `--color-text / -sub / -muted`, `--color-border / -input`, `--color-destructive / -destructive-subtle / -success / -star / -star-empty`, `--color-on-primary / -on-primary-sub / -on-primary-faint`, `--color-scrim`
 - **타이포(유틸 클래스):** `.text-display .text-title .text-heading .text-body-lg .text-body .text-label .text-caption .text-badge .text-link .text-metric .text-nav`
 - **radius:** `--r-xs/sm/md/lg/xl/full` · **shadow:** `--shadow-1`~`--shadow-4` · **motion:** `--motion-fast/standard/slow`, `--ease-enter/exit/standard`
 
