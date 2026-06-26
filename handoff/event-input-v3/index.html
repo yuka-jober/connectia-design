@@ -1684,10 +1684,6 @@
     font-size: var(--fs-label);
   }
 
-  /* 연락 방식 chips */
-  .pv-channel-chips {
-    display: flex; flex-wrap: wrap; gap: 8px;
-  }
   .pv-chip {
     background: var(--color-surface);
     border: 1px solid var(--color-border);
@@ -1903,18 +1899,6 @@
           <span class="pv-opt-row-value" id="disp-cta">이벤트 신청</span>
           <i data-lucide="chevron-right" class="pv-opt-icon-edit"></i>
         </button>
-        <button type="button" class="pv-opt-row" onclick="openSheet('eta')">
-          <i data-lucide="clock"></i>
-          <span class="pv-opt-row-label">예상 연락 시점</span>
-          <span class="pv-opt-row-value" id="disp-eta">1영업일 이내</span>
-          <i data-lucide="chevron-right" class="pv-opt-icon-edit"></i>
-        </button>
-        <button type="button" class="pv-opt-row" onclick="openSheet('channels')">
-          <i data-lucide="message-circle"></i>
-          <span class="pv-opt-row-label">연락 방식</span>
-          <span class="pv-opt-row-value" id="disp-channels">전화, 카카오 알림톡</span>
-          <i data-lucide="chevron-right" class="pv-opt-icon-edit"></i>
-        </button>
         <label class="pv-opt-row pv-opt-row-toggle">
           <i data-lucide="star"></i>
           <span class="pv-opt-row-label">리뷰 노출</span>
@@ -1946,19 +1930,6 @@
       <button type="button" class="pv-sheet-suggestion" onclick="pickSuggestion('cta','지금 신청하기')">지금 신청하기</button>
       <button type="button" class="pv-sheet-suggestion" onclick="pickSuggestion('cta','참여 신청')">참여 신청</button>
       <button type="button" class="pv-sheet-suggestion" onclick="pickSuggestion('cta','상담 신청')">상담 신청</button>
-    </div>
-    <button class="btn btn-lg btn-block btn-fill-primary" onclick="closeSheet()">완료</button>
-  </div>
-
-  <div class="pv-sheet" id="sheet-eta">
-    <div class="pv-sheet-handle"></div>
-    <div class="pv-sheet-title">예상 연락 시점</div>
-    <input type="text" class="pv-sheet-input" id="f-contact-eta" value="1영업일 이내" placeholder="예) 1영업일 이내" oninput="onSheetInput('eta')">
-    <div class="pv-sheet-suggestions">
-      <button type="button" class="pv-sheet-suggestion" onclick="pickSuggestion('eta','당일 연락')">당일 연락</button>
-      <button type="button" class="pv-sheet-suggestion" onclick="pickSuggestion('eta','1영업일 이내')">1영업일 이내</button>
-      <button type="button" class="pv-sheet-suggestion" onclick="pickSuggestion('eta','2~3영업일 이내')">2~3영업일 이내</button>
-      <button type="button" class="pv-sheet-suggestion" onclick="pickSuggestion('eta','신청 마감 후 일괄 연락')">신청 마감 후 일괄 연락</button>
     </div>
     <button class="btn btn-lg btn-block btn-fill-primary" onclick="closeSheet()">완료</button>
   </div>
@@ -2013,18 +1984,6 @@
     <div class="pv-tmpl-body">
       <div class="pv-tmpl-grid" id="tmpl-grid"></div>
     </div>
-  </div>
-
-  <div class="pv-sheet" id="sheet-channels">
-    <div class="pv-sheet-handle"></div>
-    <div class="pv-sheet-title">연락 방식</div>
-    <div class="pv-channel-chips" id="f-channels">
-      <button type="button" class="pv-chip is-selected" data-channel="phone" onclick="toggleChannel(this)">전화</button>
-      <button type="button" class="pv-chip is-selected" data-channel="kakao" onclick="toggleChannel(this)">카카오 알림톡</button>
-      <button type="button" class="pv-chip" data-channel="sms" onclick="toggleChannel(this)">문자</button>
-      <button type="button" class="pv-chip" data-channel="email" onclick="toggleChannel(this)">이메일</button>
-    </div>
-    <button class="btn btn-lg btn-block btn-fill-primary" onclick="closeSheet()">완료</button>
   </div>
 
   <!-- 미리보기 -->
@@ -2528,21 +2487,6 @@
     });
   }
 
-  /* ── Contact channel chips ── */
-  var CHANNEL_LABELS = { phone: '전화', kakao: '카카오 알림톡', sms: '문자', email: '이메일' };
-  function toggleChannel(btn) {
-    btn.classList.toggle('is-selected');
-    refreshChannelDisplay();
-  }
-  function refreshChannelDisplay() {
-    var picks = [];
-    document.querySelectorAll('#f-channels .pv-chip.is-selected').forEach(function(c){
-      picks.push(CHANNEL_LABELS[c.dataset.channel] || c.textContent.trim());
-    });
-    var disp = document.getElementById('disp-channels');
-    if (disp) disp.textContent = picks.length ? picks.join(', ') : '없음';
-  }
-
   /* ── Option bottom sheets ── */
   function openSheet(key) {
     var sheet = document.getElementById('sheet-' + key);
@@ -2561,14 +2505,10 @@
     if (key === 'cta') {
       var v = document.getElementById('f-cta').value.trim();
       document.getElementById('disp-cta').textContent = v || '이벤트 신청';
-    } else if (key === 'eta') {
-      var v2 = document.getElementById('f-contact-eta').value.trim();
-      document.getElementById('disp-eta').textContent = v2 || '미입력';
     }
   }
   function pickSuggestion(key, text) {
-    var inputId = key === 'cta' ? 'f-cta' : 'f-contact-eta';
-    var input = document.getElementById(inputId);
+    var input = document.getElementById('f-cta');
     if (input) input.value = text;
     onSheetInput(key);
   }
