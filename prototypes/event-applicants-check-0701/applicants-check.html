@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>신청자 리스트 — 엘린 피부과</title>
+<link rel="stylesheet" href="../../tokens.css">
+<link rel="stylesheet" href="../../components.css">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-base);
+    background: #e0e0e0;
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ── Frame (mobile) ── */
+  .frame {
+    width: 390px;
+    height: 844px;
+    max-height: 100dvh;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 32px 80px -20px rgba(0,0,0,0.28);
+    background: var(--color-surface);
+    border-radius: 44px;
+  }
+  @media (max-width: 439px) {
+    .frame { width: 100vw; height: 100dvh; max-height: none; border-radius: 0; }
+  }
+
+  /* ── 화면 전환 ── */
+  .screen { position: absolute; inset: 0; display: none; flex-direction: column; background: var(--color-surface); }
+  .screen.on { display: flex; }
+
+  /* ── Topbar (solid, list screen) ── */
+  .topbar-solid {
+    position: sticky; top: 0; z-index: 10;
+    display: flex; align-items: center; gap: 8px;
+    padding: 12px 8px;
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    flex-shrink: 0;
+  }
+  .topbar-solid .topbar-title {
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text);
+  }
+  .topbar-solid .topbar-right {
+    margin-left: auto;
+    display: flex; align-items: center; gap: 4px;
+  }
+
+  /* ── 공통 ── */
+  i[data-lucide] { display: inline-flex; flex-shrink: 0; }
+  svg.lucide { flex-shrink: 0; }
+
+  /* ── Topbar (floating over hero) ── */
+  .topbar {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 8px;
+    pointer-events: none;
+  }
+  .topbar .icon-btn {
+    pointer-events: auto;
+    background: rgba(255,255,255,0.35);
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    box-shadow: 0 1px 6px rgba(0,0,0,0.08);
+  }
+  .topbar .icon-btn:hover { background: rgba(255,255,255,0.55); }
+  .topbar-right { display: flex; align-items: center; gap: 4px; pointer-events: auto; }
+
+  /* 프레임 내부 한정: 바텀시트를 프레임 안에서 띄움 */
+  .frame .bottom-sheet-overlay,
+  .frame .bottom-sheet { position: absolute; }
+  .frame .bottom-sheet-overlay { border-radius: 44px; }
+  @media (max-width: 439px) {
+    .frame .bottom-sheet-overlay { border-radius: 0; }
+  }
+
+  /* ── Scroll body + sticky CTA ── */
+  .scroll-body { flex: 1; overflow-y: auto; background: var(--color-surface); padding-bottom: 96px; }
+  .sticky-bar {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    padding: 12px 20px calc(20px + env(safe-area-inset-bottom));
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+    display: flex; flex-direction: column; gap: 8px;
+    z-index: 5;
+  }
+  .sticky-meta {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    font-size: var(--fs-caption); color: var(--color-text-muted);
+  }
+  .sticky-meta strong { color: var(--color-text-sub); font-weight: var(--fw-semibold); }
+
+  /* Floating tooltip above CTA */
+  .cta-tooltip {
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 4px);
+    transform: translateX(-50%);
+    background: var(--color-text);
+    color: var(--color-on-primary);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-semibold);
+    padding: 8px 16px;
+    border-radius: var(--r-full);
+    white-space: nowrap;
+    box-shadow: var(--shadow-4);
+    pointer-events: none;
+    animation: tooltipFloat 2.4s var(--ease-standard) infinite;
+  }
+  .cta-tooltip::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: -5px;
+    transform: translateX(-50%);
+    width: 0; height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 6px solid var(--color-text);
+  }
+  @keyframes tooltipFloat {
+    0%, 100% { transform: translateX(-50%) translateY(0); }
+    50%      { transform: translateX(-50%) translateY(-6px); }
+  }
+  .cta-wrap { position: relative; }
+
+  /* ============================================
+     PARTICIPANTS LIST SCREEN
+     ============================================ */
+  .list-body {
+    flex: 1; overflow-y: auto;
+    background: var(--color-bg);
+    padding: 16px 16px 32px;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+
+  /* 이벤트 제목 + 수집 항목 묶음 카드 */
+  .event-card {
+    background: var(--color-surface);
+    border-radius: var(--r-md);
+    padding: 16px;
+    display: flex; flex-direction: column;
+    gap: 8px;
+  }
+  .list-event-name {
+    font-size: var(--fs-heading);
+    font-weight: var(--fw-bold);
+    letter-spacing: -0.3px;
+    color: var(--color-text);
+  }
+  .list-event-tag {
+    color: var(--color-primary);
+    margin-right: 8px;
+  }
+
+  /* 수집 항목 — 가벼운 한 줄 안내 */
+  .fields-summary {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  }
+  .fields-summary-text {
+    font-size: var(--fs-label); color: var(--color-text-sub);
+    flex: 1; min-width: 0;
+  }
+  .fields-summary-text strong {
+    color: var(--color-text-sub); font-weight: var(--fw-semibold);
+    margin-right: 4px;
+  }
+  /* 액션바: 합계 + 엑셀 다운로드 */
+  .list-actions {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    padding: 0 4px;
+  }
+  .list-count {
+    font-size: var(--fs-body); color: var(--color-text-sub);
+  }
+  .list-count strong { color: var(--color-text); font-weight: var(--fw-semibold); }
+
+  /* 참여자 — 큰 카드 하나에 행들 묶기 */
+  .applicant-rows {
+    background: var(--color-surface);
+    border-radius: var(--r-md);
+    padding: 4px 16px;
+    display: flex; flex-direction: column;
+  }
+  .applicant-row {
+    display: flex; flex-direction: column; gap: 12px;
+    padding: 16px 0;
+    border-top: 1px solid var(--color-border);
+  }
+  .applicant-row:first-child { border-top: none; }
+  .applicant-top {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
+  }
+  .applicant-name {
+    font-size: var(--fs-body-lg); font-weight: var(--fw-bold);
+    color: var(--color-text);
+    letter-spacing: -0.2px;
+  }
+  .applicant-date {
+    font-size: var(--fs-caption); color: var(--color-text-muted);
+    flex-shrink: 0;
+  }
+
+  /* 필드 목록 — 라벨/값 쌍이 임의 개수로 반복 */
+  .applicant-fields {
+    display: flex; flex-direction: column; gap: 8px;
+    margin: 0;
+  }
+  .applicant-field {
+    display: flex; align-items: baseline; gap: 12px;
+  }
+  .applicant-field-label {
+    flex: 0 0 72px;
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+    font-weight: var(--fw-medium);
+  }
+  .applicant-field-value {
+    flex: 1;
+    margin: 0;
+    font-size: var(--fs-label);
+    color: var(--color-text);
+    line-height: 1.5;
+    display: flex; flex-wrap: wrap; gap: 4px 6px;
+    align-items: center;
+    word-break: break-word;
+  }
+  .applicant-field-value.is-empty {
+    color: var(--color-text-muted);
+  }
+  .answer-chip {
+    display: inline-flex; align-items: center;
+    padding: 4px 8px;
+    background: var(--color-surface-sub);
+    color: var(--color-text-sub);
+    border-radius: var(--r-full);
+    font-size: var(--fs-caption);
+    font-weight: var(--fw-medium);
+  }
+  .answer-text {
+    display: block;
+    width: 100%;
+  }
+
+  /* ============================================
+     LANDING SCREEN
+     ============================================ */
+
+  /* Hero thumbnail — 4:3 slider */
+  .hero {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    flex-shrink: 0;
+    background: var(--color-primary-light);
+  }
+  .hero-slider {
+    width: 100%; height: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    display: flex;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .hero-slider::-webkit-scrollbar { display: none; }
+  .hero-slide {
+    flex: 0 0 100%;
+    width: 100%; height: 100%;
+    scroll-snap-align: start;
+    background-size: cover;
+    background-position: center;
+    background-color: var(--color-primary-light);
+    position: relative;
+  }
+  .hero-slide::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(0,0,0,0) 50%, rgba(0,0,0,0.35) 100%);
+    pointer-events: none;
+  }
+  .hero-pagination {
+    position: absolute; bottom: 12px; right: 12px;
+    z-index: 2;
+    background: rgba(17,19,24,0.55); color: var(--color-on-primary);
+    border-radius: var(--r-full);
+    padding: 4px 10px;
+    font-size: var(--fs-badge); font-weight: var(--fw-medium);
+  }
+
+  /* Hero info block */
+  .hero-info {
+    padding: 24px 20px 16px;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .hero-clinic-row { display: inline-flex; align-items: center; gap: 2px; cursor: pointer; align-self: flex-start; }
+  .hero-clinic-name {
+    font-size: var(--fs-label); font-weight: var(--fw-semibold);
+    color: var(--color-text-sub);
+  }
+  .hero-clinic-row i[data-lucide],
+  .hero-clinic-row svg { width: 16px; height: 16px; color: var(--color-text-muted); }
+  .hero-headline {
+    font-size: 24px; font-weight: var(--fw-bold);
+    line-height: 1.35; letter-spacing: -0.5px; color: var(--color-text);
+  }
+  .hero-target {
+    font-size: var(--fs-body-lg); color: var(--color-text-sub);
+    line-height: 1.5;
+  }
+
+  .trust-row {
+    display: flex; align-items: center; gap: 6px;
+    flex-wrap: wrap;
+    padding-top: 4px;
+  }
+  .trust-dot { font-size: var(--fs-caption); color: var(--color-text-muted); }
+  .star-row { display: inline-flex; align-items: center; gap: 4px; }
+  .star-row i[data-lucide],
+  .star-row svg { width: 14px; height: 14px; color: var(--color-star); fill: var(--color-star); }
+  .star-score { font-size: var(--fs-label); font-weight: var(--fw-semibold); color: var(--color-text); margin-left: 2px; }
+  .star-count { font-size: var(--fs-caption); color: var(--color-text-muted); }
+
+  .tag-official {
+    display: inline-flex; align-self: flex-start;
+    align-items: center; gap: 4px;
+    color: var(--color-primary);
+    font-size: var(--fs-caption);
+    font-weight: var(--fw-semibold);
+  }
+  .tag-official i[data-lucide],
+  .tag-official svg { width: 14px; height: 14px; }
+
+  /* Section divider */
+  .section-divider {
+    height: 8px;
+    background: var(--color-bg);
+    flex-shrink: 0;
+  }
+
+  /* Section */
+  .section {
+    padding: 24px 20px;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  .section-title {
+    font-size: var(--fs-heading);
+    font-weight: var(--fw-bold);
+    color: var(--color-text);
+    letter-spacing: -0.2px;
+  }
+  .section-sub {
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+  }
+
+  /* Date pill */
+  .date-card {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--color-surface-sub);
+    border-radius: var(--r-md);
+    padding: 16px 20px;
+  }
+  .date-card i[data-lucide],
+  .date-card svg { width: 20px; height: 20px; color: var(--color-primary); }
+  .date-card-text { flex: 1; }
+  .date-card-label { font-size: var(--fs-caption); color: var(--color-text-muted); margin-bottom: 2px; }
+  .date-card-value { font-size: var(--fs-body); font-weight: var(--fw-semibold); color: var(--color-text); }
+  .date-card-tag {
+    font-size: var(--fs-badge); font-weight: var(--fw-semibold);
+    color: var(--color-destructive);
+    padding: 4px 8px;
+    background: rgba(201,64,34,0.10);
+    border-radius: var(--r-full);
+  }
+
+  /* Checklist */
+  .checklist {
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .check-item {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-md);
+  }
+  .check-item .check-circle {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-on-primary);
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .check-item .check-circle i[data-lucide],
+  .check-item .check-circle svg {
+    width: 12px; height: 12px;
+    stroke-width: 3;
+  }
+  .check-item-text {
+    font-size: var(--fs-body-lg); color: var(--color-text);
+    line-height: 1.5;
+  }
+
+  /* Reviews */
+  .review-scroll {
+    display: flex; gap: 12px;
+    overflow-x: auto;
+    margin: 0 -20px;
+    padding: 0 20px 8px;
+    scrollbar-width: none;
+  }
+  .review-scroll::-webkit-scrollbar { display: none; }
+  .review-card {
+    width: 240px; flex-shrink: 0;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-md);
+    overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .review-img {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    background-size: cover; background-position: center;
+    background-color: var(--color-surface-sub);
+  }
+  .review-body {
+    padding: 12px 14px 14px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .review-stars { display: inline-flex; align-items: center; gap: 2px; }
+  .review-stars i[data-lucide],
+  .review-stars svg { width: 12px; height: 12px; color: var(--color-star); fill: var(--color-star); }
+  .review-text {
+    font-size: var(--fs-label); color: var(--color-text);
+    line-height: 1.5;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .review-meta {
+    font-size: 10px; color: var(--color-text-muted);
+    display: flex; align-items: center; gap: 4px;
+  }
+  .review-meta .verified {
+    display: inline-flex; align-items: center; gap: 2px;
+    color: var(--color-primary);
+    font-weight: var(--fw-medium);
+  }
+  .review-meta .verified i[data-lucide],
+  .review-meta .verified svg { width: 10px; height: 10px; }
+
+  /* Description */
+  .desc {
+    font-size: var(--fs-body); line-height: 1.7;
+    color: var(--color-text-sub);
+    position: relative;
+    max-height: 96px;
+    overflow: hidden;
+    transition: max-height var(--motion-standard) var(--ease-standard);
+  }
+  .desc.is-expanded { max-height: 2000px; }
+  .desc-fade {
+    position: absolute; bottom: 0; left: 0; right: 0; height: 48px;
+    background: linear-gradient(180deg, rgba(255,255,255,0) 0%, var(--color-surface) 100%);
+    pointer-events: none;
+  }
+  .desc.is-expanded + .desc-toggle .desc-toggle-icon { transform: rotate(180deg); }
+  .desc.is-expanded ~ .desc-fade { display: none; }
+  .desc-toggle {
+    margin-top: 12px;
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: var(--fs-label); font-weight: var(--fw-medium);
+    color: var(--color-text-sub);
+    background: none; border: none; cursor: pointer;
+    font-family: var(--font-base);
+    padding: 0;
+  }
+  .desc-toggle i[data-lucide],
+  .desc-toggle svg {
+    width: 16px; height: 16px;
+    transition: transform var(--motion-fast) var(--ease-standard);
+  }
+
+  /* Clinic page link card */
+  .clinic-link {
+    display: flex; align-items: center; gap: 12px;
+    padding: 16px;
+    background: var(--color-surface-sub);
+    border-radius: var(--r-md);
+    cursor: pointer;
+    border: none;
+    width: 100%;
+    text-align: left;
+    font-family: var(--font-base);
+  }
+  .clinic-link:hover { background: var(--color-border); }
+  .clinic-link-thumb {
+    width: 44px; height: 44px;
+    border-radius: var(--r-sm);
+    background-color: var(--color-primary-light);
+    background-image: url('https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=300&auto=format&fit=crop');
+    background-size: cover; background-position: center;
+    flex-shrink: 0;
+  }
+  .clinic-link-text { flex: 1; }
+  .clinic-link-name {
+    font-size: var(--fs-body); font-weight: var(--fw-semibold);
+    color: var(--color-text);
+  }
+  .clinic-link-sub {
+    font-size: var(--fs-caption); color: var(--color-text-muted);
+    margin-top: 2px;
+  }
+  .clinic-link i.chev,
+  .clinic-link svg.chev { width: 18px; height: 18px; color: var(--color-text-muted); }
+
+  /* Lucide stars row */
+  .star-icons-row i[data-lucide],
+  .star-icons-row svg {
+    width: 14px; height: 14px;
+    color: var(--color-star);
+    fill: var(--color-star);
+  }
+</style>
+</head>
+<body>
+
+<div class="frame">
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- PARTICIPANTS LIST (소유자 전용)              -->
+  <!-- ════════════════════════════════════════════ -->
+  <div class="screen on" id="screen-list">
+    <div class="topbar-solid">
+      <button class="icon-btn icon-btn-clear" aria-label="뒤로" onclick="window.location.href='event-landing.html'">
+        <i data-lucide="chevron-left" style="width:22px;height:22px;color:var(--color-text);"></i>
+      </button>
+      <span class="topbar-title">신청자 리스트 (관리자 화면)</span>
+    </div>
+
+    <div class="list-body">
+
+      <!-- 이벤트 제목 + 수집 항목 -->
+      <div class="event-card">
+        <h2 class="list-event-name"><span class="list-event-tag">이벤트</span>수면 리쥬베룩 50% 감사 이벤트</h2>
+        <div class="fields-summary">
+          <div class="fields-summary-text">
+            <strong>받고 있는 정보</strong><span id="fields-summary-list"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 합계 + 엑셀 다운로드 -->
+      <div class="list-actions">
+        <div class="list-count"><strong>총 20명</strong> 신청</div>
+        <button class="btn btn-sm btn-line-dark btn-pill" onclick="downloadExcel()">
+          <i data-lucide="download" style="width:14px;height:14px"></i>
+          엑셀 다운로드
+        </button>
+      </div>
+
+      <!-- 참여자 리스트 -->
+      <div class="applicant-rows" id="applicant-list"></div>
+
+    </div>
+  </div>
+
+  <!-- 바텀시트: 수정/삭제 -->
+  <div class="bottom-sheet-overlay" id="sheet-overlay" onclick="closeSheet()"></div>
+  <div class="bottom-sheet" id="sheet">
+    <div class="bottom-sheet-handle"></div>
+    <div class="menu" style="border:none;box-shadow:none;width:100%;display:flex;flex-direction:column">
+      <button class="menu-item" style="width:100%;background:none;border:none;font-family:inherit;text-align:left" onclick="closeSheet(); alert('이벤트 수정');">
+        수정
+      </button>
+      <button class="menu-item is-danger" style="width:100%;background:none;border:none;font-family:inherit;text-align:left" onclick="closeSheet(); alert('이벤트 삭제');">
+        삭제
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+  // ── Bottom sheet ──
+  function openSheet() {
+    document.getElementById('sheet-overlay').classList.add('is-open');
+    document.getElementById('sheet').classList.add('is-open');
+  }
+  function closeSheet() {
+    document.getElementById('sheet-overlay').classList.remove('is-open');
+    document.getElementById('sheet').classList.remove('is-open');
+  }
+
+  // ── Screen navigation ──
+  function navigate(id) {
+    document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('on'); });
+    var target = document.getElementById(id);
+    if (target) {
+      target.classList.add('on');
+      var scroller = target.querySelector('.scroll-body, .list-body');
+      if (scroller) scroller.scrollTop = 0;
+    }
+    if (window.lucide) lucide.createIcons();
+  }
+
+  // ── 이벤트가 수집하는 필드 정의 (기본 + 커스텀 질문) ──
+  // type: 'text' 주관식 | 'choice' 객관식(단일/복수 모두 배열 표기 가능)
+  var FIELDS = [
+    { key:'phone',      label:'전화번호', type:'text' },
+    { key:'email',      label:'이메일',   type:'text' },
+    { key:'experience', label:'시술 경험', type:'choice' },
+    { key:'interest',   label:'관심 부위', type:'choice' },
+    { key:'message',    label:'문의사항',  type:'text' },
+  ];
+
+  // ── Mock applicants (20명) — 값은 문자열 또는 배열(복수 답변) ──
+  var APPLICANTS = [
+    { name:'김민서', date:'2026.06.28 14:32', values:{ phone:'010-2841-9032', email:'minseo.k@gmail.com',    experience:'처음이에요',  interest:['피부톤','탄력'],       message:'주말에도 예약 가능한가요?' } },
+    { name:'이지훈', date:'2026.06.28 11:08', values:{ phone:'010-7193-4820', email:'jihoon.lee@naver.com',  experience:'경험있어요',  interest:['모공'],               message:'' } },
+    { name:'박서연', date:'2026.06.27 22:45', values:{ phone:'010-3072-1948', email:'seoyeon93@daum.net',    experience:'고민 중',     interest:['피부톤','색소','탄력'], message:'회복 기간이 얼마나 걸리나요?' } },
+    { name:'최도윤', date:'2026.06.27 19:20', values:{ phone:'010-9483-2017', email:'',                      experience:'처음이에요',  interest:['탄력'],               message:'' } },
+    { name:'정하은', date:'2026.06.27 16:11', values:{ phone:'010-5621-8347', email:'haeun.j@gmail.com',     experience:'처음이에요',  interest:['색소','피부톤'],       message:'상담만 먼저 받아볼 수 있을까요?' } },
+    { name:'한지우', date:'2026.06.27 09:54', values:{ phone:'010-4093-7251', email:'jiwoo.han@naver.com',   experience:'경험있어요',  interest:['모공','탄력'],         message:'' } },
+    { name:'송예린', date:'2026.06.26 21:33', values:{ phone:'010-8217-3940', email:'yerin.song@gmail.com',  experience:'처음이에요',  interest:['피부톤'],             message:'' } },
+    { name:'강현우', date:'2026.06.26 18:02', values:{ phone:'010-1937-6428', email:'hyunwoo.k@daum.net',    experience:'고민 중',     interest:['탄력','모공'],         message:'남자도 받아도 되나요?' } },
+    { name:'윤서아', date:'2026.06.26 14:47', values:{ phone:'010-6504-2839', email:'seoa.yoon@gmail.com',   experience:'처음이에요',  interest:['색소'],               message:'' } },
+    { name:'임채원', date:'2026.06.26 10:25', values:{ phone:'010-3829-4716', email:'',                      experience:'경험있어요',  interest:['피부톤','탄력','모공'], message:'전에 받았던 시술이랑 병행 가능한가요?' } },
+    { name:'오민재', date:'2026.06.25 23:18', values:{ phone:'010-7281-5093', email:'minjae.oh@naver.com',   experience:'처음이에요',  interest:['탄력'],               message:'' } },
+    { name:'배수아', date:'2026.06.25 20:06', values:{ phone:'010-2940-1837', email:'sua.bae@gmail.com',     experience:'처음이에요',  interest:['피부톤','색소'],       message:'' } },
+    { name:'문지호', date:'2026.06.25 17:42', values:{ phone:'010-5163-8204', email:'jiho.moon@kakao.com',   experience:'고민 중',     interest:['모공'],               message:'가격 문의드려요' } },
+    { name:'장유나', date:'2026.06.25 13:21', values:{ phone:'010-9072-4385', email:'yuna.jang@gmail.com',   experience:'경험있어요',  interest:['탄력','색소'],         message:'' } },
+    { name:'권태리', date:'2026.06.24 22:50', values:{ phone:'010-4708-2519', email:'',                      experience:'처음이에요',  interest:['피부톤'],             message:'' } },
+    { name:'조은서', date:'2026.06.24 19:34', values:{ phone:'010-3625-7194', email:'eunseo.cho@naver.com',  experience:'처음이에요',  interest:['탄력','모공'],         message:'' } },
+    { name:'백승호', date:'2026.06.24 15:08', values:{ phone:'010-8146-0273', email:'seungho.b@gmail.com',   experience:'경험있어요',  interest:['색소'],               message:'예약 변경 가능한지 궁금해요' } },
+    { name:'서지윤', date:'2026.06.24 11:55', values:{ phone:'010-2517-3946', email:'jiyoon.seo@daum.net',   experience:'처음이에요',  interest:['피부톤','탄력','모공','색소'], message:'' } },
+    { name:'노아람', date:'2026.06.23 21:43', values:{ phone:'010-7392-5681', email:'aram.noh@gmail.com',    experience:'고민 중',     interest:['탄력'],               message:'' } },
+    { name:'전민호', date:'2026.06.23 16:29', values:{ phone:'010-4081-2735', email:'minho.jeon@kakao.com',  experience:'처음이에요',  interest:['피부톤','색소'],       message:'' } },
+  ];
+
+  function escapeHTML(s) {
+    return String(s).replace(/[&<>"']/g, function(c){
+      return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+    });
+  }
+
+  function renderFieldValue(field, raw) {
+    var isEmpty = raw === undefined || raw === null || raw === '' || (Array.isArray(raw) && raw.length === 0);
+    if (isEmpty) {
+      return '<dd class="applicant-field-value is-empty">—</dd>';
+    }
+    if (field.type === 'choice') {
+      var list = Array.isArray(raw) ? raw : [raw];
+      var chips = list.map(function(v){
+        return '<span class="answer-chip">' + escapeHTML(v) + '</span>';
+      }).join('');
+      return '<dd class="applicant-field-value">' + chips + '</dd>';
+    }
+    // text (주관식)
+    return '<dd class="applicant-field-value"><span class="answer-text">' + escapeHTML(raw) + '</span></dd>';
+  }
+
+  function renderApplicants() {
+    var wrap = document.getElementById('applicant-list');
+    if (!wrap) return;
+    wrap.innerHTML = APPLICANTS.map(function(a){
+      var fieldsHTML = FIELDS.map(function(field){
+        return ''
+          + '<div class="applicant-field">'
+          +   '<dt class="applicant-field-label">' + escapeHTML(field.label) + '</dt>'
+          +   renderFieldValue(field, a.values[field.key])
+          + '</div>';
+      }).join('');
+      return ''
+        + '<div class="applicant-row">'
+        +   '<div class="applicant-top">'
+        +     '<span class="applicant-name">' + escapeHTML(a.name) + '</span>'
+        +     '<span class="applicant-date">' + escapeHTML(a.date) + '</span>'
+        +   '</div>'
+        +   '<dl class="applicant-fields">' + fieldsHTML + '</dl>'
+        + '</div>';
+    }).join('');
+  }
+  renderApplicants();
+
+  (function renderFieldsSummary(){
+    var el = document.getElementById('fields-summary-list');
+    if (!el) return;
+    var labels = ['이름'].concat(FIELDS.map(function(f){ return f.label; }));
+    el.textContent = labels.join(' · ');
+  })();
+
+  // ── Excel download (mock CSV) ──
+  function downloadExcel() {
+    var header = ['이름'].concat(FIELDS.map(function(f){ return f.label; })).concat(['신청일']);
+    var rows = APPLICANTS.map(function(a){
+      var row = [a.name];
+      FIELDS.forEach(function(f){
+        var v = a.values[f.key];
+        if (Array.isArray(v)) v = v.join(', ');
+        row.push(v == null ? '' : v);
+      });
+      row.push(a.date);
+      return row;
+    });
+    var csv = [header].concat(rows)
+      .map(function(r){ return r.map(function(c){ return '"' + String(c).replace(/"/g,'""') + '"'; }).join(','); })
+      .join('\n');
+    var blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = '신청자_리스트_' + new Date().toISOString().slice(0,10) + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  lucide.createIcons();
+
+  // Description expand
+  function toggleDesc() {
+    var block = document.getElementById('desc-block');
+    var fade = document.getElementById('desc-fade');
+    var label = document.getElementById('desc-toggle-label');
+    var expanded = block.classList.toggle('is-expanded');
+    fade.style.display = expanded ? 'none' : 'block';
+    label.textContent = expanded ? '접기' : '더보기';
+    var icon = document.querySelector('#desc-toggle .desc-toggle-icon');
+    if (icon) icon.style.transform = expanded ? 'rotate(180deg)' : '';
+  }
+
+  // Hero slider pagination
+  (function() {
+    var slider = document.getElementById('hero-slider');
+    var page = document.getElementById('hero-pagination');
+    if (!slider || !page) return;
+    var total = slider.querySelectorAll('.hero-slide').length;
+    slider.addEventListener('scroll', function() {
+      var index = Math.round(slider.scrollLeft / slider.clientWidth);
+      page.textContent = (index + 1) + ' / ' + total;
+    });
+  })();
+</script>
+</body>
+</html>
