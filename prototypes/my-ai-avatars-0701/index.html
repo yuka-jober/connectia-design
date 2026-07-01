@@ -477,10 +477,10 @@
         <div class="list" id="settings-list-community"></div>
       </div>
 
-      <div class="sheet-cta">
+      <div class="sheet-cta" id="settings-cta">
         <button class="create-btn" type="button" id="settings-create-btn">
           <span class="create-icon"><i data-lucide="plus"></i></span>
-          <span id="settings-create-label">새 AI 아바타 만들기</span>
+          <span>새 AI 아바타 만들기</span>
         </button>
       </div>
     </div>
@@ -632,8 +632,8 @@
     settingsView.querySelectorAll('.settings-panel').forEach(function(p){
       p.classList.toggle('is-active', p.id === 'settings-panel-' + tabName);
     });
-    document.getElementById('settings-create-label').textContent =
-      tabName === 'ai' ? '새 AI 아바타 만들기' : '새 커뮤니티 찾기';
+    // 커뮤니티 탭에서는 하단 CTA 숨김
+    document.getElementById('settings-cta').style.display = (tabName === 'ai') ? 'flex' : 'none';
   }
 
   function updateTabDots() {
