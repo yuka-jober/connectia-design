@@ -636,6 +636,115 @@
     color: var(--color-star);
     fill: var(--color-star);
   }
+
+  /* ============================================
+     PARTICIPANTS LIST SCREEN
+     ============================================ */
+  .list-body {
+    flex: 1; overflow-y: auto;
+    background: var(--color-bg);
+    padding: 16px 16px 32px;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .event-card {
+    background: var(--color-surface);
+    border-radius: var(--r-md);
+    padding: 16px;
+    display: flex; flex-direction: column;
+    gap: 8px;
+  }
+  .list-event-name {
+    font-size: var(--fs-heading);
+    font-weight: var(--fw-bold);
+    letter-spacing: -0.3px;
+    color: var(--color-text);
+  }
+  .list-event-tag {
+    color: var(--color-primary);
+    margin-right: 8px;
+  }
+  .fields-summary {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  }
+  .fields-summary-text {
+    font-size: var(--fs-label); color: var(--color-text-sub);
+    flex: 1; min-width: 0;
+  }
+  .fields-summary-text strong {
+    color: var(--color-text-sub); font-weight: var(--fw-semibold);
+    margin-right: 4px;
+  }
+  .list-actions {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    padding: 0 4px;
+  }
+  .list-count {
+    font-size: var(--fs-body); color: var(--color-text-sub);
+  }
+  .list-count strong { color: var(--color-text); font-weight: var(--fw-semibold); }
+  .applicant-rows {
+    background: var(--color-surface);
+    border-radius: var(--r-md);
+    padding: 4px 16px;
+    display: flex; flex-direction: column;
+  }
+  .applicant-row {
+    display: flex; flex-direction: column; gap: 12px;
+    padding: 16px 0;
+    border-top: 1px solid var(--color-border);
+  }
+  .applicant-row:first-child { border-top: none; }
+  .applicant-top {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
+  }
+  .applicant-name {
+    font-size: var(--fs-body-lg); font-weight: var(--fw-bold);
+    color: var(--color-text);
+    letter-spacing: -0.2px;
+  }
+  .applicant-date {
+    font-size: var(--fs-caption); color: var(--color-text-muted);
+    flex-shrink: 0;
+  }
+  .applicant-fields {
+    display: flex; flex-direction: column; gap: 8px;
+    margin: 0;
+  }
+  .applicant-field {
+    display: flex; align-items: baseline; gap: 12px;
+  }
+  .applicant-field-label {
+    flex: 0 0 72px;
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+    font-weight: var(--fw-medium);
+  }
+  .applicant-field-value {
+    flex: 1;
+    margin: 0;
+    font-size: var(--fs-label);
+    color: var(--color-text);
+    line-height: 1.5;
+    display: flex; flex-wrap: wrap; gap: 4px 6px;
+    align-items: center;
+    word-break: break-word;
+  }
+  .applicant-field-value.is-empty {
+    color: var(--color-text-muted);
+  }
+  .answer-chip {
+    display: inline-flex; align-items: center;
+    padding: 4px 8px;
+    background: var(--color-surface-sub);
+    color: var(--color-text-sub);
+    border-radius: var(--r-full);
+    font-size: var(--fs-caption);
+    font-weight: var(--fw-medium);
+  }
+  .answer-text {
+    display: block;
+    width: 100%;
+  }
 </style>
 </head>
 <body>
@@ -655,7 +764,7 @@
           </button>
           <div class="topbar-actions">
             <div class="owner-tip-wrap">
-              <button class="icon-btn icon-btn-clear has-label" aria-label="신청자 보기" onclick="window.location.href='applicants-check.html'">
+              <button class="icon-btn icon-btn-clear has-label" aria-label="신청자 보기" onclick="navigate('screen-list')">
                 <i data-lucide="users" style="width:18px;height:18px;color:var(--color-text);"></i>
                 <span>신청자 보기</span>
               </button>
@@ -949,6 +1058,39 @@
       </div>
   </div>
 
+  <!-- ════════════════════════════════════════════ -->
+  <!-- SCREEN 4 — PARTICIPANTS LIST (소유자 전용)   -->
+  <!-- ════════════════════════════════════════════ -->
+  <div class="screen" id="screen-list">
+    <div class="topbar-solid">
+      <button class="icon-btn icon-btn-clear" aria-label="뒤로" onclick="navigate('screen-landing')">
+        <i data-lucide="chevron-left" style="width:22px;height:22px;color:var(--color-text);"></i>
+      </button>
+      <span class="topbar-title">신청자 리스트 (관리자 화면)</span>
+    </div>
+
+    <div class="list-body">
+      <div class="event-card">
+        <h2 class="list-event-name"><span class="list-event-tag">이벤트</span>수면 리쥬베룩 50% 감사 이벤트</h2>
+        <div class="fields-summary">
+          <div class="fields-summary-text">
+            <strong>받고 있는 정보</strong><span id="fields-summary-list"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="list-actions">
+        <div class="list-count"><strong>총 20명</strong> 신청</div>
+        <button class="btn btn-sm btn-line-dark btn-pill" onclick="downloadExcel()">
+          <i data-lucide="download" style="width:14px;height:14px"></i>
+          엑셀 다운로드
+        </button>
+      </div>
+
+      <div class="applicant-rows" id="applicant-list"></div>
+    </div>
+  </div>
+
 </div>
 
 <script src="https://unpkg.com/lucide@latest"></script>
@@ -1007,7 +1149,7 @@
     var target = document.getElementById(id);
     if (target) {
       target.classList.add('on');
-      var scroller = target.querySelector('.scroll-body, .apply-body, .done-body');
+      var scroller = target.querySelector('.scroll-body, .apply-body, .done-body, .list-body');
       if (scroller) scroller.scrollTop = 0;
     }
   }
@@ -1231,6 +1373,113 @@
       lucide.createIcons();
     } catch(e) {}
   })();
+
+  // ══════════════════════════════════════════════
+  // 신청자 리스트 (관리자 전용)
+  // ══════════════════════════════════════════════
+  // 필드 정의 — type: 'text' 주관식 | 'choice' 객관식(단일/복수)
+  var FIELDS = [
+    { key:'phone',      label:'전화번호', type:'text' },
+    { key:'email',      label:'이메일',   type:'text' },
+    { key:'experience', label:'시술 경험', type:'choice' },
+    { key:'interest',   label:'관심 부위', type:'choice' },
+    { key:'message',    label:'문의사항',  type:'text' },
+  ];
+
+  var APPLICANTS = [
+    { name:'김민서', date:'2026.06.28 14:32', values:{ phone:'010-2841-9032', email:'minseo.k@gmail.com',    experience:'처음이에요',  interest:['피부톤','탄력'],       message:'주말에도 예약 가능한가요?' } },
+    { name:'이지훈', date:'2026.06.28 11:08', values:{ phone:'010-7193-4820', email:'jihoon.lee@naver.com',  experience:'경험있어요',  interest:['모공'],               message:'' } },
+    { name:'박서연', date:'2026.06.27 22:45', values:{ phone:'010-3072-1948', email:'seoyeon93@daum.net',    experience:'고민 중',     interest:['피부톤','색소','탄력'], message:'회복 기간이 얼마나 걸리나요?' } },
+    { name:'최도윤', date:'2026.06.27 19:20', values:{ phone:'010-9483-2017', email:'',                      experience:'처음이에요',  interest:['탄력'],               message:'' } },
+    { name:'정하은', date:'2026.06.27 16:11', values:{ phone:'010-5621-8347', email:'haeun.j@gmail.com',     experience:'처음이에요',  interest:['색소','피부톤'],       message:'상담만 먼저 받아볼 수 있을까요?' } },
+    { name:'한지우', date:'2026.06.27 09:54', values:{ phone:'010-4093-7251', email:'jiwoo.han@naver.com',   experience:'경험있어요',  interest:['모공','탄력'],         message:'' } },
+    { name:'송예린', date:'2026.06.26 21:33', values:{ phone:'010-8217-3940', email:'yerin.song@gmail.com',  experience:'처음이에요',  interest:['피부톤'],             message:'' } },
+    { name:'강현우', date:'2026.06.26 18:02', values:{ phone:'010-1937-6428', email:'hyunwoo.k@daum.net',    experience:'고민 중',     interest:['탄력','모공'],         message:'남자도 받아도 되나요?' } },
+    { name:'윤서아', date:'2026.06.26 14:47', values:{ phone:'010-6504-2839', email:'seoa.yoon@gmail.com',   experience:'처음이에요',  interest:['색소'],               message:'' } },
+    { name:'임채원', date:'2026.06.26 10:25', values:{ phone:'010-3829-4716', email:'',                      experience:'경험있어요',  interest:['피부톤','탄력','모공'], message:'전에 받았던 시술이랑 병행 가능한가요?' } },
+    { name:'오민재', date:'2026.06.25 23:18', values:{ phone:'010-7281-5093', email:'minjae.oh@naver.com',   experience:'처음이에요',  interest:['탄력'],               message:'' } },
+    { name:'배수아', date:'2026.06.25 20:06', values:{ phone:'010-2940-1837', email:'sua.bae@gmail.com',     experience:'처음이에요',  interest:['피부톤','색소'],       message:'' } },
+    { name:'문지호', date:'2026.06.25 17:42', values:{ phone:'010-5163-8204', email:'jiho.moon@kakao.com',   experience:'고민 중',     interest:['모공'],               message:'가격 문의드려요' } },
+    { name:'장유나', date:'2026.06.25 13:21', values:{ phone:'010-9072-4385', email:'yuna.jang@gmail.com',   experience:'경험있어요',  interest:['탄력','색소'],         message:'' } },
+    { name:'권태리', date:'2026.06.24 22:50', values:{ phone:'010-4708-2519', email:'',                      experience:'처음이에요',  interest:['피부톤'],             message:'' } },
+    { name:'조은서', date:'2026.06.24 19:34', values:{ phone:'010-3625-7194', email:'eunseo.cho@naver.com',  experience:'처음이에요',  interest:['탄력','모공'],         message:'' } },
+    { name:'백승호', date:'2026.06.24 15:08', values:{ phone:'010-8146-0273', email:'seungho.b@gmail.com',   experience:'경험있어요',  interest:['색소'],               message:'예약 변경 가능한지 궁금해요' } },
+    { name:'서지윤', date:'2026.06.24 11:55', values:{ phone:'010-2517-3946', email:'jiyoon.seo@daum.net',   experience:'처음이에요',  interest:['피부톤','탄력','모공','색소'], message:'' } },
+    { name:'노아람', date:'2026.06.23 21:43', values:{ phone:'010-7392-5681', email:'aram.noh@gmail.com',    experience:'고민 중',     interest:['탄력'],               message:'' } },
+    { name:'전민호', date:'2026.06.23 16:29', values:{ phone:'010-4081-2735', email:'minho.jeon@kakao.com',  experience:'처음이에요',  interest:['피부톤','색소'],       message:'' } },
+  ];
+
+  function renderFieldValue(field, raw) {
+    var isEmpty = raw === undefined || raw === null || raw === '' || (Array.isArray(raw) && raw.length === 0);
+    if (isEmpty) {
+      return '<dd class="applicant-field-value is-empty">—</dd>';
+    }
+    if (field.type === 'choice') {
+      var list = Array.isArray(raw) ? raw : [raw];
+      var chips = list.map(function(v){
+        return '<span class="answer-chip">' + escapeHTML(v) + '</span>';
+      }).join('');
+      return '<dd class="applicant-field-value">' + chips + '</dd>';
+    }
+    return '<dd class="applicant-field-value"><span class="answer-text">' + escapeHTML(raw) + '</span></dd>';
+  }
+
+  function renderApplicants() {
+    var wrap = document.getElementById('applicant-list');
+    if (!wrap) return;
+    wrap.innerHTML = APPLICANTS.map(function(a){
+      var fieldsHTML = FIELDS.map(function(field){
+        return ''
+          + '<div class="applicant-field">'
+          +   '<dt class="applicant-field-label">' + escapeHTML(field.label) + '</dt>'
+          +   renderFieldValue(field, a.values[field.key])
+          + '</div>';
+      }).join('');
+      return ''
+        + '<div class="applicant-row">'
+        +   '<div class="applicant-top">'
+        +     '<span class="applicant-name">' + escapeHTML(a.name) + '</span>'
+        +     '<span class="applicant-date">' + escapeHTML(a.date) + '</span>'
+        +   '</div>'
+        +   '<dl class="applicant-fields">' + fieldsHTML + '</dl>'
+        + '</div>';
+    }).join('');
+    if (window.lucide) lucide.createIcons();
+  }
+  renderApplicants();
+
+  (function renderFieldsSummary(){
+    var el = document.getElementById('fields-summary-list');
+    if (!el) return;
+    var labels = ['이름'].concat(FIELDS.map(function(f){ return f.label; }));
+    el.textContent = labels.join(' · ');
+  })();
+
+  function downloadExcel() {
+    var header = ['이름'].concat(FIELDS.map(function(f){ return f.label; })).concat(['신청일']);
+    var rows = APPLICANTS.map(function(a){
+      var row = [a.name];
+      FIELDS.forEach(function(f){
+        var v = a.values[f.key];
+        if (Array.isArray(v)) v = v.join(', ');
+        row.push(v == null ? '' : v);
+      });
+      row.push(a.date);
+      return row;
+    });
+    var csv = [header].concat(rows)
+      .map(function(r){ return r.map(function(c){ return '"' + String(c).replace(/"/g,'""') + '"'; }).join(','); })
+      .join('\n');
+    var blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = '신청자_리스트_' + new Date().toISOString().slice(0,10) + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
 </script>
 </body>
 </html>
