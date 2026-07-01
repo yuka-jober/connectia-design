@@ -580,8 +580,8 @@
     mainView.querySelectorAll('.tab-panel').forEach(function(p){
       p.classList.toggle('is-active', p.id === 'panel-' + tabName);
     });
-    var label = document.getElementById('create-btn-label');
-    label.textContent = tabName === 'ai' ? '새 AI 아바타 만들기' : '새 커뮤니티 찾기';
+    // 커뮤니티 탭에서는 하단 CTA 숨김
+    document.getElementById('sheet-cta').style.display = (tabName === 'ai') ? 'flex' : 'none';
   }
 
   // ── 기본 페이지 설정 ──
