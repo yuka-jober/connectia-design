@@ -23,16 +23,17 @@
 
 <style>
   .sheet-overlay{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.4);
-    display:flex;align-items:flex-end;justify-content:center;
+    display:flex;align-items:center;justify-content:center;padding:20px;
     opacity:0;pointer-events:none;transition:opacity .2s}
   .sheet-overlay.is-open{opacity:1;pointer-events:auto}
-  .sheet{width:100%;max-width:520px;background:#fff;border-radius:20px 20px 0 0;
-    padding:10px 20px calc(env(safe-area-inset-bottom) + 20px);
-    transform:translateY(100%);transition:transform .28s cubic-bezier(.2,.8,.2,1);
+  .sheet{width:100%;max-width:400px;background:#fff;border-radius:20px;
+    padding:32px 20px 24px;
+    transform:scale(.96);opacity:0;
+    transition:transform .2s cubic-bezier(.2,.8,.2,1),opacity .2s;
     font-family:Pretendard,sans-serif;
-    min-height:82vh;display:flex;flex-direction:column}
-  .sheet-overlay.is-open .sheet{transform:translateY(0)}
-  .sheet-handle{width:36px;height:4px;border-radius:2px;background:#e5e5ea;margin:0 auto 52px}
+    display:flex;flex-direction:column}
+  .sheet-overlay.is-open .sheet{transform:scale(1);opacity:1}
+  .sheet-handle{display:none}
   .sheet h2{margin:0 0 24px;font-size:20px;font-weight:700;color:var(--foreground);
     letter-spacing:-0.3px;line-height:1.4;text-align:center;word-break:keep-all}
   .sheet .sub{margin:6px 0 22px;font-size:14px;color:var(--muted-foreground);
@@ -56,7 +57,7 @@
 <div class="sheet-overlay" id="sheet">
   <div class="sheet">
     <div class="sheet-handle"></div>
-    <h2>지금 <span id="sheet-name">이</span><br>AI 페이지를 시작하세요</h2>
+    <h2>지금 <span id="sheet-name">상호명</span>의<br>AI 페이지를 시작하세요</h2>
     <button type="button" class="kakao-btn">
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
         <path d="M10 3C5.58 3 2 5.82 2 9.3c0 2.23 1.47 4.19 3.7 5.29l-.83 3.06c-.07.24.2.44.42.31l3.62-2.4c.36.04.72.06 1.09.06 4.42 0 8-2.82 8-6.32C18 5.82 14.42 3 10 3z" fill="#191919"/>
@@ -80,8 +81,17 @@
     const nameEl = document.getElementById('sheet-name');
     const input = document.querySelector('input[type="text"]');
     if (!doneBtn || !overlay) { console.error('sheet elements missing', {doneBtn, overlay}); return; }
+    const syncDone = () => {
+      const v = (input && input.value || '').trim();
+      doneBtn.disabled = !v;
+      doneBtn.style.opacity = v ? '1' : '0.4';
+      doneBtn.style.cursor = v ? 'pointer' : 'not-allowed';
+    };
+    syncDone();
+    if (input) input.addEventListener('input', syncDone);
     doneBtn.addEventListener('click', () => {
       const v = (input && input.value || '').trim();
+      if (!v) return;
       nameEl.textContent = v;
       overlay.classList.add('is-open');
     });
