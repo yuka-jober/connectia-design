@@ -1574,12 +1574,53 @@
   .pv-sheet-link-danger[hidden] { display: none !important; }
 
   /* 옵션 리스트 (luma-style) */
+  .pv-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    width: 100%;
+    padding: 14px 16px;
+    background: transparent;
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-md);
+    cursor: pointer;
+    font-family: var(--font-base);
+  }
+  .pv-section-header .pv-section-title {
+    margin-top: 0;
+    color: var(--color-text-sub);
+    font-weight: var(--fw-medium);
+    font-size: var(--fs-label);
+    letter-spacing: -0.1px;
+  }
+  .pv-section-chevron {
+    width: 18px;
+    height: 18px;
+    color: var(--color-text-muted);
+    transition: transform var(--motion-fast) var(--ease-standard);
+  }
+  .pv-section-header.is-open .pv-section-chevron {
+    transform: rotate(180deg);
+  }
+  .pv-section-header.is-open {
+    border-radius: var(--r-md) var(--r-md) 0 0;
+    border-bottom: none;
+  }
+  .pv-section-header.is-open + .pv-opt-list {
+    border-radius: 0 0 var(--r-md) var(--r-md);
+    border: 1px solid var(--color-border);
+    border-top: none;
+    background: transparent;
+    margin-top: -12px;
+  }
   .pv-opt-list {
     background: var(--color-surface-sub);
     border-radius: var(--r-md);
     display: flex; flex-direction: column;
     overflow: hidden;
   }
+  .pv-opt-list[hidden] { display: none; }
   .pv-opt-row {
     display: flex;
     align-items: center;
@@ -1622,6 +1663,20 @@
     font-size: var(--fs-body);
     font-weight: var(--fw-medium);
     color: var(--color-text);
+  }
+  .pv-opt-row-label:has(.pv-opt-row-sub) {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    min-width: 0;
+    flex-wrap: wrap;
+  }
+  .pv-opt-row-sub {
+    font-size: var(--fs-caption);
+    font-weight: var(--fw-regular);
+    color: var(--color-text-muted);
+    line-height: 1.4;
+    white-space: nowrap;
   }
   .pv-opt-row-value {
     font-size: var(--fs-body);
@@ -1995,14 +2050,17 @@
       </div>
     </div>
 
-    <!-- 이벤트 옵션 -->
-    <div class="pv-section">
-      <div class="pv-section-title">이벤트 옵션</div>
-      <div class="pv-opt-list">
+    <!-- 이벤트 설정 -->
+    <div class="pv-section" style="margin-top: 20px;">
+      <button type="button" class="pv-section-header" id="opt-section-header" onclick="toggleOptions()">
+        <span class="pv-section-title">이벤트 설정</span>
+        <i data-lucide="chevron-down" class="pv-section-chevron"></i>
+      </button>
+      <div class="pv-opt-list" id="opt-list" hidden>
         <button type="button" class="pv-opt-row" onclick="openSheet('cta')">
           <i data-lucide="mouse-pointer-click"></i>
           <span class="pv-opt-row-label">신청 버튼 문구</span>
-          <span class="pv-opt-row-value" id="disp-cta">이벤트 신청</span>
+          <span class="pv-opt-row-value" id="disp-cta">신청하기</span>
           <i data-lucide="chevron-right" class="pv-opt-icon-edit"></i>
         </button>
         <label class="pv-opt-row pv-opt-row-toggle">
@@ -2020,6 +2078,11 @@
           <span class="pv-opt-row-label">신청자 수 노출</span>
           <input type="checkbox" class="toggle toggle-sm" id="opt-show-applicants">
         </label>
+        <label class="pv-opt-row pv-opt-row-toggle">
+          <i data-lucide="sparkles"></i>
+          <span class="pv-opt-row-label">AI 학습 <span class="pv-opt-row-sub">채팅 답변에 반영</span></span>
+          <input type="checkbox" class="toggle toggle-sm" id="opt-ai-training" checked>
+        </label>
       </div>
     </div>
 
@@ -2035,9 +2098,9 @@
   <div class="pv-sheet" id="sheet-cta">
     <div class="pv-sheet-handle"></div>
     <div class="pv-sheet-title">신청 버튼 문구</div>
-    <input type="text" class="pv-sheet-input" id="f-cta" value="이벤트 신청" placeholder="예) 이벤트 신청" oninput="onSheetInput('cta')">
+    <input type="text" class="pv-sheet-input" id="f-cta" value="신청하기" placeholder="예) 신청하기" oninput="onSheetInput('cta')">
     <div class="pv-sheet-suggestions">
-      <button type="button" class="pv-sheet-suggestion" onclick="pickSuggestion('cta','이벤트 신청')">이벤트 신청</button>
+      <button type="button" class="pv-sheet-suggestion" onclick="pickSuggestion('cta','신청하기')">신청하기</button>
       <button type="button" class="pv-sheet-suggestion" onclick="pickSuggestion('cta','지금 신청하기')">지금 신청하기</button>
       <button type="button" class="pv-sheet-suggestion" onclick="pickSuggestion('cta','참여 신청')">참여 신청</button>
       <button type="button" class="pv-sheet-suggestion" onclick="pickSuggestion('cta','상담 신청')">상담 신청</button>
@@ -2208,7 +2271,7 @@
     </div>
 
     <div class="pv-prev-sticky">
-      <button class="btn btn-xl btn-block btn-fill-primary" id="pv-prev-cta">이벤트 신청</button>
+      <button class="btn btn-xl btn-block btn-fill-primary" id="pv-prev-cta">신청하기</button>
     </div>
   </div>
 
@@ -2620,7 +2683,7 @@
   function onSheetInput(key) {
     if (key === 'cta') {
       var v = document.getElementById('f-cta').value.trim();
-      document.getElementById('disp-cta').textContent = v || '이벤트 신청';
+      document.getElementById('disp-cta').textContent = v || '신청하기';
     }
   }
   function pickSuggestion(key, text) {
@@ -2642,6 +2705,15 @@
     if (on) closeCalendar();
     onInput();
   }
+
+  function toggleOptions() {
+    var header = document.getElementById('opt-section-header');
+    var list = document.getElementById('opt-list');
+    var open = list.hidden;
+    list.hidden = !open;
+    header.classList.toggle('is-open', open);
+  }
+
 
   function toggleTime(which) {
     var card = document.getElementById(which + '-card');
@@ -2880,7 +2952,7 @@
       images: images,
       applyPeriod: applyPeriod,
       eventSchedule: eventSchedule,
-      cta: (document.getElementById('disp-cta').textContent.trim() || '이벤트 참여하기'),
+      cta: (document.getElementById('disp-cta').textContent.trim() || '신청하기'),
       fields: {
         name:  { enabled: document.getElementById('field-name-enabled').checked,  required: reqSelected('name')  },
         phone: { enabled: document.getElementById('field-phone-enabled').checked, required: reqSelected('phone') },
@@ -3002,7 +3074,7 @@
       descDivider.hidden = true;
     }
 
-    var ctaText = document.getElementById('disp-cta').textContent.trim() || '이벤트 신청';
+    var ctaText = document.getElementById('disp-cta').textContent.trim() || '신청하기';
     document.getElementById('pv-prev-cta').textContent = ctaText;
 
     document.getElementById('pv-preview').classList.add('is-open');
