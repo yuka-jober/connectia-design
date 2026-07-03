@@ -1580,9 +1580,9 @@
     justify-content: space-between;
     gap: 8px;
     width: 100%;
-    padding: 14px 16px;
-    background: transparent;
-    border: 1px solid var(--color-border);
+    padding: 14px 20px;
+    background: var(--color-surface-sub);
+    border: 0;
     border-radius: var(--r-md);
     cursor: pointer;
     font-family: var(--font-base);
@@ -1594,6 +1594,24 @@
     font-size: var(--fs-label);
     letter-spacing: -0.1px;
   }
+  .pv-section-header-text {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+    min-width: 0;
+    flex: 1;
+  }
+  .pv-section-summary {
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+    font-weight: var(--fw-regular);
+    line-height: 1.4;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+  }
+  .pv-section-header.is-open .pv-section-summary { display: none; }
   .pv-section-chevron {
     width: 18px;
     height: 18px;
@@ -1605,13 +1623,9 @@
   }
   .pv-section-header.is-open {
     border-radius: var(--r-md) var(--r-md) 0 0;
-    border-bottom: none;
   }
   .pv-section-header.is-open + .pv-opt-list {
     border-radius: 0 0 var(--r-md) var(--r-md);
-    border: 1px solid var(--color-border);
-    border-top: none;
-    background: transparent;
     margin-top: -12px;
   }
   .pv-opt-list {
@@ -2053,7 +2067,10 @@
     <!-- 이벤트 설정 -->
     <div class="pv-section" style="margin-top: 20px;">
       <button type="button" class="pv-section-header" id="opt-section-header" onclick="toggleOptions()">
-        <span class="pv-section-title">이벤트 설정</span>
+        <span class="pv-section-header-text">
+          <span class="pv-section-title">이벤트 설정</span>
+          <span class="pv-section-summary">리뷰, 댓글, 신청자수 등</span>
+        </span>
         <i data-lucide="chevron-down" class="pv-section-chevron"></i>
       </button>
       <div class="pv-opt-list" id="opt-list" hidden>
@@ -2713,6 +2730,7 @@
     list.hidden = !open;
     header.classList.toggle('is-open', open);
   }
+
 
 
   function toggleTime(which) {
