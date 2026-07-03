@@ -47,6 +47,7 @@
     .section-title { font-size: var(--fs-heading); font-weight: var(--fw-semibold); color: var(--color-text); margin-bottom: 4px; }
     .section-title--edit { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
     .section-title-edit-icon { width: 14px; height: 14px; color: var(--color-text-muted); flex-shrink: 0; }
+    .rename-hint { font-size: var(--fs-caption); color: var(--color-text-muted); margin-top: 8px; }
     .section-desc { font-size: var(--fs-caption); color: var(--color-text-muted); line-height: var(--lh-caption); margin-bottom: 16px; }
 
     .sheet-wrap {
@@ -1149,6 +1150,7 @@
       <p class="dialog-title">섹션 제목 변경</p>
       <p class="dialog-desc" id="rename-desc">섹션의 이름을 변경할 수 있어요.</p>
       <input type="text" class="input" id="rename-input" maxlength="30">
+      <p class="rename-hint">비워두면 제목이 표시되지 않아요.</p>
       <div class="dialog-actions">
         <button class="btn btn-md btn-weak-dark" onclick="closeRenameDialog()">취소</button>
         <button class="btn btn-md btn-fill-primary" onclick="confirmRename()">저장</button>
