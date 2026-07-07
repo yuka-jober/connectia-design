@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>팀 AI 페이지 — Connectia</title>
+<title>팀 단위 페이지 관리 — Connectia</title>
 <link rel="stylesheet" href="../../tokens.css">
 <link rel="stylesheet" href="../../components.css">
 <style>
@@ -292,7 +292,7 @@
     font-size: var(--fs-body);
   }
 
-  /* ── Sticky bottom (새 아바타 만들기 + 팀 AI 페이지 진입점) ── */
+  /* ── Sticky bottom (새 아바타 만들기 + 팀 단위 페이지 관리 진입점) ── */
   .sheet-cta {
     position: absolute;
     left: 0; right: 0; bottom: 0;
@@ -330,7 +330,7 @@
   .create-icon i[data-lucide],
   .create-icon svg { width: 18px; height: 18px; }
 
-  /* 진입점: 팀 AI 페이지 */
+  /* 진입점: 팀 단위 페이지 관리 */
   .entry-item {
     display: flex; align-items: center; gap: 12px;
     width: 100%;
@@ -368,7 +368,7 @@
   .entry-chevron { width: 16px; height: 16px; color: var(--color-text-muted); }
 
   /* ══════════════════════════════════════════
-     화면 2 — 팀 AI 페이지 (관리 화면)
+     화면 2 — 팀 단위 페이지 관리 (관리 화면)
      ══════════════════════════════════════════ */
   .page-header {
     display: flex; align-items: center; gap: 4px;
@@ -636,7 +636,7 @@
 <!-- 프로토타입 네비게이터 -->
 <div class="proto-nav">
   <button type="button" data-goto="sheet" class="is-active" onclick="protoGo('sheet')">① 진입점 시트</button>
-  <button type="button" data-goto="team" onclick="protoGo('team')">② 팀 AI 페이지</button>
+  <button type="button" data-goto="team" onclick="protoGo('team')">② 팀 단위 페이지 관리</button>
   <button type="button" data-goto="chips" onclick="protoGo('chips')">③ 리스트 + 필터 칩</button>
   <button type="button" data-goto="landing" onclick="protoGo('landing')">④ 링크 랜딩 (생성자 측)</button>
   <label><input type="checkbox" id="toggle-nolinks" onchange="toggleNoLinks(this.checked)"> 링크 0개 상태</label>
@@ -709,7 +709,7 @@
         <button class="entry-item" type="button" onclick="protoGo('team')">
           <span class="entry-icon"><i data-lucide="folder"></i></span>
           <span class="entry-text">
-            <span class="entry-title">팀 AI 페이지</span>
+            <span class="entry-title">팀 단위 페이지 관리</span>
             <span class="entry-sub">초대 링크로 팀원의 페이지를 모아 관리해요</span>
           </span>
           <i data-lucide="chevron-right" class="entry-chevron"></i>
@@ -718,13 +718,13 @@
     </div>
   </div>
 
-  <!-- ═══ 화면 2: 팀 AI 페이지 (관리) ═══ -->
+  <!-- ═══ 화면 2: 팀 단위 페이지 관리 (관리) ═══ -->
   <div class="screen" id="screen-team">
     <div class="page-header">
       <button class="icon-btn icon-btn-clear" type="button" onclick="protoGo('sheet')">
         <i data-lucide="chevron-left"></i>
       </button>
-      <span class="page-title">팀 AI 페이지</span>
+      <span class="page-title">팀 단위 페이지 관리</span>
     </div>
     <div class="page-body">
       <p class="page-info">초대 링크로 만들어진 페이지에는 내 계정이 관리자로 자동 추가됩니다.</p>
