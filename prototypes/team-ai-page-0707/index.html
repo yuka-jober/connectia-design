@@ -1,0 +1,1201 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>우리 팀 AI 페이지 — Connectia</title>
+<link rel="stylesheet" href="../../tokens.css">
+<link rel="stylesheet" href="../../components.css">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-base);
+    background: #e0e0e0;
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .frame {
+    width: 390px;
+    height: 844px;
+    max-height: 100dvh;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 32px 80px -20px rgba(0,0,0,0.28);
+    background: var(--color-surface);
+    border-radius: 44px;
+  }
+  @media (max-width: 439px) {
+    .frame { width: 100vw; height: 100dvh; max-height: none; border-radius: 0; }
+  }
+
+  i[data-lucide] { display: inline-flex; flex-shrink: 0; }
+  svg.lucide { flex-shrink: 0; }
+
+  /* ── 프로토타입 네비게이터 (frame 밖 컨트롤) ── */
+  .proto-nav {
+    position: fixed;
+    left: 16px; bottom: 16px;
+    z-index: 100;
+    display: flex; flex-direction: column; gap: 4px;
+    background: rgba(17,19,24,0.82);
+    border-radius: var(--r-md);
+    padding: 8px;
+  }
+  .proto-nav button, .proto-nav label {
+    font-family: var(--font-base);
+    font-size: var(--fs-caption);
+    color: rgba(255,255,255,0.75);
+    background: none; border: none;
+    padding: 4px 8px;
+    text-align: left;
+    cursor: pointer;
+    border-radius: var(--r-xs);
+    display: flex; align-items: center; gap: 4px;
+    white-space: nowrap;
+  }
+  .proto-nav button:hover { background: rgba(255,255,255,0.1); }
+  .proto-nav button.is-active { color: #fff; font-weight: var(--fw-bold); background: rgba(255,255,255,0.14); }
+
+  /* ── Screens ── */
+  .screen {
+    position: absolute; inset: 0;
+    display: none;
+    flex-direction: column;
+    background: var(--color-surface);
+  }
+  .screen.is-active { display: flex; }
+
+  /* ══════════════════════════════════════════
+     화면 1·3 — 페이지 전환 시트
+     ══════════════════════════════════════════ */
+  .backdrop {
+    position: absolute; inset: 0;
+    background: var(--color-surface);
+    display: flex; flex-direction: column;
+  }
+  .top-nav {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px 12px;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+  .brand-select {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: none; border: none; cursor: pointer;
+    font-family: var(--font-base);
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-bold);
+    color: var(--color-text);
+    letter-spacing: -0.2px;
+    padding: 0;
+  }
+  .brand-select i[data-lucide],
+  .brand-select svg { width: 18px; height: 18px; color: var(--color-text-muted); }
+  .top-actions { display: inline-flex; align-items: center; gap: 8px; }
+  .top-actions .btn { padding: 0 12px; }
+  .backdrop-preview { flex: 1; padding: 8px 20px 0; }
+  .preview-tile {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    background: var(--color-surface-sub);
+    border-radius: var(--r-md);
+    background-image: url('profile.svg');
+    background-size: 40%;
+    background-repeat: no-repeat;
+    background-position: center;
+  }
+
+  .scrim {
+    position: absolute; inset: 0;
+    background: var(--color-scrim);
+    z-index: 5;
+  }
+
+  .sheet {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 88%;
+    background: var(--color-surface);
+    border-top-left-radius: 24px;
+    border-top-right-radius: 24px;
+    display: flex; flex-direction: column;
+    z-index: 10;
+    overflow: hidden;
+  }
+  .sheet-handle {
+    width: 40px; height: 4px;
+    background: var(--color-border);
+    border-radius: var(--r-full);
+    margin: 8px auto 4px;
+    flex-shrink: 0;
+  }
+
+  .sheet-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px 0;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+
+  .sheet-tabs { display: inline-flex; align-items: center; gap: 20px; }
+  .tab {
+    background: none; border: none;
+    padding: 8px 0 12px;
+    font-family: var(--font-base);
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    letter-spacing: -0.2px;
+    position: relative;
+  }
+  .tab.is-active { color: var(--color-text); font-weight: var(--fw-bold); }
+  .tab.is-active::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 2px;
+    background: var(--color-text);
+    border-radius: var(--r-full);
+  }
+  .tab-count { color: var(--color-text-muted); font-weight: var(--fw-semibold); margin-left: 4px; }
+  .sheet-header-border {
+    height: 1px;
+    background: var(--color-border);
+    margin: 0 20px;
+    flex-shrink: 0;
+  }
+
+  .tab-panel { display: none; flex: 1; flex-direction: column; min-height: 0; }
+  .tab-panel.is-active { display: flex; }
+
+  /* ── 필터 칩 (화면 3) ── */
+  .chips-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 16px 20px 4px;
+    overflow-x: auto;
+    flex-shrink: 0;
+    scrollbar-width: none;
+  }
+  .chips-row::-webkit-scrollbar { display: none; }
+  .chip {
+    height: 36px;
+    padding: 0 16px;
+    border-radius: var(--r-full);
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-medium);
+    color: var(--color-text-sub);
+    white-space: nowrap;
+    cursor: pointer;
+    flex-shrink: 0;
+    letter-spacing: -0.2px;
+    transition: all var(--motion-fast) var(--ease-standard);
+  }
+  .chip.is-active {
+    background: var(--color-text);
+    border-color: var(--color-text);
+    color: var(--color-surface);
+    font-weight: var(--fw-semibold);
+  }
+
+  .search-wrap {
+    padding: 12px 20px 12px;
+    flex-shrink: 0;
+    position: relative;
+  }
+  .search-wrap i[data-lucide],
+  .search-wrap svg.search-icon {
+    position: absolute;
+    left: 36px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px; height: 16px;
+    color: var(--color-text-muted);
+    pointer-events: none;
+  }
+  .search-input {
+    width: 100%;
+    height: 44px;
+    background: var(--color-surface-sub);
+    border: none;
+    border-radius: var(--r-md);
+    padding: 0 16px 0 40px;
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    color: var(--color-text);
+  }
+  .search-input::placeholder { color: var(--color-text-muted); }
+  .search-input:focus { outline: 2px solid var(--color-primary); outline-offset: -2px; }
+
+  .list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 4px 12px 160px;
+    display: flex; flex-direction: column;
+    gap: 2px;
+  }
+  .avatar-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 12px;
+    border-radius: var(--r-md);
+    cursor: pointer;
+    background: none;
+    border: none;
+    width: 100%;
+    text-align: left;
+    font-family: var(--font-base);
+    transition: background var(--motion-fast) var(--ease-standard);
+  }
+  .avatar-item:hover { background: var(--color-surface-sub); }
+  .avatar-item.is-selected { background: var(--color-primary-light); }
+  .avatar-img {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background-color: var(--color-surface-sub);
+    background-image: url('profile.svg');
+    background-size: 60%;
+    background-repeat: no-repeat;
+    background-position: center;
+    flex-shrink: 0;
+  }
+  .avatar-name {
+    flex: 1;
+    font-size: var(--fs-body);
+    color: var(--color-text);
+    font-weight: var(--fw-medium);
+    letter-spacing: -0.2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .avatar-item.is-selected .avatar-name {
+    color: var(--color-primary);
+    font-weight: var(--fw-semibold);
+  }
+  .avatar-check {
+    width: 20px; height: 20px;
+    color: var(--color-primary);
+    flex-shrink: 0;
+  }
+
+  .list-empty {
+    padding: 48px 20px;
+    text-align: center;
+    color: var(--color-text-muted);
+    font-size: var(--fs-body);
+  }
+
+  /* ── Sticky bottom (새 아바타 만들기 + 우리 팀 AI 페이지 진입점) ── */
+  .sheet-cta {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    padding: 8px 12px calc(12px + env(safe-area-inset-bottom));
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+    display: flex; flex-direction: column;
+    gap: 2px;
+    z-index: 2;
+  }
+  .cta-divider { height: 1px; background: var(--color-border); margin: 4px 8px; }
+  .create-btn {
+    display: flex; align-items: center; gap: 12px;
+    width: 100%;
+    background: none; border: none;
+    padding: 12px 8px;
+    cursor: pointer;
+    font-family: var(--font-base);
+    color: var(--color-text);
+    font-size: var(--fs-body);
+    font-weight: var(--fw-semibold);
+    letter-spacing: -0.2px;
+    border-radius: var(--r-md);
+    transition: background var(--motion-fast) var(--ease-standard);
+  }
+  .create-btn:hover { background: var(--color-surface-sub); }
+  .create-icon {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: var(--color-surface-sub);
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--color-text-sub);
+    flex-shrink: 0;
+  }
+  .create-icon i[data-lucide],
+  .create-icon svg { width: 18px; height: 18px; }
+
+  /* 진입점: 우리 팀 AI 페이지 */
+  .entry-item {
+    display: flex; align-items: center; gap: 12px;
+    width: 100%;
+    background: none; border: none;
+    padding: 12px 8px;
+    cursor: pointer;
+    font-family: var(--font-base);
+    text-align: left;
+    border-radius: var(--r-md);
+    transition: background var(--motion-fast) var(--ease-standard);
+  }
+  .entry-item:hover { background: var(--color-surface-sub); }
+  .entry-icon {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: var(--color-primary-light);
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--color-primary);
+    flex-shrink: 0;
+  }
+  .entry-icon i[data-lucide],
+  .entry-icon svg { width: 16px; height: 16px; }
+  .entry-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  .entry-title {
+    font-size: var(--fs-body);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text);
+    letter-spacing: -0.2px;
+  }
+  .entry-sub {
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+    letter-spacing: -0.2px;
+  }
+  .entry-chevron { width: 16px; height: 16px; color: var(--color-text-muted); }
+
+  /* ══════════════════════════════════════════
+     화면 2 — 우리 팀 AI 페이지 (관리 화면)
+     ══════════════════════════════════════════ */
+  .page-header {
+    display: flex; align-items: center; gap: 4px;
+    padding: 12px 12px 8px;
+    flex-shrink: 0;
+  }
+  .page-title {
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-bold);
+    color: var(--color-text);
+    letter-spacing: -0.2px;
+  }
+  .page-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 4px 20px calc(32px + env(safe-area-inset-bottom));
+    display: flex; flex-direction: column;
+    gap: 16px;
+  }
+  .page-info {
+    font-size: var(--fs-label);
+    color: var(--color-text-sub);
+    letter-spacing: -0.2px;
+    line-height: 1.5;
+  }
+
+  .link-card {
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-lg);
+    background: var(--color-card);
+    padding: 16px;
+    display: flex; flex-direction: column;
+    gap: 12px;
+  }
+  .link-card.is-inactive { background: var(--color-surface-sub); }
+  .link-card.is-inactive .link-name { color: var(--color-text-muted); }
+  .link-card-head { display: flex; align-items: center; gap: 8px; }
+  .link-name {
+    font-size: var(--fs-body);
+    font-weight: var(--fw-bold);
+    color: var(--color-text);
+    letter-spacing: -0.2px;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .link-url-row {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--color-surface-sub);
+    border-radius: var(--r-md);
+    padding: 4px 4px 4px 12px;
+  }
+  .link-card.is-inactive .link-url-row { background: rgba(0,0,0,0.04); }
+  .link-url {
+    flex: 1;
+    font-size: var(--fs-label);
+    color: var(--color-text-sub);
+    letter-spacing: -0.1px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .link-url-row .icon-btn { color: var(--color-text-sub); }
+  .link-url-row .icon-btn i[data-lucide],
+  .link-url-row .icon-btn svg { width: 16px; height: 16px; }
+
+  .link-meta-row {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 8px;
+  }
+  .link-pages {
+    font-size: var(--fs-label);
+    color: var(--color-text-sub);
+    letter-spacing: -0.2px;
+  }
+  .link-pages b { color: var(--color-text); font-weight: var(--fw-bold); }
+  .link-view {
+    display: inline-flex; align-items: center; gap: 2px;
+    background: none; border: none;
+    padding: 4px 0;
+    cursor: pointer;
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-semibold);
+    color: var(--color-primary);
+    letter-spacing: -0.2px;
+  }
+  .link-view i[data-lucide],
+  .link-view svg { width: 14px; height: 14px; }
+
+  .link-foot {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 8px;
+    padding-top: 12px;
+    border-top: 1px solid var(--color-border);
+  }
+  .link-people {
+    display: inline-flex; align-items: center; gap: 8px;
+    min-width: 0;
+  }
+  .avatar-stack { display: inline-flex; }
+  .avatar-stack .avatar-img {
+    width: 24px; height: 24px;
+    border: 2px solid var(--color-card);
+    background-size: 60%;
+  }
+  .avatar-stack .avatar-img + .avatar-img { margin-left: -8px; }
+  .link-people-names {
+    font-size: var(--fs-caption);
+    color: var(--color-text-sub);
+    letter-spacing: -0.2px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .link-people-empty {
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+    letter-spacing: -0.2px;
+  }
+  .link-toggle-btn {
+    background: none; border: none;
+    padding: 4px 0;
+    cursor: pointer;
+    font-family: var(--font-base);
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+    letter-spacing: -0.2px;
+    flex-shrink: 0;
+  }
+  .link-toggle-btn:hover { color: var(--color-text-sub); }
+
+  /* 새 초대 링크 만들기 (점선 박스) */
+  .invite-create {
+    border: 1.5px dashed var(--color-border);
+    border-radius: var(--r-lg);
+    padding: 24px 16px;
+    display: flex; flex-direction: column; align-items: center;
+    gap: 12px;
+    text-align: center;
+  }
+  .invite-create-desc {
+    font-size: var(--fs-label);
+    color: var(--color-text-muted);
+    letter-spacing: -0.2px;
+  }
+  .invite-create .btn i[data-lucide],
+  .invite-create .btn svg { width: 16px; height: 16px; }
+
+  /* ══════════════════════════════════════════
+     화면 4 — 생성자 측 링크 랜딩
+     ══════════════════════════════════════════ */
+  .landing-body {
+    flex: 1;
+    display: flex; flex-direction: column;
+    align-items: flex-start;
+    padding: 80px 24px 0;
+    gap: 16px;
+  }
+  .landing-logo {
+    width: 64px; height: 64px;
+    border-radius: var(--r-lg);
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-bold);
+    letter-spacing: -0.4px;
+    margin-bottom: 8px;
+  }
+  .landing-title {
+    font-size: var(--fs-title, 24px);
+    font-weight: var(--fw-bold);
+    color: var(--color-text);
+    letter-spacing: -0.4px;
+    line-height: 1.35;
+  }
+  .landing-desc {
+    font-size: var(--fs-body);
+    color: var(--color-text-sub);
+    letter-spacing: -0.2px;
+    line-height: 1.55;
+  }
+  .landing-notice {
+    display: flex; align-items: flex-start; gap: 8px;
+    background: var(--color-surface-sub);
+    border-radius: var(--r-md);
+    padding: 12px 16px;
+    margin-top: 8px;
+    font-size: var(--fs-label);
+    color: var(--color-text-sub);
+    letter-spacing: -0.2px;
+    line-height: 1.5;
+  }
+  .landing-notice i[data-lucide],
+  .landing-notice svg {
+    width: 16px; height: 16px;
+    color: var(--color-text-muted);
+    margin-top: 2px;
+  }
+  .landing-cta {
+    flex-shrink: 0;
+    padding: 16px 24px calc(24px + env(safe-area-inset-bottom));
+    display: flex; flex-direction: column;
+    gap: 16px;
+  }
+
+  .link-card-head .icon-btn { color: var(--color-text-muted); margin: -4px -4px -4px 0; }
+  .link-card-head .icon-btn i[data-lucide],
+  .link-card-head .icon-btn svg { width: 18px; height: 18px; }
+
+  /* 더보기 / 삭제 방식 바텀시트 */
+  #more-sheet .menu-item {
+    width: 100%;
+    background: none;
+    border: none;
+    text-align: left;
+    font-family: var(--font-base);
+  }
+  .sheet-menu-title {
+    font-size: var(--fs-label);
+    font-weight: var(--fw-bold);
+    color: var(--color-text);
+    padding: 0 8px 8px;
+    letter-spacing: -0.2px;
+  }
+  .sheet-menu-desc {
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+    padding: 0 8px 12px;
+    letter-spacing: -0.2px;
+    line-height: 1.5;
+  }
+  .opt-row {
+    display: flex; flex-direction: column; gap: 2px;
+    width: 100%;
+    background: none; border: none;
+    padding: 14px 8px;
+    text-align: left;
+    cursor: pointer;
+    font-family: var(--font-base);
+    border-radius: var(--r-md);
+    transition: background var(--motion-fast) var(--ease-standard);
+  }
+  .opt-row:hover { background: var(--color-surface-sub); }
+  .opt-title {
+    font-size: var(--fs-body);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text);
+    letter-spacing: -0.2px;
+  }
+  .opt-row.is-danger .opt-title { color: var(--color-destructive); }
+  .opt-desc {
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+    letter-spacing: -0.2px;
+    line-height: 1.5;
+  }
+
+  /* frame 내부에 dialog/toast/시트 가두기 */
+  .frame .dialog-overlay { position: absolute; z-index: 50; }
+  .frame .toast-container { position: absolute; bottom: 120px; z-index: 60; }
+  .frame .bottom-sheet-overlay { position: absolute; z-index: 55; }
+  .frame .bottom-sheet { position: absolute; }
+</style>
+</head>
+<body>
+
+<!-- 프로토타입 네비게이터 -->
+<div class="proto-nav">
+  <button type="button" data-goto="sheet" class="is-active" onclick="protoGo('sheet')">① 진입점 시트</button>
+  <button type="button" data-goto="team" onclick="protoGo('team')">② 우리 팀 AI 페이지</button>
+  <button type="button" data-goto="chips" onclick="protoGo('chips')">③ 리스트 + 필터 칩</button>
+  <button type="button" data-goto="landing" onclick="protoGo('landing')">④ 링크 랜딩 (생성자 측)</button>
+  <label><input type="checkbox" id="toggle-nolinks" onchange="toggleNoLinks(this.checked)"> 링크 0개 상태</label>
+</div>
+
+<div class="frame">
+
+  <!-- ═══ 화면 1·3: 페이지 전환 시트 ═══ -->
+  <div class="screen is-active" id="screen-sheet">
+    <div class="backdrop">
+      <div class="top-nav">
+        <button class="brand-select" type="button">
+          <span>양은주</span>
+          <i data-lucide="chevron-down"></i>
+        </button>
+        <div class="top-actions">
+          <button class="btn btn-sm btn-line-dark btn-pill" type="button">미리보기</button>
+          <button class="btn btn-sm btn-fill-dark btn-pill" type="button">편집</button>
+          <button class="btn btn-sm btn-fill-dark btn-pill" type="button">설정</button>
+        </div>
+      </div>
+      <div class="backdrop-preview">
+        <div class="preview-tile"></div>
+      </div>
+    </div>
+
+    <div class="scrim"></div>
+
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+
+      <div class="sheet-header">
+        <div class="sheet-tabs" role="tablist">
+          <button class="tab is-active" type="button" role="tab" data-tab="ai" onclick="switchTab('ai')">
+            내 AI 페이지 <span class="tab-count" id="tab-count-ai">0</span>
+          </button>
+          <button class="tab" type="button" role="tab" data-tab="community" onclick="switchTab('community')">
+            가입한 커뮤니티 <span class="tab-count" id="tab-count-community">0</span>
+          </button>
+        </div>
+        <button class="btn btn-sm btn-line-dark btn-pill" type="button">기본값 설정</button>
+      </div>
+      <div class="sheet-header-border"></div>
+
+      <!-- Tab panel: 내 AI 페이지 -->
+      <div class="tab-panel is-active" id="panel-ai">
+        <div class="chips-row" id="chips-row"></div>
+        <div class="search-wrap">
+          <i data-lucide="search" class="search-icon"></i>
+          <input class="search-input" type="text" placeholder="아바타 검색..." id="search-avatar">
+        </div>
+        <div class="list" id="avatar-list"></div>
+      </div>
+
+      <!-- Tab panel: 가입한 커뮤니티 -->
+      <div class="tab-panel" id="panel-community">
+        <div class="search-wrap" style="padding-top:16px;">
+          <i data-lucide="search" class="search-icon"></i>
+          <input class="search-input" type="text" placeholder="커뮤니티 검색..." id="search-community">
+        </div>
+        <div class="list" id="community-list"></div>
+      </div>
+
+      <div class="sheet-cta" id="sheet-cta">
+        <button class="create-btn" type="button">
+          <span class="create-icon"><i data-lucide="plus"></i></span>
+          <span>새 AI 아바타 만들기</span>
+        </button>
+        <div class="cta-divider"></div>
+        <button class="entry-item" type="button" onclick="protoGo('team')">
+          <span class="entry-icon"><i data-lucide="folder"></i></span>
+          <span class="entry-text">
+            <span class="entry-title">우리 팀 AI 페이지</span>
+            <span class="entry-sub">초대 링크로 팀원의 페이지를 모아 관리해요</span>
+          </span>
+          <i data-lucide="chevron-right" class="entry-chevron"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ 화면 2: 우리 팀 AI 페이지 (관리) ═══ -->
+  <div class="screen" id="screen-team">
+    <div class="page-header">
+      <button class="icon-btn icon-btn-clear" type="button" onclick="protoGo('sheet')">
+        <i data-lucide="arrow-left"></i>
+      </button>
+      <span class="page-title">우리 팀 AI 페이지</span>
+    </div>
+    <div class="page-body">
+      <p class="page-info">초대 링크로 만들어진 페이지에는 내 계정이 관리자로 자동 추가됩니다.</p>
+      <div id="link-cards" style="display:flex; flex-direction:column; gap:12px;"></div>
+      <div class="invite-create">
+        <p class="invite-create-desc">팀이나 캠페인별로 링크를 만들어보세요.</p>
+        <button class="btn btn-md btn-line-dark btn-pill" type="button" onclick="openLinkDialog()">
+          <i data-lucide="plus"></i> 새 초대 링크 만들기
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ 화면 4: 생성자 측 링크 랜딩 ═══ -->
+  <div class="screen" id="screen-landing">
+    <div class="landing-body">
+      <div class="landing-logo" id="landing-logo">유맨</div>
+      <h1 class="landing-title" id="landing-title"></h1>
+      <p class="landing-desc" id="landing-desc"></p>
+      <div class="landing-notice">
+        <i data-lucide="info"></i>
+        <span id="landing-notice-text"></span>
+      </div>
+    </div>
+    <div class="landing-cta">
+      <button class="btn btn-xl btn-block btn-fill-primary" type="button">시작하기</button>
+    </div>
+  </div>
+
+  <!-- 새 초대 링크 다이얼로그 -->
+  <div class="dialog-overlay" id="link-dialog" style="display:none;">
+    <div class="dialog">
+      <div class="dialog-title" id="link-dialog-title">새 초대 링크 만들기</div>
+      <div class="dialog-desc">팀이나 캠페인 이름으로 링크 이름을 지어주세요.</div>
+      <input class="input" id="link-name-input" type="text" placeholder="예: 3기 캠페인">
+      <div class="dialog-actions" style="margin-top:20px;">
+        <button class="btn btn-md btn-weak-dark" type="button" onclick="closeLinkDialog()">취소</button>
+        <button class="btn btn-md btn-fill-primary" type="button" id="link-dialog-confirm" onclick="saveLink()">만들기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 더보기 바텀시트 (이름 수정 / 삭제) -->
+  <div class="bottom-sheet-overlay" id="more-overlay" onclick="closeMoreSheet()"></div>
+  <div class="bottom-sheet" id="more-sheet">
+    <div class="bottom-sheet-handle"></div>
+    <button class="menu-item" type="button" onclick="renameLink()">이름 수정</button>
+    <button class="menu-item is-danger" type="button" onclick="openDeleteSheet()">삭제</button>
+  </div>
+
+  <!-- 삭제 방식 선택 바텀시트 -->
+  <div class="bottom-sheet-overlay" id="delete-overlay" onclick="closeDeleteSheet()"></div>
+  <div class="bottom-sheet" id="delete-sheet">
+    <div class="bottom-sheet-handle"></div>
+    <div class="sheet-menu-title" id="delete-sheet-title">초대 링크 삭제</div>
+    <div class="sheet-menu-desc">삭제 방식을 선택해주세요. 이 작업은 되돌릴 수 없어요.</div>
+    <button class="opt-row" type="button" onclick="doDelete('keep')">
+      <span class="opt-title">링크와 폴더만 삭제</span>
+      <span class="opt-desc">받은 페이지의 관리자 권한은 그대로 유지돼요.</span>
+    </button>
+    <button class="opt-row is-danger" type="button" onclick="doDelete('all')">
+      <span class="opt-title">관리자 권한까지 모두 삭제</span>
+      <span class="opt-desc">받은 페이지에서도 내 관리자 자격이 사라져요.</span>
+    </button>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast-container" id="toast-container"></div>
+
+</div>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+  // ══════════ Mock data ══════════
+  var AVATARS = [
+    { name: '양은주', selected: true },
+    { name: '엘린 피부과 (유카 테스트)' },
+    { name: '고덕 아테라' },
+    { name: '커넥티아' },
+    { name: '해맑은요가 이광호 대표' },
+    { name: '이윤재' },
+    { name: '케이스 테스트 유카' },
+    { name: '감성대디 인생고민 상담소' },
+    { name: '자버 어드민' },
+    { name: '뷰티 살롱 어드민' },
+    { name: '실전 마케팅 코치' },
+    { name: '카페 지원가' },
+    { name: '피부과 상담 도우미' },
+    { name: '헬스 트레이너 도우미' },
+    { name: '이벤트 기획 어시스턴트' },
+    { name: '고객문의 자동응답' },
+    { name: '리뷰 답변 봇' },
+    { name: '병원 예약 안내' },
+    { name: '멤버십 안내 봇' },
+    { name: '이벤트 리마인더' },
+  ];
+
+  var COMMUNITIES = [
+    { name: '자버 크리에이터 라운지' },
+  ];
+
+  // 초대 링크 목데이터
+  var LINKS = [
+    {
+      id: 'ym',
+      name: '유맨 인플루언서 협업',
+      url: 'connectia.io/i/ym7x2k',
+      active: true,
+      pages: [
+        { name: '김하늘' },
+        { name: '이서준' },
+        { name: '박지우' },
+        { name: '최민서' },
+      ],
+    },
+    {
+      id: 'c2',
+      name: '2기 캠페인',
+      url: 'connectia.io/i/c2p9q4',
+      active: true,
+      pages: [],
+    },
+  ];
+
+  // 링크 랜딩(생성자 측)에 노출할 발급 팀 — 링크 이름과 통일해서 사용
+  var TEAM = { brand: '유맨', name: '유맨 인플루언서 협업', host: '양은주' };
+
+  var linksEnabled = true;          // "링크 0개 상태" 토글
+  var currentChip = 'all';          // 'all' | 'mine' | link.id
+  var linkSeq = 2;
+
+  function activeLinks() { return linksEnabled ? LINKS : []; }
+
+  function escapeHTML(s) {
+    return String(s).replace(/[&<>"']/g, function(c){
+      return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+    });
+  }
+
+  // ══════════ 화면 전환 ══════════
+  function protoGo(name) {
+    // ③ 리스트+칩 = 시트 화면에서 유맨 협업 칩이 선택된 상태
+    var screen = name;
+    if (name === 'chips') {
+      screen = 'sheet';
+      currentChip = linksEnabled && LINKS.length ? LINKS[0].id : 'all';
+    }
+    ['sheet', 'team', 'landing'].forEach(function(s){
+      document.getElementById('screen-' + s).classList.toggle('is-active', s === screen);
+    });
+    document.querySelectorAll('.proto-nav button').forEach(function(b){
+      b.classList.toggle('is-active', b.dataset.goto === name);
+    });
+    if (screen === 'sheet') renderList();
+    if (screen === 'team') renderLinkCards();
+    if (window.lucide) lucide.createIcons();
+  }
+
+  // "페이지 보기" → 화면 3 (해당 그룹 칩 선택 상태)
+  function viewPages(linkId) {
+    currentChip = linkId;
+    protoGo('chips');
+    currentChip = linkId; // protoGo('chips')가 첫 링크로 바꾸므로 다시 지정
+    renderList();
+  }
+
+  function toggleNoLinks(checked) {
+    linksEnabled = !checked;
+    if (!linksEnabled) currentChip = 'all';
+    renderList();
+    renderLinkCards();
+  }
+
+  // ══════════ 화면 1·3: 시트 리스트 ══════════
+  function getListItems() {
+    var items = AVATARS.map(function(a){
+      return { name: a.name, group: 'mine', selected: !!a.selected };
+    });
+    activeLinks().forEach(function(l){
+      l.pages.forEach(function(p){
+        items.push({ name: p.name, group: l.id });
+      });
+    });
+    return items;
+  }
+
+  function renderChips() {
+    var row = document.getElementById('chips-row');
+    var links = activeLinks();
+    // 초대 링크가 없으면 칩 줄 자체가 없는 기존 화면과 동일
+    if (!links.length) { row.style.display = 'none'; return; }
+    row.style.display = 'flex';
+
+    var chips = [
+      { key: 'all', label: '전체' },
+      { key: 'mine', label: '내 AI' },
+    ].concat(links.map(function(l){ return { key: l.id, label: l.name }; }));
+
+    row.innerHTML = chips.map(function(c){
+      var active = currentChip === c.key;
+      return '<button class="chip' + (active ? ' is-active' : '') + '" type="button" '
+        + 'onclick="selectChip(\'' + c.key + '\')">' + escapeHTML(c.label) + '</button>';
+    }).join('');
+  }
+
+  function selectChip(key) {
+    currentChip = key;
+    renderList();
+  }
+
+  function renderList() {
+    renderChips();
+
+    var q = (document.getElementById('search-avatar').value || '').trim().toLowerCase();
+    var items = getListItems().filter(function(i){
+      if (currentChip === 'mine' && i.group !== 'mine') return false;
+      if (currentChip !== 'all' && currentChip !== 'mine' && i.group !== currentChip) return false;
+      if (q && i.name.toLowerCase().indexOf(q) === -1) return false;
+      return true;
+    });
+
+    var wrap = document.getElementById('avatar-list');
+    if (!items.length) {
+      wrap.innerHTML = '<div class="list-empty">검색 결과가 없어요</div>';
+    } else {
+      wrap.innerHTML = items.map(function(it){
+        var selectedCls = it.selected ? ' is-selected' : '';
+        var check = it.selected ? '<i data-lucide="check" class="avatar-check"></i>' : '';
+        return ''
+          + '<button class="avatar-item' + selectedCls + '" type="button" onclick="selectAvatar(\'' + escapeHTML(it.name) + '\')">'
+          +   '<span class="avatar-img"></span>'
+          +   '<span class="avatar-name">' + escapeHTML(it.name) + '</span>'
+          +   check
+          + '</button>';
+      }).join('');
+    }
+
+    document.getElementById('tab-count-ai').textContent = getListItems().length;
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function selectAvatar(name) {
+    AVATARS.forEach(function(a){ a.selected = (a.name === name); });
+    renderList();
+  }
+
+  function renderCommunities(list) {
+    var wrap = document.getElementById('community-list');
+    if (!list.length) {
+      wrap.innerHTML = '<div class="list-empty">아직 가입한 커뮤니티가 없어요</div>';
+      return;
+    }
+    wrap.innerHTML = list.map(function(c){
+      return ''
+        + '<button class="avatar-item" type="button">'
+        +   '<span class="avatar-img"></span>'
+        +   '<span class="avatar-name">' + escapeHTML(c.name) + '</span>'
+        + '</button>';
+    }).join('');
+    if (window.lucide) lucide.createIcons();
+  }
+
+  var currentTab = 'ai';
+  function switchTab(tabName) {
+    currentTab = tabName;
+    var sheet = document.getElementById('screen-sheet');
+    sheet.querySelectorAll('.tab').forEach(function(t){
+      t.classList.toggle('is-active', t.dataset.tab === tabName);
+    });
+    sheet.querySelectorAll('.tab-panel').forEach(function(p){
+      p.classList.toggle('is-active', p.id === 'panel-' + tabName);
+    });
+    document.getElementById('sheet-cta').style.display = (tabName === 'ai') ? 'flex' : 'none';
+  }
+
+  // ══════════ 화면 2: 링크 카드 ══════════
+  function renderLinkCards() {
+    var wrap = document.getElementById('link-cards');
+    var links = activeLinks();
+    wrap.style.display = links.length ? 'flex' : 'none';
+
+    wrap.innerHTML = links.map(function(l){
+      var badge = l.active
+        ? '<span class="badge badge-md badge-weak-primary">활성</span>'
+        : '<span class="badge badge-md badge-weak-neutral">비활성</span>';
+
+      var peopleHTML;
+      if (l.pages.length) {
+        var stackCount = Math.min(l.pages.length, 3);
+        var stack = '';
+        for (var i = 0; i < stackCount; i++) stack += '<span class="avatar-img"></span>';
+        var names = l.pages.slice(0, 2).map(function(p){ return p.name; }).join(', ');
+        var rest = l.pages.length - 2;
+        var nameText = rest > 0 ? names + ' 외 ' + rest + '명' : names;
+        peopleHTML = '<div class="link-people">'
+          + '<span class="avatar-stack">' + stack + '</span>'
+          + '<span class="link-people-names">' + escapeHTML(nameText) + '</span>'
+          + '</div>';
+      } else {
+        peopleHTML = '<span class="link-people-empty">아직 만들어진 페이지가 없어요</span>';
+      }
+
+      return ''
+        + '<div class="link-card' + (l.active ? '' : ' is-inactive') + '">'
+        +   '<div class="link-card-head">'
+        +     '<span class="link-name">' + escapeHTML(l.name) + '</span>'
+        +     badge
+        +     '<button class="icon-btn icon-btn-sm icon-btn-clear" type="button" aria-label="더보기" onclick="openMoreSheet(\'' + l.id + '\')">'
+        +       '<i data-lucide="more-vertical"></i>'
+        +     '</button>'
+        +   '</div>'
+        +   '<div class="link-url-row">'
+        +     '<span class="link-url">' + escapeHTML(l.url) + '</span>'
+        +     '<button class="icon-btn icon-btn-sm icon-btn-clear" type="button" onclick="copyLink(\'' + l.id + '\')">'
+        +       '<i data-lucide="copy"></i>'
+        +     '</button>'
+        +   '</div>'
+        +   '<div class="link-meta-row">'
+        +     '<span class="link-pages">받은 페이지 <b>' + l.pages.length + '</b></span>'
+        +     (l.pages.length
+              ? '<button class="link-view" type="button" onclick="viewPages(\'' + l.id + '\')">페이지 보기 <i data-lucide="chevron-right"></i></button>'
+              : '')
+        +   '</div>'
+        +   '<div class="link-foot">'
+        +     peopleHTML
+        +     '<button class="link-toggle-btn" type="button" onclick="toggleLinkActive(\'' + l.id + '\')">'
+        +       (l.active ? '비활성화' : '활성화')
+        +     '</button>'
+        +   '</div>'
+        + '</div>';
+    }).join('');
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function copyLink(id) {
+    var link = LINKS.filter(function(l){ return l.id === id; })[0];
+    if (link && navigator.clipboard) navigator.clipboard.writeText('https://' + link.url).catch(function(){});
+    showToast('초대 링크가 복사되었어요');
+  }
+
+  function toggleLinkActive(id) {
+    var link = LINKS.filter(function(l){ return l.id === id; })[0];
+    if (!link) return;
+    link.active = !link.active;
+    renderLinkCards();
+    showToast(link.active ? '초대 링크가 활성화되었어요' : '초대 링크가 비활성화되었어요');
+  }
+
+  // ── 새 초대 링크 / 이름 수정 다이얼로그 ──
+  var linkDialogMode = 'create';   // 'create' | 'edit'
+  var activeLinkId = null;         // 더보기/수정/삭제 대상
+
+  function openLinkDialog() {
+    linkDialogMode = 'create';
+    activeLinkId = null;
+    document.getElementById('link-dialog-title').textContent = '새 초대 링크 만들기';
+    document.getElementById('link-dialog-confirm').textContent = '만들기';
+    document.getElementById('link-name-input').value = '';
+    document.getElementById('link-dialog').style.display = 'flex';
+    setTimeout(function(){ document.getElementById('link-name-input').focus(); }, 50);
+  }
+  function closeLinkDialog() {
+    document.getElementById('link-dialog').style.display = 'none';
+  }
+  function saveLink() {
+    var name = document.getElementById('link-name-input').value.trim();
+    if (!name) { document.getElementById('link-name-input').focus(); return; }
+    if (linkDialogMode === 'edit') {
+      var link = LINKS.filter(function(l){ return l.id === activeLinkId; })[0];
+      if (link) { link.name = name; }
+      closeLinkDialog();
+      renderLinkCards();
+      renderList();
+      showToast('링크 이름을 수정했어요');
+      return;
+    }
+    linkSeq++;
+    LINKS.push({
+      id: 'l' + linkSeq,
+      name: name,
+      url: 'connectia.io/i/' + Math.random().toString(36).slice(2, 8),
+      active: true,
+      pages: [],
+    });
+    closeLinkDialog();
+    renderLinkCards();
+    showToast('초대 링크가 만들어졌어요');
+  }
+
+  // ── 더보기 바텀시트 ──
+  function openMoreSheet(id) {
+    activeLinkId = id;
+    document.getElementById('more-overlay').classList.add('is-open');
+    document.getElementById('more-sheet').classList.add('is-open');
+  }
+  function closeMoreSheet() {
+    document.getElementById('more-overlay').classList.remove('is-open');
+    document.getElementById('more-sheet').classList.remove('is-open');
+  }
+  function renameLink() {
+    var link = LINKS.filter(function(l){ return l.id === activeLinkId; })[0];
+    closeMoreSheet();
+    if (!link) return;
+    linkDialogMode = 'edit';
+    document.getElementById('link-dialog-title').textContent = '링크 이름 수정';
+    document.getElementById('link-dialog-confirm').textContent = '저장';
+    document.getElementById('link-name-input').value = link.name;
+    document.getElementById('link-dialog').style.display = 'flex';
+    setTimeout(function(){ document.getElementById('link-name-input').focus(); }, 50);
+  }
+
+  // ── 삭제 방식 선택 바텀시트 ──
+  function openDeleteSheet() {
+    closeMoreSheet();
+    var link = LINKS.filter(function(l){ return l.id === activeLinkId; })[0];
+    document.getElementById('delete-sheet-title').textContent =
+      link ? '‘' + link.name + '’ 삭제' : '초대 링크 삭제';
+    document.getElementById('delete-overlay').classList.add('is-open');
+    document.getElementById('delete-sheet').classList.add('is-open');
+  }
+  function closeDeleteSheet() {
+    document.getElementById('delete-overlay').classList.remove('is-open');
+    document.getElementById('delete-sheet').classList.remove('is-open');
+  }
+  function doDelete(mode) {
+    var idx = LINKS.map(function(l){ return l.id; }).indexOf(activeLinkId);
+    if (idx !== -1) LINKS.splice(idx, 1);
+    if (currentChip === activeLinkId) currentChip = 'all';
+    activeLinkId = null;
+    closeDeleteSheet();
+    renderLinkCards();
+    renderList();
+    showToast(mode === 'all' ? '링크와 관리자 권한을 모두 삭제했어요' : '링크와 폴더를 삭제했어요');
+  }
+
+  // ── Toast ──
+  var toastTimer = null;
+  function showToast(msg) {
+    var container = document.getElementById('toast-container');
+    container.innerHTML = '<div class="toast">' + escapeHTML(msg) + '</div>';
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ container.innerHTML = ''; }, 2000);
+  }
+
+  // ── Search ──
+  document.getElementById('search-avatar').addEventListener('input', renderList);
+  document.getElementById('search-community').addEventListener('input', function(e){
+    var q = e.target.value.trim().toLowerCase();
+    renderCommunities(q ? COMMUNITIES.filter(function(c){ return c.name.toLowerCase().indexOf(q) !== -1; }) : COMMUNITIES);
+  });
+
+  // Enter로 링크 생성
+  document.getElementById('link-name-input').addEventListener('keydown', function(e){
+    if (e.key === 'Enter') saveLink();
+  });
+
+  // ── 링크 랜딩 텍스트 (팀 이름 통일) ──
+  function renderLanding() {
+    document.getElementById('landing-logo').textContent = TEAM.brand;
+    document.getElementById('landing-title').innerHTML = escapeHTML(TEAM.name) + '의<br>AI 페이지 만들기';
+    document.getElementById('landing-desc').textContent = TEAM.host + '님의 초대로 나만의 AI 페이지를 만듭니다.';
+    document.getElementById('landing-notice-text').textContent =
+      '페이지의 소유자는 나이며, ' + TEAM.name + ' 팀이 관리자로 함께 참여합니다.';
+  }
+
+  // ── Init ──
+  renderList();
+  renderCommunities(COMMUNITIES);
+  renderLanding();
+  document.getElementById('tab-count-community').textContent = COMMUNITIES.length;
+  lucide.createIcons();
+</script>
+</body>
+</html>
