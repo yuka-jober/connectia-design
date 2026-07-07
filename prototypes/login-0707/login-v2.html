@@ -1,0 +1,1396 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>로그인</title>
+  <style>
+    :root {
+      --bg-base:           oklch(97.5% .008 285);
+      --bg-surface:        oklch(99.5% .003 285);
+      --bg-elevated:       oklch(94%   .015 285);
+      --bg-primary-subtle: oklch(45% .24 290 / 0.08);
+
+      --text-primary:   oklch(13%  .025 285);
+      --text-secondary: oklch(48%  .02  285);
+      --text-tertiary:  oklch(67%  .01  285);
+      --text-brand:     oklch(45%  .24  290);
+
+      --primary:              #6B6BE1;
+      --logo-stop-a:          #6B6BE1;
+      --logo-stop-b:          #E94F6E;
+      --logo-stop-c:          #E94F6E;
+      --border-default:       oklch(87%  .015 285);
+      --checkbox-empty:       oklch(82%  .015 285);
+      --checkbox-rect:        oklch(87%  .015 285);
+      --checkbox-path:        oklch(67%  .01  285);
+      --gradient-brand: linear-gradient(135deg, #6B6BE1, #E94F6E);
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg-base);
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 24px;
+      font-size: 16px;
+      line-height: 1.5;
+      transition: background 0.25s, color 0.25s;
+    }
+
+    .outer-card {
+      width: min(400px, 100%);
+      border-radius: 20px;
+      overflow: hidden;
+    }
+
+    /* ── Left panel ── */
+    /* ── Right panel (login content) ── */
+    .right-panel {
+      flex: 1;
+      background: var(--bg-surface);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 56px 48px;
+      min-height: 520px;
+      transition: background 0.25s;
+    }
+
+    .login-content {
+      width: 100%;
+      max-width: 300px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* ── Hero ── */
+    .hero {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .logo {
+      margin-bottom: 10px;
+    }
+
+    .logo svg {
+      width: 160px;
+      height: auto;
+    }
+
+    .subtitle {
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    /* ── Actions ── */
+    .actions {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 28px;
+    }
+
+    /* ── Social login stack ── */
+    .social-stack {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* 공통 소셜 버튼 — 모든 브랜드 동일한 크기/모양 */
+    .btn-social {
+      width: 100%;
+      padding: 16px 20px;
+      border: 1px solid transparent;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: opacity 0.2s, background 0.2s;
+    }
+
+    .btn-social svg {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+    }
+
+    .btn-social:hover {
+      opacity: 0.88;
+    }
+
+    /* 구글: 주력이면 흰 버튼으로 시선 유도 */
+    .is-primary.social-google {
+      background: #FFFFFF;
+      color: #1F1F1F;
+      border-color: var(--border-default);
+    }
+
+    /* 보조(그 아래): 투명 배경 + 연한 테두리로 조용히 물러남 */
+    .is-secondary {
+      background: transparent;
+      color: var(--text-secondary);
+      border-color: var(--bg-elevated);
+    }
+
+    .is-secondary svg {
+      opacity: 0.8;
+    }
+
+    .is-secondary:hover {
+      opacity: 1;
+      background: var(--bg-elevated);
+    }
+
+    /* 카카오: 위치(주력/보조)와 무관하게 항상 브랜드 노랑 유지 — 보조 규칙보다 뒤에 두어 확실히 우선 */
+    .social-kakao,
+    .is-secondary.social-kakao {
+      background: #FEE500;
+      color: #191919;
+      border-color: transparent;
+    }
+
+    .is-secondary.social-kakao svg {
+      opacity: 1;
+    }
+
+    /* ── 데모 전용: 지역(KR/해외) 전환 토글 — 실서비스엔 없음 ── */
+    .demo-locale-toggle {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: var(--bg-surface);
+      color: var(--text-secondary);
+      border: 1px dashed var(--border-default);
+      border-radius: 999px;
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      z-index: 10;
+    }
+
+    .demo-locale-toggle:hover {
+      color: var(--text-primary);
+    }
+
+    /* 이메일로 시작 — 작은 인라인 아이콘+텍스트 */
+    .email-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      opacity: 0.6;
+      transition: opacity 0.2s;
+    }
+
+    .email-wrap:hover {
+      opacity: 1;
+    }
+
+    .btn-email {
+      width: 28px;
+      height: 28px;
+      background: var(--bg-elevated);
+      color: var(--text-secondary);
+      border: none;
+      border-radius: 999px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .btn-email svg {
+      width: 13px;
+      height: 13px;
+    }
+
+    .email-label {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    /* 개인정보 처리방침 */
+    .link-privacy {
+      font-size: 13px;
+      color: var(--text-tertiary);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .link-privacy:hover {
+      color: var(--text-secondary);
+    }
+
+    /* ── Email screen ── */
+    .email-screen {
+      position: absolute;
+      inset: 0;
+      background: var(--bg-surface);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      border-radius: inherit;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateX(24px);
+      transition: opacity 0.25s, transform 0.25s;
+      padding: 48px 36px 36px;
+      gap: 32px;
+    }
+
+    .email-screen.active {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateX(0);
+    }
+
+    .email-screen-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1.3;
+      letter-spacing: -0.02em;
+      margin-top: 16px;
+    }
+
+    .email-field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .email-input-wrap {
+      background: var(--bg-elevated);
+      border-radius: 12px;
+      padding: 1.5px;
+      transition: background 0.15s;
+    }
+
+    .email-input-wrap.focused {
+      background: var(--primary);
+    }
+
+    .email-input-inner {
+      background: var(--bg-elevated);
+      border-radius: 10.5px;
+      padding: 14px 16px;
+    }
+
+    .email-input-inner input {
+      width: 100%;
+      background: transparent;
+      border: none;
+      outline: none;
+      font-size: 16px;
+      color: var(--text-primary);
+      font-family: inherit;
+    }
+
+    .email-input-inner input::placeholder {
+      color: var(--text-tertiary);
+    }
+
+    .btn-next {
+      width: 100%;
+      padding: 15px;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      transition: opacity 0.2s;
+    }
+
+    .btn-next:hover {
+      opacity: 0.88;
+    }
+
+    .email-screen-back {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .email-screen-back svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    /* ── Signup screen ── */
+    .signup-screen {
+      position: absolute;
+      inset: 0;
+      background: var(--bg-surface);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      border-radius: inherit;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateX(24px);
+      transition: opacity 0.25s, transform 0.25s;
+      padding: 36px 36px 28px;
+      gap: 16px;
+    }
+
+    .signup-screen.active {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateX(0);
+    }
+
+    .signup-screen-back {
+      display: flex;
+      align-items: center;
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 0;
+      align-self: flex-start;
+    }
+
+    .signup-screen-back svg { width: 20px; height: 20px; }
+    .signup-screen-back:hover { color: var(--text-primary); }
+
+    .signup-screen-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.02em;
+    }
+
+    .signup-email-badge {
+      display: inline-flex;
+      align-items: center;
+      background: var(--bg-elevated);
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      align-self: flex-start;
+    }
+
+    .signup-field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .signup-screen #signupPwWrap {
+      margin-bottom: 8px;
+    }
+
+    .signup-agree-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .signup-screen .term-row {
+      padding: 3px 4px;
+    }
+
+    .signup-field-label {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+    }
+
+    .signup-input-wrap {
+      background: var(--bg-elevated);
+      border-radius: 12px;
+      padding: 1.5px;
+      transition: background 0.15s;
+    }
+
+    .signup-input-wrap.focused { background: var(--primary); }
+
+    .signup-input-inner {
+      background: var(--bg-elevated);
+      border-radius: 10.5px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .signup-input-inner input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      font-size: 16px;
+      color: var(--text-primary);
+      font-family: inherit;
+    }
+
+    .signup-input-inner input::placeholder { color: var(--text-tertiary); }
+
+    .signup-agree-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+    }
+
+    .signup-agree-label {
+      flex: 1;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .link-signup-privacy {
+      font-size: 13px;
+      color: var(--text-tertiary);
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .link-signup-privacy:hover { color: var(--text-secondary); }
+
+    .btn-signup {
+      width: 100%;
+      padding: 15px;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      transition: opacity 0.2s;
+    }
+
+    .btn-signup:hover:not(:disabled) { opacity: 0.88; }
+
+    .btn-signup:disabled {
+      background: var(--bg-elevated);
+      color: var(--text-tertiary);
+      cursor: not-allowed;
+    }
+
+    /* ── Password screen ── */
+    .password-screen {
+      position: absolute;
+      inset: 0;
+      background: var(--bg-surface);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      border-radius: inherit;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateX(24px);
+      transition: opacity 0.25s, transform 0.25s;
+      padding: 48px 36px 36px;
+      gap: 24px;
+    }
+
+    .password-screen.active {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateX(0);
+    }
+
+    .password-screen-back {
+      display: flex;
+      align-items: center;
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 0;
+      align-self: flex-start;
+    }
+
+    .password-screen-back svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .password-screen-back:hover { color: var(--text-primary); }
+
+    .password-screen-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1.3;
+      letter-spacing: -0.02em;
+    }
+
+    .password-email-badge {
+      display: inline-flex;
+      align-items: center;
+      background: var(--bg-elevated);
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      align-self: flex-start;
+    }
+
+    .password-field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .password-field-label {
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    .password-input-wrap {
+      background: var(--bg-elevated);
+      border-radius: 12px;
+      padding: 1.5px;
+      transition: background 0.15s;
+    }
+
+    .password-input-wrap.focused {
+      background: var(--primary);
+    }
+
+    .password-input-inner {
+      background: var(--bg-elevated);
+      border-radius: 10.5px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .password-input-inner input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      font-size: 16px;
+      color: var(--text-primary);
+      font-family: inherit;
+    }
+
+    .password-input-inner input::placeholder {
+      color: var(--text-tertiary);
+    }
+
+    .btn-pw-toggle {
+      background: none;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      color: var(--text-tertiary);
+      display: flex;
+      align-items: center;
+    }
+
+    .btn-pw-toggle svg { width: 18px; height: 18px; }
+    .btn-pw-toggle:hover { color: var(--text-secondary); }
+
+    .btn-login {
+      width: 100%;
+      padding: 15px;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      transition: opacity 0.2s;
+    }
+
+    .btn-login:hover { opacity: 0.88; }
+
+    .link-forgot {
+      text-align: center;
+      font-size: 13px;
+      color: var(--text-tertiary);
+      text-decoration: none;
+    }
+
+    .link-forgot:hover { color: var(--text-secondary); }
+
+    /* ── Terms back button ── */
+    .terms-back {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 0;
+      font-size: 14px;
+      font-family: inherit;
+      align-self: flex-start;
+    }
+
+    .terms-back svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .terms-back:hover {
+      color: var(--text-primary);
+    }
+
+    /* ── Terms screen ── */
+    .right-panel {
+      position: relative;
+    }
+
+    .terms-screen {
+      position: absolute;
+      inset: 0;
+      background: var(--bg-surface);
+      display: flex;
+      flex-direction: column;
+      border-radius: inherit;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateX(24px);
+      transition: opacity 0.25s, transform 0.25s;
+    }
+
+    .terms-screen.active {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateX(0);
+    }
+
+    .terms-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 36px 36px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .terms-top {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      text-align: center;
+    }
+
+    .terms-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+      line-height: 1.5;
+    }
+
+    /* 전체 동의하기 박스 */
+    .agree-all-box {
+      background: var(--bg-elevated);
+      border-radius: 12px;
+      padding: 16px 20px;
+    }
+
+    .agree-all-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+    }
+
+    .agree-all-text {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+
+    .agree-all-label {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .agree-all-sub {
+      font-size: 12px;
+      color: var(--text-tertiary);
+    }
+
+    /* 개별 약관 행 */
+    .terms-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .term-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 13px 4px;
+      cursor: pointer;
+    }
+
+    .terms-screen .term-row + .term-row {
+      position: relative;
+    }
+
+    .terms-screen .term-row + .term-row::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 40px;
+      right: 0;
+      height: 1px;
+      background: var(--border-default);
+    }
+
+    .term-label {
+      flex: 1;
+      font-size: 14px;
+      color: var(--text-primary);
+    }
+
+    .term-chevron {
+      color: var(--text-tertiary);
+    }
+
+    .term-chevron svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* 커스텀 체크박스 — Figma 컴포넌트 기반 SVG */
+    .custom-check {
+      flex-shrink: 0;
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+
+    .custom-check .check-rect {
+      fill: var(--checkbox-rect);
+      transition: fill 0.15s;
+    }
+
+    .custom-check .check-path {
+      fill: var(--checkbox-path);
+      transition: fill 0.15s;
+    }
+
+    .custom-check.checked .check-rect {
+      fill: var(--primary);
+    }
+
+    .custom-check.checked .check-path {
+      fill: #fff;
+    }
+
+    /* 동의 버튼 */
+    .terms-footer {
+      padding: 16px 36px 32px;
+    }
+
+    .btn-agree {
+      width: 100%;
+      padding: 15px;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      transition: opacity 0.2s, background 0.2s;
+    }
+
+    .btn-agree:hover:not(:disabled) {
+      opacity: 0.88;
+    }
+
+    .btn-agree:disabled {
+      background: var(--bg-elevated);
+      color: var(--text-tertiary);
+      cursor: not-allowed;
+    }
+
+    @media (max-width: 480px) {
+      body {
+        padding: 0;
+        min-height: unset;
+        align-items: flex-start;
+      }
+
+      .outer-card {
+        width: 100%;
+        border-radius: 0;
+        min-height: 100svh;
+      }
+
+      .right-panel {
+        padding: 36px 24px;
+        border-radius: 0;
+        min-height: 100svh;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 데모 전용: 지역 전환 (실서비스엔 없음) -->
+  <button class="demo-locale-toggle" id="localeToggle"></button>
+
+  <div class="outer-card">
+
+    <!-- 왼쪽 브랜드 패널 (PC only) -->
+
+    <!-- 오른쪽 로그인 패널 -->
+    <div class="right-panel">
+      <div class="login-content">
+        <div class="hero">
+          <div class="logo">
+            <svg width="120" height="20" viewBox="0 0 120 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M24.3662 6.125C25.5438 6.125 26.6117 6.39004 27.5684 6.91992C28.525 7.43509 29.2758 8.17127 29.8203 9.12793C30.3795 10.0846 30.6592 11.1885 30.6592 12.4395C30.6592 13.6904 30.3718 14.7943 29.7979 15.751C29.2386 16.7077 28.4734 17.4515 27.502 17.9814C26.5453 18.4965 25.4706 18.7539 24.2783 18.7539C23.1008 18.7539 22.0406 18.4965 21.0986 17.9814C20.1568 17.4516 19.4137 16.7077 18.8691 15.751C18.3394 14.7943 18.0742 13.6904 18.0742 12.4395C18.0742 11.1884 18.347 10.0847 18.8916 9.12793C19.451 8.1713 20.2084 7.43507 21.165 6.91992C22.1217 6.3901 23.1889 6.12506 24.3662 6.125ZM65.6973 6.125C66.8601 6.125 67.898 6.37553 68.8105 6.87598C69.7379 7.37642 70.4517 8.09031 70.9521 9.01758C71.4672 9.93013 71.7246 10.9825 71.7246 12.1748C71.7246 12.6164 71.6956 13.014 71.6367 13.3672H62.6943C62.768 14.2503 63.0775 14.942 63.6221 15.4424C64.1666 15.9428 64.8362 16.1933 65.6309 16.1934C66.7789 16.1934 67.5962 15.7 68.082 14.7139H71.416C71.0628 15.8913 70.3855 16.8626 69.3848 17.6279C68.3839 18.3786 67.1544 18.7539 65.6973 18.7539C64.5199 18.7539 63.4604 18.4964 62.5186 17.9814C61.5913 17.4515 60.8619 16.7078 60.332 15.751C59.8171 14.7944 59.5596 13.6904 59.5596 12.4395C59.5596 11.1737 59.817 10.0622 60.332 9.10547C60.8472 8.14878 61.5688 7.4126 62.4961 6.89746C63.4234 6.38242 64.4905 6.12503 65.6973 6.125ZM78.7939 6.125C80.3099 6.12505 81.5607 6.5081 82.5469 7.27344C83.5477 8.02404 84.2171 9.08352 84.5557 10.4521H81.2227C81.046 9.92244 80.7442 9.51015 80.3174 9.21582C79.9053 8.90671 79.3897 8.75293 78.7715 8.75293C77.8884 8.75294 77.1889 9.07603 76.6738 9.72363C76.1586 10.3566 75.9014 11.262 75.9014 12.4395C75.9014 13.6022 76.1587 14.5077 76.6738 15.1553C77.1889 15.7882 77.8884 16.1045 78.7715 16.1045C80.0227 16.1045 80.84 15.5455 81.2227 14.4268H84.5557C84.2172 15.7514 83.5477 16.8038 82.5469 17.584C81.5461 18.364 80.2952 18.7539 78.7939 18.7539C77.6164 18.7539 76.5708 18.4965 75.6582 17.9814C74.7458 17.4516 74.0318 16.7154 73.5166 15.7734C73.0015 14.8168 72.7441 13.7053 72.7441 12.4395C72.7442 11.1738 73.0015 10.0698 73.5166 9.12793C74.0318 8.17125 74.7458 7.43509 75.6582 6.91992C76.5708 6.39004 77.6164 6.125 78.7939 6.125ZM104.992 6.125C105.904 6.125 106.699 6.30896 107.376 6.67676C108.068 7.04474 108.62 7.50904 109.032 8.06836V6.32422H112.146V18.5557H109.032V16.7666C108.635 17.3407 108.083 17.8194 107.376 18.2021C106.684 18.5699 105.882 18.7539 104.971 18.7539C103.94 18.7539 102.998 18.4889 102.145 17.959C101.306 17.4291 100.636 16.6861 100.135 15.7295C99.6494 14.7581 99.4063 13.6466 99.4062 12.3955C99.4062 11.1591 99.6494 10.0622 100.135 9.10547C100.636 8.1489 101.306 7.41256 102.145 6.89746C102.997 6.38243 103.947 6.12504 104.992 6.125ZM116.091 15.0889C116.636 15.0889 117.085 15.2659 117.438 15.6191C117.79 15.9576 117.968 16.3843 117.968 16.8994C117.968 17.4145 117.79 17.8488 117.438 18.2021C117.085 18.5405 116.636 18.71 116.091 18.71C115.532 18.7099 115.068 18.5406 114.7 18.2021C114.347 17.8488 114.17 17.4145 114.17 16.8994C114.17 16.3843 114.347 15.9576 114.7 15.6191C115.068 15.2659 115.532 15.0889 116.091 15.0889ZM9.84766 2.94629C11.5697 2.94629 13.0788 3.38747 14.374 4.27051C15.6692 5.15363 16.5747 6.37539 17.0898 7.93555H13.5352C13.1819 7.19985 12.6816 6.64823 12.0342 6.28027C11.4013 5.91232 10.665 5.72756 9.82617 5.72754C8.92831 5.72754 8.12546 5.9413 7.41895 6.36816C6.72732 6.78028 6.18249 7.3695 5.78516 8.13477C5.40261 8.90005 5.21191 9.798 5.21191 10.8281C5.21193 11.8436 5.40256 12.7415 5.78516 13.5215C6.18246 14.2867 6.7274 14.8827 7.41895 15.3096C8.12546 15.7217 8.92831 15.9277 9.82617 15.9277C10.665 15.9277 11.4013 15.744 12.0342 15.376C12.6817 14.9933 13.1819 14.4341 13.5352 13.6982H17.0898C16.5747 15.2732 15.6692 16.5025 14.374 17.3857C13.0935 18.254 11.5844 18.6885 9.84766 18.6885C8.37591 18.6884 7.0437 18.3566 5.85156 17.6943C4.67419 17.0173 3.73959 16.0827 3.04785 14.8906C2.37079 13.6984 2.03224 12.3442 2.03223 10.8281C2.03223 9.31209 2.3708 7.95786 3.04785 6.76562C3.73958 5.55878 4.67421 4.62426 5.85156 3.96191C7.0437 3.2849 8.37591 2.94635 9.84766 2.94629ZM38.8213 6.14746C40.2783 6.14751 41.4557 6.61091 42.3535 7.53809C43.2514 8.45067 43.7002 9.73131 43.7002 11.3799V18.5557H40.6094V11.7998C40.6094 10.8283 40.3666 10.0845 39.8809 9.56934C39.3952 9.03948 38.7325 8.77441 37.8936 8.77441C37.04 8.77446 36.3627 9.03949 35.8623 9.56934C35.3766 10.0845 35.1338 10.8284 35.1338 11.7998V18.5557H32.043V6.32422H35.1338V7.84766C35.5458 7.31792 36.0684 6.90569 36.7012 6.61133C37.3488 6.30223 38.0559 6.14746 38.8213 6.14746ZM52.9766 6.14746C54.4336 6.14749 55.6109 6.61092 56.5088 7.53809C57.4066 8.45067 57.8555 9.73131 57.8555 11.3799V18.5557H54.7646V11.7998C54.7646 10.8283 54.5218 10.0845 54.0361 9.56934C53.5503 9.03951 52.8878 8.77441 52.0488 8.77441C51.1953 8.77448 50.5179 9.03951 50.0176 9.56934C49.5319 10.0845 49.2891 10.8284 49.2891 11.7998V18.5557H46.1982V6.32422H49.2891V7.84766C49.7011 7.31792 50.2238 6.90569 50.8564 6.61133C51.5041 6.30223 52.2112 6.14746 52.9766 6.14746ZM89.9775 6.32422H92.7148V8.86328H89.9775V14.7803C89.9776 15.1922 90.0734 15.4943 90.2646 15.6855C90.4708 15.862 90.8094 15.9502 91.2803 15.9502H92.7148V18.5557H90.7725C88.1673 18.5557 86.8643 17.2895 86.8643 14.7578V8.86328H85.4072V6.32422H86.8643V3.29883H89.9775V6.32422ZM97.5879 18.5557H94.4971V6.32422H97.5879V18.5557ZM24.3223 8.81836C23.4392 8.81842 22.6962 9.1357 22.0928 9.76855C21.5042 10.3867 21.209 11.2768 21.209 12.4395C21.209 13.6021 21.4964 14.4999 22.0703 15.1328C22.659 15.751 23.3952 16.0605 24.2783 16.0605C24.8377 16.0605 25.36 15.9279 25.8457 15.6631C26.3462 15.3834 26.7437 14.9713 27.0381 14.4268C27.3324 13.8822 27.4795 13.2196 27.4795 12.4395C27.4795 11.277 27.1707 10.3867 26.5527 9.76855C25.9492 9.13563 25.2054 8.81836 24.3223 8.81836ZM105.786 8.84082C105.212 8.84087 104.683 8.98113 104.197 9.26074C103.711 9.54041 103.315 9.95258 103.006 10.4971C102.711 11.0269 102.563 11.6596 102.563 12.3955C102.563 13.1314 102.711 13.7796 103.006 14.3389C103.315 14.8831 103.712 15.3024 104.197 15.5967C104.697 15.891 105.227 16.038 105.786 16.0381C106.361 16.0381 106.898 15.8988 107.398 15.6191C107.899 15.3249 108.297 14.9127 108.591 14.3828C108.886 13.8382 109.032 13.1902 109.032 12.4395C109.032 11.6888 108.886 11.0484 108.591 10.5186C108.297 9.97394 107.899 9.56188 107.398 9.28223C106.898 8.98788 106.361 8.84082 105.786 8.84082ZM65.6094 8.66406C64.844 8.66406 64.1959 8.90007 63.666 9.37109C63.1511 9.82728 62.8346 10.4672 62.7168 11.291H68.5234C68.5086 10.4964 68.2213 9.8635 67.6621 9.39258C67.1028 8.90708 66.4187 8.66412 65.6094 8.66406ZM96.0645 1.24609C96.6088 1.24609 97.0579 1.42241 97.4111 1.77539C97.7791 2.11393 97.9639 2.54147 97.9639 3.05664C97.9638 3.57166 97.7791 4.00619 97.4111 4.35938C97.0579 4.69762 96.6088 4.86719 96.0645 4.86719C95.5202 4.86711 95.0641 4.69758 94.6963 4.35938C94.3431 4.00619 94.1661 3.57166 94.166 3.05664C94.166 2.54147 94.343 2.11393 94.6963 1.77539C95.0641 1.42244 95.5202 1.24617 96.0645 1.24609Z" fill="url(#logo-gradient)"/>
+              <defs>
+                <linearGradient id="logo-gradient" x1="2" y1="4" x2="120" y2="19" gradientUnits="userSpaceOnUse">
+                  <stop stop-color="var(--logo-stop-a)"/>
+                  <stop offset="0.5" stop-color="var(--logo-stop-b)"/>
+                  <stop offset="1" stop-color="var(--logo-stop-c)"/>
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+          <p class="subtitle">나를 소개하는 가장 새로운 방법</p>
+        </div>
+
+        <div class="actions">
+          <!-- 소셜 로그인 스택 — 순서/구성은 JS 레지스트리에서 렌더 -->
+          <div class="social-stack" id="socialStack"></div>
+
+          <div class="email-wrap">
+            <button class="btn-email" aria-label="이메일로 시작하기">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="4" width="20" height="16" rx="3"/>
+                <path d="M2 7l10 7 10-7"/>
+              </svg>
+            </button>
+            <span class="email-label">이메일로 시작</span>
+          </div>
+
+          <a href="#" class="link-privacy">개인정보 처리방침</a>
+        </div>
+      </div>
+
+      <!-- 회원가입 화면 -->
+      <div class="signup-screen" id="signupScreen">
+        <button class="signup-screen-back" id="signupBack" aria-label="뒤로">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"/>
+          </svg>
+        </button>
+
+        <p class="signup-screen-title">회원가입</p>
+
+        <span class="signup-email-badge" id="signupEmailBadge"></span>
+
+        <div class="signup-field-group">
+          <p class="signup-field-label">이름과 비밀번호를 설정해주세요</p>
+
+          <div class="signup-input-wrap" id="signupNameWrap">
+            <div class="signup-input-inner">
+              <input type="text" id="signupNameInput" placeholder="이름" autocomplete="name" />
+            </div>
+          </div>
+
+          <div class="signup-input-wrap" id="signupPwWrap">
+            <div class="signup-input-inner">
+              <input type="password" id="signupPwInput" placeholder="비밀번호" autocomplete="new-password" />
+              <button class="btn-pw-toggle" id="signupPwToggle" aria-label="비밀번호 표시">
+                <svg id="signupPwEyeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- 약관 동의 묶음 -->
+          <div class="signup-agree-group">
+            <div class="agree-all-row" id="signupAgreeAllRow">
+              <svg class="custom-check checked" id="signupCheckAll" width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <rect class="check-rect" height="16.5" rx="4.25" width="16.5" x="0.75" y="0.75"/>
+                <path class="check-path" d="M14.1128 5.38717C14.4513 5.72563 14.4513 6.27437 14.1128 6.61283L8.11283 12.6128C7.77437 12.9513 7.22563 12.9513 6.88717 12.6128L3.88717 9.61283C3.54872 9.27437 3.54872 8.72563 3.88717 8.38717C4.22563 8.04872 4.77437 8.04872 5.11283 8.38717L7.5 10.7743L12.8872 5.38717C13.2256 5.04872 13.7744 5.04872 14.1128 5.38717Z"/>
+              </svg>
+              <span class="agree-all-label">전체 동의하기</span>
+            </div>
+
+          <!-- 개별 항목 -->
+          <div class="terms-list">
+            <div class="term-row" id="signupTermRow1">
+              <svg class="custom-check checked" id="signupCheck1" width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <rect class="check-rect" height="16.5" rx="4.25" width="16.5" x="0.75" y="0.75"/>
+                <path class="check-path" d="M14.1128 5.38717C14.4513 5.72563 14.4513 6.27437 14.1128 6.61283L8.11283 12.6128C7.77437 12.9513 7.22563 12.9513 6.88717 12.6128L3.88717 9.61283C3.54872 9.27437 3.54872 8.72563 3.88717 8.38717C4.22563 8.04872 4.77437 8.04872 5.11283 8.38717L7.5 10.7743L12.8872 5.38717C13.2256 5.04872 13.7744 5.04872 14.1128 5.38717Z"/>
+              </svg>
+              <span class="term-label">(필수) 서비스 이용약관</span>
+              <span class="term-chevron">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </span>
+            </div>
+            <div class="term-row" id="signupTermRow2">
+              <svg class="custom-check checked" id="signupCheck2" width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <rect class="check-rect" height="16.5" rx="4.25" width="16.5" x="0.75" y="0.75"/>
+                <path class="check-path" d="M14.1128 5.38717C14.4513 5.72563 14.4513 6.27437 14.1128 6.61283L8.11283 12.6128C7.77437 12.9513 7.22563 12.9513 6.88717 12.6128L3.88717 9.61283C3.54872 9.27437 3.54872 8.72563 3.88717 8.38717C4.22563 8.04872 4.77437 8.04872 5.11283 8.38717L7.5 10.7743L12.8872 5.38717C13.2256 5.04872 13.7744 5.04872 14.1128 5.38717Z"/>
+              </svg>
+              <span class="term-label">(필수) 개인정보 처리방침</span>
+              <span class="term-chevron">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </span>
+            </div>
+          </div>
+          </div>
+
+          <button class="btn-signup" id="btnSignup" disabled>동의 및 회원가입</button>
+        </div>
+      </div>
+
+      <!-- 비밀번호 입력 화면 -->
+      <div class="password-screen" id="passwordScreen">
+        <button class="password-screen-back" id="passwordBack" aria-label="뒤로">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"/>
+          </svg>
+        </button>
+
+        <p class="password-screen-title">다시 오신 것을<br>환영해요</p>
+
+        <span class="password-email-badge" id="passwordEmailBadge"></span>
+
+        <div class="password-field-group">
+          <p class="password-field-label">비밀번호를 입력해주세요</p>
+          <div class="password-input-wrap" id="passwordWrap">
+            <div class="password-input-inner">
+              <input type="password" id="passwordInput" placeholder="비밀번호" autocomplete="current-password" />
+              <button class="btn-pw-toggle" id="pwToggle" aria-label="비밀번호 표시">
+                <svg id="pwEyeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <button class="btn-login" id="btnLogin">로그인</button>
+          <a href="#" class="link-forgot">비밀번호를 잊으셨나요?</a>
+        </div>
+      </div>
+
+      <!-- 이메일 입력 화면 -->
+      <div class="email-screen" id="emailScreen">
+        <button class="email-screen-back" id="emailBack" aria-label="뒤로">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"/>
+          </svg>
+        </button>
+
+        <p class="email-screen-title">이메일을 입력해주세요</p>
+
+        <div class="email-field-group">
+          <div class="email-input-wrap" id="emailWrap">
+            <div class="email-input-inner">
+              <input type="email" id="emailInput" placeholder="이메일" autocomplete="email" />
+            </div>
+          </div>
+          <button class="btn-next" id="btnNext">다음</button>
+        </div>
+      </div>
+
+      <!-- 약관동의 화면 -->
+      <div class="terms-screen" id="termsScreen">
+        <div class="terms-body">
+          <button class="terms-back" id="termsBack" aria-label="뒤로">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="15 18 9 12 15 6"/>
+            </svg>
+            <span class="terms-back-label">뒤로</span>
+          </button>
+          <div class="terms-top">
+            <svg width="120" height="20" viewBox="0 0 120 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M24.3662 6.125C25.5438 6.125 26.6117 6.39004 27.5684 6.91992C28.525 7.43509 29.2758 8.17127 29.8203 9.12793C30.3795 10.0846 30.6592 11.1885 30.6592 12.4395C30.6592 13.6904 30.3718 14.7943 29.7979 15.751C29.2386 16.7077 28.4734 17.4515 27.502 17.9814C26.5453 18.4965 25.4706 18.7539 24.2783 18.7539C23.1008 18.7539 22.0406 18.4965 21.0986 17.9814C20.1568 17.4516 19.4137 16.7077 18.8691 15.751C18.3394 14.7943 18.0742 13.6904 18.0742 12.4395C18.0742 11.1884 18.347 10.0847 18.8916 9.12793C19.451 8.1713 20.2084 7.43507 21.165 6.91992C22.1217 6.3901 23.1889 6.12506 24.3662 6.125ZM65.6973 6.125C66.8601 6.125 67.898 6.37553 68.8105 6.87598C69.7379 7.37642 70.4517 8.09031 70.9521 9.01758C71.4672 9.93013 71.7246 10.9825 71.7246 12.1748C71.7246 12.6164 71.6956 13.014 71.6367 13.3672H62.6943C62.768 14.2503 63.0775 14.942 63.6221 15.4424C64.1666 15.9428 64.8362 16.1933 65.6309 16.1934C66.7789 16.1934 67.5962 15.7 68.082 14.7139H71.416C71.0628 15.8913 70.3855 16.8626 69.3848 17.6279C68.3839 18.3786 67.1544 18.7539 65.6973 18.7539C64.5199 18.7539 63.4604 18.4964 62.5186 17.9814C61.5913 17.4515 60.8619 16.7078 60.332 15.751C59.8171 14.7944 59.5596 13.6904 59.5596 12.4395C59.5596 11.1737 59.817 10.0622 60.332 9.10547C60.8472 8.14878 61.5688 7.4126 62.4961 6.89746C63.4234 6.38242 64.4905 6.12503 65.6973 6.125ZM78.7939 6.125C80.3099 6.12505 81.5607 6.5081 82.5469 7.27344C83.5477 8.02404 84.2171 9.08352 84.5557 10.4521H81.2227C81.046 9.92244 80.7442 9.51015 80.3174 9.21582C79.9053 8.90671 79.3897 8.75293 78.7715 8.75293C77.8884 8.75294 77.1889 9.07603 76.6738 9.72363C76.1586 10.3566 75.9014 11.262 75.9014 12.4395C75.9014 13.6022 76.1587 14.5077 76.6738 15.1553C77.1889 15.7882 77.8884 16.1045 78.7715 16.1045C80.0227 16.1045 80.84 15.5455 81.2227 14.4268H84.5557C84.2172 15.7514 83.5477 16.8038 82.5469 17.584C81.5461 18.364 80.2952 18.7539 78.7939 18.7539C77.6164 18.7539 76.5708 18.4965 75.6582 17.9814C74.7458 17.4516 74.0318 16.7154 73.5166 15.7734C73.0015 14.8168 72.7441 13.7053 72.7441 12.4395C72.7442 11.1738 73.0015 10.0698 73.5166 9.12793C74.0318 8.17125 74.7458 7.43509 75.6582 6.91992C76.5708 6.39004 77.6164 6.125 78.7939 6.125ZM104.992 6.125C105.904 6.125 106.699 6.30896 107.376 6.67676C108.068 7.04474 108.62 7.50904 109.032 8.06836V6.32422H112.146V18.5557H109.032V16.7666C108.635 17.3407 108.083 17.8194 107.376 18.2021C106.684 18.5699 105.882 18.7539 104.971 18.7539C103.94 18.7539 102.998 18.4889 102.145 17.959C101.306 17.4291 100.636 16.6861 100.135 15.7295C99.6494 14.7581 99.4063 13.6466 99.4062 12.3955C99.4062 11.1591 99.6494 10.0622 100.135 9.10547C100.636 8.1489 101.306 7.41256 102.145 6.89746C102.997 6.38243 103.947 6.12504 104.992 6.125ZM116.091 15.0889C116.636 15.0889 117.085 15.2659 117.438 15.6191C117.79 15.9576 117.968 16.3843 117.968 16.8994C117.968 17.4145 117.79 17.8488 117.438 18.2021C117.085 18.5405 116.636 18.71 116.091 18.71C115.532 18.7099 115.068 18.5406 114.7 18.2021C114.347 17.8488 114.17 17.4145 114.17 16.8994C114.17 16.3843 114.347 15.9576 114.7 15.6191C115.068 15.2659 115.532 15.0889 116.091 15.0889ZM9.84766 2.94629C11.5697 2.94629 13.0788 3.38747 14.374 4.27051C15.6692 5.15363 16.5747 6.37539 17.0898 7.93555H13.5352C13.1819 7.19985 12.6816 6.64823 12.0342 6.28027C11.4013 5.91232 10.665 5.72756 9.82617 5.72754C8.92831 5.72754 8.12546 5.9413 7.41895 6.36816C6.72732 6.78028 6.18249 7.3695 5.78516 8.13477C5.40261 8.90005 5.21191 9.798 5.21191 10.8281C5.21193 11.8436 5.40256 12.7415 5.78516 13.5215C6.18246 14.2867 6.7274 14.8827 7.41895 15.3096C8.12546 15.7217 8.92831 15.9277 9.82617 15.9277C10.665 15.9277 11.4013 15.744 12.0342 15.376C12.6817 14.9933 13.1819 14.4341 13.5352 13.6982H17.0898C16.5747 15.2732 15.6692 16.5025 14.374 17.3857C13.0935 18.254 11.5844 18.6885 9.84766 18.6885C8.37591 18.6884 7.0437 18.3566 5.85156 17.6943C4.67419 17.0173 3.73959 16.0827 3.04785 14.8906C2.37079 13.6984 2.03224 12.3442 2.03223 10.8281C2.03223 9.31209 2.3708 7.95786 3.04785 6.76562C3.73958 5.55878 4.67421 4.62426 5.85156 3.96191C7.0437 3.2849 8.37591 2.94635 9.84766 2.94629ZM38.8213 6.14746C40.2783 6.14751 41.4557 6.61091 42.3535 7.53809C43.2514 8.45067 43.7002 9.73131 43.7002 11.3799V18.5557H40.6094V11.7998C40.6094 10.8283 40.3666 10.0845 39.8809 9.56934C39.3952 9.03948 38.7325 8.77441 37.8936 8.77441C37.04 8.77446 36.3627 9.03949 35.8623 9.56934C35.3766 10.0845 35.1338 10.8284 35.1338 11.7998V18.5557H32.043V6.32422H35.1338V7.84766C35.5458 7.31792 36.0684 6.90569 36.7012 6.61133C37.3488 6.30223 38.0559 6.14746 38.8213 6.14746ZM52.9766 6.14746C54.4336 6.14749 55.6109 6.61092 56.5088 7.53809C57.4066 8.45067 57.8555 9.73131 57.8555 11.3799V18.5557H54.7646V11.7998C54.7646 10.8283 54.5218 10.0845 54.0361 9.56934C53.5503 9.03951 52.8878 8.77441 52.0488 8.77441C51.1953 8.77448 50.5179 9.03951 50.0176 9.56934C49.5319 10.0845 49.2891 10.8284 49.2891 11.7998V18.5557H46.1982V6.32422H49.2891V7.84766C49.7011 7.31792 50.2238 6.90569 50.8564 6.61133C51.5041 6.30223 52.2112 6.14746 52.9766 6.14746ZM89.9775 6.32422H92.7148V8.86328H89.9775V14.7803C89.9776 15.1922 90.0734 15.4943 90.2646 15.6855C90.4708 15.862 90.8094 15.9502 91.2803 15.9502H92.7148V18.5557H90.7725C88.1673 18.5557 86.8643 17.2895 86.8643 14.7578V8.86328H85.4072V6.32422H86.8643V3.29883H89.9775V6.32422ZM97.5879 18.5557H94.4971V6.32422H97.5879V18.5557ZM24.3223 8.81836C23.4392 8.81842 22.6962 9.1357 22.0928 9.76855C21.5042 10.3867 21.209 11.2768 21.209 12.4395C21.209 13.6021 21.4964 14.4999 22.0703 15.1328C22.659 15.751 23.3952 16.0605 24.2783 16.0605C24.8377 16.0605 25.36 15.9279 25.8457 15.6631C26.3462 15.3834 26.7437 14.9713 27.0381 14.4268C27.3324 13.8822 27.4795 13.2196 27.4795 12.4395C27.4795 11.277 27.1707 10.3867 26.5527 9.76855C25.9492 9.13563 25.2054 8.81836 24.3223 8.81836ZM105.786 8.84082C105.212 8.84087 104.683 8.98113 104.197 9.26074C103.711 9.54041 103.315 9.95258 103.006 10.4971C102.711 11.0269 102.563 11.6596 102.563 12.3955C102.563 13.1314 102.711 13.7796 103.006 14.3389C103.315 14.8831 103.712 15.3024 104.197 15.5967C104.697 15.891 105.227 16.038 105.786 16.0381C106.361 16.0381 106.898 15.8988 107.398 15.6191C107.899 15.3249 108.297 14.9127 108.591 14.3828C108.886 13.8382 109.032 13.1902 109.032 12.4395C109.032 11.6888 108.886 11.0484 108.591 10.5186C108.297 9.97394 107.899 9.56188 107.398 9.28223C106.898 8.98788 106.361 8.84082 105.786 8.84082ZM65.6094 8.66406C64.844 8.66406 64.1959 8.90007 63.666 9.37109C63.1511 9.82728 62.8346 10.4672 62.7168 11.291H68.5234C68.5086 10.4964 68.2213 9.8635 67.6621 9.39258C67.1028 8.90708 66.4187 8.66412 65.6094 8.66406ZM96.0645 1.24609C96.6088 1.24609 97.0579 1.42241 97.4111 1.77539C97.7791 2.11393 97.9639 2.54147 97.9639 3.05664C97.9638 3.57166 97.7791 4.00619 97.4111 4.35938C97.0579 4.69762 96.6088 4.86719 96.0645 4.86719C95.5202 4.86711 95.0641 4.69758 94.6963 4.35938C94.3431 4.00619 94.1661 3.57166 94.166 3.05664C94.166 2.54147 94.343 2.11393 94.6963 1.77539C95.0641 1.42244 95.5202 1.24617 96.0645 1.24609Z" fill="url(#logo-gradient-terms)"/>
+              <defs>
+                <linearGradient id="logo-gradient-terms" x1="2" y1="4" x2="120" y2="19" gradientUnits="userSpaceOnUse">
+                  <stop stop-color="var(--logo-stop-a)"/>
+                  <stop offset="0.5" stop-color="var(--logo-stop-b)"/>
+                  <stop offset="1" stop-color="var(--logo-stop-c)"/>
+                </linearGradient>
+              </defs>
+            </svg>
+            <p class="terms-title">서비스 이용을 위해<br>약관에 동의해 주세요.</p>
+          </div>
+
+          <!-- 전체 동의 -->
+          <div class="agree-all-box">
+            <div class="agree-all-row" id="agreeAllRow">
+              <svg class="custom-check checked" id="checkAll" width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <rect class="check-rect" height="16.5" rx="4.25" width="16.5" x="0.75" y="0.75"/>
+                <path class="check-path" d="M14.1128 5.38717C14.4513 5.72563 14.4513 6.27437 14.1128 6.61283L8.11283 12.6128C7.77437 12.9513 7.22563 12.9513 6.88717 12.6128L3.88717 9.61283C3.54872 9.27437 3.54872 8.72563 3.88717 8.38717C4.22563 8.04872 4.77437 8.04872 5.11283 8.38717L7.5 10.7743L12.8872 5.38717C13.2256 5.04872 13.7744 5.04872 14.1128 5.38717Z"/>
+              </svg>
+              <span class="agree-all-label">전체 동의하기</span>
+            </div>
+          </div>
+
+          <!-- 개별 항목 -->
+          <div class="terms-list">
+            <div class="term-row" data-id="term1">
+              <svg class="custom-check checked" id="check1" width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <rect class="check-rect" height="16.5" rx="4.25" width="16.5" x="0.75" y="0.75"/>
+                <path class="check-path" d="M14.1128 5.38717C14.4513 5.72563 14.4513 6.27437 14.1128 6.61283L8.11283 12.6128C7.77437 12.9513 7.22563 12.9513 6.88717 12.6128L3.88717 9.61283C3.54872 9.27437 3.54872 8.72563 3.88717 8.38717C4.22563 8.04872 4.77437 8.04872 5.11283 8.38717L7.5 10.7743L12.8872 5.38717C13.2256 5.04872 13.7744 5.04872 14.1128 5.38717Z"/>
+              </svg>
+              <span class="term-label">(필수) 서비스 이용약관</span>
+              <span class="term-chevron">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="9 18 15 12 9 6"/>
+                </svg>
+              </span>
+            </div>
+            <div class="term-row" data-id="term2">
+              <svg class="custom-check checked" id="check2" width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <rect class="check-rect" height="16.5" rx="4.25" width="16.5" x="0.75" y="0.75"/>
+                <path class="check-path" d="M14.1128 5.38717C14.4513 5.72563 14.4513 6.27437 14.1128 6.61283L8.11283 12.6128C7.77437 12.9513 7.22563 12.9513 6.88717 12.6128L3.88717 9.61283C3.54872 9.27437 3.54872 8.72563 3.88717 8.38717C4.22563 8.04872 4.77437 8.04872 5.11283 8.38717L7.5 10.7743L12.8872 5.38717C13.2256 5.04872 13.7744 5.04872 14.1128 5.38717Z"/>
+              </svg>
+              <span class="term-label">(필수) 개인정보 처리방침</span>
+              <span class="term-chevron">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="9 18 15 12 9 6"/>
+                </svg>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="terms-footer">
+          <button class="btn-agree" id="btnAgree">동의</button>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    // 회원가입 화면
+    const signupScreen = document.getElementById('signupScreen');
+    const signupBack = document.getElementById('signupBack');
+    const signupEmailBadge = document.getElementById('signupEmailBadge');
+    const signupNameWrap = document.getElementById('signupNameWrap');
+    const signupPwWrap = document.getElementById('signupPwWrap');
+    const signupNameInput = document.getElementById('signupNameInput');
+    const signupPwInput = document.getElementById('signupPwInput');
+    const signupPwToggle = document.getElementById('signupPwToggle');
+    const signupPwEyeIcon = document.getElementById('signupPwEyeIcon');
+    const signupCheckAll = document.getElementById('signupCheckAll');
+    const signupCheck1 = document.getElementById('signupCheck1');
+    const signupCheck2 = document.getElementById('signupCheck2');
+    const signupAgreeAllRow = document.getElementById('signupAgreeAllRow');
+    const signupTermRow1 = document.getElementById('signupTermRow1');
+    const signupTermRow2 = document.getElementById('signupTermRow2');
+    const btnSignup = document.getElementById('btnSignup');
+    const signupItemChecks = [signupCheck1, signupCheck2];
+
+    function syncSignupAll() {
+      const allChecked = signupItemChecks.every(c => c.classList.contains('checked'));
+      const hasName = signupNameInput.value.trim().length > 0;
+      const hasPw = signupPwInput.value.length > 0;
+      signupCheckAll.classList.toggle('checked', allChecked);
+      btnSignup.disabled = !(allChecked && hasName && hasPw);
+    }
+
+    signupAgreeAllRow.addEventListener('click', () => {
+      const allChecked = signupItemChecks.every(c => c.classList.contains('checked'));
+      signupItemChecks.forEach(c => c.classList.toggle('checked', !allChecked));
+      syncSignupAll();
+    });
+
+    signupTermRow1.addEventListener('click', (e) => {
+      if (e.target.closest('.term-chevron')) return;
+      signupCheck1.classList.toggle('checked');
+      syncSignupAll();
+    });
+
+    signupTermRow2.addEventListener('click', (e) => {
+      if (e.target.closest('.term-chevron')) return;
+      signupCheck2.classList.toggle('checked');
+      syncSignupAll();
+    });
+
+    signupBack.addEventListener('click', () => {
+      signupScreen.classList.remove('active');
+      emailScreen.classList.add('active');
+    });
+
+    signupNameInput.addEventListener('focus', () => signupNameWrap.classList.add('focused'));
+    signupNameInput.addEventListener('blur', () => signupNameWrap.classList.remove('focused'));
+    signupNameInput.addEventListener('input', syncSignupAll);
+    signupPwInput.addEventListener('focus', () => signupPwWrap.classList.add('focused'));
+    signupPwInput.addEventListener('blur', () => signupPwWrap.classList.remove('focused'));
+    signupPwInput.addEventListener('input', syncSignupAll);
+
+    signupPwToggle.addEventListener('click', () => {
+      const isHidden = signupPwInput.type === 'password';
+      signupPwInput.type = isHidden ? 'text' : 'password';
+      signupPwEyeIcon.innerHTML = isHidden
+        ? '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>'
+        : '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
+    });
+
+    // 비밀번호 화면
+    const passwordScreen = document.getElementById('passwordScreen');
+    const passwordBack = document.getElementById('passwordBack');
+    const passwordInput = document.getElementById('passwordInput');
+    const passwordWrap = document.getElementById('passwordWrap');
+    const passwordEmailBadge = document.getElementById('passwordEmailBadge');
+    const pwToggle = document.getElementById('pwToggle');
+    const pwEyeIcon = document.getElementById('pwEyeIcon');
+
+    passwordBack.addEventListener('click', () => {
+      passwordScreen.classList.remove('active');
+      emailScreen.classList.add('active');
+    });
+
+    passwordInput.addEventListener('focus', () => passwordWrap.classList.add('focused'));
+    passwordInput.addEventListener('blur', () => passwordWrap.classList.remove('focused'));
+
+    pwToggle.addEventListener('click', () => {
+      const isHidden = passwordInput.type === 'password';
+      passwordInput.type = isHidden ? 'text' : 'password';
+      pwEyeIcon.innerHTML = isHidden
+        ? '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>'
+        : '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
+    });
+
+    // 이메일 입력 화면
+    const emailScreen = document.getElementById('emailScreen');
+    const emailBack = document.getElementById('emailBack');
+    const emailInput = document.getElementById('emailInput');
+    const emailWrap = document.getElementById('emailWrap');
+    const emailWrapBtn = document.querySelector('.email-wrap');
+
+    emailWrapBtn.addEventListener('click', () => {
+      emailScreen.classList.add('active');
+      setTimeout(() => emailInput.focus(), 260);
+    });
+
+    emailBack.addEventListener('click', () => {
+      emailScreen.classList.remove('active');
+    });
+
+    emailInput.addEventListener('focus', () => emailWrap.classList.add('focused'));
+    emailInput.addEventListener('blur', () => emailWrap.classList.remove('focused'));
+
+    const btnNext = document.getElementById('btnNext');
+    btnNext.addEventListener('click', () => {
+      const val = emailInput.value.trim();
+      if (!val) return;
+      if (val === 'yuka@jober.io') {
+        passwordEmailBadge.textContent = val;
+        emailScreen.classList.remove('active');
+        passwordScreen.classList.add('active');
+        setTimeout(() => passwordInput.focus(), 260);
+      } else {
+        signupEmailBadge.textContent = val;
+        emailScreen.classList.remove('active');
+        signupScreen.classList.add('active');
+        setTimeout(() => signupNameInput.focus(), 260);
+      }
+    });
+
+    // 약관동의 화면
+    const termsScreen = document.getElementById('termsScreen');
+    const termsBack = document.getElementById('termsBack');
+    const btnAgree = document.getElementById('btnAgree');
+    const agreeAllRow = document.getElementById('agreeAllRow');
+    const checks = [
+      document.getElementById('checkAll'),
+      document.getElementById('check1'),
+      document.getElementById('check2'),
+    ];
+    const itemChecks = [
+      document.getElementById('check1'),
+      document.getElementById('check2'),
+    ];
+
+    // 초기 버튼 상태 동기화
+    syncAllCheck();
+
+    // ── 소셜 로그인 (설정 기반) ────────────────────────────
+    // 소셜 추가 = SOCIALS에 항목 추가 + ORDER 배열에 id만 끼워넣으면 끝.
+    const SOCIALS = {
+      kakao: {
+        label: { KR: '카카오로 3초만에 시작하기', INTL: 'Continue with Kakao' },
+        className: 'social-kakao',
+        logo: '<svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 3C6.477 3 2 6.582 2 11c0 2.862 1.674 5.373 4.2 6.896L5.2 21l4.116-2.163A11.7 11.7 0 0012 19c5.523 0 10-3.582 10-8S17.523 3 12 3z"/></svg>',
+      },
+      google: {
+        label: { KR: '구글로 시작하기', INTL: 'Continue with Google' },
+        className: 'social-google',
+        logo: '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>',
+      },
+    };
+
+    // 지역별 노출 순서 (id 배열) — 새 지역/소셜은 여기만 손보면 됨
+    const ORDER = {
+      KR:   ['kakao', 'google'],   // 한국: 카카오 → 구글
+      INTL: ['google', 'kakao'],   // 해외: 구글 → 카카오
+    };
+
+    const socialStack = document.getElementById('socialStack');
+    const localeToggle = document.getElementById('localeToggle');
+    let locale = 'KR';
+
+    function renderSocials() {
+      socialStack.innerHTML = '';
+      ORDER[locale].forEach((id, i) => {
+        const s = SOCIALS[id];
+        const btn = document.createElement('button');
+        // 순서상 맨 위 = 주력, 나머지 = 보조
+        btn.className = 'btn-social ' + s.className + (i === 0 ? ' is-primary' : ' is-secondary');
+        btn.dataset.social = id;
+        btn.innerHTML = s.logo + '<span>' + s.label[locale] + '</span>';
+        socialStack.appendChild(btn);
+      });
+    }
+
+    // 소셜 버튼 클릭 → 약관 화면 (데모: 모든 소셜 공통)
+    socialStack.addEventListener('click', (e) => {
+      if (e.target.closest('.btn-social')) {
+        termsScreen.classList.add('active');
+      }
+    });
+
+    // ── 화면 전체 문구 i18n (한국어 ↔ 해외 영어) ────────────
+    // sel: 대상 셀렉터, ph: placeholder, html: <br> 등 마크업 포함
+    const I18N = [
+      { sel: '.subtitle',              ko: '나를 소개하는 가장 새로운 방법', en: 'A whole new way to introduce yourself' },
+      { sel: '.email-label',           ko: '이메일로 시작',                 en: 'Continue with email' },
+      { sel: '.link-privacy',          ko: '개인정보 처리방침',             en: 'Privacy Policy' },
+      // 이메일 입력 화면
+      { sel: '.email-screen-title',    ko: '이메일을 입력해주세요',         en: 'Enter your email' },
+      { sel: '#emailInput', ph: true,  ko: '이메일',                       en: 'Email' },
+      { sel: '#btnNext',               ko: '다음',                         en: 'Next' },
+      // 비밀번호 화면
+      { sel: '.password-screen-title', html: true, ko: '다시 오신 것을<br>환영해요', en: 'Welcome<br>back' },
+      { sel: '.password-field-label',  ko: '비밀번호를 입력해주세요',       en: 'Enter your password' },
+      { sel: '#passwordInput', ph: true, ko: '비밀번호',                   en: 'Password' },
+      { sel: '#btnLogin',              ko: '로그인',                       en: 'Log in' },
+      { sel: '.link-forgot',           ko: '비밀번호를 잊으셨나요?',        en: 'Forgot your password?' },
+      // 회원가입 화면
+      { sel: '.signup-screen-title',   ko: '회원가입',                     en: 'Sign up' },
+      { sel: '.signup-field-label',    ko: '이름과 비밀번호를 설정해주세요', en: 'Set your name and password' },
+      { sel: '#signupNameInput', ph: true, ko: '이름',                    en: 'Name' },
+      { sel: '#signupPwInput', ph: true, ko: '비밀번호',                  en: 'Password' },
+      { sel: '#signupAgreeAllRow .agree-all-label',   ko: '전체 동의하기', en: 'Agree to all' },
+      { sel: '#signupTermRow1 .term-label', ko: '(필수) 서비스 이용약관',   en: '(Required) Terms of Service' },
+      { sel: '#signupTermRow2 .term-label', ko: '(필수) 개인정보 처리방침', en: '(Required) Privacy Policy' },
+      { sel: '#btnSignup',             ko: '동의 및 회원가입',             en: 'Agree & sign up' },
+      // 약관동의 화면
+      { sel: '.terms-back-label',      ko: '뒤로',                         en: 'Back' },
+      { sel: '.terms-title', html: true, ko: '서비스 이용을 위해<br>약관에 동의해 주세요.', en: 'Please agree to the terms<br>to use the service.' },
+      { sel: '#agreeAllRow .agree-all-label',  ko: '전체 동의하기',        en: 'Agree to all' },
+      { sel: '#termsScreen [data-id="term1"] .term-label', ko: '(필수) 서비스 이용약관',   en: '(Required) Terms of Service' },
+      { sel: '#termsScreen [data-id="term2"] .term-label', ko: '(필수) 개인정보 처리방침', en: '(Required) Privacy Policy' },
+      { sel: '#btnAgree',              ko: '동의',                         en: 'Agree' },
+    ];
+
+    function applyLocale() {
+      const lang = locale === 'KR' ? 'ko' : 'en';
+      I18N.forEach((t) => {
+        const el = document.querySelector(t.sel);
+        if (!el) return;
+        if (t.ph) el.placeholder = t[lang];
+        else if (t.html) el.innerHTML = t[lang];
+        else el.textContent = t[lang];
+      });
+      document.documentElement.lang = lang;
+    }
+
+    // 데모 전용: 지역(KR/해외) 전환
+    function syncLocaleToggle() {
+      localeToggle.textContent = locale === 'KR' ? '데모: 🇰🇷 한국' : '데모: 🌐 해외';
+    }
+    localeToggle.addEventListener('click', () => {
+      locale = locale === 'KR' ? 'INTL' : 'KR';
+      syncLocaleToggle();
+      renderSocials();
+      applyLocale();
+    });
+
+    renderSocials();
+    syncLocaleToggle();
+    applyLocale();
+
+    // 약관 뒤로가기
+    termsBack.addEventListener('click', () => {
+      termsScreen.classList.remove('active');
+    });
+
+    // 동의 버튼 → 닫기 (실제 구현 시 다음 단계로 이동)
+    btnAgree.addEventListener('click', () => {
+      termsScreen.classList.remove('active');
+    });
+
+    // 전체 동의하기 토글
+    agreeAllRow.addEventListener('click', () => {
+      const allChecked = itemChecks.every(c => c.classList.contains('checked'));
+      itemChecks.forEach(c => c.classList.toggle('checked', !allChecked));
+      syncAllCheck();
+    });
+
+    // 개별 항목 토글
+    document.querySelectorAll('.term-row').forEach((row, i) => {
+      row.addEventListener('click', (e) => {
+        if (e.target.closest('.term-chevron')) return;
+        itemChecks[i].classList.toggle('checked');
+        syncAllCheck();
+      });
+    });
+
+    function syncAllCheck() {
+      const allChecked = itemChecks.every(c => c.classList.contains('checked'));
+      checks[0].classList.toggle('checked', allChecked);
+      btnAgree.disabled = !allChecked;
+    }
+  </script>
+</body>
+</html>
