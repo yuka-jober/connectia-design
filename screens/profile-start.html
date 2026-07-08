@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Connectia — 시작하기</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="../components.css">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;height:100dvh;overflow:hidden;}
+  body{
+    font-family:'Pretendard',sans-serif;
+    background:#d8d8e8;
+    display:flex;align-items:center;justify-content:center;
+    overflow:hidden;
+  }
+  i[data-lucide]{display:inline-block;width:1em;height:1em;vertical-align:middle;}
+
+  .frame{
+    width:390px;
+    height:100dvh;
+    max-height:844px;
+    background:#eeeef6;
+    position:relative;
+    overflow:hidden;
+    box-shadow:0 32px 80px -20px rgba(0,0,0,0.28);
+  }
+  @media(max-width:439px){.frame{width:100vw;box-shadow:none;}}
+  @media(min-width:440px){.frame{border-radius:44px;height:calc(100dvh - 32px);}}
+
+  /* ── 스크린 공통 ── */
+  .screen{
+    position:absolute;inset:0;
+    display:flex;flex-direction:column;
+    transition:transform .28s cubic-bezier(.4,0,.2,1);
+  }
+  .screen.hidden-right{transform:translateX(100%);}
+  .screen.hidden-left{transform:translateX(-100%);}
+
+  /* ── 홈 스크린 ── */
+  #s-home{
+    justify-content:center;
+    gap:20px;
+  }
+  .topbar{
+    flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+    padding-top:env(safe-area-inset-top);
+    padding-bottom:0;
+  }
+  .logo img{height:18px;display:block;}
+
+  .hero{
+    flex-shrink:0;
+    text-align:center;
+    padding:0 20px;
+  }
+  .hero h1{font-size:22px;font-weight:700;line-height:1.38;letter-spacing:-0.02em;color:#111318;word-break:keep-all;}
+  .hero h1 b{color:#6b6be1;font-weight:800;}
+  .hero p{font-size:12px;color:#6b7280;margin-top:7px;}
+
+  .grid{
+    flex-shrink:0;
+    margin-top:10px;
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:9px;
+    padding:0 12px calc(env(safe-area-inset-bottom));
+    height:46dvh;
+    max-height:360px;
+  }
+
+  .gc{
+    background:#fff;
+    border-radius:16px;
+    overflow:hidden;
+    cursor:pointer;
+    box-shadow:0 3px 14px rgba(0,0,0,0.07);
+    display:flex;flex-direction:column;
+    transition:transform .13s, box-shadow .13s;
+    min-height:0;
+  }
+  .gc:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,0.13);}
+  .gc:active{transform:scale(0.95);box-shadow:0 3px 14px rgba(0,0,0,0.07);}
+
+  .ci{
+    flex:1;min-height:0;
+    position:relative;
+    display:flex;align-items:center;justify-content:center;
+    overflow:hidden;
+  }
+  .d{position:absolute;border-radius:8px;background:rgba(255,255,255,0.46);}
+  .ico{
+    width:40px;height:40px;border-radius:11px;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 3px 12px rgba(0,0,0,0.16);
+    position:relative;z-index:1;
+    flex-shrink:0;
+  }
+  .cl{
+    flex-shrink:0;
+    padding:7px 10px 9px;
+    font-size:12.5px;font-weight:600;color:#111318;
+  }
+
+  .g1{background:linear-gradient(145deg,#c5c5f4,#ddd8fa,#eae6fd);}
+  .g2{background:linear-gradient(145deg,#f8c6c6,#fad2b6,#fde9d2);}
+  .g3{background:linear-gradient(145deg,#b6c8f4,#ccd8fb,#dce6fd);}
+  .g4{background:linear-gradient(145deg,#cec4f4,#ddd3f8,#ece8fd);}
+  .g5{background:linear-gradient(145deg,#c6d9f4,#d8e7fb,#e4eefe);}
+  .g6{background:linear-gradient(145deg,#b6e8d6,#cdf0e2,#dcf6ee);}
+
+  .i1{background:linear-gradient(135deg,#7c7cec,#5a5ee8);}
+  .i2{background:linear-gradient(135deg,#f87171,#fb923c);}
+  .i3{background:linear-gradient(135deg,#60a5fa,#818cf8);}
+  .i4{background:linear-gradient(135deg,#a78bfa,#818cf8);}
+  .i5{background:linear-gradient(135deg,#38bdf8,#818cf8);}
+  .i6{background:linear-gradient(135deg,#34d399,#059669);}
+
+  /* ── 프리뷰 스크린 공통 ── */
+  .pv-topbar{
+    flex-shrink:0;
+    display:flex;align-items:center;
+    gap:10px;
+    padding:calc(env(safe-area-inset-top) + 14px) 16px 14px;
+    background:#fff;
+    border-bottom:1px solid #ebebeb;
+  }
+  .pv-back{
+    width:36px;height:36px;border-radius:99px;border:none;
+    background:#f3f3f8;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;
+    transition:background .1s;
+  }
+  .pv-back:active{background:#e5e5ef;}
+  .pv-title{font-size:16px;font-weight:700;color:#111318;letter-spacing:-0.02em;}
+
+  .pv-body{
+    flex:1;
+    overflow-y:auto;
+    overflow-x:hidden;
+    position:relative;
+    background:#fff;
+  }
+  .pv-body::-webkit-scrollbar{width:0;}
+
+  /* ── 인라인 명함 카드 ── */
+  .cd-head{padding:52px 40px 36px;}
+  .cd-logo{margin-bottom:14px;}
+  .cd-logo img{height:70px;width:auto;max-width:100%;object-fit:contain;}
+  .cd-divider{width:100%;height:1.5px;background:#111318;margin:18px 0 20px;}
+  .cd-name{font-size:26px;font-weight:800;letter-spacing:-0.02em;line-height:1.1;margin-top:14px;}
+  .cd-avatar{width:64px;height:64px;border-radius:50%;object-fit:cover;}
+  .cd-sec{padding:28px 40px;border-top:1px solid rgba(17,19,24,0.1);}
+  .cd-label{font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#9ca3af;margin-bottom:14px;}
+  .cd-row{display:flex;align-items:flex-start;font-size:13px;line-height:1.6;margin-bottom:6px;}
+  .cd-key{font-weight:700;width:24px;flex-shrink:0;color:#111318;}
+  .cd-val{color:#6b7280;}
+  .cd-topbar-btn{height:36px;padding:0 11px;border-radius:9px;background:none;border:1px solid rgba(17,19,24,0.16);cursor:pointer;font-size:13px;font-weight:500;color:#111318;font-family:'Pretendard',sans-serif;}
+
+  .pv-footer{
+    flex-shrink:0;
+    padding:14px 16px calc(env(safe-area-inset-bottom) + 14px);
+    background:#fff;
+    border-top:1px solid #ebebeb;
+  }
+  .pv-cta{
+    width:100%;
+    padding:16px;
+    border:none;border-radius:16px;
+    background:#4242A6;
+    color:#fff;
+    font-family:'Pretendard',sans-serif;
+    font-size:16px;font-weight:700;letter-spacing:-0.01em;
+    cursor:pointer;
+    transition:opacity .13s, transform .13s;
+  }
+  .pv-cta:hover{opacity:.92;}
+  .pv-cta:active{transform:scale(0.98);}
+
+  /* ── 이력서 준비 스크린 ── */
+  .info-body{
+    flex:1;
+    display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+    gap:10px;
+    padding:40px 32px;
+    text-align:center;
+  }
+  .info-icon{
+    width:56px;height:56px;border-radius:16px;
+    background:linear-gradient(135deg,#7c7cec,#5a5ee8);
+    display:flex;align-items:center;justify-content:center;
+    margin-bottom:6px;
+  }
+  .info-body h2{font-size:18px;font-weight:700;color:#111318;letter-spacing:-0.02em;}
+  .info-body p{font-size:14px;color:#6b7280;line-height:1.6;word-break:keep-all;}
+
+  /* ── 스캔 바텀시트 (프레임 내부에 한정) ── */
+  #scan-overlay{position:absolute;z-index:600;}
+  #scan-sheet{position:absolute;z-index:601;}
+  .scan-icon{
+    width:56px;height:56px;border-radius:var(--r-md);
+    background:var(--color-primary-light);
+    display:inline-flex;align-items:center;justify-content:center;
+    margin-bottom:16px;
+  }
+  .scan-option{
+    display:flex;align-items:center;gap:12px;
+    width:100%;padding:16px;
+    background:var(--color-surface-sub);
+    border:1px solid var(--color-border);
+    border-radius:var(--r-md);
+    cursor:pointer;
+    font-family:var(--font-base);
+    text-align:left;
+    transition:background var(--motion-fast) var(--ease-standard), transform var(--motion-fast) var(--ease-standard);
+  }
+  .scan-option:hover{background:var(--color-primary-light);border-color:var(--color-primary-subtle);}
+  .scan-option:active{transform:scale(0.98);}
+  .scan-option-ico{
+    width:40px;height:40px;border-radius:var(--r-sm);
+    background:var(--color-surface);
+    display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;
+    color:var(--color-primary);
+  }
+  .scan-option-text{display:flex;flex-direction:column;gap:4px;flex:1;min-width:0;}
+  .scan-skip{
+    width:100%;margin-top:12px;padding:12px;
+    background:none;border:none;cursor:pointer;
+    font-family:var(--font-base);
+    font-size:var(--fs-body);
+    color:var(--color-text-muted);
+  }
+  .scan-skip:hover{color:var(--color-text-sub);}
+
+  /* ── 명함 분석 중 스크린 ── */
+  #s-analyzing{background:var(--color-bg);}
+  .analyzing-body{
+    flex:1;
+    display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+    padding:32px 24px;
+  }
+  .scan-card{
+    width:280px;height:168px;
+    border-radius:var(--r-md);
+    background:var(--color-surface);
+    position:relative;
+    overflow:hidden;
+    box-shadow:var(--shadow-3);
+  }
+  .scan-card-content{
+    padding:24px;
+    display:flex;flex-direction:column;gap:8px;
+    height:100%;
+  }
+  .scan-card-logo{
+    width:40px;height:16px;
+    background:var(--color-primary-light);
+    border-radius:var(--r-xs);
+    margin-bottom:8px;
+  }
+  .scan-card-line{
+    height:8px;
+    background:var(--color-surface-sub);
+    border-radius:var(--r-xs);
+  }
+  .scan-card-name{width:96px;height:12px;}
+  .scan-card-info{width:60%;}
+  .scan-card-info.short{width:40%;}
+  .scan-card-line-anim{
+    position:absolute;left:0;right:0;
+    height:3px;
+    background:linear-gradient(90deg,transparent,var(--color-primary),transparent);
+    box-shadow:0 0 16px var(--color-primary);
+    animation:scan-line-move 1.6s var(--ease-standard) infinite;
+  }
+  @keyframes scan-line-move{
+    0%   {top:-3px;opacity:0;}
+    15%  {opacity:1;}
+    85%  {opacity:1;}
+    100% {top:100%;opacity:0;}
+  }
+  .analyzing-dots{
+    display:inline-flex;gap:4px;
+    margin-left:4px;
+    vertical-align:middle;
+  }
+  .analyzing-dots span{
+    width:4px;height:4px;
+    border-radius:var(--r-full);
+    background:var(--color-text-muted);
+    animation:dot-pulse 1.4s var(--ease-standard) infinite;
+  }
+  .analyzing-dots span:nth-child(2){animation-delay:0.2s;}
+  .analyzing-dots span:nth-child(3){animation-delay:0.4s;}
+  @keyframes dot-pulse{
+    0%,100% {opacity:0.3;}
+    50%     {opacity:1;}
+  }
+</style>
+</head>
+<body>
+<div class="frame">
+
+  <!-- ── 스크린 1: 홈 ── -->
+  <div class="screen" id="s-home">
+    <div class="topbar">
+      <div class="logo"><img src="../assets/logo-start.svg" alt="Connectia"></div>
+    </div>
+
+    <div class="hero">
+      <h1><b>짧게.</b> 보여주고<br>궁금한 건 <b>AI</b>가 설명하는<br>나만의 페이지</h1>
+      <p>단 1분만에 만들어보세요</p>
+    </div>
+
+    <div class="grid">
+
+      <!-- 이력서 -->
+      <div class="gc" onclick="openResume()">
+        <div class="ci g1">
+          <div class="d" style="width:48%;height:58%;top:50%;left:50%;transform:translate(-72%,-68%) rotate(-10deg);"></div>
+          <div class="d" style="width:48%;height:58%;top:50%;left:50%;transform:translate(-28%,-52%) rotate(-2deg);"></div>
+          <div class="ico i1"><i data-lucide="file-text" style="width:19px;height:19px;color:#fff;"></i></div>
+        </div>
+        <p class="cl">이력서</p>
+      </div>
+
+      <!-- 세일즈 -->
+      <div class="gc" onclick="openServiceIntro('세일즈')">
+        <div class="ci g2">
+          <div class="d" style="width:48%;height:58%;top:50%;left:50%;transform:translate(-70%,-65%) rotate(-8deg);"></div>
+          <div class="d" style="width:48%;height:58%;top:50%;left:50%;transform:translate(-30%,-50%) rotate(4deg);"></div>
+          <div class="ico i2"><i data-lucide="trending-up" style="width:19px;height:19px;color:#fff;"></i></div>
+        </div>
+        <p class="cl">세일즈</p>
+      </div>
+
+      <!-- 서비스 소개서 -->
+      <div class="gc" onclick="openServiceIntro()">
+        <div class="ci g6">
+          <div class="d" style="width:62%;height:9%;top:50%;left:50%;transform:translate(-50%,-240%);border-radius:5px;"></div>
+          <div class="d" style="width:48%;height:7%;top:50%;left:50%;transform:translate(-50%,-160%);border-radius:5px;opacity:.7;"></div>
+          <div class="d" style="width:66%;height:28%;top:50%;left:50%;transform:translate(-50%,-40%);border-radius:8px;"></div>
+          <div class="d" style="width:36%;height:7%;top:50%;left:50%;transform:translate(-50%,100%);border-radius:5px;opacity:.65;"></div>
+          <div class="ico i6"><i data-lucide="globe" style="width:19px;height:19px;color:#fff;"></i></div>
+        </div>
+        <p class="cl">서비스 소개서</p>
+      </div>
+
+      <!-- 팬페이지 (프로필 페이지) -->
+      <div class="gc" onclick="openServiceIntro('프로필 페이지')">
+        <div class="ci g4">
+          <div class="d" style="width:54%;height:64%;top:50%;left:50%;transform:translate(-62%,-62%) rotate(-6deg);"></div>
+          <div class="d" style="width:22%;height:22%;top:50%;left:50%;transform:translate(-160%,-20%);border-radius:50%;opacity:.8;"></div>
+          <div class="ico i4"><i data-lucide="layout" style="width:19px;height:19px;color:#fff;"></i></div>
+        </div>
+        <p class="cl">프로필 페이지</p>
+      </div>
+
+      <!-- CS -->
+      <div class="gc" onclick="openServiceIntro('CS')">
+        <div class="ci g3">
+          <div class="d" style="width:60%;height:26%;top:50%;left:50%;transform:translate(-50%,-130%);border-radius:10px 10px 10px 2px;"></div>
+          <div class="d" style="width:50%;height:22%;top:50%;left:50%;transform:translate(-50%,-30%);border-radius:10px 10px 2px 10px;opacity:.75;"></div>
+          <div class="d" style="width:38%;height:18%;top:50%;left:50%;transform:translate(-50%,70%);border-radius:10px;opacity:.55;"></div>
+          <div class="ico i3"><i data-lucide="message-circle" style="width:19px;height:19px;color:#fff;"></i></div>
+        </div>
+        <p class="cl">CS</p>
+      </div>
+
+      <!-- 명함 -->
+      <div class="gc" onclick="openPreview('명함','card2.html')">
+        <div class="ci g5">
+          <div class="d" style="width:68%;height:32%;top:50%;left:50%;transform:translate(-50%,-110%) rotate(-6deg);border-radius:9px;"></div>
+          <div class="d" style="width:68%;height:32%;top:50%;left:50%;transform:translate(-50%,-10%) rotate(4deg);border-radius:9px;"></div>
+          <div class="ico i5"><i data-lucide="credit-card" style="width:19px;height:19px;color:#fff;"></i></div>
+        </div>
+        <p class="cl">명함</p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── 스크린 2: 템플릿 프리뷰 ── -->
+  <div class="screen hidden-right" id="s-preview">
+    <div class="pv-topbar">
+      <button class="pv-back" onclick="goHome()">
+        <i data-lucide="chevron-left" style="width:18px;height:18px;color:#111318;"></i>
+      </button>
+      <span class="pv-title" id="pv-title">템플릿</span>
+    </div>
+    <div class="pv-body">
+      <div style="padding-bottom:40px;">
+        <div class="cd-head">
+          <div class="cd-logo"><img src="../assets/logo-company.png" alt="커넥트생명"></div>
+          <div class="cd-divider"></div>
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;">
+            <img src="../assets/profile.svg" class="cd-avatar" alt="">
+          </div>
+          <p class="cd-name">김영희</p>
+        </div>
+        <div class="cd-sec">
+          <p class="cd-label">연락처</p>
+          <div class="cd-row"><span class="cd-key">T.</span><span class="cd-val">010-1234-5678</span></div>
+          <div class="cd-row"><span class="cd-key">E.</span><span class="cd-val">younghee.kim@connectlife.co.kr</span></div>
+          <div class="cd-row"><span class="cd-key">A.</span><span class="cd-val">서울 영등포구 여의대로 108,<br>커넥트생명 여의도지점</span></div>
+          <button style="margin-top:20px;display:flex;align-items:center;justify-content:center;gap:7px;width:100%;height:44px;border-radius:6px;border:none;background:#111318;cursor:pointer;font-size:14px;font-weight:700;font-family:'Pretendard',sans-serif;color:#fff;"><i data-lucide="message-circle" style="width:16px;height:16px;"></i>질문하기</button>
+        </div>
+      </div>
+    </div>
+    <div class="pv-footer">
+      <button class="pv-cta" onclick="launchTemplate()">이 템플릿으로 만들기</button>
+    </div>
+  </div>
+
+  <!-- ── 스크린 5: 생성됨 ── -->
+  <div class="screen hidden-right" id="s-created">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;padding-top:calc(10px + env(safe-area-inset-top));border-bottom:1px solid rgba(17,19,24,0.1);flex-shrink:0;background:#fff;">
+      <button style="display:flex;align-items:center;gap:4px;background:none;border:none;cursor:pointer;font-size:15px;font-weight:700;color:#111318;font-family:'Pretendard',sans-serif;">
+        김영희 <i data-lucide="chevron-down" style="width:14px;height:14px;color:#9ca3af;"></i>
+      </button>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <button id="cd-edit-btn" class="cd-topbar-btn">프로필 편집</button>
+        <button id="cd-settings-btn" class="cd-topbar-btn">설정</button>
+      </div>
+    </div>
+    <div style="flex:1;overflow-y:auto;background:#fff;" class="pv-body" id="cd-body">
+      <div style="padding-bottom:40px;">
+        <div class="cd-head">
+          <div class="cd-logo"><img src="../assets/logo-company.png" alt="커넥트생명"></div>
+          <div class="cd-divider"></div>
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;">
+            <img src="../assets/profile.svg" class="cd-avatar" alt="">
+          </div>
+          <p class="cd-name">김영희</p>
+        </div>
+        <div class="cd-sec">
+          <p class="cd-label">연락처</p>
+          <div class="cd-row"><span class="cd-key">T.</span><span class="cd-val">010-1234-5678</span></div>
+          <div class="cd-row"><span class="cd-key">E.</span><span class="cd-val">younghee.kim@connectlife.co.kr</span></div>
+          <div class="cd-row"><span class="cd-key">A.</span><span class="cd-val">서울 영등포구 여의대로 108,<br>커넥트생명 여의도지점</span></div>
+          <button style="margin-top:20px;display:flex;align-items:center;justify-content:center;gap:7px;width:100%;height:44px;border-radius:6px;border:none;background:#111318;cursor:pointer;font-size:14px;font-weight:700;font-family:'Pretendard',sans-serif;color:#fff;"><i data-lucide="message-circle" style="width:16px;height:16px;"></i>질문하기</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 온보딩 오버레이 (s-created 위에 표시) ── -->
+  <div id="onb-ov" style="display:none;position:absolute;inset:0;z-index:700;">
+    <div id="onb-dim" style="position:absolute;inset:0;background:rgba(0,0,0,0.52);display:none;"></div>
+    <div id="onb-hl" style="position:absolute;border-radius:9px;box-shadow:0 0 0 3px #6b6be1, 0 0 0 9999px rgba(0,0,0,0.52);pointer-events:none;"></div>
+    <!-- 툴팁 -->
+    <div id="onb-tip" style="position:absolute;background:#fff;border-radius:16px;padding:18px 18px 14px;width:260px;box-shadow:0 8px 32px rgba(0,0,0,0.18);">
+      <div id="onb-arr" style="position:absolute;top:-8px;width:16px;height:8px;overflow:hidden;"><div style="width:12px;height:12px;background:#fff;transform:rotate(45deg);border-radius:2px;position:absolute;bottom:-6px;left:2px;box-shadow:-1px -1px 3px rgba(0,0,0,0.08);"></div></div>
+      <p id="onb-desc" style="font-size:14px;font-weight:500;line-height:1.65;color:#111318;word-break:keep-all;white-space:pre-line;"></p>
+      <div style="text-align:right;margin-top:10px;"><button id="onb-next" onclick="onbNext()" style="background:none;border:none;cursor:pointer;font-size:14px;font-weight:600;color:#6b6be1;font-family:'Pretendard',sans-serif;padding:4px 0;">다음</button></div>
+    </div>
+    <!-- 알림 동의 카드 -->
+    <div id="onb-card" style="display:none;position:absolute;left:16px;right:16px;top:60px;">
+      <div style="background:#fff;border-radius:24px;padding:28px 24px 24px;box-shadow:0 16px 48px rgba(0,0,0,0.22);">
+        <div style="width:44px;height:44px;border-radius:13px;background:linear-gradient(135deg,#7c7cec,#5a5ee8);display:flex;align-items:center;justify-content:center;margin-bottom:16px;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        </div>
+        <p style="font-size:17px;font-weight:700;color:#111318;letter-spacing:-0.02em;line-height:1.4;word-break:keep-all;">답변 못한 질문을<br>카카오 알림톡으로 받아보세요</p>
+        <p style="font-size:13px;color:#6b7280;margin-top:8px;line-height:1.6;word-break:keep-all;">방문자가 AI가 답변하지 못한 질문을 남기면, 카카오톡으로 바로 알림을 받고 답변을 추가할 수 있어요.</p>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:20px;padding:14px 16px;background:#f5f6f8;border-radius:12px;">
+          <span style="font-size:14px;font-weight:600;color:#111318;">카카오 알림톡 수신 동의</span>
+          <div id="onb-toggle" onclick="onbToggle()" style="width:48px;height:28px;border-radius:99px;background:#6b6be1;cursor:pointer;position:relative;transition:background .2s;flex-shrink:0;">
+            <div id="onb-toggle-knob" style="width:22px;height:22px;border-radius:50%;background:#fff;position:absolute;top:3px;left:3px;transform:translateX(20px);transition:transform .2s;box-shadow:0 1px 4px rgba(0,0,0,0.18);"></div>
+          </div>
+        </div>
+        <button onclick="onbCardDone()" style="width:100%;margin-top:16px;padding:16px;border:none;border-radius:14px;background:#6b6be1;color:#fff;font-size:16px;font-weight:700;font-family:'Pretendard',sans-serif;cursor:pointer;letter-spacing:-0.01em;">시작하기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 스크린 4: 기존 프로필 페이지 안내 ── -->
+  <div class="screen hidden-right" id="s-service">
+    <div class="pv-topbar">
+      <button class="pv-back" onclick="goHome()">
+        <i data-lucide="chevron-left" style="width:18px;height:18px;color:#111318;"></i>
+      </button>
+      <span class="pv-title" id="s-service-title">서비스 소개서</span>
+    </div>
+    <div class="info-body" id="s-service-body" style="padding:0;overflow-y:auto;">
+      <img id="s-service-img" src="" alt="" style="display:none;width:100%;height:auto;display:block;">
+      <h2 id="s-service-msg" style="text-align:center;margin:auto;">기존 프로필 페이지를<br>보여줍니다</h2>
+    </div>
+    <div class="pv-footer">
+      <button class="pv-cta" onclick="toast('이 템플릿으로 만들기를 시작해요')">이 템플릿으로 만들기</button>
+    </div>
+  </div>
+
+  <!-- ── 명함 스캔 바텀시트 (s-created 진입 시 표시) ── -->
+  <div id="scan-overlay" class="bottom-sheet-overlay" onclick="skipScan()"></div>
+  <div id="scan-sheet" class="bottom-sheet">
+    <div class="bottom-sheet-handle"></div>
+
+    <div style="text-align:center;padding:8px 0 24px;">
+      <div class="scan-icon">
+        <i data-lucide="scan-line" style="width:28px;height:28px;color:var(--color-primary);"></i>
+      </div>
+      <h2 class="text-title">명함 정보를 자동으로 채워볼까요?</h2>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <button class="scan-option" onclick="scanByCamera()">
+        <span class="scan-option-ico"><i data-lucide="camera" style="width:20px;height:20px;"></i></span>
+        <span class="scan-option-text">
+          <span class="text-heading">명함 사진 촬영</span>
+        </span>
+        <i data-lucide="chevron-right" style="width:18px;height:18px;color:var(--color-text-muted);"></i>
+      </button>
+      <button class="scan-option" onclick="scanByUpload()">
+        <span class="scan-option-ico"><i data-lucide="image" style="width:20px;height:20px;"></i></span>
+        <span class="scan-option-text">
+          <span class="text-heading">이미지 업로드</span>
+        </span>
+        <i data-lucide="chevron-right" style="width:18px;height:18px;color:var(--color-text-muted);"></i>
+      </button>
+    </div>
+
+    <button class="scan-skip" onclick="skipScan()">직접 입력할게요</button>
+  </div>
+
+  <!-- ── 스크린: 명함 분석 중 ── -->
+  <div class="screen hidden-right" id="s-analyzing">
+    <div class="analyzing-body">
+      <div class="scan-card">
+        <div class="scan-card-content">
+          <div class="scan-card-logo"></div>
+          <div class="scan-card-line scan-card-name"></div>
+          <div style="flex:1;"></div>
+          <div class="scan-card-line scan-card-info"></div>
+          <div class="scan-card-line scan-card-info short"></div>
+          <div class="scan-card-line scan-card-info"></div>
+        </div>
+        <div class="scan-card-line-anim"></div>
+      </div>
+      <h2 class="text-title" style="margin-top:40px;">명함을 분석하고 있어요</h2>
+      <p class="text-caption" style="margin-top:8px;">잠시만 기다려주세요<span class="analyzing-dots"><span></span><span></span><span></span></span></p>
+    </div>
+  </div>
+
+  <!-- ── 스크린 3: 이력서 ── -->
+  <div class="screen hidden-right" id="s-resume">
+    <div class="pv-topbar">
+      <button class="pv-back" onclick="goHome()">
+        <i data-lucide="chevron-left" style="width:18px;height:18px;color:#111318;"></i>
+      </button>
+      <span class="pv-title">이력서</span>
+    </div>
+    <div class="info-body">
+      <h2>이력서 생성 과정으로<br>이동합니다</h2>
+      <p>기존 과정이 있어서,<br>해당 과정으로 연결됩니다</p>
+    </div>
+  </div>
+
+
+</div>
+
+<script>
+lucide.createIcons();
+
+var current = 's-home';
+var currentSrc = '';
+var currentType = '';
+
+function showScreen(to) {
+  var from = document.getElementById(current);
+  var toEl = document.getElementById(to);
+  from.classList.add('hidden-left');
+  toEl.classList.remove('hidden-right');
+  current = to;
+}
+
+function goHome() {
+  var fromEl = document.getElementById(current);
+  var homeEl = document.getElementById('s-home');
+  fromEl.classList.add('hidden-right');
+  homeEl.classList.remove('hidden-left');
+  document.getElementById('onb-ov').style.display = 'none';
+  current = 's-home';
+}
+
+function openPreview(title, src) {
+  currentSrc = src;
+  currentType = title;
+  document.getElementById('pv-title').textContent = title;
+  showScreen('s-preview');
+}
+
+function launchTemplate() {
+  showScreen('s-created');
+  lucide.createIcons();
+  setTimeout(openScanSheet, 400);
+}
+
+/* ── 명함 스캔 바텀시트 ── */
+function openScanSheet() {
+  document.getElementById('scan-overlay').classList.add('is-open');
+  document.getElementById('scan-sheet').classList.add('is-open');
+}
+
+function closeScanSheet(cb) {
+  document.getElementById('scan-overlay').classList.remove('is-open');
+  document.getElementById('scan-sheet').classList.remove('is-open');
+  setTimeout(function(){ if (cb) cb(); }, 260);
+}
+
+function scanByCamera() {
+  closeScanSheet(showAnalyzing);
+}
+
+function scanByUpload() {
+  closeScanSheet(showAnalyzing);
+}
+
+function skipScan() {
+  closeScanSheet(startOnboarding);
+}
+
+function showAnalyzing() {
+  showScreen('s-analyzing');
+  setTimeout(function() {
+    var analyzing = document.getElementById('s-analyzing');
+    var created = document.getElementById('s-created');
+    analyzing.classList.add('hidden-right');
+    created.classList.remove('hidden-left');
+    current = 's-created';
+    setTimeout(startOnboarding, 400);
+  }, 2400);
+}
+
+/* ── 온보딩 ── */
+var onbStep = 0;
+var onbToggleOn = false;
+var onbSteps = [
+  { elId: 'cd-edit-btn', desc: '프로필 편집을 통해\n자유롭게 페이지를 구성해보세요' },
+  { elId: 'cd-settings-btn', desc: '대화에 필요한 자료를 추가하고,\n대화 설정을 관리하고,\n방문자 통계를 확인해보세요' }
+];
+
+function startOnboarding() {
+  onbStep = 0;
+  onbToggleOn = true;
+  document.getElementById('onb-ov').style.display = 'block';
+  document.getElementById('onb-card').style.display = 'none';
+  document.getElementById('onb-tip').style.display = 'block';
+  document.getElementById('onb-hl').style.display = 'block';
+  document.getElementById('onb-dim').style.display = 'none';
+  document.getElementById('onb-toggle').style.background = '#6b6be1';
+  document.getElementById('onb-toggle-knob').style.transform = 'translateX(20px)';
+  onbShow(0);
+}
+
+function onbShow(i) {
+  if (i >= onbSteps.length) {
+    document.getElementById('onb-tip').style.display = 'none';
+    document.getElementById('onb-hl').style.display = 'none';
+    document.getElementById('onb-dim').style.display = 'block';
+    document.getElementById('onb-card').style.display = 'block';
+    return;
+  }
+  var s = onbSteps[i];
+  var el = document.getElementById(s.elId);
+  var frame = document.querySelector('.frame');
+  var fr = frame.getBoundingClientRect();
+  var br = el.getBoundingClientRect();
+  var sl = br.left - fr.left;
+  var st = br.top - fr.top;
+  var sw = br.width;
+  var sh = br.height;
+  var tip = document.getElementById('onb-tip');
+  var arr = document.getElementById('onb-arr');
+  var hl  = document.getElementById('onb-hl');
+  hl.style.left = sl + 'px'; hl.style.top = st + 'px';
+  hl.style.width = sw + 'px'; hl.style.height = sh + 'px';
+  var cx = sl + sw / 2;
+  var frameW = frame.offsetWidth;
+  var tl = Math.max(10, Math.min(cx - 130, frameW - 270));
+  tip.style.left = tl + 'px';
+  tip.style.top  = (st + sh + 14) + 'px';
+  arr.style.left = (cx - tl - 8) + 'px';
+  document.getElementById('onb-desc').textContent = s.desc;
+  document.getElementById('onb-next').textContent = '다음';
+}
+
+function onbNext() {
+  onbStep++;
+  onbShow(onbStep);
+}
+
+function onbToggle() {
+  onbToggleOn = !onbToggleOn;
+  document.getElementById('onb-toggle').style.background = onbToggleOn ? '#6b6be1' : '#d1d5db';
+  document.getElementById('onb-toggle-knob').style.transform = onbToggleOn ? 'translateX(20px)' : 'translateX(0)';
+}
+
+function onbCardDone() {
+  document.getElementById('onb-ov').style.display = 'none';
+}
+
+function openResume() {
+  showScreen('s-resume');
+}
+
+var serviceImages = { 'CS': '../assets/profile-cs.png', '세일즈': '../assets/profile-sales.png', '서비스 소개서': '../assets/profile-service.png', '프로필 페이지': '../assets/profile-fan.png' };
+function openServiceIntro(title) {
+  title = title || '서비스 소개서';
+  document.getElementById('s-service-title').textContent = title;
+  var img = document.getElementById('s-service-img');
+  var msg = document.getElementById('s-service-msg');
+  var src = serviceImages[title];
+  var body = document.getElementById('s-service-body');
+  if (src) {
+    img.src = src; img.style.display = 'block';
+    msg.style.display = 'none';
+    body.style.alignItems = 'flex-start';
+    body.style.justifyContent = 'flex-start';
+  } else {
+    img.style.display = 'none';
+    msg.style.display = '';
+    body.style.alignItems = '';
+    body.style.justifyContent = '';
+  }
+  showScreen('s-service');
+}
+
+function toast(msg) {
+  var t = document.createElement('div');
+  t.textContent = msg;
+  t.style.cssText = 'position:fixed;bottom:40px;left:50%;transform:translateX(-50%);background:rgba(17,19,24,0.88);color:#fff;padding:11px 20px;border-radius:99px;font-size:13px;font-family:Pretendard,sans-serif;z-index:9999;white-space:nowrap;pointer-events:none;';
+  document.body.appendChild(t);
+  setTimeout(function(){ t.remove(); }, 1800);
+}
+</script>
+</body>
+</html>

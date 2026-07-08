@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>내가 만든 AI — Connectia</title>
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="../components.css">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-base);
+    background: #e0e0e0;
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .frame {
+    width: 390px;
+    height: 844px;
+    max-height: 100dvh;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 32px 80px -20px rgba(0,0,0,0.28);
+    background: var(--color-surface);
+    border-radius: 44px;
+  }
+  @media (max-width: 439px) {
+    .frame { width: 100vw; height: 100dvh; max-height: none; border-radius: 0; }
+  }
+
+  i[data-lucide] { display: inline-flex; flex-shrink: 0; }
+  svg.lucide { flex-shrink: 0; }
+
+  /* ── 배경(상단): 편집자 뷰 top bar가 살짝 보임 ── */
+  .backdrop {
+    position: absolute; inset: 0;
+    background: var(--color-surface);
+    display: flex; flex-direction: column;
+  }
+  .top-nav {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px 12px;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+  .brand-select {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: none; border: none; cursor: pointer;
+    font-family: var(--font-base);
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-bold);
+    color: var(--color-text);
+    letter-spacing: -0.2px;
+    padding: 0;
+  }
+  .brand-select i[data-lucide],
+  .brand-select svg { width: 18px; height: 18px; color: var(--color-text-muted); }
+  .top-actions {
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .top-actions .btn {
+    padding: 0 12px;
+  }
+
+  /* 배경 미리보기 (avatar placeholder) — 시트가 시작되기 전 살짝 보이는 영역 */
+  .backdrop-preview {
+    flex: 1;
+    padding: 8px 20px 0;
+  }
+  .preview-tile {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    background: var(--color-surface-sub);
+    border-radius: var(--r-md);
+    background-image: url('../assets/profile.svg');
+    background-size: 40%;
+    background-repeat: no-repeat;
+    background-position: center;
+  }
+
+  /* ── Scrim (sheet 뒤 어두운 오버레이) ── */
+  .scrim {
+    position: absolute; inset: 0;
+    background: var(--color-scrim);
+    z-index: 5;
+  }
+
+  /* ── Bottom Sheet (이 화면 자체) ── */
+  .sheet {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 88%;
+    background: var(--color-surface);
+    border-top-left-radius: 24px;
+    border-top-right-radius: 24px;
+    display: flex; flex-direction: column;
+    z-index: 10;
+    overflow: hidden;
+  }
+  .sheet-handle {
+    width: 40px; height: 4px;
+    background: var(--color-border);
+    border-radius: var(--r-full);
+    margin: 8px auto 4px;
+    flex-shrink: 0;
+  }
+
+  .sheet-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px 0;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+
+  /* Tabs */
+  .sheet-tabs {
+    display: inline-flex; align-items: center; gap: 20px;
+  }
+  .tab {
+    background: none; border: none;
+    padding: 8px 0 12px;
+    font-family: var(--font-base);
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    letter-spacing: -0.2px;
+    position: relative;
+  }
+  .tab.is-active {
+    color: var(--color-text);
+    font-weight: var(--fw-bold);
+  }
+  .tab.is-active::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 2px;
+    background: var(--color-text);
+    border-radius: var(--r-full);
+  }
+  .tab-count {
+    color: var(--color-text-muted);
+    font-weight: var(--fw-semibold);
+    margin-left: 4px;
+  }
+  .sheet-header-border {
+    height: 1px;
+    background: var(--color-border);
+    margin: 0 20px;
+    flex-shrink: 0;
+  }
+
+  /* Tab panels */
+  .tab-panel { display: none; flex: 1; flex-direction: column; min-height: 0; }
+  .tab-panel.is-active { display: flex; }
+
+  /* ── Sheet views (main vs settings) ── */
+  .view { display: none; flex: 1; flex-direction: column; min-height: 0; position: relative; }
+  .view.is-active { display: flex; }
+
+  .settings-topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 12px;
+    gap: 12px;
+    flex-shrink: 0;
+    min-height: 48px;
+    position: relative;
+  }
+  .settings-title {
+    position: absolute;
+    left: 50%; transform: translateX(-50%);
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-bold);
+    color: var(--color-text);
+    letter-spacing: -0.2px;
+    pointer-events: none;
+  }
+  .settings-topbar-slot { min-width: 60px; display: inline-flex; }
+  .settings-topbar-slot.right { justify-content: flex-end; }
+  .topbar-btn {
+    background: none; border: none;
+    padding: 8px 12px;
+    font-family: var(--font-base);
+    font-size: var(--fs-body);
+    color: var(--color-text-sub);
+    cursor: pointer;
+    letter-spacing: -0.2px;
+  }
+  .topbar-btn.is-primary {
+    color: var(--color-primary);
+    font-weight: var(--fw-semibold);
+  }
+
+  .settings-info {
+    padding: 4px 20px 12px;
+    font-size: var(--fs-label);
+    color: var(--color-text-sub);
+    letter-spacing: -0.2px;
+    flex-shrink: 0;
+  }
+
+  .tab-dot {
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    margin-left: 4px;
+    vertical-align: middle;
+  }
+
+  .settings-panel { display: none; flex: 1; flex-direction: column; min-height: 0; }
+  .settings-panel.is-active { display: flex; }
+
+  /* 설정 리스트: 메인의 avatar-item과 동일한 형태 + 라디오만 왼쪽에 추가 */
+  .radio-circle {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    border: 1.5px solid var(--color-border);
+    flex-shrink: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: var(--color-surface);
+    transition: all var(--motion-fast) var(--ease-standard);
+  }
+  .radio-circle svg {
+    width: 12px; height: 12px;
+    color: var(--color-on-primary);
+    opacity: 0;
+    transition: opacity var(--motion-fast) var(--ease-standard);
+  }
+  .avatar-item.is-radio-selected .radio-circle {
+    border-color: var(--color-primary);
+    background: var(--color-primary);
+  }
+  .avatar-item.is-radio-selected .radio-circle svg { opacity: 1; }
+  .avatar-item.is-radio-selected .avatar-name {
+    color: var(--color-primary);
+    font-weight: var(--fw-semibold);
+  }
+
+  .list-empty {
+    padding: 48px 20px;
+    text-align: center;
+    color: var(--color-text-muted);
+    font-size: var(--fs-body);
+  }
+
+  .search-wrap {
+    padding: 4px 20px 12px;
+    flex-shrink: 0;
+    position: relative;
+  }
+  .search-wrap i[data-lucide],
+  .search-wrap svg.search-icon {
+    position: absolute;
+    left: 36px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px; height: 16px;
+    color: var(--color-text-muted);
+    pointer-events: none;
+  }
+  .search-input {
+    width: 100%;
+    height: 44px;
+    background: var(--color-surface-sub);
+    border: none;
+    border-radius: var(--r-md);
+    padding: 0 16px 0 40px;
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    color: var(--color-text);
+  }
+  .search-input::placeholder { color: var(--color-text-muted); }
+  .search-input:focus { outline: 2px solid var(--color-primary); outline-offset: -2px; }
+
+  /* ── List ── */
+  .list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 4px 12px 96px;
+    display: flex; flex-direction: column;
+    gap: 2px;
+  }
+  .avatar-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 12px;
+    border-radius: var(--r-md);
+    cursor: pointer;
+    background: none;
+    border: none;
+    width: 100%;
+    text-align: left;
+    font-family: var(--font-base);
+    transition: background var(--motion-fast) var(--ease-standard);
+  }
+  .avatar-item:hover { background: var(--color-surface-sub); }
+  .avatar-item.is-selected {
+    background: var(--color-primary-light);
+  }
+  .avatar-img {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background-color: var(--color-surface-sub);
+    background-image: url('../assets/profile.svg');
+    background-size: 60%;
+    background-repeat: no-repeat;
+    background-position: center;
+    flex-shrink: 0;
+  }
+  .avatar-name {
+    flex: 1;
+    font-size: var(--fs-body);
+    color: var(--color-text);
+    font-weight: var(--fw-medium);
+    letter-spacing: -0.2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .avatar-item.is-selected .avatar-name {
+    color: var(--color-primary);
+    font-weight: var(--fw-semibold);
+  }
+  .avatar-check {
+    width: 20px; height: 20px;
+    color: var(--color-primary);
+    flex-shrink: 0;
+  }
+
+  /* ── Sticky bottom CTA (sheet 안) ── */
+  .sheet-cta {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    padding: 12px 20px calc(20px + env(safe-area-inset-bottom));
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+    display: flex; align-items: center;
+    z-index: 2;
+  }
+  .create-btn {
+    display: flex; align-items: center; gap: 8px;
+    width: 100%;
+    background: none; border: none;
+    padding: 8px 4px;
+    cursor: pointer;
+    font-family: var(--font-base);
+    color: var(--color-text);
+    font-size: var(--fs-body);
+    font-weight: var(--fw-semibold);
+    letter-spacing: -0.2px;
+  }
+  .create-icon {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: var(--color-surface-sub);
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--color-text-sub);
+    flex-shrink: 0;
+  }
+  .create-icon i[data-lucide],
+  .create-icon svg { width: 18px; height: 18px; }
+</style>
+</head>
+<body>
+
+<div class="frame">
+
+  <!-- 뒤 배경: 편집 뷰 상단바 -->
+  <div class="backdrop">
+    <div class="top-nav">
+      <button class="brand-select" type="button">
+        <span>Bella Freud</span>
+        <i data-lucide="chevron-down"></i>
+      </button>
+      <div class="top-actions">
+        <button class="btn btn-sm btn-line-dark btn-pill" type="button">미리보기</button>
+        <button class="btn btn-sm btn-fill-dark btn-pill" type="button">편집</button>
+        <button class="btn btn-sm btn-fill-dark btn-pill" type="button">설정</button>
+      </div>
+    </div>
+    <div class="backdrop-preview">
+      <div class="preview-tile"></div>
+    </div>
+  </div>
+
+  <!-- 어두운 스크림 -->
+  <div class="scrim"></div>
+
+  <!-- 바텀시트 본체 -->
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+
+    <!-- View: 메인 (탭 + 리스트) -->
+    <div class="view is-active" id="view-main">
+      <div class="sheet-header">
+        <div class="sheet-tabs" role="tablist">
+          <button class="tab is-active" type="button" role="tab" data-tab="ai" onclick="switchTab('ai')">
+            내 AI 페이지 <span class="tab-count" id="tab-count-ai">51</span>
+          </button>
+          <button class="tab" type="button" role="tab" data-tab="community" onclick="switchTab('community')">
+            가입한 커뮤니티 <span class="tab-count" id="tab-count-community">0</span>
+          </button>
+        </div>
+        <button class="btn btn-sm btn-line-dark btn-pill" type="button" id="header-action-btn" onclick="openSettings()">기본값 설정</button>
+      </div>
+      <div class="sheet-header-border"></div>
+
+      <!-- Tab panel: 내 AI 페이지 -->
+      <div class="tab-panel is-active" id="panel-ai">
+        <div class="search-wrap" style="padding-top:16px;">
+          <i data-lucide="search" class="search-icon"></i>
+          <input class="search-input" type="text" placeholder="아바타 검색..." id="search-avatar">
+        </div>
+        <div class="list" id="avatar-list"></div>
+      </div>
+
+      <!-- Tab panel: 가입한 커뮤니티 -->
+      <div class="tab-panel" id="panel-community">
+        <div class="search-wrap" style="padding-top:16px;">
+          <i data-lucide="search" class="search-icon"></i>
+          <input class="search-input" type="text" placeholder="커뮤니티 검색..." id="search-community">
+        </div>
+        <div class="list" id="community-list"></div>
+      </div>
+
+      <div class="sheet-cta" id="sheet-cta">
+        <button class="create-btn" type="button" id="create-btn">
+          <span class="create-icon"><i data-lucide="plus"></i></span>
+          <span id="create-btn-label">새 AI 아바타 만들기</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- View: 기본 페이지 설정 -->
+    <div class="view" id="view-settings">
+      <div class="settings-topbar">
+        <div class="settings-topbar-slot">
+          <button class="topbar-btn" type="button" onclick="cancelSettings()">취소</button>
+        </div>
+        <div class="settings-title">기본 페이지 설정</div>
+        <div class="settings-topbar-slot right">
+          <button class="topbar-btn is-primary" type="button" id="settings-done-btn" onclick="completeSettings()" style="display:none;">완료</button>
+        </div>
+      </div>
+
+      <div class="sheet-header">
+        <div class="sheet-tabs" role="tablist">
+          <button class="tab is-active" type="button" role="tab" data-tab="ai" onclick="switchSettingsTab('ai')">
+            내 AI 페이지<span class="tab-dot" id="dot-ai" style="display:none;"></span>
+          </button>
+          <button class="tab" type="button" role="tab" data-tab="community" onclick="switchSettingsTab('community')">
+            가입한 커뮤니티<span class="tab-dot" id="dot-community" style="display:none;"></span>
+          </button>
+        </div>
+      </div>
+      <div class="sheet-header-border"></div>
+
+      <div class="settings-panel is-active" id="settings-panel-ai">
+        <div class="settings-info" style="padding-top:12px;">기본 아바타로 설정할 아바타를 선택해주세요</div>
+        <div class="search-wrap">
+          <i data-lucide="search" class="search-icon"></i>
+          <input class="search-input" type="text" placeholder="아바타 검색..." id="search-settings-avatar">
+        </div>
+        <div class="list" id="settings-list-ai"></div>
+      </div>
+      <div class="settings-panel" id="settings-panel-community">
+        <div class="settings-info" style="padding-top:12px;">기본 커뮤니티로 설정할 커뮤니티를 선택해주세요</div>
+        <div class="search-wrap">
+          <i data-lucide="search" class="search-icon"></i>
+          <input class="search-input" type="text" placeholder="커뮤니티 검색..." id="search-settings-community">
+        </div>
+        <div class="list" id="settings-list-community"></div>
+      </div>
+
+      <div class="sheet-cta" id="settings-cta">
+        <button class="create-btn" type="button" id="settings-create-btn">
+          <span class="create-icon"><i data-lucide="plus"></i></span>
+          <span>새 AI 아바타 만들기</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+  // ── Mock data ──
+  var AVATARS = [
+    { name: 'Bella Freud',            selected: true },
+    { name: 'I' },
+    { name: '고덕 아테라' },
+    { name: '커넥티아' },
+    { name: '해맑은요가 이광호 대표' },
+    { name: '이윤재' },
+    { name: '케이스 테스트 유카' },
+    { name: '감성대디 인생고민 상담소' },
+    { name: '자버 어드민' },
+    { name: '뷰티 살롱 어드민' },
+    { name: '실전 마케팅 코치' },
+    { name: '카페 지원가' },
+    { name: '피부과 상담 도우미' },
+    { name: '헬스 트레이너 도우미' },
+    { name: '이벤트 기획 어시스턴트' },
+    { name: '고객문의 자동응답' },
+    { name: '리뷰 답변 봇' },
+    { name: '병원 예약 안내' },
+    { name: '멤버십 안내 봇' },
+    { name: '이벤트 리마인더' },
+  ];
+
+  var COMMUNITIES = [
+    { name: '자버 크리에이터 라운지' },
+    { name: '뷰티 살롱 오너 모임' },
+    { name: 'AI 프롬프트 연구소' },
+    { name: '피부과 원장님들의 마케팅 이야기' },
+    { name: '요가 스튜디오 운영자 커뮤니티' },
+  ];
+
+  function escapeHTML(s) {
+    return String(s).replace(/[&<>"']/g, function(c){
+      return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+    });
+  }
+
+  function renderAvatars(list) {
+    var wrap = document.getElementById('avatar-list');
+    wrap.innerHTML = list.map(function(a){
+      var selectedCls = a.selected ? ' is-selected' : '';
+      var check = a.selected
+        ? '<i data-lucide="check" class="avatar-check"></i>'
+        : '';
+      return ''
+        + '<button class="avatar-item' + selectedCls + '" type="button" onclick="selectAvatar(\'' + escapeHTML(a.name) + '\')">'
+        +   '<span class="avatar-img"></span>'
+        +   '<span class="avatar-name">' + escapeHTML(a.name) + '</span>'
+        +   check
+        + '</button>';
+    }).join('');
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function renderCommunities(list) {
+    var wrap = document.getElementById('community-list');
+    if (!list.length) {
+      wrap.innerHTML = ''
+        + '<div style="padding:48px 20px; text-align:center; color:var(--color-text-muted); font-size:var(--fs-body);">'
+        +   '아직 가입한 커뮤니티가 없어요'
+        + '</div>';
+      return;
+    }
+    wrap.innerHTML = list.map(function(c){
+      return ''
+        + '<button class="avatar-item" type="button">'
+        +   '<span class="avatar-img"></span>'
+        +   '<span class="avatar-name">' + escapeHTML(c.name) + '</span>'
+        + '</button>';
+    }).join('');
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function selectAvatar(name) {
+    AVATARS.forEach(function(a){ a.selected = (a.name === name); });
+    renderAvatars(AVATARS);
+  }
+
+  var currentTab = 'ai';
+
+  function switchTab(tabName) {
+    currentTab = tabName;
+    var mainView = document.getElementById('view-main');
+    mainView.querySelectorAll('.tab').forEach(function(t){
+      t.classList.toggle('is-active', t.dataset.tab === tabName);
+    });
+    mainView.querySelectorAll('.tab-panel').forEach(function(p){
+      p.classList.toggle('is-active', p.id === 'panel-' + tabName);
+    });
+    // 커뮤니티 탭에서는 하단 CTA 숨김
+    document.getElementById('sheet-cta').style.display = (tabName === 'ai') ? 'flex' : 'none';
+  }
+
+  // ── 기본 페이지 설정 ──
+  // defaultPage: 전역 단일 기본. { type: 'ai'|'community', name }
+  var defaultPage = { type: 'ai', name: '커넥티아' };
+  var pendingDefault = null;   // 설정 모드에서 유저가 새로 고른 값 (없으면 null)
+  var settingsTab = 'ai';
+
+  function openSettings() {
+    pendingDefault = Object.assign({}, defaultPage);
+    settingsTab = defaultPage.type;
+
+    // 검색어 초기화
+    var sa = document.getElementById('search-settings-avatar');
+    var sc = document.getElementById('search-settings-community');
+    if (sa) sa.value = '';
+    if (sc) sc.value = '';
+
+    document.getElementById('view-main').classList.remove('is-active');
+    document.getElementById('view-settings').classList.add('is-active');
+
+    switchSettingsTab(settingsTab);
+    renderSettingsLists();
+    updateTabDots();
+    updateDoneBtn();
+  }
+
+  function cancelSettings() {
+    pendingDefault = null;
+    document.getElementById('view-settings').classList.remove('is-active');
+    document.getElementById('view-main').classList.add('is-active');
+  }
+
+  function completeSettings() {
+    if (!pendingDefault) return;
+    defaultPage = Object.assign({}, pendingDefault);
+    pendingDefault = null;
+    document.getElementById('view-settings').classList.remove('is-active');
+    document.getElementById('view-main').classList.add('is-active');
+  }
+
+  function switchSettingsTab(tabName) {
+    settingsTab = tabName;
+    var settingsView = document.getElementById('view-settings');
+    settingsView.querySelectorAll('.tab').forEach(function(t){
+      t.classList.toggle('is-active', t.dataset.tab === tabName);
+    });
+    settingsView.querySelectorAll('.settings-panel').forEach(function(p){
+      p.classList.toggle('is-active', p.id === 'settings-panel-' + tabName);
+    });
+    // 커뮤니티 탭에서는 하단 CTA 숨김
+    document.getElementById('settings-cta').style.display = (tabName === 'ai') ? 'flex' : 'none';
+  }
+
+  function updateTabDots() {
+    var mark = pendingDefault || defaultPage;
+    document.getElementById('dot-ai').style.display = (mark.type === 'ai') ? 'inline-block' : 'none';
+    document.getElementById('dot-community').style.display = (mark.type === 'community') ? 'inline-block' : 'none';
+  }
+
+  function updateDoneBtn() {
+    var changed = pendingDefault && (pendingDefault.type !== defaultPage.type || pendingDefault.name !== defaultPage.name);
+    document.getElementById('settings-done-btn').style.display = changed ? 'inline-flex' : 'none';
+  }
+
+  function selectDefault(type, name) {
+    pendingDefault = { type: type, name: name };
+    renderSettingsLists();
+    updateDoneBtn();
+    updateTabDots();
+  }
+
+  function radioItemHTML(entry, isSelected, type) {
+    var cls = 'avatar-item' + (isSelected ? ' is-radio-selected' : '');
+    return ''
+      + '<button class="' + cls + '" type="button" onclick="selectDefault(\'' + type + '\', \'' + escapeHTML(entry.name) + '\')">'
+      +   '<span class="radio-circle"><i data-lucide="check"></i></span>'
+      +   '<span class="avatar-img"></span>'
+      +   '<span class="avatar-name">' + escapeHTML(entry.name) + '</span>'
+      + '</button>';
+  }
+
+  function filterByQuery(list, q) {
+    q = (q || '').trim().toLowerCase();
+    if (!q) return list;
+    return list.filter(function(x){ return x.name.toLowerCase().indexOf(q) !== -1; });
+  }
+
+  function renderSettingsLists() {
+    var sel = pendingDefault || defaultPage;
+
+    var qAvatar = (document.getElementById('search-settings-avatar') || {}).value || '';
+    var qComm = (document.getElementById('search-settings-community') || {}).value || '';
+
+    var aiList = filterByQuery(AVATARS, qAvatar);
+    var aiWrap = document.getElementById('settings-list-ai');
+    aiWrap.innerHTML = aiList.map(function(a){
+      return radioItemHTML(a, sel.type === 'ai' && sel.name === a.name, 'ai');
+    }).join('');
+
+    var cList = filterByQuery(COMMUNITIES, qComm);
+    var cWrap = document.getElementById('settings-list-community');
+    if (!COMMUNITIES.length) {
+      cWrap.innerHTML = '<div class="list-empty">아직 가입한 커뮤니티가 없어요</div>';
+    } else if (!cList.length) {
+      cWrap.innerHTML = '<div class="list-empty">검색 결과가 없어요</div>';
+    } else {
+      cWrap.innerHTML = cList.map(function(c){
+        return radioItemHTML(c, sel.type === 'community' && sel.name === c.name, 'community');
+      }).join('');
+    }
+
+    if (window.lucide) lucide.createIcons();
+  }
+
+  // Search filters
+  document.getElementById('search-avatar').addEventListener('input', function(e){
+    var q = e.target.value.trim().toLowerCase();
+    if (!q) { renderAvatars(AVATARS); return; }
+    renderAvatars(AVATARS.filter(function(a){ return a.name.toLowerCase().indexOf(q) !== -1; }));
+  });
+
+  document.getElementById('search-community').addEventListener('input', function(e){
+    var q = e.target.value.trim().toLowerCase();
+    if (!q) { renderCommunities(COMMUNITIES); return; }
+    renderCommunities(COMMUNITIES.filter(function(c){ return c.name.toLowerCase().indexOf(q) !== -1; }));
+  });
+
+  document.getElementById('search-settings-avatar').addEventListener('input', renderSettingsLists);
+  document.getElementById('search-settings-community').addEventListener('input', renderSettingsLists);
+
+  renderAvatars(AVATARS);
+  renderCommunities(COMMUNITIES);
+  document.getElementById('tab-count-ai').textContent = AVATARS.length;
+  document.getElementById('tab-count-community').textContent = COMMUNITIES.length;
+</script>
+</body>
+</html>

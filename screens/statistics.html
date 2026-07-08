@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>통계 v2 — Connectia</title>
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="../components.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-base);
+  background: #e0e0e0;
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.frame {
+  width: 390px;
+  height: 844px;
+  max-height: 100dvh;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 32px 80px -20px rgba(0,0,0,0.28);
+  background: var(--color-surface);
+  display: flex;
+  flex-direction: column;
+}
+@media (max-width: 439px) { .frame { width: 100vw; height: 100dvh; max-height: none; } }
+@media (min-width: 440px) { .frame { border-radius: 44px; max-height: calc(100dvh - 40px); } }
+
+i[data-lucide] { display: inline-flex; flex-shrink: 0; }
+
+/* ── Topbar ── */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 16px 8px;
+  flex-shrink: 0;
+  background: var(--color-surface);
+}
+.topbar-left { display: flex; align-items: center; gap: 4px; cursor: pointer; }
+.topbar-title {
+  font-size: var(--fs-body-lg);
+  font-weight: var(--fw-semibold);
+  color: var(--color-text);
+  letter-spacing: var(--ls-body-lg);
+}
+.page-subtitle { padding: 0 16px 12px; flex-shrink: 0; }
+
+/* ── Tabs ── */
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+  background: var(--color-surface);
+  padding: 0 4px;
+}
+.tab {
+  flex: 1;
+  padding: 12px 0;
+  font-size: var(--fs-label);
+  font-weight: var(--fw-medium);
+  color: var(--color-text-muted);
+  text-align: center;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color var(--motion-fast) var(--ease-standard);
+}
+.tab.is-active {
+  color: var(--color-text);
+  font-weight: var(--fw-bold);
+  border-bottom-color: var(--color-text);
+}
+
+/* ── Scroll body ── */
+.body { flex: 1; overflow-y: auto; background: var(--color-bg); }
+.inner { padding: 16px 16px 40px; display: flex; flex-direction: column; gap: 16px; }
+
+/* ── Period segmented control ── */
+.period-seg {
+  display: flex;
+  background: var(--color-surface-sub);
+  border-radius: var(--r-sm);
+  padding: 4px;
+  gap: 4px;
+}
+.period-seg-btn {
+  flex: 1;
+  padding: 8px 0;
+  font-size: var(--fs-label);
+  font-weight: var(--fw-medium);
+  color: var(--color-text-muted);
+  text-align: center;
+  border-radius: var(--r-xs);
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  font-family: var(--font-base);
+  transition: all var(--motion-fast) var(--ease-standard);
+}
+.period-seg-btn.is-active {
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-weight: var(--fw-semibold);
+  box-shadow: var(--shadow-1);
+}
+
+/* ── Card 공통 ── */
+.card {
+  background: var(--color-card);
+  border-radius: var(--r-md);
+  padding: 20px;
+}
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.card-title {
+  font-size: var(--fs-heading);
+  font-weight: var(--fw-bold);
+  color: var(--color-text);
+  letter-spacing: var(--ls-heading);
+}
+.card-more {
+  font-size: var(--fs-label);
+  font-weight: var(--fw-medium);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* ──────────────────────────────────────────
+   3.1 채워야 할 질문 (HERO)
+   ────────────────────────────────────────── */
+.hero-card {
+  background: var(--color-card);
+  border-radius: var(--r-md);
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+}
+.hero-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.hero-headline-area { flex: 1; min-width: 0; }
+.hero-top .card-more { flex-shrink: 0; padding-top: 4px; }
+
+.hero-headline {
+  font-size: var(--fs-title);
+  font-weight: var(--fw-bold);
+  color: var(--color-text);
+  line-height: var(--lh-title);
+  letter-spacing: var(--ls-title);
+  margin-bottom: 4px;
+}
+.hero-headline em {
+  font-style: normal;
+  color: var(--color-primary);
+}
+.hero-sub {
+  font-size: var(--fs-body);
+  color: var(--color-text-muted);
+  line-height: var(--lh-caption);
+}
+
+.fill-list { display: flex; flex-direction: column; gap: 8px; }
+.fill-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 14px;
+  background: var(--color-bg);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background var(--motion-fast) var(--ease-standard),
+              border-color var(--motion-fast) var(--ease-standard);
+}
+.fill-item:hover { background: var(--color-primary-light); border-color: var(--color-primary-subtle); }
+.fill-q-wrap { flex: 1; min-width: 0; }
+.fill-q {
+  font-size: var(--fs-body);
+  color: var(--color-text);
+  font-weight: var(--fw-medium);
+  line-height: var(--lh-heading);
+  margin-bottom: 2px;
+}
+.fill-meta {
+  font-size: var(--fs-caption);
+  color: var(--color-text-muted);
+}
+.fill-cta {
+  color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.hero-more {
+  margin-top: 12px;
+  display: flex;
+  justify-content: center;
+}
+.hero-more-btn {
+  background: transparent;
+  border: none;
+  font-family: var(--font-base);
+  font-size: var(--fs-label);
+  font-weight: var(--fw-medium);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 6px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* HERO 하단 핵심 지표 */
+.hero-stats {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.hero-stats.hero-stats-solo {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+.hero-stats.hero-stats-solo .hero-stat-value {
+  font-size: var(--fs-display);
+  letter-spacing: var(--ls-display);
+}
+.hero-stat {
+  min-width: 0;
+  cursor: pointer;
+  padding: 12px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-sm);
+  transition: background var(--motion-fast) var(--ease-standard),
+              border-color var(--motion-fast) var(--ease-standard);
+}
+.hero-stat:hover {
+  background: var(--color-primary-light);
+  border-color: var(--color-primary-subtle);
+}
+.hero-stat-label {
+  font-size: var(--fs-caption);
+  color: var(--color-text-muted);
+  line-height: var(--lh-label);
+  margin-bottom: 4px;
+}
+.hero-stat-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.hero-stat-value {
+  font-size: var(--fs-title);
+  font-weight: var(--fw-bold);
+  color: var(--color-text);
+  letter-spacing: var(--ls-title);
+  line-height: var(--lh-metric);
+}
+.hero-stat-change {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-medium);
+  color: var(--color-text-muted);
+}
+.tri {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  flex-shrink: 0;
+}
+.tri-up {
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-bottom: 7px solid var(--color-primary);
+}
+.tri-down {
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 7px solid var(--color-primary);
+}
+.tri-flat {
+  width: 8px;
+  height: 2px;
+  background: var(--color-text-muted);
+}
+
+/* HERO 빈 상태 */
+.hero-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 8px 0 4px;
+  gap: 8px;
+}
+.hero-empty-icon {
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  margin-bottom: 4px;
+}
+.hero-empty-title {
+  font-size: var(--fs-heading);
+  font-weight: var(--fw-bold);
+  color: var(--color-text);
+}
+.hero-empty-sub {
+  font-size: var(--fs-body);
+  color: var(--color-text-muted);
+  line-height: var(--lh-caption);
+}
+
+/* ──────────────────────────────────────────
+   3.3 자주 묻는 질문
+   ────────────────────────────────────────── */
+.faq-list { display: flex; flex-direction: column; gap: 4px; }
+.faq-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.faq-item:last-child  { border-bottom: none; }
+.faq-rank {
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-bold);
+  color: var(--color-text-muted);
+  min-width: 16px;
+}
+.faq-q {
+  font-size: var(--fs-body);
+  color: var(--color-text);
+  flex: 1;
+  line-height: var(--lh-caption);
+}
+.faq-count {
+  font-size: var(--fs-caption);
+  color: var(--color-text-muted);
+  font-weight: var(--fw-medium);
+  flex-shrink: 0;
+}
+
+/* ──────────────────────────────────────────
+   3.4 최근 대화
+   ────────────────────────────────────────── */
+.chat-list { display: flex; flex-direction: column; }
+.chat-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--color-border);
+  cursor: pointer;
+}
+.chat-item:first-child { padding-top: 4px; }
+.chat-item:last-child  { border-bottom: none; padding-bottom: 4px; }
+.chat-info { flex: 1; min-width: 0; }
+.chat-name-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 3px;
+}
+.chat-name {
+  font-size: var(--fs-label);
+  font-weight: var(--fw-semibold);
+  color: var(--color-text);
+}
+.chat-time {
+  font-size: var(--fs-caption);
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+.chat-preview {
+  font-size: var(--fs-body);
+  color: var(--color-text-sub);
+  line-height: var(--lh-caption);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ──────────────────────────────────────────
+   3.5 정보를 제출한 사람 / 빈 상태
+   ────────────────────────────────────────── */
+.submitter-list { display: flex; flex-direction: column; }
+.submitter-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.submitter-item:first-child { padding-top: 4px; }
+.submitter-item:last-child  { border-bottom: none; padding-bottom: 4px; }
+.submitter-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.submitter-name {
+  font-size: var(--fs-body-lg);
+  font-weight: var(--fw-bold);
+  color: var(--color-text);
+}
+.submitter-time {
+  font-size: var(--fs-caption);
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+.submitter-summary {
+  font-size: var(--fs-body);
+  color: var(--color-text-sub);
+  font-weight: var(--fw-regular);
+  line-height: var(--lh-caption);
+}
+
+.empty-state {
+  padding: 12px 0 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+.empty-state-compact {
+  padding: 4px 0 0;
+  gap: 10px;
+}
+.empty-state-text {
+  font-size: var(--fs-body);
+  color: var(--color-text-muted);
+  text-align: center;
+  line-height: var(--lh-body);
+}
+.empty-state-icon {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--color-surface-sub);
+  color: var(--color-text-muted);
+}
+</style>
+</head>
+<body>
+<div class="frame">
+
+  <!-- Scroll body -->
+  <div class="body">
+    <div class="inner">
+
+      <!-- 기간 선택 -->
+      <div class="period-seg" id="periodSeg">
+        <button class="period-seg-btn is-active" data-period="today">오늘</button>
+        <button class="period-seg-btn" data-period="week">이번 주</button>
+        <button class="period-seg-btn" data-period="month">이번 달</button>
+      </div>
+
+      <!-- 1. 채워야 할 질문 (HERO + 핵심 지표) -->
+      <div class="hero-card" id="heroCard"></div>
+
+      <!-- 2. 정보를 제출한 사람 (즉각 처리) -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">정보를 제출한 사람</span>
+          <span class="card-more" id="submitterMore" style="display:none">더보기</span>
+        </div>
+        <div id="submitterBody"></div>
+      </div>
+
+      <!-- 3. 자주 묻는 질문 -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">자주 묻는 질문</span>
+          <span class="card-more">더보기</span>
+        </div>
+        <div class="faq-list" id="faqList"></div>
+      </div>
+
+      <!-- 5. 최근 대화 -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">최근 대화</span>
+          <span class="card-more">더보기</span>
+        </div>
+        <div class="chat-list" id="chatList"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+/* ──────────────────────────────────────────
+   데이터
+   ────────────────────────────────────────── */
+const DATA = {
+  today: {
+    fill: [
+      { count: 3, q: '단체카톡을 발송하려면 필요한 게 무엇인지 알려주세요' },
+      { count: 2, q: '전화번호만 있으면 단체 카톡이 발송 가능한가요?' },
+      { count: 1, q: '자버로 발송할 수 있는 카톡 형태를 보여주세요' },
+    ],
+    fillTotal: 3,
+    rate: { value: 85, status: 'good', text: '받은 대화 8건 중 7건 답변' },
+    chats: 8,  chatsChange: { dir: 'down', label: '어제 이맘때보다 −2' },
+    views: 12, viewsChange: { dir: 'up',   label: '어제 이맘때보다 +3' },
+    faq: [
+      { count: 5, q: '영업시간이 언제예요?' },
+      { count: 3, q: '주차가 가능한가요?' },
+      { count: 2, q: '예약은 어떻게 하나요?' },
+    ],
+    chats_list: [
+      { name: '익명의 사용자', q: '영업시간이 어떻게 되나요?', time: '1시간 전' },
+      { name: '김민지', q: '주말에도 영업하시나요?', time: '3시간 전' },
+      { name: '익명의 사용자', q: '주차 공간이 있나요?', time: '5시간 전' },
+    ],
+    submitters: [],
+  },
+  week: {
+    fill: [
+      { count: 14, q: '단체카톡을 발송하려면 필요한 게 무엇인지 알려주세요' },
+      { count: 9,  q: '전화번호만 있으면 단체 카톡이 발송 가능한가요?' },
+      { count: 7,  q: '자버로 발송할 수 있는 카톡 형태를 보여주세요' },
+      { count: 5,  q: '카카오 비즈니스 채널 연결이 필수인가요?' },
+    ],
+    fillTotal: 11,
+    rate: { value: 72, status: 'warning', text: '받은 대화 40건 중 29건 답변' },
+    chats: 40,  chatsChange: { dir: 'flat', label: '0' },
+    views: 67,  viewsChange: { dir: 'down', label: '지난주보다 −4' },
+    faq: [
+      { count: 18, q: '단체 예약이 가능한가요?' },
+      { count: 12, q: '영업시간이 언제예요?' },
+      { count: 9,  q: '카카오톡으로도 문의할 수 있나요?' },
+      { count: 6,  q: '주차 공간이 있나요?' },
+    ],
+    chats_list: [
+      { name: '박지훈', q: '단체 카톡 발송 비용이 어떻게 되나요?', time: '2시간 전' },
+      { name: '익명의 사용자', q: '전화번호 없이도 발송이 가능한가요?', time: '5시간 전' },
+      { name: '이수진', q: '카카오 채널 연결 방법을 알려주세요', time: '어제' },
+      { name: '익명의 사용자', q: '무료로 사용할 수 있는 기간이 있나요?', time: '어제' },
+    ],
+    submitters: [
+      { name: '한승훈', summary: '단체 카톡 발송 비용 문의', time: '1일 전' },
+      { name: '이희선', summary: '카카오 채널 연결 도움 요청', time: '1일 전' },
+      { name: '김민지', summary: '무료 체험 신청 문의', time: '2일 전' },
+    ],
+  },
+  month: {
+    fill: [
+      { count: 47, q: '단체카톡을 발송하려면 필요한 게 무엇인지 알려주세요' },
+      { count: 28, q: '전화번호만 있으면 단체 카톡이 발송 가능한가요?' },
+      { count: 19, q: '자버로 발송할 수 있는 카톡 형태를 보여주세요' },
+      { count: 13, q: '카카오 비즈니스 채널 연결이 필수인가요?' },
+      { count: 9,  q: '월 사용량 제한이 있나요?' },
+    ],
+    fillTotal: 64,
+    rate: { value: 55, status: 'danger', text: '받은 대화 142건 중 78건 답변' },
+    chats: 142, chatsChange: { dir: 'down', label: '지난달보다 −18' },
+    views: 234, viewsChange: { dir: 'up',   label: '지난달보다 +41' },
+    faq: [
+      { count: 47, q: '가격이 어떻게 되나요?' },
+      { count: 28, q: '단체 예약이 가능한가요?' },
+      { count: 19, q: '무료 체험이 가능한가요?' },
+      { count: 13, q: '영업시간이 언제예요?' },
+    ],
+    chats_list: [
+      { name: '최영호', q: '월정액 요금제가 어떻게 되나요?', time: '4시간 전' },
+      { name: '익명의 사용자', q: '무료 체험 기간이 있나요?', time: '어제' },
+      { name: '박서연', q: '카카오 비즈니스 채널 연결이 필수인가요?', time: '2일 전' },
+      { name: '익명의 사용자', q: '기업용 요금제도 있나요?', time: '3일 전' },
+    ],
+    submitters: [
+      { name: '한승훈', summary: '단체 카톡 발송 비용 문의', time: '1일 전' },
+      { name: '이희선', summary: '카카오 채널 연결 도움 요청', time: '1일 전' },
+      { name: '김민지', summary: '무료 체험 신청 문의', time: '5일 전' },
+      { name: '박지훈', summary: '기업용 요금제 상담 요청', time: '12일 전' },
+      { name: '최영호', summary: '월정액 결제 방법 문의', time: '18일 전' },
+    ],
+  },
+};
+
+const HERO_VISIBLE = 3;
+
+/* ──────────────────────────────────────────
+   HERO — 채워야 할 질문
+   ────────────────────────────────────────── */
+function renderHero(d, period) {
+  const el = document.getElementById('heroCard');
+
+  /* 이번 주 / 이번 달: 답변 못한 질문 숨김, 핵심 지표를 메인 자리로 */
+  if (period !== 'today') {
+    el.innerHTML = `
+      <div class="hero-stats hero-stats-solo">
+        <div class="hero-stat">
+          <div class="hero-stat-label">받은 대화</div>
+          <div class="hero-stat-row">
+            <span class="hero-stat-value">${d.chats}</span>
+            ${renderStatChange(d.chats, d.chatsChange)}
+          </div>
+        </div>
+        <div class="hero-stat">
+          <div class="hero-stat-label">페이지 조회수</div>
+          <div class="hero-stat-row">
+            <span class="hero-stat-value">${d.views}</span>
+            ${renderStatChange(d.views, d.viewsChange)}
+          </div>
+        </div>
+      </div>`;
+    return;
+  }
+
+  const total = d.fillTotal;
+
+  if (total === 0) {
+    el.innerHTML = `
+      <div class="hero-empty">
+        <div class="hero-empty-icon">
+          <i data-lucide="check" style="width:24px;height:24px"></i>
+        </div>
+        <div class="hero-empty-title">지금은 AI가 다 답하고 있어요</div>
+        <div class="hero-empty-sub">새로운 질문이 들어오면<br>여기에 모아드릴게요</div>
+      </div>`;
+    return;
+  }
+
+  const visible = d.fill.slice(0, HERO_VISIBLE);
+  const remaining = total - visible.length;
+
+  el.innerHTML = `
+    <div class="hero-top">
+      <div class="hero-headline-area">
+        <div class="hero-headline"><em>${total}개</em> 질문에 답해주세요</div>
+        <div class="hero-sub">앞으로 같은 질문에 AI가 대신 답할게요</div>
+      </div>
+      <span class="card-more">더보기</span>
+    </div>
+
+    <div class="fill-list">
+      ${visible.map(it => `
+        <div class="fill-item">
+          <div class="fill-q-wrap">
+            <div class="fill-q">${it.q}</div>
+          </div>
+          <i data-lucide="chevron-right" class="fill-cta" style="width:18px;height:18px"></i>
+        </div>
+      `).join('')}
+    </div>
+
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="hero-stat-label">받은 대화</div>
+        <div class="hero-stat-row">
+          <span class="hero-stat-value">${d.chats}</span>
+          ${renderStatChange(d.chats, d.chatsChange)}
+        </div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-label">페이지 조회수</div>
+        <div class="hero-stat-row">
+          <span class="hero-stat-value">${d.views}</span>
+          ${renderStatChange(d.views, d.viewsChange)}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+/* ──────────────────────────────────────────
+   핵심 지표
+   ────────────────────────────────────────── */
+function changeIcon(dir) {
+  return `<span class="tri tri-${dir}"></span>`;
+}
+function renderStatChange(value, change) {
+  const num = change.label.match(/\d+/);
+  const txt = num ? num[0] : change.label;
+  return `<div class="hero-stat-change">${changeIcon(change.dir)} ${txt}</div>`;
+}
+/* ──────────────────────────────────────────
+   FAQ
+   ────────────────────────────────────────── */
+function renderFaq(items) {
+  const el = document.getElementById('faqList');
+  if (!items.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-state-text">이 기간엔 자주 묻는 질문이 없어요</div></div>`;
+    return;
+  }
+  el.innerHTML = items.map((it, i) => `
+    <div class="faq-item">
+      <span class="faq-rank">${i + 1}</span>
+      <span class="faq-q">${it.q}</span>
+      <span class="faq-count">${it.count}번</span>
+    </div>
+  `).join('');
+}
+
+/* ──────────────────────────────────────────
+   최근 대화
+   ────────────────────────────────────────── */
+function renderChats(items) {
+  const el = document.getElementById('chatList');
+  if (!items.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-state-text">이 기간엔 대화가 없었어요</div></div>`;
+    return;
+  }
+  el.innerHTML = items.map(it => `
+    <div class="chat-item">
+      <div class="chat-info">
+        <div class="chat-name-row">
+          <span class="chat-name">${it.name}</span>
+          <span class="chat-time">${it.time}</span>
+        </div>
+        <div class="chat-preview">${it.q}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+/* ──────────────────────────────────────────
+   정보를 제출한 사람
+   ────────────────────────────────────────── */
+function renderSubmitters(items) {
+  const body = document.getElementById('submitterBody');
+  const more = document.getElementById('submitterMore');
+
+  if (!items.length) {
+    more.style.display = 'none';
+    body.innerHTML = `
+      <div class="empty-state empty-state-compact">
+        <div class="empty-state-text">이벤트를 열어 고객 정보를 모아보세요</div>
+        <button class="btn btn-sm btn-weak-primary btn-pill">이벤트 만들기</button>
+      </div>`;
+    return;
+  }
+  more.style.display = 'inline-flex';
+  body.innerHTML = `
+    <div class="submitter-list">
+      ${items.map(it => `
+        <div class="submitter-item">
+          <div class="submitter-row">
+            <span class="submitter-name">${it.name}</span>
+            <span class="submitter-time">${it.time}</span>
+          </div>
+          <div class="submitter-summary">${it.summary}</div>
+        </div>
+      `).join('')}
+    </div>`;
+}
+
+/* ──────────────────────────────────────────
+   전체 업데이트
+   ────────────────────────────────────────── */
+function update(period) {
+  const d = DATA[period];
+
+  renderHero(d, period);
+
+  renderFaq(d.faq);
+  renderChats(d.chats_list);
+  renderSubmitters(d.submitters);
+
+  lucide.createIcons();
+}
+
+/* ──────────────────────────────────────────
+   이벤트
+   ────────────────────────────────────────── */
+document.getElementById('periodSeg').addEventListener('click', e => {
+  const btn = e.target.closest('.period-seg-btn');
+  if (!btn) return;
+  document.querySelectorAll('.period-seg-btn').forEach(b => b.classList.remove('is-active'));
+  btn.classList.add('is-active');
+  update(btn.dataset.period);
+});
+
+update('today');
+</script>
+</body>
+</html>

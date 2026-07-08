@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>이벤트 예시</title>
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="../components.css">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-base);
+    background: #e0e0e0;
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .frame {
+    width: 390px;
+    height: 844px;
+    max-height: 100dvh;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 32px 80px -20px rgba(0,0,0,0.28);
+    background: var(--color-surface-sub);
+    display: flex;
+    flex-direction: column;
+  }
+  @media (max-width: 439px) { .frame { width: 100vw; height: 100dvh; max-height: none; } }
+  @media (min-width: 440px) { .frame { border-radius: 44px; max-height: calc(100dvh - 40px); } }
+
+  /* ── Outer topbar ── */
+  .ex-topbar {
+    position: relative;
+    display: flex; align-items: center; gap: 8px;
+    padding: 12px 8px;
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    flex-shrink: 0;
+  }
+  .ex-topbar-title {
+    position: absolute;
+    left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-bold);
+    color: var(--color-primary);
+    pointer-events: none;
+    text-align: center;
+    display: inline-flex; align-items: center; gap: 6px;
+    white-space: nowrap;
+  }
+  .ex-topbar-title i[data-lucide],
+  .ex-topbar-title svg { width: 16px; height: 16px; }
+
+  /* ── Intro copy ── */
+  .ex-intro {
+    padding: 20px 24px 12px;
+    background: var(--color-surface);
+    flex-shrink: 0;
+    text-align: center;
+  }
+  .ex-intro-sub {
+    font-size: var(--fs-label);
+    color: var(--color-text-sub);
+    line-height: 1.5;
+  }
+
+  /* ── Mockup area ── */
+  .ex-mockup-area {
+    flex: 1;
+    background: var(--color-surface-sub);
+    overflow: hidden;
+    position: relative;
+  }
+  .ex-mockup-area::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at 50% 40%, rgba(107,107,225,0.08), transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .phone-mockup {
+    position: absolute;
+    top: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 330px;
+    height: 720px;
+    background: #1a1a1a;
+    border-radius: 48px;
+    padding: 7px;
+    box-shadow:
+      0 40px 60px -20px rgba(0,0,0,0.35),
+      0 0 0 1px rgba(255,255,255,0.06) inset;
+    z-index: 1;
+  }
+  .phone-screen {
+    width: 100%; height: 100%;
+    background: #fff;
+    border-radius: 41px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    position: relative;
+    scrollbar-width: none;
+  }
+  .phone-screen::-webkit-scrollbar { display: none; }
+  .phone-content {
+    zoom: 0.8103;   /* 316 / 390 */
+  }
+
+  /* ── Landing content (inside phone) ── */
+  .landing {
+    background: var(--color-surface);
+    padding-bottom: 140px;
+  }
+
+  .landing .ew-intro-hero {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    background: var(--color-primary-light);
+  }
+  .landing .ew-intro-hero-slide {
+    width: 100%; height: 100%;
+    background-size: cover;
+    background-position: center;
+    background-color: var(--color-primary-light);
+    position: relative;
+  }
+  .landing .ew-intro-hero-slide::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(0,0,0,0) 50%, rgba(0,0,0,0.35) 100%);
+    pointer-events: none;
+  }
+
+  .landing .ew-intro-hero-info {
+    padding: 24px 20px 16px;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .landing .ew-intro-hero-clinic-row {
+    display: inline-flex; align-items: center; gap: 2px;
+    align-self: flex-start;
+  }
+  .landing .ew-intro-hero-clinic-name {
+    font-size: var(--fs-label); font-weight: var(--fw-semibold);
+    color: var(--color-text-sub);
+  }
+  .landing .ew-intro-hero-clinic-row i[data-lucide],
+  .landing .ew-intro-hero-clinic-row svg { width: 16px; height: 16px; color: var(--color-text-muted); }
+  .landing .ew-intro-hero-headline {
+    font-size: 24px; font-weight: var(--fw-bold);
+    line-height: 1.35; letter-spacing: -0.5px; color: var(--color-text);
+  }
+  .landing .ew-intro-trust-row {
+    display: flex; align-items: center; gap: 6px;
+    flex-wrap: wrap;
+    padding-top: 4px;
+  }
+  .landing .ew-intro-star-row { display: inline-flex; align-items: center; gap: 4px; }
+  .landing .ew-intro-star-row i[data-lucide],
+  .landing .ew-intro-star-row svg { width: 14px; height: 14px; color: var(--color-star); fill: var(--color-star); }
+  .landing .ew-intro-star-score { font-size: var(--fs-label); font-weight: var(--fw-semibold); color: var(--color-text); margin-left: 2px; }
+  .landing .ew-intro-star-count { font-size: var(--fs-caption); color: var(--color-text-muted); }
+
+  .landing .ew-intro-section-divider {
+    height: 8px;
+    background: var(--color-bg);
+    flex-shrink: 0;
+  }
+  .landing .ew-intro-section {
+    padding: 24px 20px;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  .landing .ew-intro-section-title {
+    font-size: var(--fs-heading);
+    font-weight: var(--fw-bold);
+    color: var(--color-text);
+    letter-spacing: -0.2px;
+  }
+
+  .landing .ew-intro-date-card {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--color-surface-sub);
+    border-radius: var(--r-md);
+    padding: 16px 20px;
+  }
+  .landing .ew-intro-date-card i[data-lucide],
+  .landing .ew-intro-date-card svg { width: 20px; height: 20px; color: var(--color-primary); }
+  .landing .ew-intro-date-card-text { flex: 1; }
+  .landing .ew-intro-date-card-label { font-size: var(--fs-caption); color: var(--color-text-muted); margin-bottom: 2px; }
+  .landing .ew-intro-date-card-value { font-size: var(--fs-body); font-weight: var(--fw-semibold); color: var(--color-text); }
+  .landing .ew-intro-date-card-tag {
+    font-size: var(--fs-badge); font-weight: var(--fw-semibold);
+    color: var(--color-destructive);
+    padding: 4px 8px;
+    background: rgba(201,64,34,0.10);
+    border-radius: var(--r-full);
+  }
+
+  .landing .ew-intro-desc {
+    font-size: var(--fs-body); line-height: 1.7;
+    color: var(--color-text-sub);
+  }
+
+  .landing .ew-intro-review-scroll {
+    display: flex; gap: 12px;
+    overflow-x: hidden;
+    margin: 0 -20px;
+    padding: 0 20px 8px;
+  }
+  .landing .ew-intro-review-card {
+    width: 240px; flex-shrink: 0;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-md);
+    overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .landing .ew-intro-review-body {
+    padding: 12px 14px 14px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .landing .ew-intro-review-stars { display: inline-flex; align-items: center; gap: 2px; }
+  .landing .ew-intro-review-stars i[data-lucide],
+  .landing .ew-intro-review-stars svg { width: 12px; height: 12px; color: var(--color-star); fill: var(--color-star); }
+  .landing .ew-intro-review-text {
+    font-size: var(--fs-label); color: var(--color-text);
+    line-height: 1.5;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .landing .ew-intro-review-meta {
+    font-size: 10px; color: var(--color-text-muted);
+    display: flex; align-items: center; gap: 4px;
+  }
+  .landing .ew-intro-review-meta .ew-intro-verified {
+    display: inline-flex; align-items: center; gap: 2px;
+    color: var(--color-primary);
+    font-weight: var(--fw-medium);
+  }
+  .landing .ew-intro-review-meta .ew-intro-verified i[data-lucide],
+  .landing .ew-intro-review-meta .ew-intro-verified svg { width: 10px; height: 10px; }
+
+  .landing .ew-intro-clinic-link {
+    display: flex; align-items: center; gap: 12px;
+    padding: 16px;
+    background: var(--color-surface-sub);
+    border-radius: var(--r-md);
+    border: none;
+    width: 100%;
+    text-align: left;
+    font-family: var(--font-base);
+    cursor: pointer;
+  }
+  .landing .ew-intro-clinic-link-thumb {
+    width: 44px; height: 44px;
+    border-radius: var(--r-sm);
+    background-color: var(--color-primary-light);
+    background-image: url('https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=300&auto=format&fit=crop');
+    background-size: cover; background-position: center;
+    flex-shrink: 0;
+  }
+  .landing .ew-intro-clinic-link-text { flex: 1; }
+  .landing .ew-intro-clinic-link-name {
+    font-size: var(--fs-body); font-weight: var(--fw-semibold);
+    color: var(--color-text);
+  }
+  .landing .ew-intro-clinic-link-sub {
+    font-size: var(--fs-caption); color: var(--color-text-muted);
+    margin-top: 2px;
+  }
+  .landing .ew-intro-clinic-link i.chev,
+  .landing .ew-intro-clinic-link svg.chev { width: 18px; height: 18px; color: var(--color-text-muted); }
+
+  /* ── Outer footer ── */
+  .ex-footer {
+    padding: 12px 20px calc(16px + env(safe-area-inset-bottom));
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+    display: flex; flex-direction: column; gap: 12px;
+    flex-shrink: 0;
+  }
+  .ex-skip {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: var(--fs-label);
+    color: var(--color-text-sub);
+    cursor: pointer;
+    user-select: none;
+    align-self: flex-start;
+  }
+</style>
+</head>
+<body>
+<div class="frame">
+
+  <!-- Outer topbar -->
+  <div class="ex-topbar">
+    <button class="icon-btn icon-btn-clear" aria-label="뒤로">
+      <i data-lucide="chevron-left" style="width:22px;height:22px;color:var(--color-text);"></i>
+    </button>
+    <span class="ex-topbar-title">
+      <i data-lucide="sparkles"></i>이벤트 페이지가 이렇게 만들어져요
+    </span>
+  </div>
+
+  <!-- Phone-in-phone mockup -->
+  <div class="ex-mockup-area">
+    <div class="phone-mockup">
+      <div class="phone-screen">
+        <div class="phone-content">
+          <div class="landing">
+            <!-- Hero -->
+            <div class="ew-intro-hero">
+              <div class="ew-intro-hero-slide" style="background-image:url('../assets/event_thumbnail.png');"></div>
+            </div>
+
+            <!-- Hero info -->
+            <div class="ew-intro-hero-info">
+              <div class="ew-intro-hero-clinic-row">
+                <span class="ew-intro-hero-clinic-name">커넥티아 카페</span>
+                <i data-lucide="chevron-right"></i>
+              </div>
+              <h1 class="ew-intro-hero-headline">오픈 기념 무료 이벤트</h1>
+              <div class="ew-intro-trust-row">
+                <div class="ew-intro-star-row">
+                  <i data-lucide="star"></i>
+                  <span class="ew-intro-star-score">4.9</span>
+                  <span class="ew-intro-star-count">· 후기 24개</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="ew-intro-section-divider"></div>
+
+            <!-- Date -->
+            <div class="ew-intro-section">
+              <div class="ew-intro-date-card">
+                <i data-lucide="calendar-days"></i>
+                <div class="ew-intro-date-card-text">
+                  <div class="ew-intro-date-card-label">신청 기간</div>
+                  <div class="ew-intro-date-card-value">2026.07.10 ~ 07.20</div>
+                </div>
+                <span class="ew-intro-date-card-tag">D-9</span>
+              </div>
+            </div>
+
+            <div class="ew-intro-section-divider"></div>
+
+            <!-- Description -->
+            <div class="ew-intro-section">
+              <div class="ew-intro-section-title">이벤트 안내</div>
+              <div class="ew-intro-desc">
+                <p>커넥티아 카페는 원두 로스팅부터 디저트까지 하나하나 정성 들여 만드는 동네 카페예요.</p>
+                <br>
+                <p>오픈을 기념해 신청해 주신 분들께 아메리카노 무료 쿠폰을 드려요.</p>
+              </div>
+            </div>
+
+            <div class="ew-intro-section-divider"></div>
+
+            <!-- Reviews -->
+            <div class="ew-intro-section">
+              <div class="ew-intro-section-title">실제 후기</div>
+              <div class="ew-intro-review-scroll">
+                <div class="ew-intro-review-card">
+                  <div class="ew-intro-review-body">
+                    <div class="ew-intro-review-stars">
+                      <i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i>
+                    </div>
+                    <p class="ew-intro-review-text">시그니처 라떼가 정말 부드럽고 맛있어요. 매장 분위기도 좋아서 오래 머물기 좋아요.</p>
+                    <div class="ew-intro-review-meta">
+                      <span class="ew-intro-verified"><i data-lucide="badge-check"></i>실제 후기</span>
+                      <span>·</span>
+                      <span>홍○○</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="ew-intro-review-card">
+                  <div class="ew-intro-review-body">
+                    <div class="ew-intro-review-stars">
+                      <i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i>
+                    </div>
+                    <p class="ew-intro-review-text">조용해서 작업하기 좋아요. 원두 향이 진하고 디저트 종류도 다양해서 자주 가요.</p>
+                    <div class="ew-intro-review-meta">
+                      <span class="ew-intro-verified"><i data-lucide="badge-check"></i>실제 후기</span>
+                      <span>·</span>
+                      <span>김○○</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="ew-intro-section-divider"></div>
+
+            <!-- Clinic link -->
+            <div class="ew-intro-section">
+              <button class="ew-intro-clinic-link" aria-label="상호명 페이지 가기">
+                <div class="ew-intro-clinic-link-thumb"></div>
+                <div class="ew-intro-clinic-link-text">
+                  <div class="ew-intro-clinic-link-name">커넥티아 카페</div>
+                  <div class="ew-intro-clinic-link-sub">매장 정보 · 메뉴 · 위치 보기</div>
+                </div>
+                <i data-lucide="chevron-right" class="chev"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Outer footer -->
+  <div class="ex-footer">
+    <label class="ex-skip">
+      <input type="checkbox" class="checkbox" id="ex-skip-check">
+      <span>다시 보지 않기</span>
+    </label>
+    <button class="btn btn-xl btn-fill-primary btn-block">
+      이벤트 만들기
+    </button>
+  </div>
+
+</div>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+  lucide.createIcons();
+</script>
+</body>
+</html>
