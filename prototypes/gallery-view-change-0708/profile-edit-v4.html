@@ -1,0 +1,1794 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>프로필 편집 v2</title>
+  <link rel="stylesheet" href="../../tokens.css">
+  <link rel="stylesheet" href="../../components.css">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font-base);
+      background: var(--color-bg);
+      color: var(--color-text);
+      max-width: 430px;
+      margin: 0 auto;
+      height: 100dvh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .input, .textarea, .select { background: var(--color-surface-sub); }
+
+    i[data-lucide] { display: inline-flex; flex-shrink: 0; }
+
+    .navbar {
+      position: sticky; top: 0; z-index: 100;
+      background: var(--color-surface);
+      border-bottom: 1px solid var(--color-border);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 16px; height: 52px;
+    }
+    .navbar-action {
+      font-size: var(--fs-body); font-weight: var(--fw-medium);
+      color: var(--color-text-muted); background: none; border: none;
+      cursor: pointer; padding: 8px 0; min-width: 44px;
+    }
+    .navbar-action.primary { color: var(--color-primary); font-weight: var(--fw-semibold); }
+    .navbar-title { font-size: var(--fs-body-lg); font-weight: var(--fw-bold); color: var(--color-text); }
+
+    .scroll-area { flex: 1; overflow-y: auto; padding-bottom: 96px; }
+
+    .section { background: var(--color-surface); margin-bottom: 8px; padding: 20px 16px; }
+    .section-title { font-size: var(--fs-heading); font-weight: var(--fw-semibold); color: var(--color-text); margin-bottom: 4px; }
+    .section-title--edit { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+    .section-title-edit-icon { width: 14px; height: 14px; color: var(--color-text-muted); flex-shrink: 0; }
+    .rename-hint { font-size: var(--fs-caption); color: var(--color-text-muted); margin-top: 8px; margin-bottom: 16px; }
+    .section-desc { font-size: var(--fs-caption); color: var(--color-text-muted); line-height: var(--lh-caption); margin-bottom: 16px; }
+
+    .sheet-wrap {
+      position: fixed; top: 0; bottom: 0; left: 50%; transform: translateX(-50%);
+      width: 100%; max-width: 430px; z-index: 500; pointer-events: none;
+    }
+    .sheet-wrap.on { pointer-events: auto; }
+    .sheet-wrap .bottom-sheet-overlay { opacity: 0; pointer-events: none; transition: opacity var(--motion-standard) var(--ease-enter); }
+    .sheet-wrap.on .bottom-sheet-overlay { opacity: 1; pointer-events: auto; }
+    .sheet-wrap .bottom-sheet { transform: translateY(100%); transition: transform var(--motion-standard) var(--ease-enter); }
+    .sheet-wrap.on .bottom-sheet { transform: translateY(0); }
+
+.banner-wrap { position: relative; background: var(--color-surface); margin-bottom: 8px; }
+    .banner-placeholder { width: 100%; aspect-ratio: 9/4; background: var(--color-banner-gradient); display: flex; align-items: center; justify-content: center; }
+
+    /* ── 명함 템플릿 로고 영역 ── */
+    .logo-area {
+      display: none;
+      padding: 64px 20px 20px;
+      background: var(--color-surface);
+      position: relative;
+    }
+    .logo-upload {
+      display: flex; align-items: center; gap: 12px; cursor: pointer;
+    }
+    .logo-size-wrap { position: relative; margin-left: auto; }
+    .logo-size-trigger {
+      display: flex; align-items: center; gap: 4px; height: 32px; padding: 0 10px 0 12px;
+      background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--r-full);
+      font-family: var(--font-base); font-size: var(--fs-label); font-weight: var(--fw-medium);
+      color: var(--color-text); cursor: pointer;
+    }
+    .logo-size-menu {
+      position: absolute; top: calc(100% + 6px); right: 0; min-width: 100px;
+      background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--r-md);
+      box-shadow: var(--shadow-2); padding: 4px; z-index: 5;
+      display: none; flex-direction: column;
+    }
+    .logo-size-wrap.is-open .logo-size-menu { display: flex; }
+    .logo-size-menu button {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      height: 36px; padding: 0 10px; background: none; border: none; cursor: pointer;
+      font-family: var(--font-base); font-size: var(--fs-label); font-weight: var(--fw-medium);
+      color: var(--color-text); border-radius: var(--r-sm); text-align: left;
+    }
+    .logo-size-menu button:hover { background: var(--color-surface-sub); }
+    .logo-size-menu button.is-active { color: var(--color-primary); }
+    .logo-size-menu button.is-active::after { content: ''; }
+    .logo-placeholder {
+      width: 48px; height: 48px; border-radius: var(--r-sm);
+      border: 1.5px dashed var(--color-border);
+      background: var(--color-surface-sub);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--color-text-muted); flex-shrink: 0;
+    }
+    .namecard-preview {
+      width: 180px; aspect-ratio: 9/5; border-radius: var(--r-sm);
+      border: 1.5px dashed var(--color-border);
+      background: var(--color-surface-sub);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--color-text-muted); margin-top: 16px; cursor: pointer;
+    }
+    .logo-area.is-big-card .namecard-preview {
+      width: 100%; border-radius: var(--r-md);
+    }
+    .logo-upload-label {
+      font-size: var(--fs-body); font-weight: var(--fw-medium); color: var(--color-text-muted);
+    }
+    .logo-divider { height: 1px; background: var(--color-text); opacity: 0.12; margin-top: 20px; }
+    .banner-area { position: relative; cursor: pointer; }
+    .banner-hover-overlay {
+      position: absolute; inset: 0; background: var(--color-scrim);
+      backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--color-on-primary); opacity: 0;
+      transition: opacity var(--motion-fast) var(--ease-standard); pointer-events: none;
+    }
+    .banner-area:hover .banner-hover-overlay { opacity: 1; }
+    .banner-autofill-btn {
+      position: absolute; top: 12px; left: 12px; height: 36px; padding: 0 12px;
+      background: var(--color-scrim); border: none; border-radius: var(--r-full);
+      display: flex; align-items: center; gap: 6px; cursor: pointer;
+      color: var(--color-on-primary); font-family: var(--font-base);
+      font-size: var(--fs-label); font-weight: var(--fw-medium);
+    }
+    .banner-template-btn {
+      position: absolute; top: 12px; right: 12px; height: 36px; padding: 0 12px;
+      background: var(--color-scrim); border: none; border-radius: var(--r-full);
+      display: flex; align-items: center; gap: 6px; cursor: pointer;
+      color: var(--color-on-primary); font-family: var(--font-base);
+      font-size: var(--fs-label); font-weight: var(--fw-medium);
+    }
+    .avatar-wrap { position: absolute; bottom: -24px; left: 16px; }
+    .avatar-edit {
+      position: relative; display: inline-block;
+      width: 72px; height: 72px; border-radius: 50%; overflow: hidden;
+      cursor: pointer; box-shadow: 0 0 0 3px var(--color-surface);
+    }
+    .avatar-hover-overlay {
+      position: absolute; inset: 0; border-radius: 50%;
+      background: var(--color-scrim); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--color-on-primary); opacity: 0;
+      transition: opacity var(--motion-fast) var(--ease-standard); pointer-events: none;
+    }
+    .avatar-edit:hover .avatar-hover-overlay { opacity: 1; }
+
+    .profile-fields {
+      background: var(--color-surface); padding: 36px 16px 20px; margin-bottom: 8px;
+      display: flex; flex-direction: column; gap: 12px;
+    }
+    .profile-url-row { display: flex; flex-direction: column; gap: 4px; }
+    .profile-url-status { font-size: var(--fs-caption); color: var(--color-success); font-weight: var(--fw-medium); }
+    .profile-url-display { font-size: var(--fs-caption); color: var(--color-text-muted); }
+
+    .input-icon-wrap { position: relative; }
+    .input-icon-wrap .input { padding-left: 44px; }
+    .input-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--color-text-muted); pointer-events: none; }
+
+    .sns-add-btn {
+      width: 44px; height: 44px; border: 1.5px dashed var(--color-border);
+      border-radius: var(--r-sm); background: none;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--color-text-muted); cursor: pointer;
+    }
+
+    .chat-btn-section { background: var(--color-surface); padding: 16px; margin-bottom: 8px; }
+
+    .board-section-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 4px; }
+    .board-section-header .section-title { margin-bottom: 0; }
+    .board-count-select { display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0; white-space: nowrap; }
+    .board-count-wrap { position: relative; }
+    .board-count-trigger {
+      display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px 0 12px;
+      background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--r-full);
+      font-family: var(--font-base); font-size: var(--fs-label); font-weight: var(--fw-medium);
+      color: var(--color-text); cursor: pointer;
+    }
+    .board-count-menu {
+      position: absolute; top: calc(100% + 6px); right: 0; min-width: 96px;
+      background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--r-md);
+      box-shadow: var(--shadow-2); padding: 4px; z-index: 5;
+      display: none; flex-direction: column;
+    }
+    .board-count-wrap.is-open .board-count-menu { display: flex; }
+    .board-count-menu button {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      height: 36px; padding: 0 10px; background: none; border: none; cursor: pointer;
+      font-family: var(--font-base); font-size: var(--fs-label); font-weight: var(--fw-medium);
+      color: var(--color-text); border-radius: var(--r-sm); text-align: left;
+    }
+    .board-count-menu button:hover { background: var(--color-surface-sub); }
+    .board-count-menu button.is-active { color: var(--color-primary); }
+    .board-preview {
+      display: flex; flex-direction: column;
+      margin-top: 12px;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--r-sm);
+      overflow: hidden;
+      opacity: 0.5; pointer-events: none;
+      max-height: 110px;
+      mask-image: linear-gradient(to bottom, #000 60%, transparent 100%);
+      -webkit-mask-image: linear-gradient(to bottom, #000 60%, transparent 100%);
+    }
+    .board-card {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 16px;
+      min-height: 76px;
+      box-sizing: border-box;
+    }
+    .board-card + .board-card { border-top: 1px solid var(--color-border); }
+    .board-card-body { flex: 1; min-width: 0; }
+    .board-card-title {
+      font-size: var(--fs-label); font-weight: var(--fw-semibold); color: var(--color-text);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .board-card-excerpt {
+      font-size: var(--fs-caption); color: var(--color-text-sub);
+      margin-top: 4px;
+      display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical;
+      overflow: hidden; text-overflow: ellipsis;
+    }
+    .board-card-thumb {
+      width: 48px; height: 48px; flex-shrink: 0;
+      border-radius: var(--r-xs); overflow: hidden;
+      background: var(--color-surface-sub);
+    }
+    .board-card-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+    .review-summary {
+      display: inline-flex; align-items: center; gap: 4px;
+      margin-top: 12px; margin-bottom: 8px;
+      font-size: var(--fs-label);
+      opacity: 0.7;
+    }
+    .review-summary i, .review-summary svg { width: 14px; height: 14px; color: var(--color-primary); fill: var(--color-primary); }
+    .review-summary .rating-num { font-weight: var(--fw-semibold); color: var(--color-text); }
+    .review-summary .rating-count { color: var(--color-text-muted); font-size: var(--fs-caption); margin-left: 2px; }
+
+    .review-preview {
+      display: flex; gap: 8px;
+      overflow: hidden;
+      opacity: 0.5; pointer-events: none;
+      mask-image: linear-gradient(to right, #000 70%, transparent 100%);
+      -webkit-mask-image: linear-gradient(to right, #000 70%, transparent 100%);
+    }
+    .review-preview-card {
+      flex-shrink: 0;
+      width: 200px;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--r-sm);
+      padding: 12px 14px;
+      display: flex; flex-direction: column; gap: 6px;
+      box-sizing: border-box;
+    }
+    .review-preview-stars { display: inline-flex; gap: 2px; }
+    .review-preview-stars svg, .review-preview-stars i { width: 12px; height: 12px; color: var(--color-primary); fill: var(--color-primary); }
+    .review-preview-text {
+      font-size: var(--fs-caption); color: var(--color-text-sub); line-height: 1.5;
+      display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .review-preview-meta { font-size: 10px; color: var(--color-text-muted); }
+
+    .textarea-wrap { position: relative; }
+    .textarea-counter { position: absolute; bottom: 8px; right: 12px; font-size: var(--fs-caption); color: var(--color-text-muted); }
+    .textarea-wrap .textarea { padding-bottom: 24px; }
+
+    /* ── Rich-text editor (About) ── */
+    .rt-editor {
+      background: rgba(0,0,0,0.02);
+      border: 1px solid var(--color-border);
+      border-radius: var(--r-sm);
+      overflow: hidden;
+      transition: border-color var(--motion-fast) var(--ease-standard);
+    }
+    .rt-editor:focus-within { border-color: var(--color-primary); }
+    .rt-editor-toolbar {
+      display: flex; gap: 4px;
+      padding: 8px;
+      border-bottom: 1px solid var(--color-border);
+      background: var(--color-surface);
+    }
+    .rt-editor-btn {
+      width: 28px; height: 28px;
+      display: inline-flex; align-items: center; justify-content: center;
+      border: 0; background: transparent;
+      border-radius: var(--r-xs);
+      color: var(--color-text-sub);
+      font-family: var(--font-base);
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .rt-editor-btn:hover { background: var(--color-surface-sub); }
+    .rt-editor-btn.is-active {
+      background: var(--color-primary-light);
+      color: var(--color-primary);
+    }
+    .rt-editor-content {
+      min-height: 132px;
+      max-height: 280px;
+      overflow-y: auto;
+      padding: 14px 16px 28px;
+      font-family: var(--font-base);
+      font-size: var(--fs-body-lg);
+      line-height: var(--lh-body-lg);
+      color: var(--color-text);
+      outline: none;
+    }
+    .rt-editor-content:empty:before {
+      content: attr(data-placeholder);
+      color: var(--color-text-muted);
+      pointer-events: none;
+    }
+
+    .photo-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .photo-add {
+      aspect-ratio: 1; background: var(--color-bg);
+      border: 1px solid var(--color-border); border-radius: var(--r-xs);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 4px; color: var(--color-text-muted); font-size: var(--fs-nav); cursor: pointer;
+    }
+
+    .yt-row { display: flex; align-items: center; gap: 8px; }
+    .yt-row .input { flex: 1; }
+
+    .info-list { display: flex; flex-direction: column; gap: 12px; }
+
+    /* ── 배너 게시글 리스트 ── */
+    .banner-list {
+      background: var(--color-surface-sub);
+      border-radius: var(--r-sm);
+      overflow: hidden;
+    }
+    .banner-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-top: 1px solid var(--color-border);
+    }
+    .banner-row:first-child { border-top: none; }
+    .banner-row-title {
+      flex: 1; min-width: 0;
+      font-size: var(--fs-body);
+      color: var(--color-text);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .info-group {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      grid-template-rows: auto auto auto;
+      gap: 4px 8px;
+      align-items: center;
+    }
+    .info-group .drag-handle  { grid-column: 1; grid-row: 1; }
+    .info-group .delete-btn { grid-column: 3; grid-row: 1; }
+    .info-group .name-input   { grid-column: 2; grid-row: 1; }
+    .info-group .url-input    { grid-column: 2; grid-row: 2; }
+    .info-group .ai-toggle-row { grid-column: 2; grid-row: 3; }
+    .info-group .input { background: var(--color-surface-sub); }
+
+    .drag-handle { color: var(--color-text-muted); cursor: grab; background: none; border: none; padding: 0; display: flex; align-items: center; flex-shrink: 0; }
+
+
+    /* ── AI 인라인 토글 ── */
+    .input-ai-wrap { display: flex; flex-direction: column; gap: 6px; }
+    .ai-toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      padding: 2px 0;
+    }
+    .ai-toggle-label {
+      font-size: var(--fs-caption);
+      color: var(--color-text-muted);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* ── Bottom action bar ── */
+    .bottom-action-bar {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      display: flex; gap: 12px; padding: 16px 20px;
+      padding-bottom: calc(16px + env(safe-area-inset-bottom));
+      background: linear-gradient(to bottom, transparent, var(--color-bg) 40%);
+      pointer-events: none;
+    }
+    .bottom-action-bar .btn { flex: 1; box-shadow: var(--shadow-3); pointer-events: auto; }
+
+    .divider { height: 1px; background: var(--color-border); margin: 16px 0; }
+
+    /* ── Template sheet ── */
+    .tpl-item { flex: 1; min-width: 0; cursor: pointer; }
+    .tpl-card {
+      width: 100%; height: 185px;
+      border-radius: var(--r-md); overflow: hidden;
+      border: 2px solid var(--color-border);
+      background: var(--color-surface-sub);
+      display: flex; flex-direction: column;
+      position: relative;
+      transition: border-color var(--motion-fast);
+    }
+    .tpl-item.is-selected .tpl-card { border-color: var(--color-primary); }
+    .tpl-check {
+      position: absolute; top: 8px; right: 8px;
+      width: 20px; height: 20px; border-radius: 50%;
+      background: var(--color-primary);
+      display: none; align-items: center; justify-content: center;
+    }
+    .tpl-item.is-selected .tpl-check { display: flex; }
+    .tpl-name {
+      font-size: var(--fs-caption); font-weight: var(--fw-medium);
+      color: var(--color-text-muted); text-align: center; margin-bottom: 8px;
+      transition: color var(--motion-fast);
+    }
+    .tpl-item.is-selected .tpl-name { color: var(--color-primary); }
+    .tpl-preview-btn {
+      width: 100%; margin-top: 6px; padding: 6px 0;
+      background: none; border: 1px solid var(--color-border);
+      border-radius: var(--r-sm); cursor: pointer;
+      font-family: var(--font-base); font-size: var(--fs-caption);
+      font-weight: var(--fw-medium); color: var(--color-text-muted);
+    }
+
+    /* ── Template preview screen ── */
+    .tpl-preview-screen {
+      position: fixed; inset: 0;
+      left: 50%; transform: translateX(-50%);
+      width: 100%; max-width: 430px;
+      z-index: 600;
+      display: flex; flex-direction: column;
+      background: var(--color-bg);
+      opacity: 0; pointer-events: none;
+      transition: opacity var(--motion-standard) var(--ease-enter);
+    }
+    .tpl-preview-screen.is-open { opacity: 1; pointer-events: auto; }
+    .tpl-preview-nav {
+      display: flex; align-items: center; gap: 8px;
+      padding: 0 16px; height: 52px; flex-shrink: 0;
+      background: var(--color-surface);
+      border-bottom: 1px solid var(--color-border);
+    }
+    .tpl-preview-scroll {
+      flex: 1; overflow-y: auto;
+    }
+    .tpl-preview-footer {
+      padding: 12px 16px; padding-bottom: calc(12px + env(safe-area-inset-bottom));
+      background: var(--color-surface);
+      border-top: 1px solid var(--color-border);
+      flex-shrink: 0;
+    }
+
+    /* ── Section manager sheet ── */
+    .section-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--color-surface-sub);
+      border-radius: var(--r-sm);
+      padding: 12px 16px;
+    }
+    .section-row-info { flex: 1; min-width: 0; }
+    .section-row-type {
+      font-size: var(--fs-caption);
+      color: var(--color-text-muted);
+      margin-bottom: 2px;
+    }
+    .section-row-name {
+      font-size: var(--fs-body);
+      font-weight: var(--fw-medium);
+      color: var(--color-text);
+    }
+    .section-row-actions { display: flex; align-items: center; gap: 4px; }
+
+    /* ── Gallery section ── */
+    .gallery-section-header {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; margin-bottom: 4px;
+    }
+    .gallery-section-header .section-title { margin-bottom: 0; }
+    .gallery-layout-seg {
+      display: inline-flex;
+      padding: 2px;
+      background: var(--color-surface-sub);
+      border-radius: var(--r-xs);
+      gap: 2px;
+    }
+    .gallery-layout-seg-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 32px; height: 24px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      border-radius: var(--r-xs);
+      color: var(--color-text-muted);
+      cursor: pointer;
+    }
+    .gallery-layout-seg-btn svg { width: 14px; height: 14px; }
+    .gallery-layout-seg-btn.is-active {
+      background: var(--color-primary-light);
+      color: var(--color-primary);
+    }
+    .gallery-list { display: flex; flex-direction: column; margin-bottom: 16px; }
+    .gallery-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 0;
+      border-top: 1px solid var(--color-border);
+    }
+    .gallery-item:first-child { border-top: 0; }
+    .gallery-item-thumb {
+      width: 44px; height: 44px; border-radius: var(--r-xs);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; overflow: hidden;
+      background: var(--color-surface-sub);
+      position: relative;
+    }
+    .gallery-item-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .gallery-item-thumb-play {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: color-mix(in srgb, var(--color-text) 30%, transparent);
+      color: var(--color-surface);
+    }
+    .gallery-item-thumb-youtube {
+      background: var(--color-surface-sub);
+      color: var(--color-text-sub);
+      border: 1px solid var(--color-border);
+    }
+    .gallery-item-info { flex: 1; min-width: 0; }
+    .gallery-item-name {
+      font-size: var(--fs-label);
+      font-weight: var(--fw-medium);
+      color: var(--color-text-sub);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .gallery-item-sub {
+      font-size: var(--fs-caption);
+      color: var(--color-text-muted);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      margin-top: 2px;
+    }
+    .gallery-item-ai {
+      display: inline-flex; align-items: center; gap: 6px;
+      flex-shrink: 0;
+    }
+    .gallery-item-ai-label {
+      font-size: var(--fs-caption);
+      color: var(--color-text-muted);
+    }
+    .gallery-item .drag-handle { flex-shrink: 0; }
+    .gallery-add-row {
+      display: flex; gap: 8px;
+    }
+    .gallery-yt-dialog { width: min(360px, calc(100vw - 40px)); }
+    .gallery-yt-dialog .input { width: 100%; margin-top: 12px; margin-bottom: 16px; }
+    .gallery-add-btn {
+      flex: 1;
+      display: inline-flex; align-items: center; justify-content: center;
+      gap: 6px; padding: 10px;
+      border: 1px solid var(--color-border);
+      border-radius: var(--r-sm);
+      background: none;
+      font-family: var(--font-base);
+      font-size: var(--fs-label);
+      font-weight: var(--fw-medium);
+      color: var(--color-text-sub);
+      cursor: pointer;
+    }
+    .gallery-add-btn i,
+    .gallery-add-btn svg { width: 14px; height: 14px; }
+    .gallery-section-add {
+      display: flex; align-items: center; justify-content: center;
+      gap: 6px; width: 100%; padding: 12px;
+      background: none;
+      border: 1px dashed var(--color-border);
+      border-radius: var(--r-sm);
+      font-family: var(--font-base);
+      font-size: var(--fs-label);
+      font-weight: var(--fw-medium);
+      color: var(--color-primary);
+      cursor: pointer;
+      margin-top: 4px;
+    }
+
+    .btn-style-group {
+      display: flex;
+      gap: 8px;
+    }
+    .btn-style-opt {
+      flex: 1;
+      padding: 8px;
+      border: 1.5px solid var(--color-border);
+      border-radius: var(--r-sm);
+      background: none;
+      font-family: var(--font-base);
+      font-size: var(--fs-caption);
+      font-weight: var(--fw-medium);
+      color: var(--color-text-muted);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      transition: border-color var(--motion-fast), color var(--motion-fast);
+    }
+    .btn-style-opt.is-active {
+      border-color: var(--color-primary);
+      color: var(--color-primary);
+      background: var(--color-primary-light);
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <button class="navbar-action" onclick="history.back()">취소</button>
+    <span class="navbar-title">프로필 편집</span>
+    <button class="navbar-action primary" onclick="history.back()">적용</button>
+  </nav>
+
+  <div class="scroll-area">
+
+    <!-- Banner + Avatar -->
+    <!-- 명함 템플릿 로고 영역 -->
+    <div class="logo-area" id="logo-area">
+      <button class="banner-autofill-btn" aria-label="자동 채우기" onclick="openSheet('sheet-autofill')">
+        <i data-lucide="sparkles" style="width:14px;height:14px"></i>
+        자동 채우기
+      </button>
+      <button class="banner-template-btn" aria-label="템플릿 선택" onclick="openSheet('sheet-template')">
+        <i data-lucide="layout-template" style="width:14px;height:14px"></i>
+        <span class="tpl-btn-label">템플릿 : <span class="tpl-btn-name" style="color:var(--color-primary-light);font-weight:var(--fw-semibold)">기본</span></span>
+      </button>
+      <div class="logo-upload">
+        <div>
+          <p class="logo-upload-label">로고/명함 이미지 업로드</p>
+        </div>
+        <div class="logo-size-wrap" id="logo-size-wrap" onclick="event.stopPropagation();">
+          <button type="button" class="logo-size-trigger" onclick="toggleLogoSize(event)">
+            <span id="logo-size-value">작게(로고)</span>
+            <i data-lucide="chevron-down" style="width:14px;height:14px"></i>
+          </button>
+          <div class="logo-size-menu">
+            <button type="button" class="is-active" onclick="selectLogoSize(this,'작게(로고)')">작게(로고)</button>
+            <button type="button" onclick="selectLogoSize(this,'크게(명함)')">크게(명함)</button>
+          </div>
+        </div>
+      </div>
+      <div class="namecard-preview">
+        <i data-lucide="image" style="width:32px;height:32px"></i>
+      </div>
+      <div class="logo-divider"></div>
+      <div class="logo-upload" style="margin-top:20px;">
+        <div class="avatar-edit" style="width:56px;height:56px;flex-shrink:0;">
+          <div class="avatar avatar-lg"></div>
+          <div class="avatar-hover-overlay">
+            <i data-lucide="pencil" style="width:16px;height:16px;color:var(--color-on-primary)"></i>
+          </div>
+        </div>
+        <div>
+          <p class="logo-upload-label">프로필 사진</p>
+          <p style="font-size:var(--fs-caption);color:var(--color-text-muted);margin-top:2px;">명함에 표시될 사진이에요</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="banner-wrap" id="banner-wrap">
+      <div class="banner-area">
+        <div class="banner-placeholder"></div>
+        <div class="banner-hover-overlay">
+          <i data-lucide="pencil" style="width:24px;height:24px"></i>
+        </div>
+      </div>
+      <button class="banner-autofill-btn" aria-label="자동 채우기" onclick="openSheet('sheet-autofill')">
+        <i data-lucide="sparkles" style="width:14px;height:14px"></i>
+        자동 채우기
+      </button>
+      <button class="banner-template-btn" aria-label="템플릿 선택" onclick="openSheet('sheet-template')">
+        <i data-lucide="layout-template" style="width:14px;height:14px"></i>
+        <span class="tpl-btn-label">템플릿 : <span class="tpl-btn-name" style="color:var(--color-primary-light);font-weight:var(--fw-semibold)">기본</span></span>
+      </button>
+      <div class="avatar-wrap">
+        <div class="avatar-edit">
+          <div class="avatar avatar-xl"></div>
+          <div class="avatar-hover-overlay">
+            <i data-lucide="pencil" style="width:16px;height:16px;color:var(--color-on-primary)"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Profile fields -->
+    <div class="profile-fields">
+      <input class="input" type="text" placeholder="이름">
+      <div>
+        <input class="input" type="text" placeholder="@ handle">
+      </div>
+      <div class="profile-url-row">
+        <span class="profile-url-status">사용 가능한 프로필 주소입니다.</span>
+        <span class="profile-url-display">connectia.bio/dennis2271</span>
+      </div>
+    </div>
+
+    <!-- 연락처 -->
+    <div class="section">
+      <div class="section-title section-title--edit" data-type="연락처" onclick="openRenameDialog(this)"><span class="section-title-text">Contact</span><i data-lucide="pencil" class="section-title-edit-icon"></i></div>
+      <div class="section-desc">프로필 상단에 표시돼요. 비워두면 표시되지 않아요.</div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div class="input-ai-wrap">
+          <div class="input-icon-wrap">
+            <i data-lucide="phone" class="input-icon" style="width:18px;height:18px"></i>
+            <input class="input" type="tel" placeholder="전화번호를 입력하세요.">
+          </div>
+          <div class="ai-toggle-row">
+            <span class="ai-toggle-label">AI 학습</span>
+            <input type="checkbox" class="toggle toggle-sm" checked onchange="confirmAiToggle(this)">
+          </div>
+        </div>
+        <div class="input-ai-wrap">
+          <div class="input-icon-wrap">
+            <i data-lucide="mail" class="input-icon" style="width:18px;height:18px"></i>
+            <input class="input" type="email" placeholder="이메일을 입력하세요.">
+          </div>
+          <div class="ai-toggle-row">
+            <span class="ai-toggle-label">AI 학습</span>
+            <input type="checkbox" class="toggle toggle-sm" checked onchange="confirmAiToggle(this)">
+          </div>
+        </div>
+        <div class="input-ai-wrap">
+          <div class="input-icon-wrap">
+            <i data-lucide="map-pin" class="input-icon" style="width:18px;height:18px"></i>
+            <input class="input" type="text" placeholder="주소 또는 위치를 입력하세요.">
+          </div>
+          <div class="ai-toggle-row">
+            <span class="ai-toggle-label">AI 학습</span>
+            <input type="checkbox" class="toggle toggle-sm" checked onchange="confirmAiToggle(this)">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SNS 연결 -->
+    <div class="section">
+      <div class="section-title section-title--edit" data-type="SNS 버튼" onclick="openRenameDialog(this)"><span class="section-title-text">SNS</span><i data-lucide="pencil" class="section-title-edit-icon"></i></div>
+      <button class="sns-add-btn" aria-label="SNS 추가" style="margin-top:12px;" onclick="openSheet('sheet-sns')">
+        <i data-lucide="plus" style="width:20px;height:20px"></i>
+      </button>
+    </div>
+
+    <!-- 대화하기 버튼 미리보기 -->
+    <div class="chat-btn-section" style="display:none;opacity:0.4;pointer-events:none;">
+      <button class="btn btn-lg btn-fill-gradient btn-block">
+        <i data-lucide="message-circle" style="width:18px;height:18px"></i>
+        대화하기
+      </button>
+    </div>
+
+    <!-- 설명 -->
+    <div class="section">
+      <div class="section-title section-title--edit" data-type="설명" style="margin-bottom:12px" onclick="openRenameDialog(this)"><span class="section-title-text">About</span><i data-lucide="pencil" class="section-title-edit-icon"></i></div>
+      <div class="input-ai-wrap">
+        <div class="textarea-wrap rt-editor">
+          <div class="rt-editor-toolbar" onmousedown="event.preventDefault()">
+            <button type="button" class="rt-editor-btn" onclick="rtCmd(event, 'bold')" aria-label="굵게"><b>B</b></button>
+            <button type="button" class="rt-editor-btn" onclick="rtCmd(event, 'italic')" aria-label="기울임"><i>I</i></button>
+            <button type="button" class="rt-editor-btn" onclick="rtCmd(event, 'underline')" aria-label="밑줄"><u>U</u></button>
+            <button type="button" class="rt-editor-btn" onclick="rtCmd(event, 'strikeThrough')" aria-label="취소선"><s>S</s></button>
+          </div>
+          <div class="rt-editor-content" contenteditable="true" data-placeholder="자기소개를 입력하세요." id="desc-textarea" oninput="updateCounter(this)" onkeyup="rtSyncState()" onmouseup="rtSyncState()"></div>
+          <span class="textarea-counter" id="desc-counter">0/2000</span>
+        </div>
+        <div class="ai-toggle-row">
+          <span class="ai-toggle-label">AI 학습</span>
+          <input type="checkbox" class="toggle toggle-sm" checked onchange="confirmAiToggle(this)">
+        </div>
+      </div>
+    </div>
+
+    <!-- 이벤트 -->
+    <div class="section">
+      <div class="section-title section-title--edit" data-type="이벤트" onclick="openRenameDialog(this)"><span class="section-title-text">Event</span><i data-lucide="pencil" class="section-title-edit-icon"></i></div>
+      <div class="section-desc">이벤트, 행사를 보여줄 순서를 변경하세요.</div>
+      <div class="gallery-list" id="event-list">
+        <div class="gallery-item">
+          <button class="drag-handle" aria-label="순서 변경"><i data-lucide="grip-vertical" style="width:16px;height:16px"></i></button>
+          <div class="gallery-item-thumb">
+            <img src="https://picsum.photos/seed/event-1/88/88" alt="">
+          </div>
+          <div class="gallery-item-info">
+            <p class="gallery-item-name">수면 리쥬베룩 이벤트</p>
+          </div>
+          <div class="gallery-item-ai">
+            <span class="gallery-item-ai-label">AI 학습</span>
+            <input type="checkbox" class="toggle toggle-sm" checked onchange="confirmAiToggle(this)">
+          </div>
+          <button class="icon-btn icon-btn-sm icon-btn-clear" aria-label="삭제" onclick="this.closest('.gallery-item').remove()">
+            <i data-lucide="trash-2" style="width:16px;height:16px"></i>
+          </button>
+        </div>
+        <div class="gallery-item">
+          <button class="drag-handle" aria-label="순서 변경"><i data-lucide="grip-vertical" style="width:16px;height:16px"></i></button>
+          <div class="gallery-item-thumb">
+            <img src="https://picsum.photos/seed/event-2/88/88" alt="">
+          </div>
+          <div class="gallery-item-info">
+            <p class="gallery-item-name">여름맞이 물광 스킨부스터 + 모공 케어 스페셜 이벤트</p>
+          </div>
+          <div class="gallery-item-ai">
+            <span class="gallery-item-ai-label">AI 학습</span>
+            <input type="checkbox" class="toggle toggle-sm" checked onchange="confirmAiToggle(this)">
+          </div>
+          <button class="icon-btn icon-btn-sm icon-btn-clear" aria-label="삭제" onclick="this.closest('.gallery-item').remove()">
+            <i data-lucide="trash-2" style="width:16px;height:16px"></i>
+          </button>
+        </div>
+        <div class="gallery-item">
+          <button class="drag-handle" aria-label="순서 변경"><i data-lucide="grip-vertical" style="width:16px;height:16px"></i></button>
+          <div class="gallery-item-thumb">
+            <img src="https://picsum.photos/seed/event-3/88/88" alt="">
+          </div>
+          <div class="gallery-item-info">
+            <p class="gallery-item-name">모공·잡티 케어 이벤트</p>
+          </div>
+          <div class="gallery-item-ai">
+            <span class="gallery-item-ai-label">AI 학습</span>
+            <input type="checkbox" class="toggle toggle-sm" checked onchange="confirmAiToggle(this)">
+          </div>
+          <button class="icon-btn icon-btn-sm icon-btn-clear" aria-label="삭제" onclick="this.closest('.gallery-item').remove()">
+            <i data-lucide="trash-2" style="width:16px;height:16px"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 갤러리 -->
+    <div class="section">
+      <div class="gallery-section-header">
+        <div class="section-title section-title--edit" data-type="갤러리" onclick="openRenameDialog(this)"><span class="section-title-text">Gallery</span><i data-lucide="pencil" class="section-title-edit-icon"></i></div>
+        <div class="gallery-layout-seg">
+          <button class="gallery-layout-seg-btn" onclick="selectGalleryLayout(this)" aria-label="가로 배치">
+            <i data-lucide="rows-2"></i>
+          </button>
+          <button class="gallery-layout-seg-btn is-active" onclick="selectGalleryLayout(this)" aria-label="세로 배치">
+            <i data-lucide="columns-2"></i>
+          </button>
+          <button class="gallery-layout-seg-btn" onclick="selectGalleryLayout(this)" aria-label="격자 배치">
+            <i data-lucide="grid-2x2"></i>
+          </button>
+        </div>
+      </div>
+      <div class="section-desc">사진, 동영상, 유튜브를 한 갤러리에 모아 보여줄 수 있어요.</div>
+      <div class="gallery-list" id="gallery-list">
+        <div class="gallery-item">
+          <button class="drag-handle" aria-label="순서 변경"><i data-lucide="grip-vertical" style="width:16px;height:16px"></i></button>
+          <div class="gallery-item-thumb">
+            <img src="https://picsum.photos/seed/gallery-video/88/88" alt="">
+            <div class="gallery-item-thumb-play">
+              <i data-lucide="play" style="width:16px;height:16px;fill:currentColor"></i>
+            </div>
+          </div>
+          <div class="gallery-item-info">
+            <p class="gallery-item-name">동영상 · 12s</p>
+            <p class="gallery-item-sub">1.2MB</p>
+          </div>
+          <div class="gallery-item-ai">
+            <span class="gallery-item-ai-label">AI 학습</span>
+            <input type="checkbox" class="toggle toggle-sm" checked onchange="confirmAiToggle(this)">
+          </div>
+          <button class="icon-btn icon-btn-sm icon-btn-clear" aria-label="삭제" onclick="this.closest('.gallery-item').remove()">
+            <i data-lucide="trash-2" style="width:16px;height:16px"></i>
+          </button>
+        </div>
+      </div>
+      <div class="gallery-add-row">
+        <button class="gallery-add-btn" onclick="addGalleryPhoto()">
+          <i data-lucide="image"></i>
+          사진/동영상 추가
+        </button>
+        <button class="gallery-add-btn" onclick="showGalleryYoutubeInput()">
+          <i data-lucide="play-circle"></i>
+          유튜브 추가
+        </button>
+      </div>
+    </div>
+
+    <!-- 게시판 -->
+    <div class="section">
+      <div class="board-section-header">
+        <div class="section-title section-title--edit" data-type="게시판" onclick="openRenameDialog(this)"><span class="section-title-text">Board</span><i data-lucide="pencil" class="section-title-edit-icon"></i></div>
+        <div class="board-count-select">
+          <span class="text-caption" style="color:var(--color-text-muted);">표시 개수</span>
+          <div class="board-count-wrap" id="board-count-wrap" onclick="event.stopPropagation();">
+            <button type="button" class="board-count-trigger" onclick="toggleBoardCount()">
+              <span id="board-count-value">3개</span>
+              <i data-lucide="chevron-down" style="width:14px;height:14px"></i>
+            </button>
+            <div class="board-count-menu">
+              <button type="button" class="is-active" onclick="selectBoardCount(this, 3)">3개</button>
+              <button type="button" onclick="selectBoardCount(this, 5)">5개</button>
+              <button type="button" onclick="selectBoardCount(this, 10)">10개</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="section-desc">공지와 최근 글이 순서대로 표시돼요.</div>
+      <div class="board-preview" id="board-preview" aria-hidden="true">
+        <div class="board-card">
+          <div class="board-card-body">
+            <p class="board-card-title">참여자 게시글 테스트</p>
+            <p class="board-card-excerpt">참여자 게시글</p>
+          </div>
+          <div class="board-card-thumb">
+            <img src="https://picsum.photos/seed/board-1/96/96" alt="">
+          </div>
+        </div>
+        <div class="board-card">
+          <div class="board-card-body">
+            <p class="board-card-title">관리자 게시글 테스트</p>
+            <p class="board-card-excerpt">관리자 게시글 테스트입니다 관리자 게시글 테스트입니다 관리자…</p>
+          </div>
+        </div>
+        <div class="board-card">
+          <div class="board-card-body">
+            <p class="board-card-title">참여자 게시글 테스트</p>
+            <p class="board-card-excerpt">참여자 게시글 테스트 참여자 게시글 테스트 참여자 게시글 테스트</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 리뷰 -->
+    <div class="section">
+      <div class="section-title section-title--edit" data-type="리뷰" onclick="openRenameDialog(this)"><span class="section-title-text">Reviews</span><i data-lucide="pencil" class="section-title-edit-icon"></i></div>
+      <div class="section-desc">실제로 받은 후기가 자동으로 표시돼요.</div>
+      <div class="review-summary" aria-hidden="true">
+        <i data-lucide="star"></i>
+        <span class="rating-num">5.0</span>
+        <span class="rating-count">(4)</span>
+      </div>
+      <div class="review-preview" aria-hidden="true">
+        <div class="review-preview-card">
+          <div class="review-preview-stars">
+            <i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i>
+          </div>
+          <p class="review-preview-text">결국 직접 던져봐야 그것이 바위인지 알 수 있다는 말씀에 공감했습니다. 여러 면에서 큰 영감을 받았습니다.</p>
+          <p class="review-preview-meta">김준영 · 2026년 6월 5일</p>
+        </div>
+        <div class="review-preview-card">
+          <div class="review-preview-stars">
+            <i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i>
+          </div>
+          <p class="review-preview-text">'협상에서 중요한 건 상대의 입장을 이해하는 것이에요.' 라는 문구가 오래 남았어요.</p>
+          <p class="review-preview-meta">박윤정 · 2026년 5월 22일</p>
+        </div>
+        <div class="review-preview-card">
+          <div class="review-preview-stars">
+            <i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i>
+          </div>
+          <p class="review-preview-text">준비된 시간이 알차게 흘러갔어요. 다음에도 꼭 참여하고 싶습니다.</p>
+          <p class="review-preview-meta">이수민 · 2026년 5월 10일</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 추가 정보 -->
+    <div class="section">
+      <div class="section-title section-title--edit" data-type="추가 정보" onclick="openRenameDialog(this)"><span class="section-title-text">Information</span><i data-lucide="pencil" class="section-title-edit-icon"></i></div>
+      <div class="section-desc">링크, 연락처 등을 자유롭게 추가하세요.</div>
+      <div class="info-list">
+        <div class="info-group">
+          <button class="drag-handle" aria-label="순서 변경"><i data-lucide="grip-vertical" style="width:16px;height:16px"></i></button>
+          <input class="input name-input" type="text" value="포트폴리오">
+          <button class="icon-btn icon-btn-sm icon-btn-clear delete-btn" aria-label="삭제" onclick="this.closest('.info-group').remove()"><i data-lucide="trash-2" style="width:16px;height:16px"></i></button>
+          <input class="input url-input" type="url" value="https://notion.so/portfolio">
+          <div class="ai-toggle-row">
+            <span class="ai-toggle-label">AI 학습</span>
+            <input type="checkbox" class="toggle toggle-sm" checked onchange="confirmAiToggle(this)">
+          </div>
+        </div>
+        <div class="info-group">
+          <button class="drag-handle" aria-label="순서 변경"><i data-lucide="grip-vertical" style="width:16px;height:16px"></i></button>
+          <input class="input name-input" type="text" placeholder="버튼에 표시될 이름">
+          <button class="icon-btn icon-btn-sm icon-btn-clear delete-btn" aria-label="삭제" onclick="this.closest('.info-group').remove()"><i data-lucide="trash-2" style="width:16px;height:16px"></i></button>
+          <input class="input url-input" type="url" value="https://github.com/username">
+          <div class="ai-toggle-row">
+            <span class="ai-toggle-label">AI 학습</span>
+            <input type="checkbox" class="toggle toggle-sm" checked onchange="confirmAiToggle(this)">
+          </div>
+        </div>
+        <div class="info-group">
+          <button class="drag-handle" aria-label="순서 변경"><i data-lucide="grip-vertical" style="width:16px;height:16px"></i></button>
+          <input class="input name-input" type="text" value="카카오톡">
+          <button class="icon-btn icon-btn-sm icon-btn-clear delete-btn" aria-label="삭제" onclick="this.closest('.info-group').remove()"><i data-lucide="trash-2" style="width:16px;height:16px"></i></button>
+          <input class="input url-input" type="url" placeholder="실제 연결될 연락처, URL, 이메일 등">
+          <div class="ai-toggle-row">
+            <span class="ai-toggle-label">AI 학습</span>
+            <input type="checkbox" class="toggle toggle-sm" checked onchange="confirmAiToggle(this)">
+          </div>
+        </div>
+      </div>
+      <button style="display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:12px;background:none;border:none;font-size:var(--fs-label);font-weight:var(--fw-medium);color:var(--color-primary);cursor:pointer;font-family:var(--font-base);" onclick="addInfo()">
+        <i data-lucide="plus" style="width:16px;height:16px"></i>
+        정보 추가
+      </button>
+    </div>
+
+  </div>
+
+  <!-- 하단 고정 액션 바 (항목 관리만) -->
+  <div class="bottom-action-bar">
+    <button class="btn btn-lg btn-fill-primary btn-pill" onclick="openSheet('sheet-sections')">
+      <i data-lucide="arrow-up-down" style="width:16px;height:16px"></i>
+      항목 관리
+    </button>
+  </div>
+
+  <!-- 바텀시트: 항목 관리 -->
+  <div class="sheet-wrap" id="sheet-sections">
+    <div class="bottom-sheet-overlay" onclick="closeSheet('sheet-sections')"></div>
+    <div class="bottom-sheet" style="max-height:90%;display:flex;flex-direction:column;">
+      <div class="bottom-sheet-handle"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 20px 16px;">
+        <p class="text-heading">항목 관리</p>
+        <button style="font-size:var(--fs-body);font-weight:var(--fw-semibold);color:var(--color-primary);background:none;border:none;cursor:pointer;font-family:var(--font-base);padding:8px 0;" onclick="closeSheet('sheet-sections')">완료</button>
+      </div>
+      <p style="padding:0 20px 16px;font-size:var(--fs-caption);color:var(--color-text-muted);line-height:var(--lh-caption);">::을 눌러 위, 아래로 움직이세요</p>
+      <div style="flex:1;overflow-y:auto;padding:0 20px calc(20px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:8px;">
+
+        <!-- 연락처 -->
+        <div class="section-row">
+          <input type="checkbox" class="toggle toggle-sm" checked>
+          <div class="section-row-info">
+            <p class="section-row-name">연락처</p>
+          </div>
+          <div class="section-row-actions">
+            <button class="icon-btn icon-btn-sm icon-btn-clear"><i data-lucide="grip-vertical" style="width:16px;height:16px"></i></button>
+          </div>
+        </div>
+
+        <!-- SNS 버튼 -->
+        <div class="section-row">
+          <input type="checkbox" class="toggle toggle-sm" checked>
+          <div class="section-row-info">
+            <p class="section-row-name">SNS 버튼</p>
+          </div>
+          <div class="section-row-actions">
+            <button class="icon-btn icon-btn-sm icon-btn-clear"><i data-lucide="grip-vertical" style="width:16px;height:16px"></i></button>
+          </div>
+        </div>
+
+        <!-- 대화하기 -->
+        <div class="section-row" style="flex-direction:column; align-items:stretch; gap:12px;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <input type="checkbox" class="toggle toggle-sm" checked>
+            <div class="section-row-info">
+              <p class="section-row-type">대화 시작 버튼</p>
+              <p class="section-row-name">대화하기</p>
+            </div>
+            <div class="section-row-actions">
+              <button class="icon-btn icon-btn-sm icon-btn-clear"><i data-lucide="pencil" style="width:14px;height:14px"></i></button>
+              <button class="icon-btn icon-btn-sm icon-btn-clear"><i data-lucide="grip-vertical" style="width:16px;height:16px"></i></button>
+            </div>
+          </div>
+          <div class="btn-style-group">
+            <button class="btn-style-opt is-active" onclick="selectBtnStyle(this)">
+              <i data-lucide="panel-bottom" style="width:16px;height:16px"></i>
+              하단
+            </button>
+            <button class="btn-style-opt" onclick="selectBtnStyle(this)">
+              <i data-lucide="picture-in-picture-2" style="width:16px;height:16px"></i>
+              코너
+            </button>
+            <button class="btn-style-opt" onclick="selectBtnStyle(this)">
+              <i data-lucide="layout-list" style="width:16px;height:16px"></i>
+              내부
+            </button>
+          </div>
+        </div>
+
+        <!-- 설명 -->
+        <div class="section-row">
+          <input type="checkbox" class="toggle toggle-sm" checked>
+          <div class="section-row-info">
+            <p class="section-row-type">설명</p>
+            <p class="section-row-name">About</p>
+          </div>
+          <div class="section-row-actions">
+            <button class="icon-btn icon-btn-sm icon-btn-clear"><i data-lucide="pencil" style="width:14px;height:14px"></i></button>
+            <button class="icon-btn icon-btn-sm icon-btn-clear"><i data-lucide="grip-vertical" style="width:16px;height:16px"></i></button>
+          </div>
+        </div>
+
+        <!-- 이벤트 -->
+        <div class="section-row">
+          <input type="checkbox" class="toggle toggle-sm" checked>
+          <div class="section-row-info">
+            <p class="section-row-type">이벤트</p>
+            <p class="section-row-name">Event</p>
+          </div>
+          <div class="section-row-actions">
+            <button class="icon-btn icon-btn-sm icon-btn-clear"><i data-lucide="pencil" style="width:14px;height:14px"></i></button>
+            <button class="icon-btn icon-btn-sm icon-btn-clear"><i data-lucide="grip-vertical" style="width:16px;height:16px"></i></button>
+          </div>
+        </div>
+
+        <!-- 갤러리: Video -->
+        <div class="section-row">
+          <input type="checkbox" class="toggle toggle-sm" checked>
+          <div class="section-row-info">
+            <p class="section-row-type">갤러리</p>
+            <p class="section-row-name">Gallery</p>
+          </div>
+          <div class="section-row-actions">
+            <button class="icon-btn icon-btn-sm icon-btn-clear"><i data-lucide="pencil" style="width:14px;height:14px"></i></button>
+            <button class="icon-btn icon-btn-sm icon-btn-clear" onclick="this.closest('.section-row').remove()"><i data-lucide="trash-2" style="width:14px;height:14px"></i></button>
+            <button class="icon-btn icon-btn-sm icon-btn-clear"><i data-lucide="grip-vertical" style="width:16px;height:16px"></i></button>
+          </div>
+        </div>
+
+        <!-- 갤러리: 표시 안 함 -->
+        <div class="section-row">
+          <input type="checkbox" class="toggle toggle-sm" checked>
+          <div class="section-row-info">
+            <p class="section-row-type">갤러리</p>
+            <p class="section-row-name">표시 안 함</p>
+          </div>
+          <div class="section-row-actions">
+            <button class="icon-btn icon-btn-sm icon-btn-clear"><i data-lucide="pencil" style="width:14px;height:14px"></i></button>
+            <button class="icon-btn icon-btn-sm icon-btn-clear" onclick="this.closest('.section-row').remove()"><i data-lucide="trash-2" style="width:14px;height:14px"></i></button>
+            <button class="icon-btn icon-btn-sm icon-btn-clear"><i data-lucide="grip-vertical" style="width:16px;height:16px"></i></button>
+          </div>
+        </div>
+
+        <!-- 게시판 -->
+        <div class="section-row">
+          <input type="checkbox" class="toggle toggle-sm" checked>
+          <div class="section-row-info">
+            <p class="section-row-type">게시판</p>
+            <p class="section-row-name">Board</p>
+          </div>
+          <div class="section-row-actions">
+            <button class="icon-btn icon-btn-sm icon-btn-clear"><i data-lucide="pencil" style="width:14px;height:14px"></i></button>
+            <button class="icon-btn icon-btn-sm icon-btn-clear"><i data-lucide="grip-vertical" style="width:16px;height:16px"></i></button>
+          </div>
+        </div>
+
+        <!-- 리뷰 -->
+        <div class="section-row">
+          <input type="checkbox" class="toggle toggle-sm" checked>
+          <div class="section-row-info">
+            <p class="section-row-type">리뷰</p>
+            <p class="section-row-name">Reviews</p>
+          </div>
+          <div class="section-row-actions">
+            <button class="icon-btn icon-btn-sm icon-btn-clear"><i data-lucide="pencil" style="width:14px;height:14px"></i></button>
+            <button class="icon-btn icon-btn-sm icon-btn-clear"><i data-lucide="grip-vertical" style="width:16px;height:16px"></i></button>
+          </div>
+        </div>
+
+        <!-- 추가 정보 -->
+        <div class="section-row">
+          <input type="checkbox" class="toggle toggle-sm" checked>
+          <div class="section-row-info">
+            <p class="section-row-type">추가 정보</p>
+            <p class="section-row-name">Information</p>
+          </div>
+          <div class="section-row-actions">
+            <button class="icon-btn icon-btn-sm icon-btn-clear"><i data-lucide="pencil" style="width:14px;height:14px"></i></button>
+            <button class="icon-btn icon-btn-sm icon-btn-clear"><i data-lucide="grip-vertical" style="width:16px;height:16px"></i></button>
+          </div>
+        </div>
+
+        <button class="gallery-section-add" onclick="addGallerySection()">
+          <i data-lucide="plus" style="width:16px;height:16px"></i>
+          갤러리 섹션 추가
+        </button>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- 섹션 제목 변경 다이얼로그 -->
+  <div class="dialog-overlay" id="dialog-rename" style="display:none;z-index:600;" onclick="closeRenameDialog()">
+    <div class="dialog gallery-yt-dialog" onclick="event.stopPropagation()">
+      <p class="dialog-title">섹션 제목 변경</p>
+      <p class="dialog-desc" id="rename-desc">섹션의 이름을 변경할 수 있어요.</p>
+      <input type="text" class="input" id="rename-input" maxlength="30">
+      <p class="rename-hint">비워두면 제목이 표시되지 않아요.</p>
+      <div class="dialog-actions">
+        <button class="btn btn-md btn-weak-dark" onclick="closeRenameDialog()">취소</button>
+        <button class="btn btn-md btn-fill-primary" onclick="confirmRename()">저장</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 유튜브 링크 추가 다이얼로그 -->
+  <div class="dialog-overlay" id="dialog-gallery-yt" style="display:none;z-index:600;" onclick="closeGalleryYoutubeDialog()">
+    <div class="dialog gallery-yt-dialog" onclick="event.stopPropagation()">
+      <p class="dialog-title">유튜브 링크 추가</p>
+      <p class="dialog-desc">유튜브 영상 URL을 입력해주세요.</p>
+      <input type="url" class="input" id="gallery-yt-url" placeholder="https://www.youtube.com/watch?v=">
+      <div class="dialog-actions">
+        <button class="btn btn-md btn-weak-dark" onclick="closeGalleryYoutubeDialog()">취소</button>
+        <button class="btn btn-md btn-fill-primary" onclick="confirmGalleryYoutube()">추가</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI 학습 끄기 확인 다이얼로그 -->
+  <div class="dialog-overlay" id="dialog-ai-confirm" style="display:none;z-index:600;" onclick="cancelAiToggle()">
+    <div class="dialog" onclick="event.stopPropagation()">
+      <p class="dialog-title">AI 학습에서 제외할까요?</p>
+      <p class="dialog-desc">이 항목은 AI 대화에 반영되지 않아요. 나중에 다시 켤 수 있어요.</p>
+      <div class="dialog-actions">
+        <button class="btn btn-md btn-weak-dark" onclick="cancelAiToggle()">취소</button>
+        <button class="btn btn-md btn-fill-danger" onclick="confirmAiOff()">끄기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 바텀시트: SNS 연결 -->
+  <div class="sheet-wrap" id="sheet-sns">
+    <div class="bottom-sheet-overlay" onclick="closeSheet('sheet-sns')"></div>
+    <div class="bottom-sheet" style="max-height:80%;display:flex;flex-direction:column;">
+      <div class="bottom-sheet-handle"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 20px 16px;">
+        <p class="text-heading">SNS 및 연락처 연결</p>
+        <button style="font-size:var(--fs-body);font-weight:var(--fw-semibold);color:var(--color-primary);background:none;border:none;cursor:pointer;font-family:var(--font-base);padding:8px 0;" onclick="closeSheet('sheet-sns')">완료</button>
+      </div>
+      <div style="flex:1;overflow-y:auto;padding:0 20px 16px;">
+        <div id="sns-list" style="display:flex;flex-direction:column;gap:12px;">
+          <div class="input-ai-wrap">
+            <div class="yt-row">
+              <button class="drag-handle" aria-label="순서 변경"><i data-lucide="grip-vertical" style="width:16px;height:16px"></i></button>
+              <input class="input" type="text" value="https://instagram.com/username">
+              <button class="icon-btn icon-btn-sm icon-btn-clear" aria-label="삭제" onclick="this.closest('.input-ai-wrap').remove()"><i data-lucide="trash-2" style="width:16px;height:16px"></i></button>
+            </div>
+            <div class="ai-toggle-row" style="padding-left:24px;padding-right:40px;">
+              <span class="ai-toggle-label">AI 학습</span>
+              <input type="checkbox" class="toggle toggle-sm" checked onchange="confirmAiToggle(this)">
+            </div>
+          </div>
+          <div class="input-ai-wrap">
+            <div class="yt-row">
+              <button class="drag-handle" aria-label="순서 변경"><i data-lucide="grip-vertical" style="width:16px;height:16px"></i></button>
+              <input class="input" type="text" value="https://linkedin.com/in/username">
+              <button class="icon-btn icon-btn-sm icon-btn-clear" aria-label="삭제" onclick="this.closest('.input-ai-wrap').remove()"><i data-lucide="trash-2" style="width:16px;height:16px"></i></button>
+            </div>
+            <div class="ai-toggle-row" style="padding-left:24px;padding-right:40px;">
+              <span class="ai-toggle-label">AI 학습</span>
+              <input type="checkbox" class="toggle toggle-sm" checked onchange="confirmAiToggle(this)">
+            </div>
+          </div>
+          <div class="input-ai-wrap">
+            <div class="yt-row">
+              <button class="drag-handle" aria-label="순서 변경"><i data-lucide="grip-vertical" style="width:16px;height:16px"></i></button>
+              <input class="input" type="text" placeholder="SNS URL, 전화번호, 이메일 등">
+              <button class="icon-btn icon-btn-sm icon-btn-clear" aria-label="삭제" onclick="this.closest('.input-ai-wrap').remove()"><i data-lucide="trash-2" style="width:16px;height:16px"></i></button>
+            </div>
+            <div class="ai-toggle-row" style="padding-left:24px;padding-right:40px;">
+              <span class="ai-toggle-label">AI 학습</span>
+              <input type="checkbox" class="toggle toggle-sm" checked onchange="confirmAiToggle(this)">
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="padding:0 20px calc(20px + env(safe-area-inset-bottom));">
+        <button class="btn btn-md btn-weak-primary btn-block" onclick="addSns()">
+          <i data-lucide="plus" style="width:16px;height:16px"></i>
+          정보 추가
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 바텀시트: 템플릿 선택 -->
+  <div class="sheet-wrap" id="sheet-template">
+    <div class="bottom-sheet-overlay" onclick="closeSheet('sheet-template')"></div>
+    <div class="bottom-sheet" style="max-height:90%;display:flex;flex-direction:column;">
+      <div class="bottom-sheet-handle"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 20px 8px;">
+        <p class="text-heading">템플릿 선택</p>
+        <button style="font-size:var(--fs-body);font-weight:var(--fw-semibold);color:var(--color-primary);background:none;border:none;cursor:pointer;font-family:var(--font-base);padding:8px 0;" onclick="closeSheet('sheet-template')">완료</button>
+      </div>
+      <p style="padding:0 20px 20px;font-size:var(--fs-caption);color:var(--color-text-muted);line-height:var(--lh-caption);">템플릿을 변경해도 입력한 내용은 유지됩니다.</p>
+      <div id="template-list" style="padding:0 16px 28px;display:flex;gap:8px;">
+
+        <!-- 템플릿 1: 기본형 -->
+        <div class="tpl-item is-selected" onclick="selectTemplate(this)">
+          <p class="tpl-name">기본형</p>
+          <div class="tpl-card">
+            <div class="tpl-check"><i data-lucide="check" style="width:12px;height:12px;color:var(--color-on-primary)"></i></div>
+            <!-- 배너 -->
+            <div style="width:100%;height:52px;background:var(--color-banner-gradient);flex-shrink:0;"></div>
+            <!-- 아바타 -->
+            <div style="width:32px;height:32px;border-radius:50%;background:var(--color-surface-sub);margin-top:-16px;margin-left:10px;flex-shrink:0;box-shadow:0 0 0 2px var(--color-surface);"></div>
+            <!-- 이름 -->
+            <div style="height:7px;width:55%;background:var(--color-text-sub);border-radius:4px;margin:6px 10px 0;opacity:0.4;"></div>
+            <!-- 대화하기 버튼 -->
+            <div style="height:16px;margin:8px 10px 0;background:var(--color-primary);border-radius:var(--r-xs);opacity:0.8;"></div>
+            <!-- 구분선 -->
+            <div style="height:1px;background:var(--color-border);margin:8px 0;"></div>
+            <!-- 본문 줄 -->
+            <div style="padding:0 10px;display:flex;flex-direction:column;gap:5px;">
+              <div style="height:5px;width:30%;background:var(--color-border);border-radius:4px;"></div>
+              <div style="height:5px;width:85%;background:var(--color-border);border-radius:4px;"></div>
+              <div style="height:5px;width:70%;background:var(--color-border);border-radius:4px;"></div>
+            </div>
+          </div>
+          <button class="tpl-preview-btn" onclick="event.stopPropagation();openPreview(this,'기본형')">미리보기</button>
+
+        </div>
+
+        <!-- 템플릿 2: 이력서 -->
+        <div class="tpl-item" onclick="selectTemplate(this)">
+          <p class="tpl-name">이력서</p>
+          <div class="tpl-card" style="background:var(--color-surface);">
+            <div class="tpl-check"><i data-lucide="check" style="width:12px;height:12px;color:var(--color-on-primary)"></i></div>
+            <!-- 상단 헤더: 아바타 + 이름/직함 -->
+            <div style="display:flex;align-items:center;gap:8px;padding:14px 10px 10px;">
+              <div style="width:28px;height:28px;border-radius:50%;background:var(--color-border);flex-shrink:0;"></div>
+              <div style="display:flex;flex-direction:column;gap:4px;flex:1;">
+                <div style="height:6px;width:80%;background:var(--color-text-sub);border-radius:4px;opacity:0.4;"></div>
+                <div style="height:5px;width:60%;background:var(--color-border);border-radius:4px;"></div>
+              </div>
+            </div>
+            <!-- 구분선 -->
+            <div style="height:1px;background:var(--color-border);margin:0 10px;"></div>
+            <!-- 경력 섹션 -->
+            <div style="padding:8px 10px;display:flex;flex-direction:column;gap:6px;">
+              <div style="height:5px;width:25%;background:var(--color-primary);border-radius:4px;opacity:0.6;"></div>
+              <div style="display:flex;gap:6px;align-items:flex-start;">
+                <div style="width:3px;height:28px;background:var(--color-primary);border-radius:2px;flex-shrink:0;opacity:0.5;margin-top:2px;"></div>
+                <div style="display:flex;flex-direction:column;gap:4px;flex:1;">
+                  <div style="height:5px;width:70%;background:var(--color-border);border-radius:4px;"></div>
+                  <div style="height:5px;width:50%;background:var(--color-border);border-radius:4px;"></div>
+                  <div style="height:5px;width:85%;background:var(--color-border);border-radius:4px;"></div>
+                </div>
+              </div>
+            </div>
+            <!-- 구분선 -->
+            <div style="height:1px;background:var(--color-border);margin:0 10px;"></div>
+            <!-- 스킬 섹션 -->
+            <div style="padding:8px 10px;display:flex;flex-direction:column;gap:5px;">
+              <div style="height:5px;width:20%;background:var(--color-primary);border-radius:4px;opacity:0.6;"></div>
+              <div style="display:flex;gap:4px;flex-wrap:wrap;">
+                <div style="height:12px;width:28px;background:var(--color-primary-subtle);border-radius:3px;"></div>
+                <div style="height:12px;width:22px;background:var(--color-primary-subtle);border-radius:3px;"></div>
+                <div style="height:12px;width:32px;background:var(--color-primary-subtle);border-radius:3px;"></div>
+              </div>
+            </div>
+          </div>
+          <button class="tpl-preview-btn" onclick="event.stopPropagation();openPreview(this,'이력서')">미리보기</button>
+
+        </div>
+
+        <!-- 템플릿 3: 명함 -->
+        <div class="tpl-item" onclick="selectTemplate(this)">
+          <p class="tpl-name">명함</p>
+          <div class="tpl-card" style="background:var(--color-surface);">
+            <div class="tpl-check"><i data-lucide="check" style="width:12px;height:12px;color:var(--color-on-primary)"></i></div>
+            <!-- 로고 + 브랜드명 -->
+            <div style="display:flex;align-items:center;gap:6px;padding:14px 10px 10px;">
+              <div style="width:14px;height:14px;border-radius:3px;border:1.5px solid var(--color-primary);opacity:0.7;"></div>
+              <div style="height:6px;width:45%;background:var(--color-primary);border-radius:4px;opacity:0.5;"></div>
+            </div>
+            <!-- 구분선 -->
+            <div style="height:1px;background:var(--color-text);margin:0 10px;opacity:0.15;"></div>
+            <!-- 아바타 + 이름 -->
+            <div style="display:flex;align-items:center;gap:8px;padding:8px 10px 6px;">
+              <div style="width:26px;height:26px;border-radius:50%;background:var(--color-border);flex-shrink:0;"></div>
+              <div style="height:7px;width:50%;background:var(--color-text-sub);border-radius:4px;opacity:0.4;"></div>
+            </div>
+            <!-- T. E. A. 연락처 -->
+            <div style="padding:4px 10px;display:flex;flex-direction:column;gap:4px;">
+              <div style="display:flex;align-items:center;gap:4px;">
+                <div style="height:5px;width:8px;background:var(--color-text-sub);border-radius:2px;opacity:0.5;flex-shrink:0;"></div>
+                <div style="height:5px;width:55%;background:var(--color-border);border-radius:4px;"></div>
+              </div>
+              <div style="display:flex;align-items:center;gap:4px;">
+                <div style="height:5px;width:8px;background:var(--color-text-sub);border-radius:2px;opacity:0.5;flex-shrink:0;"></div>
+                <div style="height:5px;width:75%;background:var(--color-border);border-radius:4px;"></div>
+              </div>
+              <div style="display:flex;align-items:center;gap:4px;">
+                <div style="height:5px;width:8px;background:var(--color-text-sub);border-radius:2px;opacity:0.5;flex-shrink:0;"></div>
+                <div style="height:5px;width:65%;background:var(--color-border);border-radius:4px;"></div>
+              </div>
+            </div>
+            <!-- 다크 CTA 버튼 -->
+            <div style="height:16px;margin:8px 10px 0;background:var(--color-text);border-radius:var(--r-xs);opacity:0.75;"></div>
+          </div>
+          <button class="tpl-preview-btn" onclick="event.stopPropagation();openPreview(this,'명함')">미리보기</button>
+
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- 템플릿 미리보기 화면 -->
+  <div class="tpl-preview-screen" id="tpl-preview-screen">
+    <div class="tpl-preview-nav">
+      <button class="icon-btn icon-btn-clear" onclick="closePreview()">
+        <i data-lucide="arrow-left" style="width:18px;height:18px"></i>
+      </button>
+      <p id="tpl-preview-title" class="text-heading"></p>
+    </div>
+    <div class="tpl-preview-scroll">
+      <div style="display:flex;align-items:center;justify-content:center;min-height:100%;padding:40px 20px;background:var(--color-surface-sub);">
+        <p class="text-caption" style="text-align:center;color:var(--color-text-muted);">변경된 프로필 화면 미리보기가 보입니다</p>
+      </div>
+    </div>
+    <div class="tpl-preview-footer">
+      <button class="btn btn-lg btn-fill-primary btn-block" onclick="applyFromPreview()">이 템플릿으로 변경하기</button>
+    </div>
+  </div>
+
+  <!-- 바텀시트: 자동 채우기 -->
+  <div class="sheet-wrap" id="sheet-autofill">
+    <div class="bottom-sheet-overlay" onclick="closeSheet('sheet-autofill')"></div>
+    <div class="bottom-sheet">
+      <div class="bottom-sheet-handle"></div>
+      <div style="padding:0 20px 32px;">
+        <p class="text-heading" style="margin:16px 0 8px;">자동 채우기</p>
+        <p style="font-size:var(--fs-caption);color:var(--color-text-muted);line-height:var(--lh-caption);margin-bottom:20px;">명함·소개서를 촬영하거나 이름·연락처·직함·회사 등을 자동으로 인식해 빈 칸을 채워드려요. 이미 입력한 항목은 그대로 유지해요.</p>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <button class="btn btn-lg btn-weak-dark btn-block" onclick="closeSheet('sheet-autofill')">
+            <i data-lucide="camera" style="width:18px;height:18px"></i>
+            촬영하기
+          </button>
+          <button class="btn btn-lg btn-weak-dark btn-block" onclick="closeSheet('sheet-autofill')">
+            <i data-lucide="upload" style="width:18px;height:18px"></i>
+            파일 업로드
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    lucide.createIcons();
+
+    function openSheet(id) {
+      document.getElementById(id).classList.add('on');
+    }
+    function closeSheet(id) {
+      document.getElementById(id).classList.remove('on');
+    }
+    var previewingItem = null;
+
+    function openPreview(el, name) {
+      previewingItem = el.closest('.tpl-item');
+      document.getElementById('tpl-preview-title').textContent = name;
+      document.getElementById('tpl-preview-screen').classList.add('is-open');
+    }
+    function closePreview() {
+      document.getElementById('tpl-preview-screen').classList.remove('is-open');
+    }
+    function applyFromPreview() {
+      if (previewingItem) {
+        document.querySelectorAll('#template-list .tpl-item').forEach(function(i) { i.classList.remove('is-selected'); });
+        previewingItem.classList.add('is-selected');
+      }
+      closePreview();
+    }
+
+    function selectTemplate(el) {
+      document.querySelectorAll('#template-list .tpl-item').forEach(function(item) {
+        item.classList.remove('is-selected');
+      });
+      el.classList.add('is-selected');
+      var items = document.querySelectorAll('#template-list .tpl-item');
+      var idx = Array.from(items).indexOf(el);
+      var isCard = idx === 2;
+      document.getElementById('banner-wrap').style.display = isCard ? 'none' : '';
+      document.getElementById('logo-area').style.display = isCard ? 'block' : 'none';
+      document.querySelector('.profile-fields').style.paddingTop = isCard ? '20px' : '36px';
+      var tplNames = ['기본', '이력서', '명함'];
+      document.querySelectorAll('.tpl-btn-name').forEach(function(el) { el.textContent = tplNames[idx]; });
+    }
+
+    function selectBtnStyle(el) {
+      var group = el.closest('.btn-style-group');
+      var opts = group.querySelectorAll('.btn-style-opt');
+      opts.forEach(function(btn) { btn.classList.remove('is-active'); });
+      el.classList.add('is-active');
+      var isFloating = el === opts[0];
+      document.querySelector('.chat-btn-section').style.display = isFloating ? 'none' : '';
+    }
+
+    function selectGalleryLayout(el) {
+      var group = el.parentElement;
+      var opts = group.querySelectorAll('.gallery-layout-seg-btn');
+      opts.forEach(function(btn) { btn.classList.remove('is-active'); });
+      el.classList.add('is-active');
+    }
+
+    var _gallerySeed = 1;
+    function appendGalleryItem(kind, meta) {
+      var list = document.getElementById('gallery-list');
+      var thumbHtml, name = '', sub = '';
+      if (kind === 'photo') {
+        thumbHtml = '<img src="https://picsum.photos/seed/gallery-photo-' + (_gallerySeed++) + '/88/88" alt="">';
+        name = '사진';
+        sub = 'IMG_' + String(2200 + _gallerySeed).slice(-4) + '.jpg';
+      } else if (kind === 'video') {
+        thumbHtml = ''
+          + '<img src="https://picsum.photos/seed/gallery-video-' + (_gallerySeed++) + '/88/88" alt="">'
+          + '<div class="gallery-item-thumb-play">'
+          +   '<i data-lucide="play" style="width:16px;height:16px;fill:currentColor"></i>'
+          + '</div>';
+        name = '동영상 · 12s';
+        sub = '1.2MB';
+      } else {
+        thumbHtml = '<i data-lucide="play" style="width:20px;height:20px"></i>';
+        name = '유튜브';
+        sub = (meta && meta.url) ? shortenYoutubeUrl(meta.url) : '링크';
+      }
+      var thumbClass = kind === 'youtube' ? 'gallery-item-thumb gallery-item-thumb-youtube' : 'gallery-item-thumb';
+      var item = document.createElement('div');
+      item.className = 'gallery-item';
+      item.innerHTML = ''
+        + '<button class="drag-handle" aria-label="순서 변경"><i data-lucide="grip-vertical" style="width:16px;height:16px"></i></button>'
+        + '<div class="' + thumbClass + '">' + thumbHtml + '</div>'
+        + '<div class="gallery-item-info">'
+        +   '<p class="gallery-item-name">' + name + '</p>'
+        +   '<p class="gallery-item-sub">' + sub + '</p>'
+        + '</div>'
+        + '<div class="gallery-item-ai">'
+        +   '<span class="gallery-item-ai-label">AI 학습</span>'
+        +   '<input type="checkbox" class="toggle toggle-sm" checked onchange="confirmAiToggle(this)">'
+        + '</div>'
+        + '<button class="icon-btn icon-btn-sm icon-btn-clear" aria-label="삭제" onclick="this.closest(\'.gallery-item\').remove()">'
+        +   '<i data-lucide="trash-2" style="width:16px;height:16px"></i>'
+        + '</button>';
+      list.appendChild(item);
+      if (window.lucide) lucide.createIcons();
+    }
+    function shortenYoutubeUrl(url) {
+      try {
+        var u = new URL(url);
+        var id = u.searchParams.get('v') || u.pathname.replace('/', '');
+        return 'youtu.be/' + (id.length > 6 ? id.slice(0, 6) + '…' : id);
+      } catch (e) {
+        return url.length > 22 ? url.slice(0, 22) + '…' : url;
+      }
+    }
+    function addGalleryPhoto() { appendGalleryItem('photo'); }
+    function addGalleryVideo() { appendGalleryItem('video'); }
+    function showGalleryYoutubeInput() {
+      var dlg = document.getElementById('dialog-gallery-yt');
+      dlg.style.display = 'flex';
+      var url = document.getElementById('gallery-yt-url');
+      url.value = '';
+      setTimeout(function() { url.focus(); }, 50);
+    }
+    function closeGalleryYoutubeDialog() {
+      document.getElementById('dialog-gallery-yt').style.display = 'none';
+    }
+    function confirmGalleryYoutube() {
+      var url = document.getElementById('gallery-yt-url').value.trim();
+      if (!url) { closeGalleryYoutubeDialog(); return; }
+      appendGalleryItem('youtube', { url: url });
+      closeGalleryYoutubeDialog();
+    }
+
+    var _boardSamples = [
+      { title: '참여자 게시글 테스트', excerpt: '참여자 게시글', thumb: 'https://picsum.photos/seed/board-1/96/96' },
+      { title: '관리자 게시글 테스트', excerpt: '관리자 게시글 테스트입니다 관리자 게시글 테스트입니다 관리자…' },
+      { title: '참여자 게시글 테스트', excerpt: '참여자 게시글 테스트 참여자 게시글 테스트 참여자 게시글 테스트' },
+      { title: '오늘의 공지', excerpt: '이번 주 운영 관련 안내드립니다.', thumb: 'https://picsum.photos/seed/board-4/96/96' },
+      { title: '이벤트 안내', excerpt: '진행 중인 이벤트를 확인해보세요.' },
+      { title: '자유 게시글', excerpt: '함께 이야기 나눠요.', thumb: 'https://picsum.photos/seed/board-6/96/96' },
+      { title: '후기 공유', excerpt: '방문 후기를 남겨주세요.' },
+      { title: '질문 있어요', excerpt: '궁금한 점을 자유롭게 질문해주세요.' },
+      { title: '주간 하이라이트', excerpt: '이번 주 주요 소식을 정리했어요.', thumb: 'https://picsum.photos/seed/board-9/96/96' },
+      { title: '커뮤니티 소식', excerpt: '함께 만들어가는 커뮤니티 이야기.' }
+    ];
+    function renderBoardPreview(count) {
+      var wrap = document.getElementById('board-preview');
+      if (!wrap) return;
+      var n = Math.min(count, _boardSamples.length);
+      var html = '';
+      for (var i = 0; i < n; i++) {
+        var s = _boardSamples[i];
+        html += '<div class="board-card">'
+          + '<div class="board-card-body">'
+          +   '<p class="board-card-title">' + s.title + '</p>'
+          +   '<p class="board-card-excerpt">' + s.excerpt + '</p>'
+          + '</div>'
+          + (s.thumb ? '<div class="board-card-thumb"><img src="' + s.thumb + '" alt=""></div>' : '')
+          + '</div>';
+      }
+      wrap.innerHTML = html;
+    }
+    var _renameTarget = null;
+    function openRenameDialog(el) {
+      _renameTarget = el.querySelector('.section-title-text');
+      var input = document.getElementById('rename-input');
+      input.value = _renameTarget ? _renameTarget.textContent.trim() : '';
+      var type = el.getAttribute('data-type') || '';
+      var desc = document.getElementById('rename-desc');
+      if (desc) desc.textContent = type ? type + ' 섹션의 이름을 변경할 수 있어요.' : '섹션의 이름을 변경할 수 있어요.';
+      document.getElementById('dialog-rename').style.display = 'flex';
+      setTimeout(function() { input.focus(); input.select(); }, 50);
+    }
+    function closeRenameDialog() {
+      document.getElementById('dialog-rename').style.display = 'none';
+      _renameTarget = null;
+    }
+    function confirmRename() {
+      var v = document.getElementById('rename-input').value.trim();
+      if (!v) { closeRenameDialog(); return; }
+      if (_renameTarget) _renameTarget.textContent = v;
+      closeRenameDialog();
+    }
+
+    function toggleBoardCount() {
+      document.getElementById('board-count-wrap').classList.toggle('is-open');
+    }
+    function selectBoardCount(el, n) {
+      el.parentNode.querySelectorAll('button').forEach(function(b) { b.classList.remove('is-active'); });
+      el.classList.add('is-active');
+      document.getElementById('board-count-value').textContent = n + '개';
+      document.getElementById('board-count-wrap').classList.remove('is-open');
+      renderBoardPreview(n);
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+      renderBoardPreview(3);
+    });
+    document.addEventListener('click', function(e) {
+      var w = document.getElementById('board-count-wrap');
+      if (w && !w.contains(e.target)) w.classList.remove('is-open');
+    });
+
+    function addGallerySection() {
+      var addBtn = document.querySelector('.gallery-section-add');
+      var row = document.createElement('div');
+      row.className = 'section-row';
+      row.innerHTML = ''
+        + '<input type="checkbox" class="toggle toggle-sm" checked>'
+        + '<div class="section-row-info">'
+        +   '<p class="section-row-type">갤러리</p>'
+        +   '<p class="section-row-name">새 갤러리</p>'
+        + '</div>'
+        + '<div class="section-row-actions">'
+        +   '<button class="icon-btn icon-btn-sm icon-btn-clear"><i data-lucide="pencil" style="width:14px;height:14px"></i></button>'
+        +   '<button class="icon-btn icon-btn-sm icon-btn-clear" onclick="this.closest(\'.section-row\').remove()"><i data-lucide="trash-2" style="width:14px;height:14px"></i></button>'
+        +   '<button class="icon-btn icon-btn-sm icon-btn-clear"><i data-lucide="grip-vertical" style="width:16px;height:16px"></i></button>'
+        + '</div>';
+      addBtn.parentElement.insertBefore(row, addBtn);
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function toggleLogoSize(e) {
+      e.stopPropagation();
+      document.getElementById('logo-size-wrap').classList.toggle('is-open');
+    }
+    function selectLogoSize(el, label) {
+      el.parentNode.querySelectorAll('button').forEach(function(b){ b.classList.remove('is-active'); });
+      el.classList.add('is-active');
+      document.getElementById('logo-size-value').textContent = label;
+      document.getElementById('logo-size-wrap').classList.remove('is-open');
+      document.getElementById('logo-area').classList.toggle('is-big-card', label === '크게(명함)');
+      if (window.lucide) lucide.createIcons();
+    }
+    document.addEventListener('click', function(){
+      var w = document.getElementById('logo-size-wrap');
+      if (w) w.classList.remove('is-open');
+    });
+
+    function aiToggleRow(indent) {
+      var style = indent ? 'padding-left:24px;' : '';
+      return '<div class="ai-toggle-row" style="' + style + '">' +
+        '<span class="ai-toggle-label">AI 학습</span>' +
+        '<input type="checkbox" class="toggle toggle-sm" checked onchange="confirmAiToggle(this)">' +
+        '</div>';
+    }
+
+    function addSns() {
+      var wrap = document.createElement('div');
+      wrap.className = 'input-ai-wrap';
+      wrap.innerHTML =
+        '<div class="yt-row">' +
+          '<button class="drag-handle" aria-label="순서 변경"><i data-lucide="grip-vertical" style="width:16px;height:16px"></i></button>' +
+          '<input class="input" type="text" placeholder="SNS URL, 전화번호, 이메일 등" style="flex:1">' +
+          '<button class="icon-btn icon-btn-sm icon-btn-clear" aria-label="삭제" onclick="this.closest(\'.input-ai-wrap\').remove()"><i data-lucide="trash-2" style="width:16px;height:16px"></i></button>' +
+        '</div>' +
+        aiToggleRow(true);
+      document.getElementById('sns-list').appendChild(wrap);
+      lucide.createIcons();
+      wrap.querySelector('.input').focus();
+    }
+
+    function addInfo() {
+      var group = document.createElement('div');
+      group.className = 'info-group';
+      group.innerHTML =
+        '<button class="drag-handle" aria-label="순서 변경"><i data-lucide="grip-vertical" style="width:16px;height:16px"></i></button>' +
+        '<input class="input name-input" type="text" placeholder="버튼에 표시될 이름">' +
+        '<button class="icon-btn icon-btn-sm icon-btn-clear delete-btn" aria-label="삭제" onclick="this.closest(\'.info-group\').remove()"><i data-lucide="trash-2" style="width:16px;height:16px"></i></button>' +
+        '<input class="input url-input" type="url" placeholder="실제 연결될 연락처, URL, 이메일 등">' +
+        aiToggleRow(false);
+      document.querySelector('.info-list').appendChild(group);
+      lucide.createIcons();
+      group.querySelector('.name-input').focus();
+    }
+
+    function addYoutube() {
+      var wrap = document.createElement('div');
+      wrap.className = 'input-ai-wrap';
+      wrap.innerHTML =
+        '<div class="yt-row">' +
+          '<button class="drag-handle" aria-label="순서 변경"><i data-lucide="grip-vertical" style="width:16px;height:16px"></i></button>' +
+          '<input class="input" type="url" placeholder="https://www.youtube.com/watch?v=..." style="flex:1">' +
+          '<button class="icon-btn icon-btn-sm icon-btn-clear" aria-label="삭제" onclick="this.closest(\'.input-ai-wrap\').remove()"><i data-lucide="trash-2" style="width:16px;height:16px"></i></button>' +
+        '</div>' +
+        aiToggleRow(true);
+      document.getElementById('yt-list').appendChild(wrap);
+      lucide.createIcons();
+      wrap.querySelector('.input').focus();
+    }
+
+    var _aiTogglePending = null;
+
+    function confirmAiToggle(el) {
+      if (!el.checked) {
+        el.checked = true;
+        _aiTogglePending = el;
+        document.getElementById('dialog-ai-confirm').style.display = 'flex';
+      }
+    }
+
+    function confirmAiOff() {
+      if (_aiTogglePending) {
+        _aiTogglePending.checked = false;
+        _aiTogglePending = null;
+      }
+      document.getElementById('dialog-ai-confirm').style.display = 'none';
+    }
+
+    function cancelAiToggle() {
+      _aiTogglePending = null;
+      document.getElementById('dialog-ai-confirm').style.display = 'none';
+    }
+
+    function updateCounter(el) {
+      const max = 2000;
+      const isTextarea = el.value !== undefined;
+      const len = isTextarea ? el.value.length : (el.innerText || '').length;
+      document.getElementById('desc-counter').textContent = len + '/' + max;
+      if (isTextarea && len > max) el.value = el.value.slice(0, max);
+    }
+
+    const RT_CMDS = ['bold', 'italic', 'underline', 'strikeThrough'];
+    function rtCmd(e, cmd) {
+      e.preventDefault();
+      document.getElementById('desc-textarea').focus();
+      document.execCommand(cmd, false, null);
+      rtSyncState();
+    }
+    function rtSyncState() {
+      const btns = document.querySelectorAll('.rt-editor-btn');
+      btns.forEach((btn, i) => {
+        const cmd = RT_CMDS[i];
+        if (!cmd) return;
+        btn.classList.toggle('is-active', document.queryCommandState(cmd));
+      });
+    }
+  </script>
+
+</body>
+</html>
