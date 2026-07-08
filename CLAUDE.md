@@ -17,6 +17,15 @@
 - `tokens.css` — 단일 진실 공급원. **반드시 먼저 로드.**
 - `components.css` — tokens.css에 의존. 그다음 로드.
 
+## 폴더 구조 (승격 흐름)
+- `screens/` — **화면별 확정본 = 실서비스 반영 기준.** 수정 작업은 항상 여기서 출발. 직접 수정 금지(승격으로만 교체).
+- `review/` — QA 통과 후 팀 승인 대기.
+- `prototypes/` — 작업 폴더(`<주제>-MMDD/`). 기존 폴더는 아카이브 — 수정 금지.
+- `assets/` — 공용 에셋. 새 에셋도 여기에 (프로토타입 폴더에 복사 금지).
+- CSS/에셋 상대 경로: `screens/`·`review/`는 `../tokens.css`·`../assets/`, `prototypes/<폴더>/`는 `../../tokens.css`·`../../assets/`.
+- 서비스·화면 파악은 `PRODUCT.md`, 화면↔파일 매핑은 `SCREENS.md` 참조. **화면을 `screens/`에 반영하면 두 문서도 같은 작업에서 갱신.**
+- 디자인 작업 요청 시 `/design-team` 스킬 사용 (기획→승인→디자이너→QA 파이프라인).
+
 ## 사용 가능한 토큰 (tokens.css)
 - **색상(semantic):** `--color-primary / -dark / -light / -subtle`, `--color-brand-gradient / -banner-gradient`, `--color-bg / -surface / -surface-sub / -card`, `--color-text / -sub / -muted`, `--color-border / -input`, `--color-destructive / -destructive-subtle / -success / -star / -star-empty`, `--color-on-primary / -on-primary-sub / -on-primary-faint`, `--color-scrim`
 - **타이포(유틸 클래스):** `.text-display .text-title .text-heading .text-body-lg .text-body .text-label .text-caption .text-badge .text-link .text-metric .text-nav`
