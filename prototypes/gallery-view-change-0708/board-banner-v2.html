@@ -124,26 +124,20 @@
   .lp-header img { width: 100%; height: 211px; object-fit: cover; position: absolute; top: 0; left: 0; }
   .lp-avatar-wrap { position: absolute; top: 133px; left: 20px; z-index: 2; transition: all var(--motion-standard) var(--ease-standard); }
   .lp-body { flex: 1; overflow-y: auto; background: var(--color-bg); }
-  .lp-inner { padding: 88px 20px 32px; display: flex; flex-direction: column; gap: 20px; transition: padding var(--motion-standard) var(--ease-standard); }
+  .lp-inner { padding: 68px 20px 32px; display: flex; flex-direction: column; gap: 20px; transition: padding var(--motion-standard) var(--ease-standard); }
   .lp-title { font-weight: var(--fw-semibold); font-size: var(--fs-title); color: var(--color-text); letter-spacing: var(--ls-title); }
+  .lp-name-block { display: flex; flex-direction: column; gap: 4px; }
+  .lp-handle { font-size: var(--fs-label); color: var(--color-text-muted); }
+  .lp-actions-row { position: absolute; top: 190px; right: 20px; z-index: 3; display: flex; gap: 8px; align-items: center; }
 
   /* ── Cover style variants ──
-     Default (없음 or cover-overlap-left): 왼쪽 하단 겹침 (현재)
-     cover-overlap-center: 가운데 하단 겹침
-     cover-below-left:     왼쪽 아래 (겹치지 않음)
-     cover-below-center:   가운데 아래 (겹치지 않음) */
-  .lp-body.cover-overlap-center .lp-avatar-wrap { left: 50%; transform: translateX(-50%); }
-  .lp-body.cover-overlap-center .lp-title { text-align: center; }
-
+     Default (cover-overlap-left): 왼쪽 하단 겹침 (현재)
+     cover-below-left: 왼쪽 아래 (겹치지 않음)
+     cover-hidden:     프로필 사진 숨김 */
   .lp-body.cover-below-left .lp-avatar-wrap { top: 185px; }
   .lp-body.cover-below-left .lp-inner { padding-top: 112px; }
 
-  .lp-body.cover-below-center .lp-avatar-wrap { top: 185px; left: 50%; transform: translateX(-50%); }
-  .lp-body.cover-below-center .lp-inner { padding-top: 112px; }
-  .lp-body.cover-below-center .lp-title { text-align: center; }
-
   .lp-body.cover-hidden .lp-avatar-wrap { display: none; }
-  .lp-body.cover-hidden .lp-inner { padding-top: 32px; }
 
   .lp-divider { height: 1px; width: 100%; background: var(--color-border); border: none; }
   .lp-section-title { font-weight: var(--fw-semibold); font-size: var(--fs-heading); color: var(--color-text-sub); letter-spacing: var(--ls-heading); }
@@ -2266,6 +2260,18 @@
     </div>
   </div>
   <div class="lp-body cover-overlap-left" id="lp-body-root">
+    <script>
+      (function() {
+        var cover = new URLSearchParams(location.search).get('cover');
+        var valid = ['cover-overlap-left','cover-below-left','cover-hidden'];
+        if (cover && valid.indexOf(cover) !== -1) {
+          var root = document.getElementById('lp-body-root');
+          valid.forEach(function(c) { root.classList.remove(c); });
+          root.classList.add(cover);
+          history.replaceState(null, '', location.pathname);
+        }
+      })();
+    </script>
     <div style="position:relative;flex-shrink:0;">
       <div class="lp-header">
         <img src="banner.png" alt="">
@@ -2275,9 +2281,22 @@
           <img src="profile.png" alt="프로필">
         </div>
       </div>
+      <div class="lp-actions-row">
+        <button class="btn btn-md btn-weak-dark btn-pill" type="button">
+          <i data-lucide="download" style="width:16px;height:16px"></i>
+          연락처 저장
+        </button>
+        <button class="btn btn-md btn-weak-dark btn-pill" type="button">
+          <i data-lucide="link" style="width:16px;height:16px"></i>
+          공유
+        </button>
+      </div>
     </div>
     <div class="lp-inner">
-      <div class="lp-title">엘린피부과의원</div>
+      <div class="lp-name-block">
+        <div class="lp-title">엘린피부과의원</div>
+        <div class="lp-handle">@elin_clinic</div>
+      </div>
 
       <button class="btn btn-lg btn-fill-gradient btn-block">
         <i data-lucide="message-circle" style="width:18px;height:18px"></i>
@@ -2834,12 +2853,12 @@
   // ── Cover style (URL param 지원: ?cover=cover-overlap-left|cover-overlap-center|cover-below-left|cover-below-center)
   (function initCoverStyle() {
     var cover = new URLSearchParams(location.search).get('cover');
-    var valid = ['cover-overlap-left','cover-overlap-center','cover-below-left','cover-below-center','cover-hidden'];
+    var valid = ['cover-overlap-left','cover-below-left','cover-hidden'];
     if (cover && valid.indexOf(cover) !== -1) applyCoverStyle(cover);
   })();
   function applyCoverStyle(name) {
     var root = document.getElementById('lp-body-root');
-    ['cover-overlap-left','cover-overlap-center','cover-below-left','cover-below-center','cover-hidden'].forEach(function(c) {
+    ['cover-overlap-left','cover-below-left','cover-hidden'].forEach(function(c) {
       root.classList.remove(c);
     });
     root.classList.add(name);

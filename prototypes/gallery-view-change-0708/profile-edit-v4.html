@@ -210,14 +210,9 @@
     }
     /* Preview variant positions */
     .cover-item-preview.pv-overlap-left  .cover-item-avatar { top: -12px; left: 8px; }
-    .cover-item-preview.pv-overlap-center .cover-item-avatar { top: -12px; left: 50%; transform: translateX(-50%); }
-    .cover-item-preview.pv-overlap-center .cover-item-title { margin-left: auto; margin-right: auto; }
     .cover-item-preview.pv-below-left    .cover-item-avatar { top: 6px; left: 8px; }
     .cover-item-preview.pv-below-left    .cover-item-title { margin-top: 36px; }
     .cover-item-preview.pv-below-left    .cover-item-content { padding-top: 4px; }
-    .cover-item-preview.pv-below-center  .cover-item-avatar { top: 6px; left: 50%; transform: translateX(-50%); }
-    .cover-item-preview.pv-below-center  .cover-item-title { margin: 36px auto 6px; }
-    .cover-item-preview.pv-below-center  .cover-item-content { padding-top: 4px; }
     .cover-item-preview.pv-hidden        .cover-item-avatar { display: none; }
     .cover-item-preview.pv-hidden        .cover-item-content { padding-top: 8px; }
     .avatar-wrap { position: absolute; bottom: -24px; left: 16px; }
@@ -1540,19 +1535,7 @@
               <div class="cover-item-line" style="width:65%"></div>
             </div>
           </div>
-          <span class="cover-item-name">겹침 · 왼쪽</span>
-        </button>
-        <button type="button" class="cover-item" data-cover="cover-overlap-center" onclick="selectCoverItem(this)">
-          <div class="cover-item-preview pv-overlap-center">
-            <div class="cover-item-banner"></div>
-            <div class="cover-item-content">
-              <div class="cover-item-avatar"></div>
-              <div class="cover-item-title"></div>
-              <div class="cover-item-line" style="width:80%"></div>
-              <div class="cover-item-line" style="width:65%"></div>
-            </div>
-          </div>
-          <span class="cover-item-name">겹침 · 가운데</span>
+          <span class="cover-item-name">겹침</span>
         </button>
         <button type="button" class="cover-item" data-cover="cover-below-left" onclick="selectCoverItem(this)">
           <div class="cover-item-preview pv-below-left">
@@ -1564,19 +1547,7 @@
               <div class="cover-item-line" style="width:65%"></div>
             </div>
           </div>
-          <span class="cover-item-name">아래 · 왼쪽</span>
-        </button>
-        <button type="button" class="cover-item" data-cover="cover-below-center" onclick="selectCoverItem(this)">
-          <div class="cover-item-preview pv-below-center">
-            <div class="cover-item-banner"></div>
-            <div class="cover-item-content">
-              <div class="cover-item-avatar"></div>
-              <div class="cover-item-title"></div>
-              <div class="cover-item-line" style="width:80%"></div>
-              <div class="cover-item-line" style="width:65%"></div>
-            </div>
-          </div>
-          <span class="cover-item-name">아래 · 가운데</span>
+          <span class="cover-item-name">아래</span>
         </button>
         <button type="button" class="cover-item" data-cover="cover-hidden" onclick="selectCoverItem(this)">
           <div class="cover-item-preview pv-hidden">
@@ -1662,7 +1633,7 @@
     var selectedCoverStyle = 'cover-overlap-left';
     (function initEditCoverStyle() {
       var cover = new URLSearchParams(location.search).get('cover');
-      var valid = ['cover-overlap-left','cover-overlap-center','cover-below-left','cover-below-center','cover-hidden'];
+      var valid = ['cover-overlap-left','cover-below-left','cover-hidden'];
       if (cover && valid.indexOf(cover) !== -1) {
         selectedCoverStyle = cover;
         document.querySelectorAll('#cover-style-list .cover-item').forEach(function(item) {
