@@ -140,6 +140,86 @@
       color: var(--color-on-primary); font-family: var(--font-base);
       font-size: var(--fs-label); font-weight: var(--fw-medium);
     }
+    .banner-cover-btn {
+      position: absolute; top: 12px; left: 50%; transform: translateX(-50%); height: 36px; padding: 0 12px;
+      background: var(--color-scrim); border: none; border-radius: var(--r-full);
+      display: flex; align-items: center; gap: 6px; cursor: pointer;
+      color: var(--color-on-primary); font-family: var(--font-base);
+      font-size: var(--fs-label); font-weight: var(--fw-medium);
+    }
+
+    /* ── Cover style picker sheet ── */
+    .cover-style-list {
+      display: flex;
+      gap: 12px;
+      padding: 0 16px 28px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .cover-style-list::-webkit-scrollbar { display: none; }
+    .cover-item {
+      flex: 0 0 132px;
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      padding: 8px 4px;
+      cursor: pointer; background: transparent; border: 0;
+      font-family: var(--font-base);
+    }
+    .cover-item-name {
+      font-size: var(--fs-label);
+      font-weight: var(--fw-medium);
+      color: var(--color-text-sub);
+      white-space: nowrap;
+    }
+    .cover-item.is-selected .cover-item-name {
+      color: var(--color-primary);
+      font-weight: var(--fw-semibold);
+    }
+    .cover-item-preview {
+      width: 100%; aspect-ratio: 3 / 4;
+      background: var(--color-surface-sub);
+      border-radius: var(--r-sm);
+      overflow: hidden; position: relative;
+      border: 2px solid transparent;
+      display: flex; flex-direction: column;
+    }
+    .cover-item.is-selected .cover-item-preview {
+      border-color: var(--color-primary);
+    }
+    .cover-item-banner {
+      height: 42%;
+      background: var(--color-banner-gradient);
+      flex-shrink: 0;
+    }
+    .cover-item-content { flex: 1; padding: 6px 8px; position: relative; }
+    .cover-item-avatar {
+      width: 24px; height: 24px; border-radius: 50%;
+      background: var(--color-text-muted);
+      box-shadow: 0 0 0 2px var(--color-surface);
+      position: absolute;
+    }
+    .cover-item-title {
+      height: 5px; width: 60%;
+      background: var(--color-border);
+      border-radius: 4px;
+      margin: 10px 0 6px;
+    }
+    .cover-item-line {
+      height: 4px; background: var(--color-border);
+      border-radius: 4px; margin-bottom: 4px;
+    }
+    /* Preview variant positions */
+    .cover-item-preview.pv-overlap-left  .cover-item-avatar { top: -12px; left: 8px; }
+    .cover-item-preview.pv-overlap-center .cover-item-avatar { top: -12px; left: 50%; transform: translateX(-50%); }
+    .cover-item-preview.pv-overlap-center .cover-item-title { margin-left: auto; margin-right: auto; }
+    .cover-item-preview.pv-below-left    .cover-item-avatar { top: 6px; left: 8px; }
+    .cover-item-preview.pv-below-left    .cover-item-title { margin-top: 36px; }
+    .cover-item-preview.pv-below-left    .cover-item-content { padding-top: 4px; }
+    .cover-item-preview.pv-below-center  .cover-item-avatar { top: 6px; left: 50%; transform: translateX(-50%); }
+    .cover-item-preview.pv-below-center  .cover-item-title { margin: 36px auto 6px; }
+    .cover-item-preview.pv-below-center  .cover-item-content { padding-top: 4px; }
+    .cover-item-preview.pv-hidden        .cover-item-avatar { display: none; }
+    .cover-item-preview.pv-hidden        .cover-item-content { padding-top: 8px; }
     .avatar-wrap { position: absolute; bottom: -24px; left: 16px; }
     .avatar-edit {
       position: relative; display: inline-block;
@@ -694,6 +774,10 @@
       <button class="banner-autofill-btn" aria-label="자동 채우기" onclick="openSheet('sheet-autofill')">
         <i data-lucide="sparkles" style="width:14px;height:14px"></i>
         자동 채우기
+      </button>
+      <button class="banner-cover-btn" aria-label="커버 스타일 변경" onclick="openSheet('sheet-cover-style')">
+        <i data-lucide="layout-panel-top" style="width:14px;height:14px"></i>
+        커버 스타일
       </button>
       <button class="banner-template-btn" aria-label="템플릿 선택" onclick="openSheet('sheet-template')">
         <i data-lucide="layout-template" style="width:14px;height:14px"></i>
@@ -1435,6 +1519,81 @@
     </div>
   </div>
 
+  <!-- 바텀시트: 커버 스타일 변경 -->
+  <div class="sheet-wrap" id="sheet-cover-style">
+    <div class="bottom-sheet-overlay" onclick="closeSheet('sheet-cover-style')"></div>
+    <div class="bottom-sheet">
+      <div class="bottom-sheet-handle"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 20px 8px;">
+        <p class="text-heading">커버 스타일</p>
+        <button style="font-size:var(--fs-body);font-weight:var(--fw-semibold);color:var(--color-primary);background:none;border:none;cursor:pointer;font-family:var(--font-base);padding:8px 0;" onclick="applyCoverAndClose()">완료</button>
+      </div>
+      <p style="padding:0 20px 20px;font-size:var(--fs-caption);color:var(--color-text-muted);line-height:var(--lh-caption);">프로필 사진과 이름의 위치를 골라주세요.</p>
+      <div id="cover-style-list" class="cover-style-list">
+        <button type="button" class="cover-item is-selected" data-cover="cover-overlap-left" onclick="selectCoverItem(this)">
+          <div class="cover-item-preview pv-overlap-left">
+            <div class="cover-item-banner"></div>
+            <div class="cover-item-content">
+              <div class="cover-item-avatar"></div>
+              <div class="cover-item-title"></div>
+              <div class="cover-item-line" style="width:80%"></div>
+              <div class="cover-item-line" style="width:65%"></div>
+            </div>
+          </div>
+          <span class="cover-item-name">겹침 · 왼쪽</span>
+        </button>
+        <button type="button" class="cover-item" data-cover="cover-overlap-center" onclick="selectCoverItem(this)">
+          <div class="cover-item-preview pv-overlap-center">
+            <div class="cover-item-banner"></div>
+            <div class="cover-item-content">
+              <div class="cover-item-avatar"></div>
+              <div class="cover-item-title"></div>
+              <div class="cover-item-line" style="width:80%"></div>
+              <div class="cover-item-line" style="width:65%"></div>
+            </div>
+          </div>
+          <span class="cover-item-name">겹침 · 가운데</span>
+        </button>
+        <button type="button" class="cover-item" data-cover="cover-below-left" onclick="selectCoverItem(this)">
+          <div class="cover-item-preview pv-below-left">
+            <div class="cover-item-banner"></div>
+            <div class="cover-item-content">
+              <div class="cover-item-avatar"></div>
+              <div class="cover-item-title"></div>
+              <div class="cover-item-line" style="width:80%"></div>
+              <div class="cover-item-line" style="width:65%"></div>
+            </div>
+          </div>
+          <span class="cover-item-name">아래 · 왼쪽</span>
+        </button>
+        <button type="button" class="cover-item" data-cover="cover-below-center" onclick="selectCoverItem(this)">
+          <div class="cover-item-preview pv-below-center">
+            <div class="cover-item-banner"></div>
+            <div class="cover-item-content">
+              <div class="cover-item-avatar"></div>
+              <div class="cover-item-title"></div>
+              <div class="cover-item-line" style="width:80%"></div>
+              <div class="cover-item-line" style="width:65%"></div>
+            </div>
+          </div>
+          <span class="cover-item-name">아래 · 가운데</span>
+        </button>
+        <button type="button" class="cover-item" data-cover="cover-hidden" onclick="selectCoverItem(this)">
+          <div class="cover-item-preview pv-hidden">
+            <div class="cover-item-banner"></div>
+            <div class="cover-item-content">
+              <div class="cover-item-avatar"></div>
+              <div class="cover-item-title"></div>
+              <div class="cover-item-line" style="width:80%"></div>
+              <div class="cover-item-line" style="width:65%"></div>
+            </div>
+          </div>
+          <span class="cover-item-name">프로필 사진 숨김</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- 바텀시트: 자동 채우기 -->
   <div class="sheet-wrap" id="sheet-autofill">
     <div class="bottom-sheet-overlay" onclick="closeSheet('sheet-autofill')"></div>
@@ -1498,6 +1657,29 @@
       document.querySelector('.profile-fields').style.paddingTop = isCard ? '20px' : '36px';
       var tplNames = ['기본', '이력서', '명함'];
       document.querySelectorAll('.tpl-btn-name').forEach(function(el) { el.textContent = tplNames[idx]; });
+    }
+
+    var selectedCoverStyle = 'cover-overlap-left';
+    (function initEditCoverStyle() {
+      var cover = new URLSearchParams(location.search).get('cover');
+      var valid = ['cover-overlap-left','cover-overlap-center','cover-below-left','cover-below-center','cover-hidden'];
+      if (cover && valid.indexOf(cover) !== -1) {
+        selectedCoverStyle = cover;
+        document.querySelectorAll('#cover-style-list .cover-item').forEach(function(item) {
+          item.classList.toggle('is-selected', item.getAttribute('data-cover') === cover);
+        });
+      }
+    })();
+    function selectCoverItem(el) {
+      document.querySelectorAll('#cover-style-list .cover-item').forEach(function(item) {
+        item.classList.remove('is-selected');
+      });
+      el.classList.add('is-selected');
+      selectedCoverStyle = el.getAttribute('data-cover');
+    }
+    function applyCoverAndClose() {
+      closeSheet('sheet-cover-style');
+      location.href = 'board-banner-v2.html?cover=' + encodeURIComponent(selectedCoverStyle);
     }
 
     function selectBtnStyle(el) {

@@ -122,10 +122,29 @@
   /* ── 랜딩 ── */
   .lp-header { width: 100%; height: 177px; overflow: hidden; position: relative; flex-shrink: 0; }
   .lp-header img { width: 100%; height: 211px; object-fit: cover; position: absolute; top: 0; left: 0; }
-  .lp-avatar-wrap { position: absolute; top: 133px; left: 20px; z-index: 2; }
+  .lp-avatar-wrap { position: absolute; top: 133px; left: 20px; z-index: 2; transition: all var(--motion-standard) var(--ease-standard); }
   .lp-body { flex: 1; overflow-y: auto; background: var(--color-bg); }
-  .lp-inner { padding: 88px 20px 32px; display: flex; flex-direction: column; gap: 20px; }
+  .lp-inner { padding: 88px 20px 32px; display: flex; flex-direction: column; gap: 20px; transition: padding var(--motion-standard) var(--ease-standard); }
   .lp-title { font-weight: var(--fw-semibold); font-size: var(--fs-title); color: var(--color-text); letter-spacing: var(--ls-title); }
+
+  /* ── Cover style variants ──
+     Default (없음 or cover-overlap-left): 왼쪽 하단 겹침 (현재)
+     cover-overlap-center: 가운데 하단 겹침
+     cover-below-left:     왼쪽 아래 (겹치지 않음)
+     cover-below-center:   가운데 아래 (겹치지 않음) */
+  .lp-body.cover-overlap-center .lp-avatar-wrap { left: 50%; transform: translateX(-50%); }
+  .lp-body.cover-overlap-center .lp-title { text-align: center; }
+
+  .lp-body.cover-below-left .lp-avatar-wrap { top: 185px; }
+  .lp-body.cover-below-left .lp-inner { padding-top: 112px; }
+
+  .lp-body.cover-below-center .lp-avatar-wrap { top: 185px; left: 50%; transform: translateX(-50%); }
+  .lp-body.cover-below-center .lp-inner { padding-top: 112px; }
+  .lp-body.cover-below-center .lp-title { text-align: center; }
+
+  .lp-body.cover-hidden .lp-avatar-wrap { display: none; }
+  .lp-body.cover-hidden .lp-inner { padding-top: 32px; }
+
   .lp-divider { height: 1px; width: 100%; background: var(--color-border); border: none; }
   .lp-section-title { font-weight: var(--fw-semibold); font-size: var(--fs-heading); color: var(--color-text-sub); letter-spacing: var(--ls-heading); }
 
@@ -2246,7 +2265,7 @@
       <button class="btn btn-sm btn-fill-dark" type="button" onclick="goTo('s-settings')">설정</button>
     </div>
   </div>
-  <div class="lp-body">
+  <div class="lp-body cover-overlap-left" id="lp-body-root">
     <div style="position:relative;flex-shrink:0;">
       <div class="lp-header">
         <img src="banner.png" alt="">
@@ -2811,6 +2830,20 @@
 <script src="https://unpkg.com/lucide@latest"></script>
 <script>
   lucide.createIcons();
+
+  // ── Cover style (URL param 지원: ?cover=cover-overlap-left|cover-overlap-center|cover-below-left|cover-below-center)
+  (function initCoverStyle() {
+    var cover = new URLSearchParams(location.search).get('cover');
+    var valid = ['cover-overlap-left','cover-overlap-center','cover-below-left','cover-below-center','cover-hidden'];
+    if (cover && valid.indexOf(cover) !== -1) applyCoverStyle(cover);
+  })();
+  function applyCoverStyle(name) {
+    var root = document.getElementById('lp-body-root');
+    ['cover-overlap-left','cover-overlap-center','cover-below-left','cover-below-center','cover-hidden'].forEach(function(c) {
+      root.classList.remove(c);
+    });
+    root.classList.add(name);
+  }
 
   var _prevScreen = 's-landing';
 
