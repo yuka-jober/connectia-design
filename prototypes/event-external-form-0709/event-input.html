@@ -1329,24 +1329,50 @@
   .pv-field-add i[data-lucide], .pv-field-add svg.lucide {
     width: 14px; height: 14px;
   }
-  /* 외부 신청폼 연결 (구글폼 등) */
-  .pv-extform-toggle {
+  /* 신청 방식 선택 (자체 폼 / 외부 링크) */
+  .pv-formtype {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .pv-formtype-card {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 100%;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    background: var(--color-surface-sub);
+    justify-content: center;
+    gap: 8px;
+    padding: 12px;
+    background: var(--color-card);
+    border: 1px solid var(--color-border);
     border-radius: var(--r-md);
-    padding: 16px 20px;
     cursor: pointer;
     font-family: var(--font-base);
+    transition: border-color var(--motion-fast) var(--ease-standard),
+                background var(--motion-fast) var(--ease-standard);
   }
-  .pv-extform-toggle-label {
+  .pv-formtype-card.is-selected {
+    border-color: transparent;
+    background: var(--color-primary-subtle);
+  }
+  .pv-formtype-icon i[data-lucide], .pv-formtype-icon svg.lucide {
+    display: block;
+    width: 18px; height: 18px;
+    color: var(--color-text-muted);
+  }
+  .pv-formtype-card.is-selected .pv-formtype-icon i[data-lucide],
+  .pv-formtype-card.is-selected .pv-formtype-icon svg.lucide {
+    color: var(--color-primary);
+  }
+  .pv-formtype-title {
     font-size: var(--fs-body);
     font-weight: var(--fw-semibold);
     color: var(--color-text);
   }
-  .pv-extform-toggle .toggle { flex-shrink: 0; }
+  .pv-formtype-card.is-selected .pv-formtype-title {
+    color: var(--color-primary-dark);
+  }
   .pv-extform-link {
     display: flex;
     flex-direction: column;
@@ -2080,10 +2106,16 @@
     <!-- 신청폼 구성 -->
     <div class="pv-section">
       <div class="pv-section-title">신청폼 구성</div>
-      <label class="pv-extform-toggle">
-        <span class="pv-extform-toggle-label">이미 사용 중인 신청폼이 있나요?</span>
-        <input type="checkbox" class="toggle toggle-sm" id="extform-toggle" onchange="toggleExternalForm()">
-      </label>
+      <div class="pv-formtype" role="radiogroup" aria-label="신청 방식">
+        <button type="button" class="pv-formtype-card is-selected" data-mode="self" role="radio" aria-checked="true" onclick="selectFormType('self')">
+          <span class="pv-formtype-icon"><i data-lucide="clipboard-list"></i></span>
+          <span class="pv-formtype-title">자체 신청폼</span>
+        </button>
+        <button type="button" class="pv-formtype-card" data-mode="external" role="radio" aria-checked="false" onclick="selectFormType('external')">
+          <span class="pv-formtype-icon"><i data-lucide="link"></i></span>
+          <span class="pv-formtype-title">외부 링크</span>
+        </button>
+      </div>
       <div class="pv-extform-link" id="extform-link-block" hidden>
         <input type="url" class="input" id="f-extform-url" placeholder="https://forms.google.com/..." inputmode="url" oninput="onInput()">
         <span class="pv-extform-hint"><i data-lucide="external-link"></i><span>신청 버튼을 누르면 이 링크로 이동해요</span></span>
@@ -2670,17 +2702,24 @@
   }
 
   /* ── 외부 신청폼 연결 ── */
-  function toggleExternalForm() {
-    var on = document.getElementById('extform-toggle').checked;
-    document.getElementById('f-form-card').hidden = on;
-    document.getElementById('extform-link-block').hidden = !on;
-    if (on) setTimeout(function(){ document.getElementById('f-extform-url').focus(); }, 100);
+  function selectFormType(mode) {
+    document.querySelectorAll('.pv-formtype-card').forEach(function(c){
+      var on = c.dataset.mode === mode;
+      c.classList.toggle('is-selected', on);
+      c.setAttribute('aria-checked', on ? 'true' : 'false');
+    });
+    var external = mode === 'external';
+    document.getElementById('f-form-card').hidden = external;
+    document.getElementById('extform-link-block').hidden = !external;
+    if (external) setTimeout(function(){ document.getElementById('f-extform-url').focus(); }, 100);
     onInput();
   }
 
   function externalFormState() {
+    var sel = document.querySelector('.pv-formtype-card.is-selected');
+    var external = !!(sel && sel.dataset.mode === 'external');
     return {
-      enabled: document.getElementById('extform-toggle').checked,
+      enabled: external,
       url: document.getElementById('f-extform-url').value.trim()
     };
   }
