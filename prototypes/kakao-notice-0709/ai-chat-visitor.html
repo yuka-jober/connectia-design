@@ -1,0 +1,394 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>방문자 AI 채팅방 · Connectia</title>
+<link rel="stylesheet" href="../../tokens.css">
+<link rel="stylesheet" href="../../components.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--color-border);
+    font-family: var(--font-base);
+    display: flex;
+    justify-content: center;
+    min-height: 100vh;
+  }
+
+  /* ── Frame ─────────────────────────────── */
+  .frame {
+    position: relative;
+    width: 390px;
+    height: 844px;
+    background: var(--color-bg);
+    overflow: hidden;
+    transform: translateZ(0);   /* containing block for fixed overlays */
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Header ────────────────────────────── */
+  .chat-header {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: var(--color-bg);
+  }
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  /* pill 안에 아이콘 3개 */
+  .header-pill {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--color-surface-sub);
+    border-radius: var(--r-full);
+    padding: 4px;
+  }
+  .pill-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    color: var(--color-text-sub);
+    cursor: pointer;
+    border-radius: var(--r-full);
+    -webkit-tap-highlight-color: transparent;
+    transition: background var(--motion-fast) var(--ease-standard);
+  }
+  .pill-btn:active { background: var(--color-border); }
+  .pill-btn i { width: 20px; height: 20px; }
+  .pill-btn.pill-text {
+    font-size: var(--fs-label);
+    font-weight: var(--fw-bold);
+    color: var(--color-text-sub);
+  }
+  /* 뒤로가기·공유: 분리된 원형 버튼 */
+  .round-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: var(--r-full);
+    background: var(--color-surface-sub);
+    color: var(--color-text-sub);
+    cursor: pointer;
+    flex-shrink: 0;
+    -webkit-tap-highlight-color: transparent;
+    transition: background var(--motion-fast) var(--ease-standard);
+  }
+  .round-btn:active { background: var(--color-border); }
+  .round-btn i { width: 20px; height: 20px; }
+
+  /* ── 대화 스크롤 영역 ──────────────────── */
+  .chat-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 16px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* ── 메시지 행 ─────────────────────────── */
+  .msg-row { display: flex; gap: 8px; }
+  .msg-row.is-ai   { justify-content: flex-start; }
+  .msg-row.is-user { justify-content: flex-end; }
+
+  .msg-body { display: flex; flex-direction: column; gap: 4px; max-width: 78%; }
+
+  .msg-name {
+    padding-left: 4px;
+  }
+
+  /* 말풍선 공통 */
+  .bubble {
+    padding: 12px 16px;
+    border-radius: var(--r-md);
+    font-size: var(--fs-body-lg);
+    line-height: var(--lh-body-lg);
+    letter-spacing: var(--ls-body-lg);
+    word-break: break-word;
+  }
+  /* AI: 흰 배경, 좌상단만 덜 둥글게 (꼬리) */
+  .bubble-ai {
+    background: var(--color-surface);
+    color: var(--color-text);
+    box-shadow: var(--shadow-1);
+    border-top-left-radius: var(--r-xs);
+  }
+  /* User: 보라 배경, 흰 글씨, 우상단만 덜 둥글게 */
+  .bubble-user {
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+    border-top-right-radius: var(--r-xs);
+  }
+
+  .bubble-link {
+    color: var(--color-primary);
+    text-decoration: underline;
+    word-break: break-all;
+  }
+
+  /* ── 날짜 디바이더 ─────────────────────── */
+  .date-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 4px 0;
+  }
+  .date-divider::before,
+  .date-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--color-border);
+  }
+
+  /* ── 답변 추가 안내 — 기존 AI 말풍선(.bubble-ai) 안 인용답장 구조 ── */
+  .answer-quote-body {
+    display: flex;
+    flex-direction: column;
+  }
+  .answer-quote-head { display: flex; align-items: center; gap: 4px; margin-bottom: 8px; }
+  .answer-quote-head .badge i,
+  .answer-quote-head .badge svg { width: 12px; height: 12px; }
+  .answer-quote-orig {
+    padding-left: 12px;
+    border-left: 2px solid var(--color-border);
+    color: var(--color-text-muted);
+    font-size: var(--fs-body);
+    line-height: var(--lh-body);
+  }
+  .answer-quote-reply {
+    margin-top: 8px;
+    color: var(--color-text);
+    word-break: break-word;
+  }
+
+  /* ── 크레딧 안내 배너 ──────────────────── */
+  .credit-banner {
+    align-self: center;
+    max-width: 88%;
+    background: var(--color-surface-sub);
+    border-radius: var(--r-full);
+    padding: 8px 20px;
+    text-align: center;
+  }
+
+  /* ── 하단 고정 영역 (칩 + 입력바) ──────── */
+  .composer {
+    flex-shrink: 0;
+    background: var(--color-surface);
+    box-shadow: var(--shadow-2);
+  }
+
+  /* 추천 질문 칩 (가로 스크롤) */
+  .chip-scroll {
+    display: flex;
+    gap: 8px;
+    padding: 12px 16px 4px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .chip-scroll::-webkit-scrollbar { display: none; }
+
+  .chip {
+    flex-shrink: 0;
+    background: var(--color-primary-light);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-full);
+    padding: 8px 16px;
+    color: var(--color-primary);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-medium);
+    line-height: var(--lh-label);
+    white-space: nowrap;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: background var(--motion-fast) var(--ease-standard);
+  }
+  .chip:active { background: var(--color-primary-subtle); }
+
+  /* 입력 바 */
+  .input-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px calc(16px + env(safe-area-inset-bottom));
+  }
+  .input-bar .input {
+    border-radius: var(--r-full);
+    background: var(--color-surface-sub);
+    border-color: transparent;
+    padding: 12px 20px;
+  }
+  .send-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+    border: none;
+    border-radius: var(--r-full);
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: background var(--motion-fast) var(--ease-standard),
+                transform var(--motion-fast) var(--ease-standard);
+  }
+  .send-btn:active { transform: scale(0.96); background: var(--color-primary-dark); }
+  .send-btn i { width: 22px; height: 22px; }
+</style>
+
+<div class="frame">
+
+  <!-- ── 상단 헤더 ── -->
+  <header class="chat-header">
+    <button class="round-btn" aria-label="뒤로가기">
+      <i data-lucide="arrow-left"></i>
+    </button>
+
+    <div class="header-actions">
+      <div class="header-pill">
+        <button class="pill-btn" aria-label="대화 기록">
+          <i data-lucide="link"></i>
+        </button>
+        <button class="pill-btn pill-text" aria-label="글자 크기 조절">AA</button>
+        <button class="pill-btn" aria-label="번역">
+          <i data-lucide="globe"></i>
+        </button>
+      </div>
+      <button class="round-btn" aria-label="공유">
+        <i data-lucide="share"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- ── 대화 영역 ── -->
+  <div class="chat-scroll">
+
+    <!-- AI 첫 메시지 -->
+    <div class="msg-row is-ai">
+      <span class="avatar avatar-md">
+        <img src="../../assets/profile.png" alt="엘린 피부과 아바타">
+      </span>
+      <div class="msg-body">
+        <span class="msg-name text-caption">엘린 피부과 (유카 테스트)</span>
+        <div class="bubble bubble-ai">
+          네, 오픈 기념 무료 피부관리 이벤트가 진행 중입니다! 자세한 내용은 아래 링크에서 확인하실 수 있습니다 😊<br><br>
+          👉 <a class="bubble-link" href="#">https://connectia.bio/elin_clinic/board/cfb92dbd-a3e3-4fd6-bec9-b372b3a4c7d2</a><br><br>
+          더 궁금한 점 있으시면 편하게 물어보세요!
+        </div>
+      </div>
+    </div>
+
+    <!-- 날짜 디바이더 -->
+    <div class="date-divider">
+      <span class="text-caption">2026년 7월 9일 목요일</span>
+    </div>
+
+    <!-- 방문자 메시지 -->
+    <div class="msg-row is-user">
+      <div class="msg-body">
+        <div class="bubble bubble-user">어떤 업무를 담당하시나요?</div>
+      </div>
+    </div>
+
+    <!-- AI 두 번째 메시지 -->
+    <div class="msg-row is-ai">
+      <span class="avatar avatar-md">
+        <img src="../../assets/profile.png" alt="엘린 피부과 아바타">
+      </span>
+      <div class="msg-body">
+        <span class="msg-name text-caption">엘린 피부과 (유카 테스트)</span>
+        <div class="bubble bubble-ai">
+          저는 엘린 피부과의 AI 비서로, 방문자분들의 문의를 응대하고 있습니다! 현재 진행 중인 이벤트나 시술 관련 문의, 상담 예약 연결 등을 도와드리고 있어요 😊 더 궁금한 점이 있으시면 말씀해 주세요!
+        </div>
+      </div>
+    </div>
+
+    <!-- 방문자 질문 (AI가 답 못한 질문) -->
+    <div class="msg-row is-user">
+      <div class="msg-body">
+        <div class="bubble bubble-user">주말에도 상담 되나요?</div>
+      </div>
+    </div>
+
+    <!-- AI 답변 불가 -->
+    <div class="msg-row is-ai">
+      <span class="avatar avatar-md">
+        <img src="../../assets/profile.png" alt="엘린 피부과 아바타">
+      </span>
+      <div class="msg-body">
+        <span class="msg-name text-caption">엘린 피부과 (유카 테스트)</span>
+        <div class="bubble bubble-ai">
+          죄송해요, 아직 그 부분은 답변드리기 어려워요. 담당자에게 확인 후 안내드릴게요 🙏
+        </div>
+      </div>
+    </div>
+
+    <!-- 답변 추가 안내 — 기존 AI 말풍선 구조 안에 인용답장 -->
+    <div class="msg-row is-ai">
+      <span class="avatar avatar-md">
+        <img src="../../assets/profile.png" alt="엘린 피부과 아바타">
+      </span>
+      <div class="msg-body">
+        <span class="msg-name text-caption">엘린 피부과 (유카 테스트)</span>
+        <div class="bubble bubble-ai">
+          <div class="answer-quote-body">
+            <div class="answer-quote-head">
+              <span class="badge badge-md badge-weak-primary">
+                <i data-lucide="sparkles"></i>
+                답변 추가됨
+              </span>
+            </div>
+            <div class="answer-quote-orig">주말에도 상담 되나요?</div>
+            <div class="answer-quote-reply">네, 주말에도 상담 가능합니다! 예약 후 방문해 주세요.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 크레딧 안내 배너 -->
+    <div class="credit-banner">
+      <span class="text-caption">메시지당 50 크레딧이 사용됩니다. 현재 잔액: 910 크레딧</span>
+    </div>
+
+  </div>
+
+  <!-- ── 하단 고정: 추천 칩 + 입력바 ── -->
+  <div class="composer">
+    <div class="chip-scroll">
+      <button class="chip">미팅 일정은 어떻게 잡아요?</button>
+      <button class="chip">회사 소개 자료 받을 수 있나요?</button>
+      <button class="chip">현재 진행 중인 이벤트가 있나요?</button>
+    </div>
+
+    <div class="input-bar">
+      <input class="input" type="text" placeholder="메시지를 입력하세요…">
+      <button class="send-btn" aria-label="전송">
+        <i data-lucide="send"></i>
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  lucide.createIcons();
+</script>

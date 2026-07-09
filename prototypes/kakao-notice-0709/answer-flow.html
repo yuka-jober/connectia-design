@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>채팅 인라인 답변 — Connectia</title>
+<link rel="stylesheet" href="../../tokens.css">
+<link rel="stylesheet" href="../../components.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-base);
+  background: #e0e0e0;
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.frame {
+  width: 390px;
+  height: 844px;
+  max-height: 100dvh;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 32px 80px -20px rgba(0,0,0,0.28);
+  background: var(--color-surface);
+  display: flex;
+  flex-direction: column;
+}
+@media (max-width: 439px) { .frame { width: 100vw; height: 100dvh; max-height: none; } }
+@media (min-width: 440px) { .frame { border-radius: 44px; max-height: calc(100dvh - 40px); } }
+
+i[data-lucide] { display: inline-flex; flex-shrink: 0; }
+
+/* Topbar */
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 12px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+  flex-shrink: 0;
+}
+.topbar-back { color: var(--color-text); cursor: pointer; }
+.topbar-text { flex: 1; min-width: 0; }
+.topbar-title {
+  font-size: var(--fs-heading);
+  font-weight: var(--fw-bold);
+  color: var(--color-text);
+  letter-spacing: var(--ls-heading);
+}
+.topbar-meta {
+  font-size: var(--fs-caption);
+  color: var(--color-text-muted);
+  margin-top: 2px;
+}
+
+/* Chat */
+.chat-body {
+  flex: 1;
+  overflow-y: auto;
+  background: var(--color-bg);
+  padding: 16px 16px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  scroll-behavior: smooth;
+}
+.date-divider {
+  align-self: center;
+  font-size: var(--fs-caption);
+  color: var(--color-text-muted);
+  margin: 4px 0;
+}
+
+.msg { display: flex; gap: 10px; max-width: 88%; align-self: flex-start; }
+
+.msg-avatar {
+  width: 36px; height: 36px;
+  border-radius: var(--r-full);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+  background: var(--color-surface-sub);
+  color: var(--color-text-muted);
+}
+.msg-content { display: flex; flex-direction: column; gap: 6px; min-width: 0; padding-top: 2px; }
+.msg-name {
+  font-size: var(--fs-label);
+  color: var(--color-text-muted);
+  font-weight: var(--fw-medium);
+  padding-left: 4px;
+}
+
+.msg-bubble {
+  background: var(--color-surface);
+  border: none;
+  border-radius: var(--r-md);
+  padding: 14px 18px;
+  font-size: var(--fs-body-lg);
+  color: var(--color-text);
+  line-height: var(--lh-body-lg);
+  word-break: break-word;
+  box-shadow: var(--shadow-1);
+}
+
+/* 참여자 (방문자) — 비활성처럼 어둡게 오버레이 */
+.msg-visitor .msg-avatar::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.32);
+  pointer-events: none;
+}
+.msg-visitor .msg-avatar i { position: relative; z-index: 1; }
+
+.msg-time {
+  font-size: var(--fs-caption);
+  color: var(--color-text-muted);
+}
+
+/* Owner-only unanswered CTA */
+.unanswered-cta {
+  display: inline-flex;
+  align-self: flex-start;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background: rgba(201,64,34,0.10);
+  border: none;
+  border-radius: var(--r-full);
+  color: var(--color-destructive);
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-semibold);
+  font-family: var(--font-base);
+  cursor: pointer;
+  transition: background var(--motion-fast) var(--ease-standard);
+}
+.unanswered-cta:hover { background: rgba(201,64,34,0.16); }
+
+/* 답변 추가 안내 — 기존 봇 말풍선(.msg-bubble) 안 인용답장 구조 */
+.answer-quote-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.answer-quote-head { display: flex; align-items: center; gap: 4px; }
+.answer-quote-head .badge i,
+.answer-quote-head .badge svg { width: 12px; height: 12px; }
+/* 원문(인용) 블록 — 왼쪽 세로 인용 바 + 흐린 텍스트 */
+.answer-quote-orig {
+  padding-left: 12px;
+  border-left: 2px solid var(--color-border);
+  color: var(--color-text-muted);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+}
+/* 구분선 */
+.answer-quote-divider {
+  height: 1px;
+  background: var(--color-border);
+  border: none;
+}
+/* 답변 블록 */
+.answer-quote-reply {
+  color: var(--color-text);
+  word-break: break-word;
+}
+
+/* Chat input */
+.chat-input {
+  padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.chat-input-field {
+  flex: 1;
+  padding: 10px 16px;
+  background: var(--color-surface-sub);
+  border-radius: var(--r-full);
+  font-size: var(--fs-body);
+  color: var(--color-text-muted);
+}
+
+/* Bottom Sheet — 프레임 내부 + 채팅 인터랙션 유지 */
+.bottom-sheet-overlay, .bottom-sheet { position: absolute; }
+.bottom-sheet-overlay { background: transparent; pointer-events: none; }
+.bottom-sheet-overlay.is-open { pointer-events: none; background: transparent; }
+.bottom-sheet {
+  max-height: 72%;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 -8px 24px rgba(0,0,0,0.12);
+}
+
+.bs-close-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+}
+.bs-close {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  padding: 4px;
+  display: flex;
+}
+
+.bs-field { margin-bottom: 12px; }
+.bs-field .label { margin-bottom: 6px; }
+
+.bs-file {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--color-surface-sub);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-sm);
+}
+.bs-file-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--r-sm);
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.bs-file-info { flex: 1; min-width: 0; }
+.bs-file-name {
+  font-size: var(--fs-body);
+  color: var(--color-text);
+  font-weight: var(--fw-medium);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bs-file-size {
+  font-size: var(--fs-caption);
+  color: var(--color-text-muted);
+  margin-top: 2px;
+}
+.bs-file-remove {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  padding: 4px;
+  display: flex;
+}
+.bs-attach-single.is-active {
+  background: var(--color-primary-light);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.bs-action-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.bs-attach-single {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--r-sm);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-sub);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background var(--motion-fast) var(--ease-standard);
+}
+.bs-attach-single:hover { background: var(--color-surface-sub); }
+.bs-action-row .btn { flex: 1; }
+
+.bs-notice {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-size: var(--fs-caption);
+  color: var(--color-primary);
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  background: var(--color-primary-light);
+  border-radius: var(--r-sm);
+  line-height: var(--lh-caption);
+}
+
+/* Dialog — 프레임 내부에 위치 */
+.dialog-overlay { position: absolute; z-index: 300; display: none; }
+.dialog-overlay.is-open { display: flex; }
+.dialog { position: relative; }
+.dialog-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  padding: 4px;
+  display: flex;
+}
+</style>
+</head>
+<body>
+<div class="frame">
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <i data-lucide="chevron-left" class="topbar-back" style="width:24px;height:24px"></i>
+    <div class="topbar-text">
+      <div class="topbar-title">자버 AI 페이지</div>
+      <div class="topbar-meta">박지훈 · 방금 활동</div>
+    </div>
+    <i data-lucide="more-vertical" style="width:22px;height:22px;color:var(--color-text-muted);cursor:pointer"></i>
+  </div>
+
+  <!-- Chat -->
+  <div class="chat-body" id="chatBody">
+    <div class="date-divider">오늘</div>
+
+    <div class="msg msg-bot">
+      <div class="msg-avatar"><i data-lucide="user" style="width:20px;height:20px"></i></div>
+      <div class="msg-content">
+        <div class="msg-name">자버 김윤정 매니저</div>
+        <div class="msg-bubble">안녕하세요! 자버에 대해 궁금한 점이 있으면 편하게 물어봐 주세요.</div>
+        <div class="msg-time">오후 3:22</div>
+      </div>
+    </div>
+
+    <div class="msg msg-visitor">
+      <div class="msg-avatar"><i data-lucide="user" style="width:20px;height:20px"></i></div>
+      <div class="msg-content">
+        <div class="msg-name">참여자 A</div>
+        <div class="msg-bubble">영업시간이 어떻게 되나요?</div>
+        <div class="msg-time">오후 3:23</div>
+      </div>
+    </div>
+
+    <div class="msg msg-bot">
+      <div class="msg-avatar"><i data-lucide="user" style="width:20px;height:20px"></i></div>
+      <div class="msg-content">
+        <div class="msg-name">자버 김윤정 매니저</div>
+        <div class="msg-bubble">평일 오전 10시부터 오후 7시까지 운영해요. 주말과 공휴일은 휴무입니다.</div>
+        <div class="msg-time">오후 3:23</div>
+      </div>
+    </div>
+
+    <div class="msg msg-visitor" id="q1">
+      <div class="msg-avatar"><i data-lucide="user" style="width:20px;height:20px"></i></div>
+      <div class="msg-content">
+        <div class="msg-name">참여자 A</div>
+        <div class="msg-bubble">단체 카톡 발송하려면 뭐가 필요해요?</div>
+        <button class="unanswered-cta" data-target="단체 카톡 발송하려면 뭐가 필요해요?" data-anchor="q1">
+          <i data-lucide="alert-circle" style="width:14px;height:14px"></i>
+          답변하기
+        </button>
+        <div class="msg-time">오후 3:24</div>
+      </div>
+    </div>
+
+    <div class="msg msg-bot">
+      <div class="msg-avatar"><i data-lucide="user" style="width:20px;height:20px"></i></div>
+      <div class="msg-content">
+        <div class="msg-name">자버 김윤정 매니저</div>
+        <div class="msg-bubble">죄송해요, 아직 그 부분은 답변드리기 어려워요. 곧 안내드릴게요.</div>
+        <div class="msg-time">오후 3:24</div>
+      </div>
+    </div>
+
+    <div class="msg msg-visitor" id="q2">
+      <div class="msg-avatar"><i data-lucide="user" style="width:20px;height:20px"></i></div>
+      <div class="msg-content">
+        <div class="msg-name">참여자 A</div>
+        <div class="msg-bubble">카카오 비즈니스 채널 연결도 필수인가요?</div>
+        <button class="unanswered-cta" data-target="카카오 비즈니스 채널 연결도 필수인가요?" data-anchor="q2">
+          <i data-lucide="alert-circle" style="width:14px;height:14px"></i>
+          답변하기
+        </button>
+        <div class="msg-time">오후 3:25</div>
+      </div>
+    </div>
+
+    <div class="msg msg-bot">
+      <div class="msg-avatar"><i data-lucide="user" style="width:20px;height:20px"></i></div>
+      <div class="msg-content">
+        <div class="msg-name">자버 김윤정 매니저</div>
+        <div class="msg-bubble">죄송해요, 아직 그 부분은 답변드리기 어려워요.</div>
+        <div class="msg-time">오후 3:25</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chat input -->
+  <div class="chat-input">
+    <div class="chat-input-field">메시지 입력...</div>
+    <i data-lucide="send" style="width:22px;height:22px;color:var(--color-primary)"></i>
+  </div>
+
+  <!-- Bottom sheet -->
+  <div class="bottom-sheet-overlay" id="bsOverlay"></div>
+  <div class="bottom-sheet" id="bsSheet">
+    <div class="bs-close-row">
+      <button class="bs-close" id="bsClose"><i data-lucide="x" style="width:20px;height:20px"></i></button>
+    </div>
+
+    <div class="bs-field">
+      <label class="label">질문</label>
+      <input type="text" class="input" id="bsTargetQ" value="질문을 선택하세요">
+    </div>
+
+    <div class="bs-field" id="bsAnswerField">
+      <label class="label">답변</label>
+      <textarea class="textarea" placeholder="답변을 입력해 주세요"></textarea>
+    </div>
+
+    <div class="bs-field" id="bsFileField" style="display:none">
+      <label class="label">첨부 파일</label>
+      <div class="bs-file">
+        <div class="bs-file-icon"><i data-lucide="file-text" style="width:18px;height:18px"></i></div>
+        <div class="bs-file-info">
+          <div class="bs-file-name">단체카톡_발송_가이드.pdf</div>
+          <div class="bs-file-size">428 KB</div>
+        </div>
+        <button class="bs-file-remove" id="bsFileRemove"><i data-lucide="x" style="width:18px;height:18px"></i></button>
+      </div>
+    </div>
+
+    <div class="bs-notice">
+      <i data-lucide="sparkles" style="width:14px;height:14px"></i>
+      답변하면 앞으로는 같은 질문에 AI가 자동으로 답해요
+    </div>
+
+    <div class="bs-action-row">
+      <button class="bs-attach-single" id="bsAttach" title="자료 첨부"><i data-lucide="paperclip" style="width:20px;height:20px"></i></button>
+      <button class="btn btn-md btn-fill-primary" id="bsSend">답변 추가하기</button>
+    </div>
+  </div>
+
+  <!-- Confirm dialog -->
+  <div class="dialog-overlay" id="dlgOverlay">
+    <div class="dialog">
+      <button class="dialog-close" id="dlgClose"><i data-lucide="x" style="width:18px;height:18px"></i></button>
+      <div class="dialog-title">AI가 답변을 학습했어요</div>
+      <div class="dialog-desc">이 대화에도 보낼까요?</div>
+      <div class="dialog-actions">
+        <button class="btn btn-md btn-weak-dark" id="dlgSkip">보내지 않기</button>
+        <button class="btn btn-md btn-fill-primary" id="dlgSend">보내기</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const bsOverlay = document.getElementById('bsOverlay');
+const bsSheet = document.getElementById('bsSheet');
+const bsTargetQ = document.getElementById('bsTargetQ');
+const chatBody = document.getElementById('chatBody');
+
+function openSheet(qText, anchorId) {
+  bsTargetQ.value = qText;
+  /* 시트 열 때 첨부 리셋 (답변 필드는 항상 표시) */
+  document.getElementById('bsFileField').style.display = 'none';
+  document.getElementById('bsAttach').classList.remove('is-active');
+  bsOverlay.classList.add('is-open');
+  bsSheet.classList.add('is-open');
+
+  /* 시트가 다 올라온 뒤에 측정 */
+  setTimeout(() => {
+    const sheetRect = bsSheet.getBoundingClientRect();
+    const chatRect = chatBody.getBoundingClientRect();
+    /* 시트가 채팅 영역을 가리는 만큼 padding-bottom으로 보정 → 마지막 메시지까지 시트 위로 스크롤 가능 */
+    const hiddenBySheet = Math.max(0, chatRect.bottom - sheetRect.top);
+    chatBody.style.paddingBottom = (hiddenBySheet + 16) + 'px';
+
+    /* 클릭한 질문을 시트 바로 위로 스크롤 */
+    const anchorEl = document.getElementById(anchorId);
+    if (!anchorEl) return;
+    const anchorRect = anchorEl.getBoundingClientRect();
+    const delta = anchorRect.bottom - (sheetRect.top - 12);
+    chatBody.scrollTo({ top: chatBody.scrollTop + delta, behavior: 'smooth' });
+  }, 300);
+}
+
+function closeSheet() {
+  bsOverlay.classList.remove('is-open');
+  bsSheet.classList.remove('is-open');
+  chatBody.style.paddingBottom = '';
+}
+
+document.querySelectorAll('.unanswered-cta').forEach(btn => {
+  btn.addEventListener('click', e => {
+    e.stopPropagation();
+    openSheet(btn.dataset.target, btn.dataset.anchor);
+  });
+});
+
+const dlgOverlay = document.getElementById('dlgOverlay');
+function openDialog() { dlgOverlay.classList.add('is-open'); }
+function closeDialog() {
+  dlgOverlay.classList.remove('is-open');
+  closeSheet();
+}
+
+/* 답변 추가 안내 말풍선(인용답장 구조) 삽입 */
+function insertAnswerNotice() {
+  const qText = bsTargetQ.value;
+  const answerInput = document.querySelector('#bsAnswerField .textarea');
+  const aText = (answerInput && answerInput.value.trim())
+    ? answerInput.value.trim()
+    : '무료 피부시술 이벤트를 진행하고 있습니다!';
+
+  const notice = document.createElement('div');
+  notice.className = 'msg msg-bot';
+  notice.innerHTML = `
+    <div class="msg-avatar"><i data-lucide="user" style="width:20px;height:20px"></i></div>
+    <div class="msg-content">
+      <div class="msg-name">자버 김윤정 매니저</div>
+      <div class="msg-bubble">
+        <div class="answer-quote-body">
+          <div class="answer-quote-head">
+            <span class="badge badge-md badge-weak-primary">
+              <i data-lucide="sparkles"></i>
+              답변 추가됨
+            </span>
+          </div>
+          <div class="answer-quote-orig"></div>
+          <hr class="answer-quote-divider">
+          <div class="answer-quote-reply"></div>
+        </div>
+      </div>
+    </div>
+  `;
+  notice.querySelector('.answer-quote-orig').textContent = qText;
+  notice.querySelector('.answer-quote-reply').textContent = aText;
+  chatBody.appendChild(notice);
+  lucide.createIcons();
+
+  closeDialog();
+  requestAnimationFrame(() => {
+    notice.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  });
+}
+
+document.getElementById('bsSend').addEventListener('click', openDialog);
+document.getElementById('bsClose').addEventListener('click', closeSheet);
+document.getElementById('dlgClose').addEventListener('click', closeDialog);
+document.getElementById('dlgSkip').addEventListener('click', closeDialog);
+document.getElementById('dlgSend').addEventListener('click', insertAnswerNotice);
+
+const bsAttach = document.getElementById('bsAttach');
+const bsAnswerField = document.getElementById('bsAnswerField');
+const bsFileField = document.getElementById('bsFileField');
+const bsFileRemove = document.getElementById('bsFileRemove');
+
+bsAttach.addEventListener('click', () => {
+  bsFileField.style.display = '';
+  bsAttach.classList.add('is-active');
+});
+bsFileRemove.addEventListener('click', () => {
+  bsFileField.style.display = 'none';
+  bsAttach.classList.remove('is-active');
+});
+
+lucide.createIcons();
+
+/* ?q=q1|q2 진입: 해당 질문으로 시트 자동 오픈 + 쿼리 제거 */
+/* 쿼리 없이 진입(새로고침 등): list로 돌아가 데모 시작점으로 리셋 */
+const qParam = new URLSearchParams(location.search).get('q');
+if (qParam) {
+  const btn = document.querySelector(`.unanswered-cta[data-anchor="${qParam}"]`);
+  if (btn) {
+    setTimeout(() => openSheet(btn.dataset.target, btn.dataset.anchor), 200);
+  }
+  history.replaceState(null, '', location.pathname);
+} else {
+  location.replace('list.html');
+}
+</script>
+</body>
+</html>
