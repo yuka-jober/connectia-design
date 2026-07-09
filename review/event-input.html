@@ -1718,6 +1718,7 @@
   }
   .pv-opt-row.pv-opt-row-toggle { cursor: pointer; }
   .pv-opt-row.pv-opt-row-toggle .toggle { flex-shrink: 0; }
+  .pv-opt-row.is-disabled { opacity: 0.45; pointer-events: none; }
   .pv-opt-row + .pv-opt-row {
     border-top: 1px solid var(--color-border);
   }
@@ -2275,9 +2276,9 @@
           <span class="pv-opt-row-label">댓글 허용</span>
           <input type="checkbox" class="toggle toggle-sm" id="opt-comments">
         </label>
-        <label class="pv-opt-row pv-opt-row-toggle">
+        <label class="pv-opt-row pv-opt-row-toggle" id="opt-applicants-row">
           <i data-lucide="users"></i>
-          <span class="pv-opt-row-label">신청자 수 노출</span>
+          <span class="pv-opt-row-label">신청자 수 노출 <span class="pv-opt-row-sub" id="opt-applicants-note" hidden>외부 폼은 집계할 수 없어요</span></span>
           <input type="checkbox" class="toggle toggle-sm" id="opt-show-applicants">
         </label>
         <label class="pv-opt-row pv-opt-row-toggle">
@@ -2711,8 +2712,19 @@
     var external = mode === 'external';
     document.getElementById('f-form-card').hidden = external;
     document.getElementById('extform-link-block').hidden = !external;
+    syncApplicantsOption(external);
     if (external) setTimeout(function(){ document.getElementById('f-extform-url').focus(); }, 100);
     onInput();
+  }
+
+  function syncApplicantsOption(external) {
+    var row = document.getElementById('opt-applicants-row');
+    var cb = document.getElementById('opt-show-applicants');
+    row.classList.toggle('is-disabled', external);
+    row.setAttribute('aria-disabled', external ? 'true' : 'false');
+    cb.disabled = external;
+    if (external) cb.checked = false;
+    document.getElementById('opt-applicants-note').hidden = !external;
   }
 
   function externalFormState() {
