@@ -19,7 +19,7 @@ assets/       공용 에셋 — 프로토타입에서 재사용하는 이미지�
 
 | 화면 | 확정본 | 원본 (작업 이력) |
 |---|---|---|
-| 게시판(보드) | `screens/board.html` | prototypes/gallery-view-change-0708/board-banner-v2.html |
+| 게시판(보드) | `screens/board.html` | prototypes/board-gallery-tab-0708/board.html |
 | 프로필 편집 | `screens/profile-edit.html` | prototypes/gallery-view-change-0708/profile-edit-v4.html |
 | 이벤트 입력폼 | `screens/event-input.html` | handoff/event-input-v5/index.html |
 | 이벤트 랜딩 | `screens/event-landing.html` | handoff/event-input-v5/event-landing-v2.html |

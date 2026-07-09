@@ -123,7 +123,7 @@
   .lp-header { width: 100%; height: 177px; overflow: hidden; position: relative; flex-shrink: 0; }
   .lp-header img { width: 100%; height: 211px; object-fit: cover; position: absolute; top: 0; left: 0; }
   .lp-avatar-wrap { position: absolute; top: 133px; left: 20px; z-index: 2; transition: all var(--motion-standard) var(--ease-standard); }
-  .lp-body { flex: 1; overflow-y: auto; background: var(--color-bg); }
+  .lp-body { flex: 1; overflow-y: auto; overflow-x: hidden; background: var(--color-bg); }
   .lp-inner { padding: 68px 20px 32px; display: flex; flex-direction: column; gap: 20px; transition: padding var(--motion-standard) var(--ease-standard); }
   .lp-title { font-weight: var(--fw-semibold); font-size: var(--fs-title); color: var(--color-text); letter-spacing: var(--ls-title); }
   .lp-name-block { display: flex; flex-direction: column; gap: 4px; }
@@ -141,6 +141,9 @@
 
   .lp-divider { height: 1px; width: 100%; background: var(--color-border); border: none; }
   .lp-section-title { font-weight: var(--fw-semibold); font-size: var(--fs-heading); color: var(--color-text-sub); letter-spacing: var(--ls-heading); }
+
+  /* Gallery 섹션 (소제목 + 격자를 묶음) */
+  .lp-gallery-section { display: flex; flex-direction: column; gap: 12px; width: 100%; }
 
   /* Gallery grid (Instagram-style 3-column, 4:5) */
   .lp-gallery-grid {
@@ -163,6 +166,10 @@
     color: var(--color-on-primary);
     filter: drop-shadow(0 1px 2px rgba(0,0,0,0.4));
   }
+  /* Gallery 가로 캐러셀 레이아웃 (프로필 편집의 갤러리 "가로" 옵션) */
+  .lp-gallery-carousel { display: flex; gap: 8px; overflow-x: auto; width: 100%; padding-bottom: 4px; scrollbar-width: none; }
+  .lp-gallery-carousel::-webkit-scrollbar { display: none; }
+  .lp-gallery-carousel .lp-gallery-cell { flex: 0 0 auto; width: 260px; aspect-ratio: 16 / 9; border-radius: var(--r-md); }
   .lp-notice-header { display: flex; align-items: center; justify-content: space-between; width: 100%; }
 
   .lp-post-list { background: var(--color-surface); border-radius: var(--r-md); border: 1px solid var(--color-border); overflow: hidden; width: 100%; }
@@ -2306,9 +2313,106 @@
       <!-- 랜딩 탭 -->
       <div class="lp-tabs" id="lp-tabs">
         <button class="lp-tab active" data-ltab="home" onclick="setLandingTab('home')">홈</button>
+        <button class="lp-tab" data-ltab="gallery" onclick="setLandingTab('gallery')">갤러리</button>
         <button class="lp-tab" data-ltab="event" onclick="setLandingTab('event')">이벤트·행사</button>
         <button class="lp-tab" data-ltab="board" onclick="setLandingTab('board')">게시판</button>
         <button class="lp-tab" data-ltab="review" onclick="setLandingTab('review')">리뷰</button>
+      </div>
+
+      <!-- 갤러리 탭 콘텐츠 (모든 갤러리 섹션을 세로 통합) -->
+      <!-- 섹션 이름(.lp-section-title)이 비어 있으면 소제목을 생략하고 격자만 노출한다. -->
+      <div class="lp-tab-content" id="lp-tab-gallery" data-ltab="gallery" hidden>
+
+        <!-- 갤러리 섹션: 시술 전후 -->
+        <div class="lp-gallery-section">
+          <div class="lp-notice-header">
+            <span class="lp-section-title">시술 전후</span>
+            <button type="button" class="btn btn-sm btn-weak-primary btn-pill" style="display:inline-flex;align-items:center;gap:4px;">
+              <i data-lucide="plus" style="width:13px;height:13px"></i>
+              추가
+            </button>
+          </div>
+          <div class="lp-gallery-grid">
+            <button type="button" class="lp-gallery-cell">
+              <img src="https://picsum.photos/seed/gallery-1/400/500" alt="">
+            </button>
+            <button type="button" class="lp-gallery-cell">
+              <img src="https://picsum.photos/seed/gallery-2/400/500" alt="">
+              <i data-lucide="play" class="lp-gallery-cell-icon" style="width:16px;height:16px;fill:currentColor"></i>
+            </button>
+            <button type="button" class="lp-gallery-cell">
+              <img src="https://picsum.photos/seed/gallery-3/400/500" alt="">
+            </button>
+            <button type="button" class="lp-gallery-cell">
+              <img src="https://picsum.photos/seed/gallery-4/400/500" alt="">
+            </button>
+            <button type="button" class="lp-gallery-cell">
+              <img src="https://picsum.photos/seed/gallery-5/400/500" alt="">
+            </button>
+            <button type="button" class="lp-gallery-cell">
+              <img src="https://picsum.photos/seed/gallery-6/400/500" alt="">
+              <i data-lucide="play" class="lp-gallery-cell-icon" style="width:16px;height:16px;fill:currentColor"></i>
+            </button>
+          </div>
+        </div>
+
+        <hr class="lp-divider">
+
+        <!-- 갤러리 섹션: 병원 전경 (가로 캐러셀 레이아웃) -->
+        <div class="lp-gallery-section">
+          <div class="lp-notice-header">
+            <span class="lp-section-title">병원 전경</span>
+            <button type="button" class="btn btn-sm btn-weak-primary btn-pill" style="display:inline-flex;align-items:center;gap:4px;">
+              <i data-lucide="plus" style="width:13px;height:13px"></i>
+              추가
+            </button>
+          </div>
+          <div class="lp-gallery-carousel">
+            <button type="button" class="lp-gallery-cell">
+              <img src="https://picsum.photos/seed/gallery-7/640/360" alt="">
+            </button>
+            <button type="button" class="lp-gallery-cell">
+              <img src="https://picsum.photos/seed/gallery-8/640/360" alt="">
+            </button>
+            <button type="button" class="lp-gallery-cell">
+              <img src="https://picsum.photos/seed/gallery-9/640/360" alt="">
+            </button>
+            <button type="button" class="lp-gallery-cell">
+              <img src="https://picsum.photos/seed/gallery-10/640/360" alt="">
+            </button>
+          </div>
+        </div>
+
+        <hr class="lp-divider">
+
+        <!-- 갤러리 섹션: 장비 소개 -->
+        <div class="lp-gallery-section">
+          <div class="lp-notice-header">
+            <span class="lp-section-title">장비 소개</span>
+            <button type="button" class="btn btn-sm btn-weak-primary btn-pill" style="display:inline-flex;align-items:center;gap:4px;">
+              <i data-lucide="plus" style="width:13px;height:13px"></i>
+              추가
+            </button>
+          </div>
+          <div class="lp-gallery-grid">
+            <button type="button" class="lp-gallery-cell">
+              <img src="https://picsum.photos/seed/gallery-11/400/500" alt="">
+            </button>
+            <button type="button" class="lp-gallery-cell">
+              <img src="https://picsum.photos/seed/gallery-12/400/500" alt="">
+            </button>
+            <button type="button" class="lp-gallery-cell">
+              <img src="https://picsum.photos/seed/gallery-13/400/500" alt="">
+            </button>
+            <button type="button" class="lp-gallery-cell">
+              <img src="https://picsum.photos/seed/gallery-14/400/500" alt="">
+              <i data-lucide="play" class="lp-gallery-cell-icon" style="width:16px;height:16px;fill:currentColor"></i>
+            </button>
+            <button type="button" class="lp-gallery-cell">
+              <img src="https://picsum.photos/seed/gallery-15/400/500" alt="">
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- 게시판 탭 콘텐츠 (풀 리스트) -->
@@ -2479,30 +2583,98 @@
 
       <!-- 홈 탭 콘텐츠 -->
       <div class="lp-tab-content" id="lp-tab-home" data-ltab="home">
-      <!-- Gallery -->
-      <div style="display:flex;flex-direction:column;gap:12px;width:100%;">
-        <div class="lp-section-title">Gallery</div>
-        <div class="lp-gallery-grid">
-          <button type="button" class="lp-gallery-cell">
-            <img src="https://picsum.photos/seed/gallery-1/400/500" alt="">
-          </button>
-          <button type="button" class="lp-gallery-cell">
-            <img src="https://picsum.photos/seed/gallery-2/400/500" alt="">
-            <i data-lucide="play" class="lp-gallery-cell-icon" style="width:16px;height:16px;fill:currentColor"></i>
-          </button>
-          <button type="button" class="lp-gallery-cell">
-            <img src="https://picsum.photos/seed/gallery-3/400/500" alt="">
-          </button>
-          <button type="button" class="lp-gallery-cell">
-            <img src="https://picsum.photos/seed/gallery-4/400/500" alt="">
-          </button>
-          <button type="button" class="lp-gallery-cell">
-            <img src="https://picsum.photos/seed/gallery-5/400/500" alt="">
-          </button>
-          <button type="button" class="lp-gallery-cell">
-            <img src="https://picsum.photos/seed/gallery-6/400/500" alt="">
-            <i data-lucide="play" class="lp-gallery-cell-icon" style="width:16px;height:16px;fill:currentColor"></i>
-          </button>
+      <!-- Gallery (갤러리 탭과 동일한 섹션 전체를 홈에도 노출) -->
+      <div style="display:flex;flex-direction:column;gap:20px;width:100%;">
+
+        <!-- 갤러리 섹션: 시술 전후 (격자) -->
+        <div class="lp-gallery-section">
+          <div class="lp-notice-header">
+            <span class="lp-section-title">시술 전후</span>
+            <button type="button" class="btn btn-sm btn-weak-primary btn-pill" style="display:inline-flex;align-items:center;gap:4px;">
+              <i data-lucide="plus" style="width:13px;height:13px"></i>
+              추가
+            </button>
+          </div>
+          <div class="lp-gallery-grid">
+            <button type="button" class="lp-gallery-cell">
+              <img src="https://picsum.photos/seed/gallery-1/400/500" alt="">
+            </button>
+            <button type="button" class="lp-gallery-cell">
+              <img src="https://picsum.photos/seed/gallery-2/400/500" alt="">
+              <i data-lucide="play" class="lp-gallery-cell-icon" style="width:16px;height:16px;fill:currentColor"></i>
+            </button>
+            <button type="button" class="lp-gallery-cell">
+              <img src="https://picsum.photos/seed/gallery-3/400/500" alt="">
+            </button>
+            <button type="button" class="lp-gallery-cell">
+              <img src="https://picsum.photos/seed/gallery-4/400/500" alt="">
+            </button>
+            <button type="button" class="lp-gallery-cell">
+              <img src="https://picsum.photos/seed/gallery-5/400/500" alt="">
+            </button>
+            <button type="button" class="lp-gallery-cell">
+              <img src="https://picsum.photos/seed/gallery-6/400/500" alt="">
+              <i data-lucide="play" class="lp-gallery-cell-icon" style="width:16px;height:16px;fill:currentColor"></i>
+            </button>
+          </div>
+        </div>
+
+        <hr class="lp-divider">
+
+        <!-- 갤러리 섹션: 병원 전경 (가로 캐러셀 레이아웃) -->
+        <div class="lp-gallery-section">
+          <div class="lp-notice-header">
+            <span class="lp-section-title">병원 전경</span>
+            <button type="button" class="btn btn-sm btn-weak-primary btn-pill" style="display:inline-flex;align-items:center;gap:4px;">
+              <i data-lucide="plus" style="width:13px;height:13px"></i>
+              추가
+            </button>
+          </div>
+          <div class="lp-gallery-carousel">
+            <button type="button" class="lp-gallery-cell">
+              <img src="https://picsum.photos/seed/gallery-7/640/360" alt="">
+            </button>
+            <button type="button" class="lp-gallery-cell">
+              <img src="https://picsum.photos/seed/gallery-8/640/360" alt="">
+            </button>
+            <button type="button" class="lp-gallery-cell">
+              <img src="https://picsum.photos/seed/gallery-9/640/360" alt="">
+            </button>
+            <button type="button" class="lp-gallery-cell">
+              <img src="https://picsum.photos/seed/gallery-10/640/360" alt="">
+            </button>
+          </div>
+        </div>
+
+        <hr class="lp-divider">
+
+        <!-- 갤러리 섹션: 장비 소개 (격자) -->
+        <div class="lp-gallery-section">
+          <div class="lp-notice-header">
+            <span class="lp-section-title">장비 소개</span>
+            <button type="button" class="btn btn-sm btn-weak-primary btn-pill" style="display:inline-flex;align-items:center;gap:4px;">
+              <i data-lucide="plus" style="width:13px;height:13px"></i>
+              추가
+            </button>
+          </div>
+          <div class="lp-gallery-grid">
+            <button type="button" class="lp-gallery-cell">
+              <img src="https://picsum.photos/seed/gallery-11/400/500" alt="">
+            </button>
+            <button type="button" class="lp-gallery-cell">
+              <img src="https://picsum.photos/seed/gallery-12/400/500" alt="">
+            </button>
+            <button type="button" class="lp-gallery-cell">
+              <img src="https://picsum.photos/seed/gallery-13/400/500" alt="">
+            </button>
+            <button type="button" class="lp-gallery-cell">
+              <img src="https://picsum.photos/seed/gallery-14/400/500" alt="">
+              <i data-lucide="play" class="lp-gallery-cell-icon" style="width:16px;height:16px;fill:currentColor"></i>
+            </button>
+            <button type="button" class="lp-gallery-cell">
+              <img src="https://picsum.photos/seed/gallery-15/400/500" alt="">
+            </button>
+          </div>
         </div>
       </div>
 
