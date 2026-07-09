@@ -107,6 +107,8 @@
   }
   .sticky-chat:hover { background: var(--color-surface-sub); }
   .sticky-chat i[data-lucide], .sticky-chat svg { width: 22px; height: 22px; }
+  /* 외부 신청폼 모드 — CTA에 외부 이동 아이콘 병기 */
+  .sticky-actions .btn i[data-lucide], .sticky-actions .btn svg.lucide { width: 18px; height: 18px; }
 
   /* ============================================
      LANDING SCREEN
@@ -949,7 +951,18 @@
   }
 
   // ── 입력폼에서 발행한 이벤트 데이터 적용 ──
-  function goEdit() { window.location.href = 'index.html'; }
+  function goEdit() { window.location.href = 'event-input.html'; }
+
+  // ── 외부 신청폼 모드: sticky CTA를 외부 링크 이동으로 전환 ──
+  function applyExternalCta(url, ctaText) {
+    var meta = document.querySelector('#screen-landing .sticky-meta');
+    if (meta) meta.style.display = 'none'; // 외부 폼은 신청자 집계 불가
+    var ctaBtn = document.querySelector('#screen-landing .sticky-actions .btn-fill-primary');
+    if (!ctaBtn) return;
+    var text = ctaText || ctaBtn.textContent.trim();
+    ctaBtn.innerHTML = '<span>' + escapeHTML(text) + '</span><i data-lucide="external-link"></i>';
+    ctaBtn.onclick = function(){ window.open(url, '_blank', 'noopener'); };
+  }
 
   function escapeHTML(s) {
     return String(s).replace(/[&<>"']/g, function(c) {
@@ -1085,6 +1098,12 @@
       if (ctaBtn) ctaBtn.textContent = d.cta;
     }
 
+    // 외부 신청폼 모드 (구글폼 등)
+    var ext = d.externalForm || {};
+    if (ext.enabled && ext.url) {
+      applyExternalCta(ext.url, d.cta || '신청하기');
+    }
+
     // 리뷰 노출 + 큐레이션
     var reviewList = Array.isArray(d.reviewList) ? d.reviewList : null;
     var showReviews = d.reviews === true && (reviewList === null || reviewList.length > 0);
@@ -1181,16 +1200,24 @@
 
   (function init(){
     try {
-      if (!location.search.includes('from=publish')) return;
-      var raw = sessionStorage.getItem('connectia.event');
-      if (!raw) {
-        window.location.replace('index.html');
+      var params = new URLSearchParams(location.search);
+      if (params.get('from') === 'publish') {
+        var raw = sessionStorage.getItem('connectia.event');
+        if (!raw) {
+          window.location.replace('event-input.html');
+          return;
+        }
+        var data = JSON.parse(raw);
+        sessionStorage.removeItem('connectia.event');
+        applyEventData(data);
+        lucide.createIcons();
         return;
       }
-      var data = JSON.parse(raw);
-      sessionStorage.removeItem('connectia.event');
-      applyEventData(data);
-      lucide.createIcons();
+      // 데모: 랜딩 단독 열람 시 ?external=1[&url=...] 로 외부 신청폼 모드 확인
+      if (params.get('external') === '1') {
+        applyExternalCta(params.get('url') || 'https://forms.google.com/demo', null);
+        lucide.createIcons();
+      }
     } catch(e) {}
   })();
 </script>

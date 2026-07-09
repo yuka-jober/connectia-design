@@ -1329,6 +1329,66 @@
   .pv-field-add i[data-lucide], .pv-field-add svg.lucide {
     width: 14px; height: 14px;
   }
+  /* 신청 방식 선택 (자체 폼 / 외부 링크) */
+  .pv-formtype {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .pv-formtype-card {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px;
+    background: var(--color-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-md);
+    cursor: pointer;
+    font-family: var(--font-base);
+    transition: border-color var(--motion-fast) var(--ease-standard),
+                background var(--motion-fast) var(--ease-standard);
+  }
+  .pv-formtype-card.is-selected {
+    border-color: transparent;
+    background: var(--color-primary-subtle);
+  }
+  .pv-formtype-icon i[data-lucide], .pv-formtype-icon svg.lucide {
+    display: block;
+    width: 18px; height: 18px;
+    color: var(--color-text-muted);
+  }
+  .pv-formtype-card.is-selected .pv-formtype-icon i[data-lucide],
+  .pv-formtype-card.is-selected .pv-formtype-icon svg.lucide {
+    color: var(--color-primary);
+  }
+  .pv-formtype-title {
+    font-size: var(--fs-body);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text);
+  }
+  .pv-formtype-card.is-selected .pv-formtype-title {
+    color: var(--color-primary-dark);
+  }
+  .pv-extform-link {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .pv-extform-link[hidden],
+  .pv-form-card[hidden] { display: none !important; }
+  .pv-extform-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+  }
+  .pv-extform-hint i[data-lucide], .pv-extform-hint svg { width: 14px; height: 14px; }
+  #pv-prev-cta i[data-lucide], #pv-prev-cta svg.lucide { width: 18px; height: 18px; }
   .pv-form-notice {
     display: flex;
     align-items: center;
@@ -1658,6 +1718,7 @@
   }
   .pv-opt-row.pv-opt-row-toggle { cursor: pointer; }
   .pv-opt-row.pv-opt-row-toggle .toggle { flex-shrink: 0; }
+  .pv-opt-row.is-disabled { opacity: 0.45; pointer-events: none; }
   .pv-opt-row + .pv-opt-row {
     border-top: 1px solid var(--color-border);
   }
@@ -2046,6 +2107,20 @@
     <!-- 신청폼 구성 -->
     <div class="pv-section">
       <div class="pv-section-title">신청폼 구성</div>
+      <div class="pv-formtype" role="radiogroup" aria-label="신청 방식">
+        <button type="button" class="pv-formtype-card is-selected" data-mode="self" role="radio" aria-checked="true" onclick="selectFormType('self')">
+          <span class="pv-formtype-icon"><i data-lucide="clipboard-list"></i></span>
+          <span class="pv-formtype-title">자체 신청폼</span>
+        </button>
+        <button type="button" class="pv-formtype-card" data-mode="external" role="radio" aria-checked="false" onclick="selectFormType('external')">
+          <span class="pv-formtype-icon"><i data-lucide="link"></i></span>
+          <span class="pv-formtype-title">외부 링크</span>
+        </button>
+      </div>
+      <div class="pv-extform-link" id="extform-link-block" hidden>
+        <input type="url" class="input" id="f-extform-url" placeholder="https://forms.google.com/..." inputmode="url" oninput="onInput()">
+        <span class="pv-extform-hint"><i data-lucide="external-link"></i><span>신청 버튼을 누르면 이 링크로 이동해요</span></span>
+      </div>
       <div class="pv-form-card" id="f-form-card">
         <div class="pv-field-row">
           <input type="checkbox" class="checkbox" id="field-name-enabled" checked onchange="toggleFieldEnabled('name')">
@@ -2201,9 +2276,9 @@
           <span class="pv-opt-row-label">댓글 허용</span>
           <input type="checkbox" class="toggle toggle-sm" id="opt-comments">
         </label>
-        <label class="pv-opt-row pv-opt-row-toggle">
+        <label class="pv-opt-row pv-opt-row-toggle" id="opt-applicants-row">
           <i data-lucide="users"></i>
-          <span class="pv-opt-row-label">신청자 수 노출</span>
+          <span class="pv-opt-row-label">신청자 수 노출 <span class="pv-opt-row-sub" id="opt-applicants-note" hidden>외부 폼은 집계할 수 없어요</span></span>
           <input type="checkbox" class="toggle toggle-sm" id="opt-show-applicants">
         </label>
         <label class="pv-opt-row pv-opt-row-toggle">
@@ -2625,6 +2700,40 @@
     var btns = seg.querySelectorAll('.pv-req-seg-btn');
     btns[0].classList.toggle('is-selected', required);
     btns[1].classList.toggle('is-selected', !required);
+  }
+
+  /* ── 외부 신청폼 연결 ── */
+  function selectFormType(mode) {
+    document.querySelectorAll('.pv-formtype-card').forEach(function(c){
+      var on = c.dataset.mode === mode;
+      c.classList.toggle('is-selected', on);
+      c.setAttribute('aria-checked', on ? 'true' : 'false');
+    });
+    var external = mode === 'external';
+    document.getElementById('f-form-card').hidden = external;
+    document.getElementById('extform-link-block').hidden = !external;
+    syncApplicantsOption(external);
+    if (external) setTimeout(function(){ document.getElementById('f-extform-url').focus(); }, 100);
+    onInput();
+  }
+
+  function syncApplicantsOption(external) {
+    var row = document.getElementById('opt-applicants-row');
+    var cb = document.getElementById('opt-show-applicants');
+    row.classList.toggle('is-disabled', external);
+    row.setAttribute('aria-disabled', external ? 'true' : 'false');
+    cb.disabled = external;
+    if (external) cb.checked = false;
+    document.getElementById('opt-applicants-note').hidden = !external;
+  }
+
+  function externalFormState() {
+    var sel = document.querySelector('.pv-formtype-card.is-selected');
+    var external = !!(sel && sel.dataset.mode === 'external');
+    return {
+      enabled: external,
+      url: document.getElementById('f-extform-url').value.trim()
+    };
   }
 
   function toggleFieldEnabled(field) {
@@ -3218,12 +3327,13 @@
         email: { enabled: document.getElementById('field-email-enabled').checked, required: reqSelected('email') }
       },
       questions: questions,
+      externalForm: externalFormState(),
       reviews:  document.getElementById('opt-reviews').checked,
       reviewList: selectedReviews(),
       comments: document.getElementById('opt-comments').checked
     };
     try { sessionStorage.setItem('connectia.event', JSON.stringify(data)); } catch(e) {}
-    window.location.href = 'event-landing-v2.html?from=publish';
+    window.location.href = 'event-landing.html?from=publish';
   }
 
   /* ── Preview ── */
@@ -3337,7 +3447,15 @@
     }
 
     var ctaText = document.getElementById('disp-cta').textContent.trim() || '신청하기';
-    document.getElementById('pv-prev-cta').textContent = ctaText;
+    var ctaBtn = document.getElementById('pv-prev-cta');
+    var ext = externalFormState();
+    if (ext.enabled) {
+      ctaBtn.innerHTML = '<span>' + escapeText(ctaText) + '</span><i data-lucide="external-link"></i>';
+      ctaBtn.onclick = function(){ if (ext.url) window.open(ext.url, '_blank', 'noopener'); };
+    } else {
+      ctaBtn.textContent = ctaText;
+      ctaBtn.onclick = null;
+    }
 
     document.getElementById('pv-preview').classList.add('is-open');
     document.getElementById('pv-preview-body').scrollTop = 0;
