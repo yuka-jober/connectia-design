@@ -1,0 +1,1957 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Connectia — 질문받는 AI 이력서</title>
+  <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css"
+    rel="stylesheet">
+  <style>
+    /* ── Tokens ───────────────────────────── */
+    :root {
+      --deep: #0A0F1E;
+      --blue: #6B6BE1;
+      --teal: #9B8FFF;
+      --purple: #5B4FD6;
+      --bg: #ffffff;
+      --bg2: #F4F8F9;
+      --muted: #64748b;
+      --card-sh: 0 10px 30px -10px rgba(0, 0, 0, 0.10);
+    }
+
+    /* ── Reset ───────────────────────────── */
+    *,
+    *::before,
+    *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--deep);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Utility ─────────────────────────── */
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    .gradient-text {
+      background: linear-gradient(90deg, #6B6BE1 0%, #9B8FFF 50%, #5B4FD6 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 5px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(107, 107, 225, 0.3);
+      background: rgba(107, 107, 225, 0.06);
+      margin-bottom: 20px;
+    }
+
+    .section-title {
+      font-size: clamp(1.75rem, 3.2vw, 2.75rem);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      line-height: 1.3;
+      color: var(--deep);
+    }
+
+    .section-sub {
+      font-size: 1.125rem;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--blue);
+      color: #fff;
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: 600;
+      padding: 14px 26px;
+      border-radius: 20px;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.2s;
+    }
+
+    .btn-primary:hover {
+      opacity: 0.88;
+      transform: translateY(-2px);
+    }
+
+    .btn-primary:active {
+      transform: translateY(0);
+    }
+
+    /* Scroll reveal */
+    .reveal {
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity 0.65s ease, transform 0.65s ease;
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: none;
+    }
+
+    .reveal-delay-1 {
+      transition-delay: 0.1s;
+    }
+
+    .reveal-delay-2 {
+      transition-delay: 0.2s;
+    }
+
+    .reveal-delay-3 {
+      transition-delay: 0.3s;
+    }
+
+    /* ── Nav ─────────────────────────────── */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 1001;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-bottom: 0.5px solid #e2e8f0;
+    }
+
+    .nav-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 20px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .nav-logo {
+      text-decoration: none;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 28px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      font-size: 0.9375rem;
+      color: var(--muted);
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover {
+      color: var(--deep);
+    }
+
+    .nav-cta {
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--blue);
+      color: #fff;
+      font-size: 0.9rem;
+      font-weight: 600;
+      padding: 9px 18px;
+      border-radius: 20px;
+      text-decoration: none;
+      transition: opacity 0.2s;
+    }
+
+    .nav-cta:hover {
+      opacity: 0.88;
+    }
+
+    @media (max-width: 700px) {
+      .nav-links {
+        display: none;
+      }
+    }
+
+    /* ── Hero ────────────────────────────── */
+    .hero-wrap {
+      background: radial-gradient(ellipse 80% 40% at 60% -5%, rgba(107, 107, 225, 0.08) 0%, transparent 70%);
+    }
+
+    .hero {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 88px 20px 96px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 64px;
+      align-items: center;
+    }
+
+    .hero-text .section-sub {
+      margin-top: 16px;
+      max-width: 480px;
+    }
+
+    .hero-text .section-title {
+      font-size: clamp(1.375rem, 2.4vw, 2.1rem);
+      letter-spacing: -0.035em;
+      line-height: 1.45;
+    }
+
+    /* ── Intro section ───────────────────── */
+    .intro-section {
+      position: relative;
+      overflow: hidden;
+      padding: 64px 20px 56px;
+      text-align: center;
+      background: #fff;
+    }
+
+    .intro-section::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 55% 90% at 15% 30%, rgba(79, 142, 247, 0.18) 0%, transparent 60%),
+        radial-gradient(ellipse 45% 70% at 85% 10%, rgba(0, 229, 195, 0.14) 0%, transparent 55%),
+        radial-gradient(ellipse 50% 80% at 75% 85%, rgba(107, 95, 255, 0.15) 0%, transparent 55%),
+        radial-gradient(ellipse 35% 50% at 40% 90%, rgba(79, 142, 247, 0.08) 0%, transparent 50%);
+      pointer-events: none;
+    }
+
+    .intro-inner {
+      position: relative;
+      z-index: 1;
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .intro-icon {
+      font-size: clamp(1rem, 2vw, 1.5rem);
+      background: linear-gradient(135deg, #6B6BE1, #5B4FD6);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      flex-shrink: 0;
+    }
+
+    .intro-title {
+      font-size: clamp(1.75rem, 4vw, 3rem);
+      font-weight: 800;
+      letter-spacing: -0.035em;
+      line-height: 1.1;
+      background: linear-gradient(90deg, #6B6BE1 0%, #9B8FFF 48%, #5B4FD6 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* overlay-only animation */
+    #introOverlay .intro-icon {
+      opacity: 1;
+      transform: scale(3.5);
+      animation: icon-shrink 0.7s cubic-bezier(0.34, 1.2, 0.64, 1) 0.15s forwards;
+    }
+
+    #introOverlay .intro-title {
+      opacity: 0;
+    }
+
+    @keyframes icon-shrink {
+      from { transform: scale(3.5); }
+      to   { transform: scale(1); }
+    }
+
+    /* Full-screen overlay */
+    #introOverlay {
+      position: fixed;
+      inset: 0;
+      z-index: 999;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.9s cubic-bezier(0.76, 0, 0.24, 1);
+    }
+
+    #introOverlay::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 55% 90% at 15% 30%, rgba(79,142,247,0.18) 0%, transparent 60%),
+        radial-gradient(ellipse 45% 70% at 85% 10%, rgba(0,229,195,0.14) 0%, transparent 55%),
+        radial-gradient(ellipse 50% 80% at 75% 85%, rgba(107,95,255,0.15) 0%, transparent 55%),
+        radial-gradient(ellipse 35% 50% at 40% 90%, rgba(79,142,247,0.08) 0%, transparent 50%);
+      pointer-events: none;
+    }
+
+    #introOverlay.collapsing {
+      transform: translateY(-100%);
+      pointer-events: none;
+    }
+
+    .intro-cursor {
+      display: inline-block;
+      width: 2px;
+      height: 1em;
+      background: #5B4FD6;
+      margin-left: 2px;
+      vertical-align: middle;
+      animation: blink 0.8s step-end infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0; }
+    }
+
+    .hero-cta-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-top: 32px;
+      flex-wrap: wrap;
+    }
+
+    .hero-note {
+      font-size: 0.875rem;
+      color: var(--muted);
+    }
+
+    .hero-note span {
+      color: var(--deep);
+      font-weight: 600;
+    }
+
+    /* Hero chat mockup */
+    .hero-mockup-wrap {
+      position: relative;
+    }
+
+    .resume-bg-card {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 56px;
+      bottom: 32px;
+      background: #fff;
+      border-radius: 20px;
+      box-shadow: var(--card-sh), 0 0 0 1px rgba(0,0,0,0.04);
+      padding: 20px 22px;
+      z-index: 0;
+      -webkit-mask-image: linear-gradient(to bottom, black 45%, transparent 100%);
+      mask-image: linear-gradient(to bottom, black 45%, transparent 100%);
+    }
+
+    .rbc-name {
+      font-size: 1.25rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: #1e293b;
+    }
+
+    .rbc-badge {
+      display: inline-block;
+      background: rgba(107,95,255,0.12);
+      color: #5B4FD6;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 999px;
+      float: right;
+    }
+
+    .rbc-job {
+      font-size: 0.875rem;
+      color: var(--muted);
+      margin-top: 2px;
+      margin-bottom: 14px;
+    }
+
+    .rbc-hr { height: 1px; background: #f1f5f9; margin: 10px 0; }
+
+    .rbc-section { font-size: 0.7rem; font-weight: 700; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 6px; }
+
+    .rbc-intro { font-size: 0.8125rem; color: #334155; line-height: 1.6; }
+
+    .rbc-skills { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+
+    .rbc-skill {
+      font-size: 0.75rem;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: #f1f5f9;
+      color: #475569;
+    }
+
+    .hero-mockup {
+      position: relative;
+      z-index: 1;
+      margin-left: 56px;
+      margin-top: 52px;
+    }
+
+    .hero-mockup {
+      background: #fff;
+      border-radius: 20px;
+      box-shadow: var(--card-sh), 0 0 0 1px rgba(0, 0, 0, 0.04);
+      overflow: hidden;
+    }
+
+    .mockup-header {
+      background: var(--deep);
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .mockup-avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 9px;
+      background: linear-gradient(135deg, #6B6BE1, #5B4FD6);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 0.75rem;
+    }
+
+    .mockup-header-info {
+      flex: 1;
+    }
+
+    .mockup-name {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .mockup-sub {
+      font-size: 0.75rem;
+      color: rgba(255, 255, 255, 0.45);
+      margin-top: 1px;
+    }
+
+    .mockup-online {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--teal);
+    }
+
+    .mockup-body {
+      padding: 18px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .m-label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-bottom: 2px;
+    }
+
+    .m-label.right {
+      text-align: right;
+    }
+
+    .m-bubble {
+      padding: 10px 13px;
+      border-radius: 13px;
+      font-size: 0.875rem;
+      line-height: 1.55;
+      max-width: 88%;
+    }
+
+    .m-bubble.from {
+      background: var(--bg2);
+      color: var(--deep);
+      border-radius: 13px 13px 13px 3px;
+    }
+
+    .m-bubble.to {
+      background: var(--deep);
+      color: rgba(255, 255, 255, 0.88);
+      border-radius: 13px 13px 3px 13px;
+      align-self: flex-end;
+    }
+
+    .m-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .m-group.right {
+      align-items: flex-end;
+    }
+
+    @media (max-width: 840px) {
+      .hero {
+        grid-template-columns: 1fr;
+        gap: 44px;
+        padding: 60px 20px 72px;
+      }
+    }
+
+    /* ── Social Proof ────────────────────── */
+    .social-proof {
+      background: var(--bg2);
+      border-top: 1px solid #e2e8f0;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 40px 20px;
+    }
+
+    .stats-row {
+      max-width: 860px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .stat-item {
+      flex: 1;
+      min-width: 160px;
+      text-align: center;
+      padding: 16px 28px;
+      position: relative;
+    }
+
+    .stat-item:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      height: 32px;
+      width: 1px;
+      background: #e2e8f0;
+    }
+
+    .stat-num {
+      font-size: 1.875rem;
+      font-weight: 600;
+      letter-spacing: -0.03em;
+      color: var(--deep);
+    }
+
+    .stat-num.gradient-text {
+      background: linear-gradient(90deg, #4F8EF7 0%, #00E5C3 50%, #6B5FFF 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .stat-label {
+      font-size: 0.9375rem;
+      color: var(--muted);
+      margin-top: 3px;
+    }
+
+    /* ── Features ────────────────────────── */
+    .features {
+      padding: 100px 20px;
+    }
+
+    .features-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .features-head {
+      text-align: center;
+      margin-bottom: 56px;
+    }
+
+    .features-head .section-sub {
+      margin: 12px auto 0;
+      max-width: 480px;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .feature-card {
+      border-radius: 20px;
+      height: 460px;
+      position: relative;
+      overflow: hidden;
+      padding: 28px 24px;
+    }
+
+    .feature-card.blue {
+      background: radial-gradient(ellipse at 50% -10%, #4F8EF7 0%, #A8D4FF 45%, var(--bg2) 100%);
+    }
+
+    .feature-card.teal {
+      background: radial-gradient(ellipse at 50% -10%, #00E5C3 0%, #B8F7EE 45%, var(--bg2) 100%);
+    }
+
+    .feature-card.purple {
+      background: radial-gradient(ellipse at 50% -10%, #6B5FFF 0%, #C4BEFF 45%, var(--bg2) 100%);
+    }
+
+    .feature-card.purple::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.18) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.18) 1px, transparent 1px);
+      background-size: 24px 24px;
+      -webkit-mask-image: radial-gradient(ellipse at 50% 0%, black 10%, transparent 65%);
+      mask-image: radial-gradient(ellipse at 50% 0%, black 10%, transparent 65%);
+    }
+
+    .fc-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(0, 0, 0, 0.4);
+      margin-bottom: 8px;
+    }
+
+    .fc-title {
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: #1e293b;
+      letter-spacing: -0.02em;
+      line-height: 1.35;
+    }
+
+    .fc-desc {
+      font-size: 0.875rem;
+      color: var(--muted);
+      margin-top: 6px;
+      line-height: 1.5;
+    }
+
+    /* Upload mockup */
+    .fc-mockup {
+      position: absolute;
+      bottom: 22px;
+      left: 20px;
+      right: 20px;
+    }
+
+    .upload-card {
+      background: #fff;
+      border-radius: 14px;
+      padding: 14px 16px;
+      box-shadow: 0 8px 24px -8px rgba(107, 107, 225, 0.22);
+    }
+
+    .uc-row {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      margin-bottom: 10px;
+    }
+
+    .uc-icon {
+      width: 30px;
+      height: 30px;
+      border-radius: 7px;
+      background: rgba(107, 107, 225, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .uc-icon svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .uc-name {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #1e293b;
+    }
+
+    .uc-size {
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    .uc-check {
+      margin-left: auto;
+      width: 19px;
+      height: 19px;
+      border-radius: 50%;
+      background: var(--blue);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .uc-check svg {
+      width: 10px;
+      height: 10px;
+    }
+
+    .uc-bar {
+      height: 4px;
+      border-radius: 999px;
+      background: rgba(107, 107, 225, 0.15);
+      margin-bottom: 9px;
+      overflow: hidden;
+    }
+
+    .uc-bar-fill {
+      height: 100%;
+      width: 0;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #6B6BE1, #9B8FFF);
+      transition: width 1.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .feature-card.fc-animated .uc-bar-fill { width: 100%; }
+
+    .uc-done {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--blue);
+      margin-bottom: 10px;
+    }
+
+    .uc-btn {
+      display: block;
+      text-align: center;
+      font-size: 0.875rem;
+      font-weight: 700;
+      color: var(--deep);
+      background: #fff;
+      border: 1.5px solid var(--deep);
+      border-radius: 999px;
+      padding: 7px 0;
+    }
+
+    /* Chat mockup (teal) */
+    .chat-card {
+      background: #fff;
+      border-radius: 14px;
+      padding: 12px 13px;
+      box-shadow: 0 8px 24px -8px rgba(107, 107, 225, 0.18);
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .cc-bubble {
+      padding: 8px 11px;
+      border-radius: 10px;
+      font-size: 0.8125rem;
+      line-height: 1.5;
+      max-width: 88%;
+      opacity: 0;
+      transform: translateY(14px);
+      transition: opacity 0.35s ease, transform 0.35s ease;
+    }
+    .cc-bubble.fc-visible { opacity: 1; transform: none; }
+
+    .cc-bubble.from {
+      background: var(--bg2);
+      color: var(--deep);
+      border-radius: 10px 10px 10px 2px;
+    }
+
+    .cc-bubble.to {
+      background: var(--deep);
+      color: rgba(255, 255, 255, 0.88);
+      border-radius: 10px 10px 2px 10px;
+      align-self: flex-end;
+    }
+
+    /* Story cards (purple) — Gmail mockup */
+    .email-card {
+      background: #fff;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+      position: relative;
+      z-index: 1;
+      opacity: 0;
+      transform: translateY(40px);
+      transition: opacity 0.55s ease, transform 0.6s cubic-bezier(0.34, 1.1, 0.64, 1);
+    }
+    .email-card.fc-visible { opacity: 1; transform: none; }
+
+    .email-header {
+      background: #fff;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    .email-brand-icon {
+      width: 26px;
+      height: 26px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .email-brand-icon svg {
+      width: 22px;
+      height: 18px;
+    }
+
+    .email-brand-name {
+      font-size: 0.875rem;
+      font-weight: 700;
+      color: #5f6368;
+      letter-spacing: -0.2px;
+    }
+
+    .email-body {
+      padding: 16px 16px 14px;
+    }
+
+    .email-sender-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .email-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #7c3aed;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.875rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .email-sender-info { flex: 1; min-width: 0; }
+
+    .email-sender-name {
+      font-size: 0.8125rem;
+      font-weight: 700;
+      color: #1e293b;
+      line-height: 1.2;
+    }
+
+    .email-sender-addr {
+      font-size: 0.6875rem;
+      color: #94a3b8;
+      margin-top: 2px;
+    }
+
+    .email-time {
+      font-size: 0.75rem;
+      color: #94a3b8;
+      flex-shrink: 0;
+    }
+
+    .email-subject {
+      font-size: 0.9375rem;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 10px;
+      line-height: 1.35;
+    }
+
+    .email-desc {
+      font-size: 0.8125rem;
+      color: #475569;
+      line-height: 1.55;
+      margin-bottom: 4px;
+    }
+
+    .email-question {
+      font-size: 0.8125rem;
+      font-weight: 700;
+      color: #1e293b;
+      margin: 10px 0;
+      padding: 10px 12px;
+      background: #f8fafc;
+      border-left: 3px solid #e2e8f0;
+      border-radius: 4px;
+      line-height: 1.5;
+    }
+
+    .email-btn {
+      display: block;
+      width: 100%;
+      background: #1a73e8;
+      color: #fff;
+      font-size: 0.875rem;
+      font-weight: 700;
+      text-align: center;
+      padding: 11px;
+      border-radius: 8px;
+      margin-top: 14px;
+    }
+
+    @media (max-width: 860px) {
+      .features-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .feature-card:last-child {
+        grid-column: span 2;
+      }
+
+      .feature-card {
+        height: auto;
+        padding-bottom: 28px;
+      }
+
+      .fc-mockup {
+        position: relative;
+        bottom: auto;
+        left: auto;
+        right: auto;
+        margin-top: 24px;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .features-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .feature-card:last-child {
+        grid-column: span 1;
+      }
+
+      .feature-card {
+        height: auto;
+        padding-bottom: 28px;
+      }
+
+      .fc-mockup {
+        position: relative;
+        bottom: auto;
+        left: auto;
+        right: auto;
+        margin-top: 24px;
+      }
+    }
+
+    /* ── Why ─────────────────────────────── */
+    .why-section {
+      background: var(--bg2);
+      padding: 100px 20px;
+    }
+
+    .why-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 0.7fr 1fr;
+      gap: 64px;
+      align-items: center;
+    }
+
+    .why-text .section-sub {
+      margin-top: 14px;
+    }
+
+    .compare-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .compare-col {
+      background: #fff;
+      border-radius: 16px;
+      padding: 22px;
+      box-shadow: var(--card-sh);
+    }
+
+    .compare-col.dark {
+      background: var(--deep);
+    }
+
+    .compare-col-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+
+    .compare-col.dark .compare-col-title {
+      color: rgba(255, 255, 255, 0.4);
+    }
+
+    .compare-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin-bottom: 11px;
+      font-size: 0.9375rem;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    .compare-col.dark .compare-row {
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .compare-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .c-icon {
+      flex-shrink: 0;
+      font-style: normal;
+    }
+
+    @media (max-width: 820px) {
+      .why-inner {
+        grid-template-columns: 1fr;
+        gap: 44px;
+      }
+
+      .compare-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* ── How It Works ────────────────────── */
+    .how-section {
+      padding: 100px 20px;
+    }
+
+    .how-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .how-head {
+      text-align: center;
+      margin-bottom: 60px;
+    }
+
+    .how-head .section-sub {
+      margin: 12px auto 0;
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0;
+      position: relative;
+      isolation: isolate;
+    }
+
+    .steps::before {
+      content: '';
+      position: absolute;
+      top: 36px;
+      left: calc(100% / 6);
+      right: calc(100% / 6);
+      height: 1px;
+      background: linear-gradient(90deg, #4F8EF7, #00E5C3, #6B5FFF);
+      z-index: -1;
+    }
+
+    .step-item {
+      text-align: center;
+      padding: 0 24px;
+    }
+
+    .step-num {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      margin: 0 auto 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .step-item:nth-child(1) .step-num {
+      background: #EBF2FF;
+      color: #4F8EF7;
+    }
+
+    .step-item:nth-child(2) .step-num {
+      background: #E0FAF7;
+      color: #00E5C3;
+    }
+
+    .step-item:nth-child(3) .step-num {
+      background: #EDEAFF;
+      color: #6B5FFF;
+    }
+
+    .step-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .step-title {
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: var(--deep);
+      margin-bottom: 8px;
+      letter-spacing: -0.01em;
+    }
+
+    .step-desc {
+      font-size: 0.9375rem;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+
+    @media (max-width: 700px) {
+      .steps {
+        grid-template-columns: 1fr;
+        gap: 44px;
+      }
+
+      .steps::before {
+        display: none;
+      }
+
+      .step-num {
+        margin-bottom: 16px;
+      }
+    }
+
+    /* ── Testimonials ────────────────────── */
+    .testimonials {
+      background: var(--bg2);
+      padding: 100px 20px;
+    }
+
+    .testimonials-head {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .testimonials-head .section-sub {
+      margin: 10px auto 0;
+    }
+
+    .testimonials-grid {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+
+    .t-card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 26px;
+      box-shadow: var(--card-sh);
+    }
+
+    .stars {
+      color: #f59e0b;
+      font-size: 1rem;
+      margin-bottom: 12px;
+      letter-spacing: 2px;
+    }
+
+    .t-text {
+      font-size: 1rem;
+      color: var(--deep);
+      line-height: 1.75;
+      margin-bottom: 18px;
+    }
+
+    .t-author {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .t-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8125rem;
+      font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .t-name {
+      font-size: 0.9375rem;
+      font-weight: 700;
+      color: var(--deep);
+    }
+
+    .t-role {
+      font-size: 0.875rem;
+      color: var(--muted);
+      margin-top: 1px;
+    }
+
+    @media (max-width: 640px) {
+      .testimonials-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* ── FAQ ─────────────────────────────── */
+    .faq-section {
+      padding: 100px 20px;
+    }
+
+    .faq-inner {
+      max-width: 760px;
+      margin: 0 auto;
+    }
+
+    .faq-head {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .faq-item {
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .faq-question {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 0;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--deep);
+      letter-spacing: -0.01em;
+      gap: 16px;
+      user-select: none;
+      background: none;
+      border: none;
+      width: 100%;
+      text-align: left;
+      font-family: inherit;
+    }
+
+    .faq-chevron {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+      transition: transform 0.25s ease;
+      color: var(--muted);
+    }
+
+    .faq-item.open .faq-chevron {
+      transform: rotate(180deg);
+    }
+
+    .faq-answer {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.35s ease;
+    }
+
+    .faq-answer-inner {
+      padding: 0 0 20px;
+      font-size: 1rem;
+      color: var(--muted);
+      line-height: 1.8;
+    }
+
+    /* ── CTA ─────────────────────────────── */
+    .cta-section {
+      background: var(--deep);
+      padding: 100px 20px;
+      text-align: center;
+    }
+
+    .cta-section .section-title {
+      color: #fff;
+    }
+
+    .cta-section .section-sub {
+      color: #94a3b8;
+      margin: 16px auto 36px;
+      max-width: 460px;
+    }
+
+    /* ── Footer ──────────────────────────── */
+    footer {
+      background: var(--deep);
+      border-top: 1px solid rgba(255, 255, 255, 0.07);
+      padding: 48px 20px 36px;
+    }
+
+    .footer-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 32px;
+      flex-wrap: wrap;
+    }
+
+    .footer-logo {
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+    }
+
+    .footer-tagline {
+      font-size: 0.875rem;
+      color: rgba(255, 255, 255, 0.35);
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 22px;
+      flex-wrap: wrap;
+    }
+
+    .footer-links a {
+      font-size: 0.875rem;
+      color: rgba(255, 255, 255, 0.45);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover {
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .footer-copy {
+      max-width: 1100px;
+      margin: 28px auto 0;
+      padding-top: 28px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      font-size: 0.8125rem;
+      color: rgba(255, 255, 255, 0.25);
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ── Intro Overlay ─────────────────────────────────── -->
+  <div id="introOverlay">
+    <div class="intro-inner">
+      <span class="intro-icon">✦</span>
+      <h1 class="intro-title" id="introTitle"><span class="intro-cursor"></span></h1>
+    </div>
+  </div>
+
+  <!-- ── Nav ───────────────────────────────────────────── -->
+  <nav>
+    <div class="nav-inner">
+      <a href="#" class="nav-logo"><img src="logo_grd-1.svg" alt="Connectia"
+          style="height:20px; filter: brightness(0);"></a>
+      <ul class="nav-links">
+        <li><a href="#features">기능 소개</a></li>
+        <li><a href="#how">사용법</a></li>
+        <li><a href="#reviews">후기</a></li>
+      </ul>
+      <a href="#cta" class="nav-cta">✦ 무료로 시작하기</a>
+    </div>
+  </nav>
+
+  <!-- ── Intro ──────────────────────────────────────────── -->
+  <section class="intro-section">
+    <div class="intro-inner">
+      <span class="intro-icon">✦</span>
+      <h1 class="intro-title">AI 이력서의 새로운 기준</h1>
+    </div>
+  </section>
+
+  <!-- ── Hero ──────────────────────────────────────────── -->
+  <section class="hero-wrap">
+    <div class="hero">
+      <div class="hero-text">
+        <h1 class="section-title reveal">서류엔 다 못 담은 이야기,<br>이제 AI가 대신 전달합니다</h1>
+        <p class="section-sub reveal reveal-delay-1" style="margin-top:16px">면접관이 이력서에 궁금한 점을 직접 물어보면<br>AI가 지원자를 대신해 답변해드립니다.<br>서류에서부터 차별화된
+          AI 역량을 만들어가세요.</p>
+        <div class="hero-cta-row reveal reveal-delay-2">
+          <a href="#cta" class="btn-primary">✦ 무료로 AI 이력서 만들기</a>
+        </div>
+        <p class="hero-note reveal reveal-delay-3" style="margin-top:20px"><span>✓ 무료</span> · <span>이력서 업로드 1분 완성</span> · 별도 설치 없음</p>
+      </div>
+
+      <div class="hero-mockup-wrap reveal reveal-delay-2">
+        <div class="resume-bg-card">
+          <div>
+            <span class="rbc-badge">신입</span>
+            <div class="rbc-name">홍길동</div>
+          </div>
+          <div class="rbc-job">UX 디자이너</div>
+          <div class="rbc-hr"></div>
+          <div class="rbc-section">한 줄 소개</div>
+          <div class="rbc-intro">사용자 경험을 중심으로 문제를 해결하는 디자이너입니다. 데이터 기반의 UX 리서치와 프로토타이핑을 통해 실질적인 가치를 만들어냅니다.</div>
+          <div class="rbc-hr"></div>
+          <div class="rbc-section">스킬</div>
+          <div class="rbc-skills">
+            <span class="rbc-skill">Figma</span>
+            <span class="rbc-skill">UX Research</span>
+            <span class="rbc-skill">Prototyping</span>
+            <span class="rbc-skill">User Testing</span>
+            <span class="rbc-skill">Wireframing</span>
+          </div>
+        </div>
+        <div class="hero-mockup">
+          <div class="mockup-header">
+            <div class="mockup-avatar">AI</div>
+            <div class="mockup-header-info">
+              <div class="mockup-name">홍길동 AI 이력서</div>
+              <div class="mockup-sub">UX 디자이너 · 3년차</div>
+            </div>
+            <div class="mockup-online"></div>
+          </div>
+          <div class="mockup-body">
+            <div class="m-group">
+              <div class="m-label">면접관</div>
+              <div class="m-bubble from">전공이 경영학이신데, 왜 UX 디자이너를 선택하셨나요?</div>
+            </div>
+            <div class="m-group right">
+              <div class="m-label right">AI 이력서</div>
+              <div class="m-bubble to">전공에서 익힌 데이터 분석과 논리적 사고를 UX에 접목했을 때 더 설득력 있는 설계가 가능하다는 걸 느꼈습니다. 실제로 앱 전환율 개선
+                프로젝트에서 그 강점이 결정적이었어요.</div>
+            </div>
+            <div class="m-group">
+              <div class="m-label">면접관</div>
+              <div class="m-bubble from">공백기 6개월 동안 뭘 하셨나요?</div>
+            </div>
+            <div class="m-group right">
+              <div class="m-label right">AI 이력서</div>
+              <div class="m-bubble to">UX 부트캠프를 수료하고 스타트업 앱 리뉴얼 프로젝트에 참여했습니다. 단순한 공백이 아닌, 커리어 전환을 위한 집중 준비 기간이었습니다.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Social Proof ───────────────────────────────────── -->
+  <section class="social-proof">
+    <div class="stats-row reveal">
+      <div class="stat-item">
+        <div class="stat-num gradient-text">1분</div>
+        <div class="stat-label">이력서 생성 시간</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num gradient-text">98%</div>
+        <div class="stat-label">사용자 만족도</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num gradient-text">99.9%</div>
+        <div class="stat-label">AI 응답 정확도</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Features ───────────────────────────────────────── -->
+  <section class="features" id="features">
+    <div class="features-inner">
+      <div class="features-head reveal">
+        <div class="badge"><span class="gradient-text">✦ Core Features</span></div>
+        <h2 class="section-title">이력서가<br>대신 말해드립니다</h2>
+        <p class="section-sub">1분 업로드로 완성되는 AI 이력서<br>면접관의 질문에 나를 대신해 답변하고,<br>서류 단계부터 나만의 서사를 전달합니다.</p>
+      </div>
+
+      <div class="features-grid">
+        <!-- Card 1: Upload -->
+        <div class="feature-card blue reveal">
+          <div class="fc-label">Step 01</div>
+          <div class="fc-title">이력서 업로드,<br>1분 만에 완성</div>
+          <div class="fc-desc">PDF 또는 Word 파일을 올리면<br>AI가 자동으로 이력서를 분석합니다</div>
+          <div class="fc-mockup">
+            <div class="upload-card">
+              <div class="uc-row">
+                <div class="uc-icon">
+                  <svg viewBox="0 0 24 24" fill="#6B6BE1">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" />
+                    <polyline points="14 2 14 8 20 8" fill="none" stroke="#6B6BE1" stroke-width="2" />
+                  </svg>
+                </div>
+                <div>
+                  <div class="uc-name">resume_홍길동.pdf</div>
+                  <div class="uc-size">1.2 MB · PDF</div>
+                </div>
+                <div class="uc-check">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </div>
+              </div>
+              <div class="uc-bar">
+                <div class="uc-bar-fill"></div>
+              </div>
+              <div class="uc-done">✓ AI 이력서 생성 완료</div>
+              <div class="uc-btn">이력서 보기</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2: Chat -->
+        <div class="feature-card teal reveal reveal-delay-1">
+          <div class="fc-label">Step 02</div>
+          <div class="fc-title">면접관이 질문하면<br>AI가 대신 답변</div>
+          <div class="fc-desc">공백기, 이직 이유, 역할까지<br>이력서에 못 담은 것들을 AI가 설명합니다</div>
+          <div class="fc-mockup">
+            <div class="chat-card">
+              <div class="cc-bubble from">공백기에는 뭘 하셨나요?</div>
+              <div class="cc-bubble to">UX 부트캠프를 수료하고 스타트업 프로젝트에 참여했습니다. 커리어 전환을 위한 집중 준비 기간이었어요.</div>
+              <div class="cc-bubble from">주요 강점이 뭔가요?</div>
+              <div class="cc-bubble to">데이터 기반 UX 개선 경험이 많아요. 전환율 32% 향상 프로젝트를 리드한 이력이 있습니다.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 3: Story -->
+        <div class="feature-card purple reveal reveal-delay-2">
+          <div class="fc-label">Step 03</div>
+          <div class="fc-title">Even missed questions<br>can be answered right away</div>
+          <div class="fc-desc">Questions without a saved answer<br>are sent instantly via email,<br>so you can update and respond on the spot</div>
+          <div class="fc-mockup">
+            <div class="email-card">
+              <div class="email-header">
+                <div class="email-brand-icon">
+                  <svg viewBox="0 0 24 20" xmlns="http://www.w3.org/2000/svg">
+                    <path fill="#4285F4" d="M22 4.5v13a1.5 1.5 0 01-1.5 1.5H18V8.25l-6 4.5-6-4.5V19H3.5A1.5 1.5 0 012 17.5v-13z"/>
+                    <path fill="#34A853" d="M2 4.5L12 12l10-7.5H2z"/>
+                    <path fill="#EA4335" d="M2 4.5A1.5 1.5 0 013.5 3h17A1.5 1.5 0 0122 4.5L12 12z"/>
+                  </svg>
+                </div>
+                <span class="email-brand-name">Gmail</span>
+              </div>
+              <div class="email-body">
+                <div class="email-sender-row">
+                  <div class="email-avatar">C</div>
+                  <div class="email-sender-info">
+                    <div class="email-sender-name">Connectia</div>
+                    <div class="email-sender-addr">no-reply@connectia.im</div>
+                  </div>
+                  <div class="email-time">10:24 AM</div>
+                </div>
+                <div class="email-subject">A new question just arrived!</div>
+                <div class="email-desc">An interviewer left this question.</div>
+                <div class="email-question">"Why did you leave your previous job?"</div>
+                <div class="email-desc">Add your answer now and send it right away.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Why ────────────────────────────────────────────── -->
+  <section class="why-section">
+    <div class="why-inner">
+      <div class="why-text reveal">
+        <div class="badge"><span class="gradient-text">✦ Why Connectia</span></div>
+        <h2 class="section-title">기존 이력서와<br>무엇이 다른가요?</h2>
+        <p class="section-sub" style="margin-top:14px">일방적으로 읽히는 이력서에서 벗어나,<br>면접관과 양방향으로 소통하는 이력서를 만드세요.<br>서류 단계부터
+          차별화가
+          시작됩니다.</p>
+      </div>
+      <div class="compare-grid reveal reveal-delay-1">
+        <div class="compare-col">
+          <div class="compare-col-title">기존 이력서</div>
+          <div class="compare-row"><i class="c-icon">✗</i> 읽기만 가능, 질문 불가</div>
+          <div class="compare-row"><i class="c-icon">✗</i> 정해진 양식 안에서만 표현</div>
+          <div class="compare-row"><i class="c-icon">✗</i> 서류 탈락 후 이유를 알 수 없음</div>
+          <div class="compare-row"><i class="c-icon">✗</i> 면접 전까지 나를 알릴 기회 없음</div>
+        </div>
+        <div class="compare-col dark">
+          <div class="compare-col-title" style="display:flex; align-items:center; gap:6px;"><img src="logo_grd-1.svg"
+              alt="Connectia" style="height:16px; filter: brightness(0) invert(1); opacity:0.5;"><span
+              style="opacity:0.5;">AI 이력서</span></div>
+          <div class="compare-row"><i class="c-icon" style="color:var(--teal)">✓</i> 면접관이 직접 질문하고 답변 수신</div>
+          <div class="compare-row"><i class="c-icon" style="color:var(--teal)">✓</i> 나만의 언어로 서사 전달 가능</div>
+          <div class="compare-row"><i class="c-icon" style="color:var(--teal)">✓</i> 서류 단계부터 양방향 소통</div>
+          <div class="compare-row"><i class="c-icon" style="color:var(--teal)">✓</i> 미리 나를 어필하는 차별화된 경험</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── How It Works ───────────────────────────────────── -->
+  <section class="how-section" id="how">
+    <div class="how-inner">
+      <div class="how-head reveal">
+        <div class="badge"><span class="gradient-text">✦ How It Works</span></div>
+        <h2 class="section-title">딱 3단계면 됩니다</h2>
+        <p class="section-sub">복잡한 설정 없이, 이력서 파일 하나만 있으면 시작할 수 있어요.</p>
+      </div>
+      <div class="steps">
+        <div class="step-item reveal">
+          <div class="step-num">
+            <!-- Upload icon -->
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="17 8 12 3 7 8" />
+              <line x1="12" y1="3" x2="12" y2="15" />
+            </svg>
+          </div>
+          <div class="step-label">Step 01</div>
+          <div class="step-title">이력서 업로드</div>
+          <div class="step-desc">PDF 또는 Word 파일을 업로드하면<br>AI가 자동으로 이력서를 분석하고 생성해드립니다.</div>
+        </div>
+        <div class="step-item reveal reveal-delay-1">
+          <div class="step-num">
+            <!-- Edit/story icon -->
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 20h9" />
+              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+            </svg>
+          </div>
+          <div class="step-label">Step 02</div>
+          <div class="step-title">내 이야기 등록</div>
+          <div class="step-desc">공백기, 이직 사유, 커리어 포부 등<br>이력서에 담기 어려웠던 이야기를 미리 등록하세요.</div>
+        </div>
+        <div class="step-item reveal reveal-delay-2">
+          <div class="step-num">
+            <!-- Share/link icon -->
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="18" cy="5" r="3" />
+              <circle cx="6" cy="12" r="3" />
+              <circle cx="18" cy="19" r="3" />
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+            </svg>
+          </div>
+          <div class="step-label">Step 03</div>
+          <div class="step-title">링크 공유</div>
+          <div class="step-desc">AI 이력서 링크를 기업에 전달하세요.<br>면접관이 바로 접속해 대화를 시작할 수 있습니다.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Testimonials ───────────────────────────────────── -->
+  <section class="testimonials" id="reviews">
+    <div class="testimonials-head reveal">
+      <div class="badge"><span class="gradient-text">✦ 사용자 후기</span></div>
+      <h2 class="section-title">실제로 써본 분들의 이야기</h2>
+      <p class="section-sub">Connectia로 서류를 차별화한 취준생들의 생생한 후기입니다.</p>
+    </div>
+    <div class="testimonials-grid">
+      <div class="t-card reveal">
+        <div class="stars">★★★★★</div>
+        <p class="t-text">"공백기 설명을 미리 등록해뒀더니 면접관이 먼저 물어봐줬어요. 오히려 어필 기회가 됐고 서류 합격 연락을 받았습니다."</p>
+        <div class="t-author">
+          <div>
+            <div class="t-name">김○○</div>
+            <div class="t-role">마케팅 취준생</div>
+          </div>
+        </div>
+      </div>
+      <div class="t-card reveal reveal-delay-1">
+        <div class="stars">★★★★★</div>
+        <p class="t-text">"이력서에 못 담은 프로젝트 역할을 AI가 대신 설명해줘서 서류 합격률이 확 올랐어요. 면접관도 이게 뭔지 신기해했습니다."</p>
+        <div class="t-author">
+          <div>
+            <div class="t-name">박○○</div>
+            <div class="t-role">개발자 신입</div>
+          </div>
+        </div>
+      </div>
+      <div class="t-card reveal reveal-delay-1">
+        <div class="stars">★★★★★</div>
+        <p class="t-text">"AI를 잘 쓰는 사람이라는 인상까지 같이 줄 수 있어서 일석이조예요. 포트폴리오 링크 대신 이걸 보내고 있어요."</p>
+        <div class="t-author">
+          <div>
+            <div class="t-name">이○○</div>
+            <div class="t-role">디자이너 취준생</div>
+          </div>
+        </div>
+      </div>
+      <div class="t-card reveal reveal-delay-2">
+        <div class="stars">★★★★★</div>
+        <p class="t-text">"1분도 안 걸려서 이력서가 완성됐어요. 처음엔 반신반의했는데 면접관 반응이 확실히 달라지더라고요. 진짜 편했습니다."</p>
+        <div class="t-author">
+          <div>
+            <div class="t-name">최○○</div>
+            <div class="t-role">경영학과 4학년</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── FAQ ────────────────────────────────────────────── -->
+  <section class="faq-section">
+    <div class="faq-inner">
+      <div class="faq-head reveal">
+        <div class="badge"><span class="gradient-text">✦ FAQ</span></div>
+        <h2 class="section-title">자주 묻는 질문</h2>
+      </div>
+
+      <div class="faq-item reveal">
+        <button class="faq-question">
+          잘못된 답변이 면접관에게 전달되지는 않나요?
+          <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </button>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">AI는 지원자가 직접 등록한 내용을 기반으로만 답변하며, 등록되지 않은 내용에 대해서는 답변하지 않습니다. 답변하지 못한 질문은 이메일로 즉시 전송되어, 지원자가 직접 내용을 추가하고 업데이트할 수 있습니다.</div>
+        </div>
+      </div>
+      <div class="faq-item reveal">
+        <button class="faq-question">
+          등록된 내용 외 질문이 들어오면 어떻게 처리되나요?
+          <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </button>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">등록된 정보 범위를 벗어난 질문에는 AI가 임의로 답변하지 않고, 담당자에게 "직접 확인 요청" 안내를 제공합니다. 지원자는 알림을 받고 직접
+            답변을 추가할 수 있습니다.</div>
+        </div>
+      </div>
+      <div class="faq-item reveal">
+        <button class="faq-question">
+          기업 담당자도 별도 가입이 필요한가요?
+          <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </button>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">아닙니다. 지원자가 공유한 링크로 바로 접속해 채팅할 수 있습니다. 별도 설치나 가입 없이 이용 가능합니다.</div>
+        </div>
+      </div>
+      <div class="faq-item reveal">
+        <button class="faq-question">
+          어떤 이력서 파일 형식을 지원하나요?
+          <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </button>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">PDF, Word(.docx) 형식을 지원하며, 업로드 즉시 자동으로 AI 이력서로 변환됩니다.</div>
+        </div>
+      </div>
+      <div class="faq-item reveal">
+        <button class="faq-question">
+          무료로 사용할 수 있나요?
+          <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </button>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">이력서 생성은 무료로 제공됩니다. AI 채팅은 메시지당 소량의 기본료가 발생하지만, 이력서를 생성하면 무료 크레딧을 지원해 일정 구간까지는
+            무료로 사용하실 수 있습니다.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── CTA ────────────────────────────────────────────── -->
+  <section class="cta-section" id="cta">
+    <div class="container">
+      <div class="reveal">
+        <h2 class="section-title">지금 바로,<br>질문받을 준비를 하세요</h2>
+        <p class="section-sub">업로드 1분 · 완전 무료 · 가입 후 바로 사용</p>
+        <a href="#" class="btn-primary">✦ 무료로 AI 이력서 만들기</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Footer ─────────────────────────────────────────── -->
+  <footer>
+    <div class="footer-inner">
+      <div>
+        <div class="footer-logo"><img src="logo_grd-1.svg" alt="Connectia"
+            style="height:20px; filter: brightness(0) invert(1);"></div>
+        <div class="footer-tagline">질문받는 AI 이력서 서비스</div>
+      </div>
+      <div class="footer-links">
+        <a href="#">서비스 소개</a>
+        <a href="#">이용약관</a>
+        <a href="#">개인정보처리방침</a>
+        <a href="#">Instagram</a>
+        <a href="#">LinkedIn</a>
+      </div>
+    </div>
+    <div class="footer-copy">© 2025 Connectia. All rights reserved.</div>
+  </footer>
+
+  <script>
+    /* ── Scroll Reveal ── */
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+    function startRevealObserver() {
+      document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+    }
+
+    /* ── Intro Overlay ── */
+    (function () {
+      const overlay = document.getElementById('introOverlay');
+      const TEXT = 'AI 이력서의 새로운 기준';
+      const el = document.getElementById('introTitle');
+      const cursor = el.querySelector('.intro-cursor');
+      let i = 0;
+      let canScroll = false;
+
+      document.body.style.overflow = 'hidden';
+
+      function type() {
+        if (i < TEXT.length) {
+          el.insertBefore(document.createTextNode(TEXT[i]), cursor);
+          i++;
+          setTimeout(type, 68);
+        } else {
+          setTimeout(() => {
+            cursor.style.display = 'none';
+            setTimeout(() => {
+              document.body.style.overflow = '';
+              canScroll = true;
+              collapseOverlay();
+              setTimeout(() => {
+                document.querySelector('.hero-wrap').scrollIntoView({ behavior: 'smooth' });
+              }, 200);
+            }, 500);
+          }, 700);
+        }
+      }
+
+      setTimeout(() => {
+        el.style.opacity = '1';
+        type();
+      }, 900);
+
+      function collapseOverlay() {
+        if (!canScroll) return;
+        overlay.classList.add('collapsing');
+        setTimeout(() => {
+          overlay.style.display = 'none';
+          startRevealObserver();
+        }, 950);
+      }
+
+      window.addEventListener('scroll', collapseOverlay, { once: true });
+    })();
+
+    /* ── Feature Card Animations ── */
+    const fcObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting) return;
+        const card = entry.target;
+
+        if (card.classList.contains('blue')) {
+          setTimeout(() => card.classList.add('fc-animated'), 350);
+        } else if (card.classList.contains('teal')) {
+          card.querySelectorAll('.cc-bubble').forEach((b, i) => {
+            setTimeout(() => b.classList.add('fc-visible'), 250 + i * 380);
+          });
+        } else if (card.classList.contains('purple')) {
+          setTimeout(() => card.querySelector('.email-card').classList.add('fc-visible'), 250);
+        }
+
+        fcObserver.unobserve(card);
+      });
+    }, { threshold: 0.35 });
+
+    document.querySelectorAll('.feature-card').forEach(c => fcObserver.observe(c));
+
+    /* ── FAQ Accordion ── */
+    document.querySelectorAll('.faq-question').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const item = btn.closest('.faq-item');
+        const answer = item.querySelector('.faq-answer');
+        const isOpen = item.classList.contains('open');
+
+        document.querySelectorAll('.faq-item.open').forEach(i => {
+          i.classList.remove('open');
+          i.querySelector('.faq-answer').style.maxHeight = '0';
+        });
+
+        if (!isOpen) {
+          item.classList.add('open');
+          answer.style.maxHeight = answer.scrollHeight + 'px';
+        }
+      });
+    });
+  </script>
+</body>
+
+</html>
