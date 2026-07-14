@@ -22,7 +22,7 @@ assets/       공용 에셋 — 프로토타입에서 재사용하는 이미지�
 | 게시판(보드) | `screens/board.html` | prototypes/board-gallery-tab-0708/board.html |
 | 프로필 편집 | `screens/profile-edit.html` | prototypes/gallery-view-change-0708/profile-edit-v4.html |
 | 이벤트 입력폼 | `screens/event-input.html` | prototypes/event-review-remove-0714/event-input.html |
-| 이벤트 랜딩 | `screens/event-landing.html` | prototypes/event-review-remove-0714/event-landing.html |
+| 이벤트 랜딩 | `screens/event-landing.html` | prototypes/event-landing-more-menu-0714/event-landing.html |
 | 이벤트 신청자 확인 | `screens/event-applicants-check.html` | prototypes/event-applicants-check-0701/index.html |
 | 이벤트 소개 | `screens/event-intro.html` | prototypes/event-intro-0701/event-intro.html |
 | 통계 | `screens/statistics.html` | prototypes/statistics-0611/statistics-v2.html |
