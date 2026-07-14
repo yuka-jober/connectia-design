@@ -55,12 +55,13 @@
   }
   .topbar .icon-btn {
     pointer-events: auto;
-    background: rgba(255,255,255,0.35);
+    border-radius: var(--r-full);
+    background: var(--color-scrim);
     backdrop-filter: blur(14px) saturate(140%);
     -webkit-backdrop-filter: blur(14px) saturate(140%);
     box-shadow: 0 1px 6px rgba(0,0,0,0.08);
   }
-  .topbar .icon-btn:hover { background: rgba(255,255,255,0.55); }
+  .topbar .icon-btn:hover { background: var(--color-scrim); }
 
   .topbar-solid {
     position: sticky; top: 0; z-index: 10;
@@ -602,10 +603,10 @@
         <!-- Floating topbar -->
         <div class="topbar">
           <button class="icon-btn icon-btn-clear" aria-label="뒤로" onclick="goEdit()">
-            <i data-lucide="chevron-left" style="width:22px;height:22px;color:var(--color-text);"></i>
+            <i data-lucide="chevron-left" style="width:22px;height:22px;color:var(--color-on-primary);"></i>
           </button>
           <button class="icon-btn icon-btn-clear" aria-label="공유">
-            <i data-lucide="share-2" style="width:20px;height:20px;color:var(--color-text);"></i>
+            <i data-lucide="share-2" style="width:20px;height:20px;color:var(--color-on-primary);"></i>
           </button>
         </div>
 
