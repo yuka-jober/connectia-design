@@ -1104,33 +1104,8 @@
       applyExternalCta(ext.url, d.cta || '신청하기');
     }
 
-    // 리뷰 노출 + 큐레이션
-    var reviewList = Array.isArray(d.reviewList) ? d.reviewList : null;
-    var showReviews = d.reviews === true && (reviewList === null || reviewList.length > 0);
-    if (showReviews && reviewList) {
-      var scroll = document.getElementById('review-scroll');
-      if (scroll) {
-        scroll.innerHTML = '';
-        reviewList.forEach(function(r){
-          var stars = '';
-          for (var i = 0; i < (r.stars || 5); i++) stars += '<i data-lucide="star"></i>';
-          var card = document.createElement('div');
-          card.className = 'review-card';
-          var firstImg = (Array.isArray(r.imgs) && r.imgs[0]) || r.img || '';
-          var imgHTML = firstImg ? '<div class="review-img" style="background-image:url(\'' + firstImg + '\');"></div>' : '';
-          card.innerHTML =
-            imgHTML +
-            '<div class="review-body">' +
-              '<div class="review-stars">' + stars + '</div>' +
-              '<p class="review-text">' + escapeHTML(r.text) + '</p>' +
-              '<div class="review-meta">' +
-                '<span class="verified"><i data-lucide="badge-check"></i>실제 후기</span><span>·</span><span>' + escapeHTML(r.author) + '</span>' +
-              '</div>' +
-            '</div>';
-          scroll.appendChild(card);
-        });
-      }
-    }
+    // 리뷰 노출 (on/off) — 기존 하드코딩된 후기 섹션을 그대로 표시하거나 숨긴다.
+    var showReviews = d.reviews === true;
     if (!showReviews) {
       var reviewSection = document.querySelector('.review-scroll');
       if (reviewSection) {

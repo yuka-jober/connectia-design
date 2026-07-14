@@ -1188,6 +1188,35 @@
   .pv-luma-card[hidden],
   .pv-checklist[hidden] { display: none !important; }
 
+  /* ── 이벤트 설명 서식 툴바 (rt-editor, profile-edit 재사용) ── */
+  .rt-editor-toolbar {
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    background: var(--color-border);
+    border-radius: var(--r-sm);
+  }
+  .rt-editor-btn {
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    background: transparent;
+    border-radius: var(--r-xs);
+    color: var(--color-text-sub);
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    cursor: pointer;
+  }
+  .rt-editor-btn:hover { background: var(--color-surface-sub); }
+  .rt-editor-btn.is-active {
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+  }
+  .rt-editor-toolbar[hidden] { display: none; }
+
   /* ── Inline add (자격 조건 빈 상태 등) ── */
   .pv-inline-add {
     display: flex; align-items: center;
@@ -1930,87 +1959,6 @@
     cursor: pointer;
   }
   .pv-tmpl-done:hover { color: var(--color-primary-dark); }
-  .pv-review-pick-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--color-border);
-    background: var(--color-surface);
-  }
-  .pv-review-pick-header-label {
-    display: inline-flex; align-items: center; gap: 8px;
-    font-size: var(--fs-label);
-    font-weight: var(--fw-semibold);
-    color: var(--color-text);
-    cursor: pointer;
-  }
-  .pv-review-pick-count {
-    font-size: var(--fs-caption);
-    color: var(--color-text-muted);
-  }
-  .pv-review-pick-list {
-    display: flex; flex-direction: column;
-    gap: 8px;
-  }
-  .pv-review-pick-item {
-    display: flex; align-items: flex-start;
-    gap: 12px;
-    padding: 12px;
-    border: 1px solid var(--color-border);
-    border-radius: var(--r-md);
-    background: var(--color-surface);
-    cursor: pointer;
-    transition: border-color var(--motion-fast) var(--ease-standard),
-                background var(--motion-fast) var(--ease-standard);
-  }
-  .pv-review-pick-item.is-selected {
-    border-color: var(--color-primary);
-    background: var(--color-primary-light);
-  }
-  .pv-review-pick-item .checkbox { flex-shrink: 0; margin-top: 2px; }
-  .pv-review-pick-content {
-    flex: 1; min-width: 0;
-    display: flex; flex-direction: column; gap: 8px;
-  }
-  .pv-review-pick-imgs {
-    display: flex; gap: 8px;
-    overflow-x: auto;
-    scrollbar-width: none;
-    margin: 0 -12px;
-    padding: 0 12px;
-  }
-  .pv-review-pick-imgs::-webkit-scrollbar { display: none; }
-  .pv-review-pick-img {
-    width: 112px; height: 84px;
-    border-radius: var(--r-sm);
-    background-size: cover; background-position: center;
-    background-color: var(--color-surface-sub);
-    flex-shrink: 0;
-  }
-  .pv-review-pick-body {
-    min-width: 0;
-    display: flex; flex-direction: column; gap: 4px;
-  }
-  .pv-review-pick-stars {
-    display: inline-flex; align-items: center; gap: 2px;
-  }
-  .pv-review-pick-stars i[data-lucide],
-  .pv-review-pick-stars svg {
-    width: 12px; height: 12px;
-    color: var(--color-star); fill: var(--color-star);
-  }
-  .pv-review-pick-text {
-    font-size: var(--fs-label);
-    color: var(--color-text);
-    line-height: 1.5;
-    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
-  }
-  .pv-review-pick-author {
-    font-size: var(--fs-caption);
-    color: var(--color-text-muted);
-  }
 
   .pv-tmpl-empty {
     grid-column: 1 / -1;
@@ -2100,7 +2048,13 @@
     <div class="pv-section">
       <div class="pv-luma-card" id="desc-card" onclick="document.getElementById('f-desc').focus()">
         <div class="pv-desc-label">이벤트 설명</div>
-        <div class="editable pv-desc" id="f-desc" contenteditable="true" data-placeholder="어떤 이벤트인지 자유롭게 적어보세요.&#10;예) 진행 일정, 참여 방법, 혜택, 유의 사항 등" oninput="onInput()"></div>
+        <div class="rt-editor-toolbar" id="desc-toolbar" onmousedown="event.preventDefault()" hidden>
+          <button type="button" class="rt-editor-btn" onclick="rtCmd(event, 'bold')" aria-label="굵게"><b>B</b></button>
+          <button type="button" class="rt-editor-btn" onclick="rtCmd(event, 'italic')" aria-label="기울임"><i>I</i></button>
+          <button type="button" class="rt-editor-btn" onclick="rtCmd(event, 'underline')" aria-label="밑줄"><u>U</u></button>
+          <button type="button" class="rt-editor-btn" onclick="rtCmd(event, 'strikeThrough')" aria-label="취소선"><s>S</s></button>
+        </div>
+        <div class="editable pv-desc" id="f-desc" contenteditable="true" data-placeholder="어떤 이벤트인지 자유롭게 적어보세요.&#10;예) 진행 일정, 참여 방법, 혜택, 유의 사항 등" oninput="onInput()" onkeyup="rtSyncState()" onmouseup="rtSyncState()"></div>
       </div>
     </div>
 
@@ -2266,11 +2220,6 @@
           <span class="pv-opt-row-label">리뷰 노출</span>
           <input type="checkbox" class="toggle toggle-sm" id="opt-reviews" onchange="onReviewsToggle()">
         </label>
-        <button type="button" class="pv-opt-row pv-opt-row-nested" id="opt-reviews-picker" hidden onclick="openReviewsPicker()">
-          <span class="pv-opt-row-label">노출할 후기</span>
-          <span class="pv-opt-row-value" id="disp-review-count">전체</span>
-          <i data-lucide="chevron-right" class="pv-opt-icon-edit"></i>
-        </button>
         <label class="pv-opt-row pv-opt-row-toggle">
           <i data-lucide="message-square"></i>
           <span class="pv-opt-row-label">댓글 허용</span>
@@ -2364,25 +2313,6 @@
     </div>
   </div>
 
-  <!-- 리뷰 선택 -->
-  <div class="pv-sheet sheet-template" id="sheet-reviews">
-    <div class="pv-tmpl-head">
-      <span style="width:48px"></span>
-      <div class="pv-tmpl-title">노출할 후기 선택</div>
-      <button type="button" class="pv-tmpl-done" onclick="closeSheet()">완료</button>
-    </div>
-    <div class="pv-review-pick-header">
-      <label class="pv-review-pick-header-label">
-        <input type="checkbox" class="checkbox" id="reviews-select-all" onchange="toggleSelectAllReviews(this.checked)">
-        <span>전체 선택</span>
-      </label>
-      <span class="pv-review-pick-count" id="reviews-pick-count">총 0개 중 0개 선택</span>
-    </div>
-    <div class="pv-tmpl-body">
-      <div class="pv-review-pick-list" id="reviews-pick-list"></div>
-    </div>
-  </div>
-
   <!-- 미리보기 -->
   <div class="pv-preview" id="pv-preview">
     <div class="pv-preview-topbar">
@@ -2439,7 +2369,44 @@
       <div class="pv-prev-divider" id="pv-prev-review-divider"></div>
       <div class="pv-prev-section" id="pv-prev-review-section">
         <div class="pv-prev-section-title">실제 후기</div>
-        <div class="pv-prev-review-scroll" id="pv-prev-review-scroll"></div>
+        <div class="pv-prev-review-scroll" id="pv-prev-review-scroll">
+          <div class="pv-prev-review-card">
+            <div class="pv-prev-review-img" style="background-image:url('https://images.unsplash.com/photo-1559941707-c1bafc8c8f60?w=400&auto=format&fit=crop');"></div>
+            <div class="pv-prev-review-body">
+              <div class="pv-prev-review-stars">
+                <i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i>
+              </div>
+              <p class="pv-prev-review-text">상담부터 시술까지 친절하게 안내받았어요. 피부 상태를 꼼꼼히 봐주셔서 안심하고 진행했습니다.</p>
+              <div class="pv-prev-review-meta">
+                <span class="verified"><i data-lucide="badge-check"></i>실제 후기</span><span>·</span><span>김○○</span>
+              </div>
+            </div>
+          </div>
+          <div class="pv-prev-review-card">
+            <div class="pv-prev-review-img" style="background-image:url('https://images.unsplash.com/photo-1551601651-bc60f254d532?w=400&auto=format&fit=crop');"></div>
+            <div class="pv-prev-review-body">
+              <div class="pv-prev-review-stars">
+                <i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i>
+              </div>
+              <p class="pv-prev-review-text">미뤄왔던 피부 관리, 진작 받을 걸 그랬어요. 시술 다음 날부터 톤이 확 밝아진 게 보였습니다.</p>
+              <div class="pv-prev-review-meta">
+                <span class="verified"><i data-lucide="badge-check"></i>실제 후기</span><span>·</span><span>이○○</span>
+              </div>
+            </div>
+          </div>
+          <div class="pv-prev-review-card">
+            <div class="pv-prev-review-img" style="background-image:url('https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&auto=format&fit=crop');"></div>
+            <div class="pv-prev-review-body">
+              <div class="pv-prev-review-stars">
+                <i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i>
+              </div>
+              <p class="pv-prev-review-text">피부 상태에 맞춰 강도를 조절해 주셔서 부담 없이 받았어요. 의료진이 다 친절했습니다.</p>
+              <div class="pv-prev-review-meta">
+                <span class="verified"><i data-lucide="badge-check"></i>실제 후기</span><span>·</span><span>박○○</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="pv-prev-divider"></div>
@@ -2906,119 +2873,9 @@
     }
   }
 
-  /* ── 리뷰 큐레이션 ── */
-  var PAGE_REVIEWS = [
-    { id:'r1', imgs:[], stars:5, text:'상담부터 시술까지 친절하게 안내받았어요. 검사가 꼼꼼해서 안심하고 진행했습니다.', author:'김○○' },
-    { id:'r2', imgs:[
-      'https://images.unsplash.com/photo-1551601651-bc60f254d532?w=400&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=400&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1512290923902-8a9f81dc236c?w=400&auto=format&fit=crop'
-    ], stars:5, text:'미뤄왔는데 진작 할 걸 그랬어요. 결과도 만족스럽고 회복도 빨랐습니다.', author:'이○○' },
-    { id:'r3', imgs:['https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&auto=format&fit=crop'], stars:5, text:'설명을 알기 쉽게 해주셔서 좋았어요. 의료진이 다 친절했습니다.', author:'박○○' },
-    { id:'r4', imgs:[
-      'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=400&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1559941707-c1bafc8c8f60?w=400&auto=format&fit=crop'
-    ], stars:4, text:'대기시간이 조금 있었지만 진료는 만족스러웠어요. 다음에도 방문할 예정입니다.', author:'최○○' },
-    { id:'r5', imgs:['https://images.unsplash.com/photo-1512290923902-8a9f81dc236c?w=400&auto=format&fit=crop'], stars:5, text:'분위기가 편안하고 스탭분들도 친절하셨어요. 재방문 의사 100%.', author:'정○○' }
-  ];
-  var selectedReviewIds = null; // null = 미초기화, Set = 사용자 선택 상태
-  var reviewsInitialized = false;
-
-  function selectedReviews() {
-    if (!selectedReviewIds) return [];
-    return PAGE_REVIEWS.filter(function(r){ return selectedReviewIds.has(r.id); });
-  }
-
-  function initReviewsSelectionIfNeeded() {
-    if (reviewsInitialized) return;
-    reviewsInitialized = true;
-    selectedReviewIds = new Set(PAGE_REVIEWS.map(function(r){ return r.id; }));
-  }
-
+  /* ── 리뷰 노출 토글 ── */
   function onReviewsToggle() {
-    var on = document.getElementById('opt-reviews').checked;
-    var picker = document.getElementById('opt-reviews-picker');
-    if (on) {
-      initReviewsSelectionIfNeeded();
-      picker.hidden = false;
-    } else {
-      picker.hidden = true;
-    }
-    updateReviewCountLabel();
-  }
-
-  function updateReviewCountLabel() {
-    var el = document.getElementById('disp-review-count');
-    if (!el) return;
-    var total = PAGE_REVIEWS.length;
-    var count = selectedReviewIds ? selectedReviewIds.size : 0;
-    if (count === total) el.textContent = '전체 ' + total + '개';
-    else if (count === 0) el.textContent = '선택 안 함';
-    else el.textContent = count + '개 선택됨';
-  }
-
-  function openReviewsPicker() {
-    initReviewsSelectionIfNeeded();
-    renderReviewsPickList();
-    openSheet('reviews');
-  }
-
-  function renderReviewsPickList() {
-    var list = document.getElementById('reviews-pick-list');
-    if (!list) return;
-    list.innerHTML = '';
-    PAGE_REVIEWS.forEach(function(r){
-      var isSel = selectedReviewIds.has(r.id);
-      var stars = '';
-      for (var i = 0; i < r.stars; i++) stars += '<i data-lucide="star"></i>';
-      var item = document.createElement('label');
-      item.className = 'pv-review-pick-item' + (isSel ? ' is-selected' : '');
-      var imgs = Array.isArray(r.imgs) ? r.imgs : (r.img ? [r.img] : []);
-      var imgsHTML = imgs.length ?
-        '<div class="pv-review-pick-imgs">' +
-          imgs.map(function(src){
-            return '<div class="pv-review-pick-img" style="background-image:url(\'' + src + '\');"></div>';
-          }).join('') +
-        '</div>' : '';
-      item.innerHTML =
-        '<input type="checkbox" class="checkbox"' + (isSel ? ' checked' : '') + '>' +
-        '<div class="pv-review-pick-content">' +
-          imgsHTML +
-          '<div class="pv-review-pick-body">' +
-            '<div class="pv-review-pick-stars">' + stars + '</div>' +
-            '<div class="pv-review-pick-text">' + escapeText(r.text) + '</div>' +
-            '<div class="pv-review-pick-author">' + escapeText(r.author) + '</div>' +
-          '</div>' +
-        '</div>';
-      var cb = item.querySelector('input');
-      cb.addEventListener('change', function(){
-        if (cb.checked) selectedReviewIds.add(r.id);
-        else selectedReviewIds.delete(r.id);
-        item.classList.toggle('is-selected', cb.checked);
-        updateReviewCountLabel();
-        updatePickHeader();
-      });
-      list.appendChild(item);
-    });
-    updatePickHeader();
-    if (window.lucide) lucide.createIcons();
-  }
-
-  function updatePickHeader() {
-    var total = PAGE_REVIEWS.length;
-    var count = selectedReviewIds ? selectedReviewIds.size : 0;
-    var countEl = document.getElementById('reviews-pick-count');
-    if (countEl) countEl.textContent = '총 ' + total + '개 중 ' + count + '개 선택';
-    var allCb = document.getElementById('reviews-select-all');
-    if (allCb) allCb.checked = count === total && total > 0;
-  }
-
-  function toggleSelectAllReviews(checked) {
-    initReviewsSelectionIfNeeded();
-    if (checked) selectedReviewIds = new Set(PAGE_REVIEWS.map(function(r){ return r.id; }));
-    else selectedReviewIds = new Set();
-    renderReviewsPickList();
-    updateReviewCountLabel();
+    // 리뷰 노출은 on/off만 — 미리보기 후기 섹션 표시/숨김은 미리보기 열 때 반영된다.
   }
 
   function escapeText(s) {
@@ -3027,32 +2884,6 @@
     });
   }
 
-  function renderPreviewReviews() {
-    var scroll = document.getElementById('pv-prev-review-scroll');
-    if (!scroll) return;
-    var reviewsOn = document.getElementById('opt-reviews').checked;
-    if (reviewsOn) initReviewsSelectionIfNeeded();
-    scroll.innerHTML = '';
-    selectedReviews().forEach(function(r){
-      var stars = '';
-      for (var i = 0; i < r.stars; i++) stars += '<i data-lucide="star"></i>';
-      var card = document.createElement('div');
-      card.className = 'pv-prev-review-card';
-      var firstImg = (Array.isArray(r.imgs) && r.imgs[0]) || r.img || '';
-      var imgHTML = firstImg ? '<div class="pv-prev-review-img" style="background-image:url(\'' + firstImg + '\');"></div>' : '';
-      card.innerHTML =
-        imgHTML +
-        '<div class="pv-prev-review-body">' +
-          '<div class="pv-prev-review-stars">' + stars + '</div>' +
-          '<p class="pv-prev-review-text">' + escapeText(r.text) + '</p>' +
-          '<div class="pv-prev-review-meta">' +
-            '<span class="verified"><i data-lucide="badge-check"></i>실제 후기</span><span>·</span><span>' + escapeText(r.author) + '</span>' +
-          '</div>' +
-        '</div>';
-      scroll.appendChild(card);
-    });
-    if (window.lucide) lucide.createIcons();
-  }
   function pickSuggestion(key, text) {
     var input = document.getElementById('f-cta');
     if (input) input.value = text;
@@ -3329,7 +3160,6 @@
       questions: questions,
       externalForm: externalFormState(),
       reviews:  document.getElementById('opt-reviews').checked,
-      reviewList: selectedReviews(),
       comments: document.getElementById('opt-comments').checked
     };
     try { sessionStorage.setItem('connectia.event', JSON.stringify(data)); } catch(e) {}
@@ -3406,9 +3236,7 @@
       schedEl.hidden = true;
     }
 
-    var reviewsOn = document.getElementById('opt-reviews').checked;
-    renderPreviewReviews();
-    var showReviews = reviewsOn && selectedReviews().length > 0;
+    var showReviews = document.getElementById('opt-reviews').checked;
     document.getElementById('pv-prev-review-section').hidden = !showReviews;
     document.getElementById('pv-prev-review-divider').hidden = !showReviews;
     document.getElementById('pv-prev-trust-row').hidden = !showReviews;
@@ -3465,6 +3293,18 @@
   function closePreview() {
     document.getElementById('pv-preview').classList.remove('is-open');
   }
+
+  /* ── 이벤트 설명 서식 툴바 (rt-editor, profile-edit 재사용) ── */
+  const RT_CMDS = ['bold','italic','underline','strikeThrough'];
+  function rtCmd(e, cmd){ e.preventDefault(); document.getElementById('f-desc').focus(); document.execCommand(cmd,false,null); rtSyncState(); }
+  function rtSyncState(){ const btns=document.querySelectorAll('.rt-editor-btn'); btns.forEach((btn,i)=>{ const cmd=RT_CMDS[i]; if(!cmd) return; btn.classList.toggle('is-active', document.queryCommandState(cmd)); }); }
+  // 서식 툴바: 설명 입력창 포커스 시에만 노출 (툴바 버튼 클릭은 onmousedown preventDefault로 blur 방지)
+  (function(){
+    var f = document.getElementById('f-desc');
+    var tb = document.getElementById('desc-toolbar');
+    f.addEventListener('focus', function(){ tb.hidden = false; });
+    f.addEventListener('blur', function(){ tb.hidden = true; });
+  })();
 
   // 초기 호출
   renderImages();

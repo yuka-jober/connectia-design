@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>이벤트 랜딩 — 엘린 피부과</title>
-<link rel="stylesheet" href="../tokens.css">
-<link rel="stylesheet" href="../components.css">
+<link rel="stylesheet" href="../../tokens.css">
+<link rel="stylesheet" href="../../components.css">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -382,7 +382,7 @@
     width: 44px; height: 44px;
     border-radius: var(--r-sm);
     background-color: var(--color-primary-light);
-    background-image: url('../assets/profile.png');
+    background-image: url('../../assets/profile.png');
     background-size: cover; background-position: center;
     flex-shrink: 0;
   }
@@ -612,7 +612,7 @@
         <!-- Slot: 썸네일 (4:3) -->
         <div class="hero">
           <div class="hero-slider" id="hero-slider">
-            <div class="hero-slide" style="background-image:url('../assets/thumbnail_1.png');"></div>
+            <div class="hero-slide" style="background-image:url('../../assets/thumbnail_1.png');"></div>
           </div>
         </div>
 
@@ -1104,33 +1104,8 @@
       applyExternalCta(ext.url, d.cta || '신청하기');
     }
 
-    // 리뷰 노출 + 큐레이션
-    var reviewList = Array.isArray(d.reviewList) ? d.reviewList : null;
-    var showReviews = d.reviews === true && (reviewList === null || reviewList.length > 0);
-    if (showReviews && reviewList) {
-      var scroll = document.getElementById('review-scroll');
-      if (scroll) {
-        scroll.innerHTML = '';
-        reviewList.forEach(function(r){
-          var stars = '';
-          for (var i = 0; i < (r.stars || 5); i++) stars += '<i data-lucide="star"></i>';
-          var card = document.createElement('div');
-          card.className = 'review-card';
-          var firstImg = (Array.isArray(r.imgs) && r.imgs[0]) || r.img || '';
-          var imgHTML = firstImg ? '<div class="review-img" style="background-image:url(\'' + firstImg + '\');"></div>' : '';
-          card.innerHTML =
-            imgHTML +
-            '<div class="review-body">' +
-              '<div class="review-stars">' + stars + '</div>' +
-              '<p class="review-text">' + escapeHTML(r.text) + '</p>' +
-              '<div class="review-meta">' +
-                '<span class="verified"><i data-lucide="badge-check"></i>실제 후기</span><span>·</span><span>' + escapeHTML(r.author) + '</span>' +
-              '</div>' +
-            '</div>';
-          scroll.appendChild(card);
-        });
-      }
-    }
+    // 리뷰 노출 (on/off) — 기존 하드코딩된 후기 섹션을 그대로 표시하거나 숨긴다.
+    var showReviews = d.reviews === true;
     if (!showReviews) {
       var reviewSection = document.querySelector('.review-scroll');
       if (reviewSection) {
