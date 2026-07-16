@@ -1199,6 +1199,19 @@
   .pdf-file-chip-icon { flex-shrink: 0; width: 24px; height: 24px; color: var(--color-primary); }
   .pdf-file-chip-name { flex: 1; min-width: 0; font-size: var(--fs-body); color: var(--color-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .pdf-dropzone[hidden], .pdf-file-chip[hidden] { display: none !important; }
+  .pdf-preview-link {
+    align-self: flex-start;
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 4px 0;
+    background: none; border: none;
+    color: var(--color-primary);
+    font-family: inherit;
+    font-size: var(--fs-caption); font-weight: var(--fw-medium);
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .pdf-preview-link i[data-lucide],
+  .pdf-preview-link svg.lucide { width: 14px; height: 14px; color: var(--color-primary); }
   .pv-luma-card .pv-desc {
     background: transparent;
     border: none;
@@ -2105,6 +2118,10 @@
               <i data-lucide="x"></i>
             </button>
           </div>
+          <a class="pdf-preview-link" href="../event-landing-pdf-0716/event-landing-pdf.html" target="_blank" rel="noopener">
+            <i data-lucide="eye"></i>
+            미리보기
+          </a>
         </div>
       </div>
     </div>

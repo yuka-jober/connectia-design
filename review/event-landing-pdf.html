@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>이벤트 랜딩 (PDF 뷰어) — 엘린 피부과</title>
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="../components.css">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-base);
+    background: #e0e0e0;
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ── Frame (mobile) ── */
+  .frame {
+    width: 390px;
+    height: 844px;
+    max-height: 100dvh;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 32px 80px -20px rgba(0,0,0,0.28);
+    background: var(--color-surface);
+    border-radius: 44px;
+  }
+  @media (max-width: 439px) {
+    .frame { width: 100vw; height: 100dvh; max-height: none; border-radius: 0; }
+  }
+
+  /* ── 화면 전환 ── */
+  .screen { position: absolute; inset: 0; display: none; flex-direction: column; background: var(--color-surface); }
+  .screen.on { display: flex; }
+  /* 바텀시트를 폰 목업(frame) 기준으로 배치 */
+  .frame .bottom-sheet-overlay,
+  .frame .bottom-sheet { position: absolute; }
+  .topbar-actions { display: flex; align-items: center; gap: 8px; }
+  .menu-item-main { display: inline-flex; align-items: center; gap: 12px; }
+
+  /* ── 공통 ── */
+  i[data-lucide] { display: inline-flex; flex-shrink: 0; }
+  svg.lucide { flex-shrink: 0; }
+
+  /* ── Topbar (floating over hero) ── */
+  .topbar {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 8px;
+    pointer-events: none;
+  }
+  .topbar .icon-btn {
+    pointer-events: auto;
+    border-radius: var(--r-full);
+    background: var(--color-scrim);
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    box-shadow: 0 1px 6px rgba(0,0,0,0.08);
+  }
+  .topbar .icon-btn:hover { background: var(--color-scrim); }
+
+  /* 데모용 링크 (직접입력 버전으로 이동) */
+  .topbar-demo-link {
+    pointer-events: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    height: 32px;
+    padding: 0 12px;
+    border-radius: var(--r-full);
+    background: var(--color-scrim);
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    color: var(--color-on-primary);
+    text-decoration: none;
+    font-family: var(--font-base);
+  }
+  .topbar-demo-link i[data-lucide],
+  .topbar-demo-link svg { width: 12px; height: 12px; color: var(--color-on-primary); }
+
+  /* ── Scroll body + sticky CTA ── */
+  .scroll-body { flex: 1; overflow-y: auto; background: var(--color-surface); padding-bottom: 96px; }
+  .sticky-bar {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    padding: 12px 20px calc(20px + env(safe-area-inset-bottom));
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+    display: flex; flex-direction: column; gap: 8px;
+    z-index: 5;
+  }
+  .sticky-meta {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    font-size: var(--fs-caption); color: var(--color-text-muted);
+  }
+  .sticky-meta strong { color: var(--color-text-sub); font-weight: var(--fw-semibold); }
+  .sticky-actions { display: flex; align-items: stretch; gap: 8px; }
+  .sticky-chat {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    border-radius: var(--r-md);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    color: var(--color-primary);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: background var(--motion-fast) var(--ease-standard);
+  }
+  .sticky-chat:hover { background: var(--color-surface-sub); }
+  .sticky-chat i[data-lucide], .sticky-chat svg { width: 22px; height: 22px; }
+
+  /* ============================================
+     LANDING (PDF) SCREEN
+     ============================================ */
+
+  /* Hero thumbnail — 4:3 */
+  .hero {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    flex-shrink: 0;
+    background: var(--color-primary-light);
+  }
+  .hero-slider {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    display: flex;
+  }
+  .hero-slide {
+    flex: 0 0 100%;
+    width: 100%; height: 100%;
+    background-size: cover;
+    background-position: center;
+    background-color: var(--color-primary-light);
+    position: relative;
+  }
+  .hero-slide::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(0,0,0,0) 50%, rgba(0,0,0,0.35) 100%);
+    pointer-events: none;
+  }
+
+  /* Section divider */
+  .section-divider {
+    height: 8px;
+    background: var(--color-bg);
+    flex-shrink: 0;
+  }
+
+  /* Section */
+  .section {
+    padding: 24px 20px;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  .section-title {
+    font-size: var(--fs-heading);
+    font-weight: var(--fw-bold);
+    color: var(--color-text);
+    letter-spacing: -0.2px;
+  }
+
+  /* ── PDF 뷰어 ── */
+  .pdf-viewer {
+    background: var(--color-bg);
+    padding: 20px 16px;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  .pdf-page {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    background: var(--color-surface);
+    border-radius: var(--r-sm);
+    box-shadow: var(--shadow-2);
+    padding: 32px 24px;
+    display: flex; flex-direction: column; gap: 16px;
+    overflow: hidden;
+  }
+  .pdf-page-badge {
+    position: absolute;
+    top: 12px; right: 12px;
+    background: var(--color-scrim);
+    color: var(--color-on-primary);
+    font-size: var(--fs-badge);
+    font-weight: var(--fw-medium);
+    padding: 4px 8px;
+    border-radius: var(--r-full);
+  }
+  .pdf-line {
+    height: 8px;
+    border-radius: var(--r-xs);
+    background: var(--color-surface-sub);
+  }
+  .pdf-line.pdf-line-title {
+    height: 16px;
+    width: 70%;
+    background: var(--color-border);
+    margin-bottom: 8px;
+  }
+  .pdf-line.pdf-line-short { width: 60%; }
+  .pdf-line.pdf-line-mid { width: 80%; }
+  .pdf-line.pdf-line-long { width: 100%; }
+  .pdf-image {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background: var(--color-surface-sub);
+    border-radius: var(--r-xs);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--color-text-muted);
+    margin: 8px 0;
+  }
+  .pdf-image i[data-lucide],
+  .pdf-image svg { width: 32px; height: 32px; }
+  .pdf-para {
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .pdf-block {
+    display: flex; flex-direction: column; gap: 12px;
+  }
+
+  /* Reviews */
+  .review-scroll {
+    display: flex; gap: 12px;
+    overflow-x: auto;
+    margin: 0 -20px;
+    padding: 0 20px 8px;
+    scrollbar-width: none;
+  }
+  .review-scroll::-webkit-scrollbar { display: none; }
+  .review-card {
+    width: 240px; flex-shrink: 0;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-md);
+    overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .review-img {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    background-size: cover; background-position: center;
+    background-color: var(--color-surface-sub);
+  }
+  .review-body {
+    padding: 12px 16px 16px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .review-stars { display: inline-flex; align-items: center; gap: 2px; }
+  .review-stars i[data-lucide],
+  .review-stars svg { width: 12px; height: 12px; color: var(--color-star); fill: var(--color-star); }
+  .review-text {
+    font-size: var(--fs-label); color: var(--color-text);
+    line-height: 1.5;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .review-meta {
+    font-size: var(--fs-badge); color: var(--color-text-muted);
+    display: flex; align-items: center; gap: 4px;
+  }
+  .review-meta .verified {
+    display: inline-flex; align-items: center; gap: 2px;
+    color: var(--color-primary);
+    font-weight: var(--fw-medium);
+  }
+  .review-meta .verified i[data-lucide],
+  .review-meta .verified svg { width: 12px; height: 12px; }
+
+  /* Clinic page link card */
+  .clinic-link {
+    display: flex; align-items: center; gap: 12px;
+    padding: 16px;
+    background: var(--color-surface-sub);
+    border-radius: var(--r-md);
+    cursor: pointer;
+    border: none;
+    width: 100%;
+    text-align: left;
+    font-family: var(--font-base);
+  }
+  .clinic-link:hover { background: var(--color-border); }
+  .clinic-link-thumb {
+    width: 44px; height: 44px;
+    border-radius: var(--r-sm);
+    background-color: var(--color-primary-light);
+    background-image: url('../assets/profile.png');
+    background-size: cover; background-position: center;
+    flex-shrink: 0;
+  }
+  .clinic-link-text { flex: 1; }
+  .clinic-link-name {
+    font-size: var(--fs-body); font-weight: var(--fw-semibold);
+    color: var(--color-text);
+  }
+  .clinic-link-sub {
+    font-size: var(--fs-caption); color: var(--color-text-muted);
+    margin-top: 4px;
+  }
+  .clinic-link i.chev,
+  .clinic-link svg.chev { width: 20px; height: 20px; color: var(--color-text-muted); }
+</style>
+</head>
+<body>
+
+<div class="frame">
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- SCREEN — LANDING (PDF)                        -->
+  <!-- ════════════════════════════════════════════ -->
+  <div class="screen on" id="screen-landing">
+      <div class="scroll-body">
+
+        <!-- Floating topbar -->
+        <div class="topbar">
+          <button class="icon-btn icon-btn-clear" aria-label="뒤로">
+            <i data-lucide="chevron-left" style="width:22px;height:22px;color:var(--color-on-primary);"></i>
+          </button>
+          <div class="topbar-actions">
+            <a class="topbar-demo-link text-badge" href="../screens/event-landing.html">
+              직접입력 버전
+              <i data-lucide="arrow-right"></i>
+            </a>
+            <button class="icon-btn icon-btn-clear" aria-label="공유">
+              <i data-lucide="share-2" style="width:20px;height:20px;color:var(--color-on-primary);"></i>
+            </button>
+            <button class="icon-btn icon-btn-clear" aria-label="더보기">
+              <i data-lucide="ellipsis" style="width:22px;height:22px;color:var(--color-on-primary);"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Slot: 썸네일 (4:3) -->
+        <div class="hero">
+          <div class="hero-slider">
+            <div class="hero-slide" style="background-image:url('../assets/eye_banner.png');"></div>
+          </div>
+        </div>
+
+        <!-- Slot: PDF 뷰어 -->
+        <div class="pdf-viewer" aria-label="이벤트 안내 PDF">
+          <div class="pdf-page">
+            <span class="pdf-page-badge">1 / 4</span>
+            <div class="pdf-line pdf-line-title"></div>
+            <div class="pdf-para">
+              <div class="pdf-line pdf-line-long"></div>
+              <div class="pdf-line pdf-line-long"></div>
+              <div class="pdf-line pdf-line-mid"></div>
+            </div>
+            <div class="pdf-image">
+              <i data-lucide="image"></i>
+            </div>
+            <div class="pdf-para">
+              <div class="pdf-line pdf-line-long"></div>
+              <div class="pdf-line pdf-line-short"></div>
+            </div>
+          </div>
+
+          <div class="pdf-page">
+            <span class="pdf-page-badge">2 / 4</span>
+            <div class="pdf-line pdf-line-title"></div>
+            <div class="pdf-para">
+              <div class="pdf-line pdf-line-long"></div>
+              <div class="pdf-line pdf-line-long"></div>
+              <div class="pdf-line pdf-line-long"></div>
+              <div class="pdf-line pdf-line-mid"></div>
+            </div>
+            <div class="pdf-block">
+              <div class="pdf-para">
+                <div class="pdf-line pdf-line-long"></div>
+                <div class="pdf-line pdf-line-short"></div>
+              </div>
+              <div class="pdf-para">
+                <div class="pdf-line pdf-line-long"></div>
+                <div class="pdf-line pdf-line-mid"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="pdf-page">
+            <span class="pdf-page-badge">3 / 4</span>
+            <div class="pdf-line pdf-line-title"></div>
+            <div class="pdf-image">
+              <i data-lucide="image"></i>
+            </div>
+            <div class="pdf-para">
+              <div class="pdf-line pdf-line-long"></div>
+              <div class="pdf-line pdf-line-long"></div>
+              <div class="pdf-line pdf-line-mid"></div>
+              <div class="pdf-line pdf-line-short"></div>
+            </div>
+          </div>
+
+          <div class="pdf-page">
+            <span class="pdf-page-badge">4 / 4</span>
+            <div class="pdf-line pdf-line-title"></div>
+            <div class="pdf-para">
+              <div class="pdf-line pdf-line-long"></div>
+              <div class="pdf-line pdf-line-mid"></div>
+            </div>
+            <div class="pdf-block">
+              <div class="pdf-para">
+                <div class="pdf-line pdf-line-long"></div>
+                <div class="pdf-line pdf-line-long"></div>
+                <div class="pdf-line pdf-line-short"></div>
+              </div>
+            </div>
+            <div class="pdf-para">
+              <div class="pdf-line pdf-line-mid"></div>
+              <div class="pdf-line pdf-line-short"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-divider"></div>
+
+        <!-- Slot: 후기 모음 -->
+        <div class="section">
+          <div class="section-title">실제 후기</div>
+          <div class="review-scroll">
+            <div class="review-card">
+              <div class="review-img" style="background-image:url('https://images.unsplash.com/photo-1559941707-c1bafc8c8f60?w=400&auto=format&fit=crop');"></div>
+              <div class="review-body">
+                <div class="review-stars">
+                  <i data-lucide="star"></i>
+                  <i data-lucide="star"></i>
+                  <i data-lucide="star"></i>
+                  <i data-lucide="star"></i>
+                  <i data-lucide="star"></i>
+                </div>
+                <p class="review-text">상담부터 시술까지 친절하게 안내받았어요. 피부 상태를 꼼꼼히 봐주셔서 안심하고 진행했습니다.</p>
+                <div class="review-meta">
+                  <span class="verified"><i data-lucide="badge-check"></i>실제 후기</span>
+                  <span>·</span>
+                  <span>김○○ · 리쥬베룩</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="review-card">
+              <div class="review-img" style="background-image:url('https://images.unsplash.com/photo-1551601651-bc60f254d532?w=400&auto=format&fit=crop');"></div>
+              <div class="review-body">
+                <div class="review-stars">
+                  <i data-lucide="star"></i>
+                  <i data-lucide="star"></i>
+                  <i data-lucide="star"></i>
+                  <i data-lucide="star"></i>
+                  <i data-lucide="star"></i>
+                </div>
+                <p class="review-text">미뤄왔던 피부 관리, 진작 받을 걸 그랬어요. 시술 다음 날부터 톤이 확 밝아진 게 보였습니다.</p>
+                <div class="review-meta">
+                  <span class="verified"><i data-lucide="badge-check"></i>실제 후기</span>
+                  <span>·</span>
+                  <span>이○○ · 리쥬베룩</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="review-card">
+              <div class="review-img" style="background-image:url('https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&auto=format&fit=crop');"></div>
+              <div class="review-body">
+                <div class="review-stars">
+                  <i data-lucide="star"></i>
+                  <i data-lucide="star"></i>
+                  <i data-lucide="star"></i>
+                  <i data-lucide="star"></i>
+                  <i data-lucide="star"></i>
+                </div>
+                <p class="review-text">피부 상태에 맞춰 강도를 조절해 주셔서 부담 없이 받았어요. 의료진이 다 친절했습니다.</p>
+                <div class="review-meta">
+                  <span class="verified"><i data-lucide="badge-check"></i>실제 후기</span>
+                  <span>·</span>
+                  <span>박○○ · 리쥬베룩</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-divider"></div>
+
+        <!-- Slot: 병원 페이지 가기 -->
+        <div class="section">
+          <button class="clinic-link" aria-label="병원 페이지 가기">
+            <div class="clinic-link-thumb"></div>
+            <div class="clinic-link-text">
+              <div class="clinic-link-name">엘린 피부과</div>
+              <div class="clinic-link-sub">병원 정보 · 의료진 · 위치 보기</div>
+            </div>
+            <i data-lucide="chevron-right" class="chev"></i>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- Sticky CTA -->
+      <div class="sticky-bar">
+        <div class="sticky-meta">
+          <i data-lucide="users" style="width:14px;height:14px;color:var(--color-text-muted);"></i>
+          지금까지 <strong>324명</strong>이 신청했어요
+        </div>
+        <div class="sticky-actions">
+          <button class="btn btn-lg btn-block btn-fill-primary">
+            이벤트 참여하기
+          </button>
+          <button class="sticky-chat" type="button" aria-label="AI 상담">
+            <i data-lucide="bot-message-square"></i>
+          </button>
+        </div>
+      </div>
+  </div>
+
+</div>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+  lucide.createIcons();
+</script>
+</body>
+</html>
