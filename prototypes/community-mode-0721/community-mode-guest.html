@@ -2328,11 +2328,22 @@
     if (e) e.stopPropagation();
     closeLoginPopup();
   }
+  // 데모: 로그인 계정에서 가져온 프로필 (실서비스에선 세션에서 주입)
+  var DEMO_LOGIN_USER = { name: '김민준', email: 'minjun.kim@founder.co' };
+
   function onLoginDemoContinue(e) {
     // 팝업 내부 클릭 = 로그인 성공 시나리오 → 가입 신청 시트로 진행
     if (e && e.target && e.target.closest && e.target.closest('.c-login-popup-close')) return;
     closeLoginPopup();
+    prefillJoinFromLogin();
     setTimeout(openJoinSheet, 220);
+  }
+
+  function prefillJoinFromLogin() {
+    var n = document.getElementById('j-name');
+    var em = document.getElementById('j-email');
+    if (n && !n.value) n.value = DEMO_LOGIN_USER.name;
+    if (em && !em.value) em.value = DEMO_LOGIN_USER.email;
   }
 
   function openJoinSheet() {
