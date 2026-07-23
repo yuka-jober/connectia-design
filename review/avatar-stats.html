@@ -371,7 +371,7 @@
               <div class="chart-title-wrap">
                 <span class="text-heading">방문수 추이</span>
                 <button class="info-btn" id="chartInfoBtn" aria-label="설명" hidden><i data-lucide="info"></i></button>
-                <span class="info-tip" id="chartInfoTip">각 점은 그 날짜부터 시작하는 일주일간의 추이예요</span>
+                <span class="info-tip" id="chartInfoTip">각 점은 그 날짜까지 일주일간의 방문 추이예요</span>
               </div>
             </div>
             <div class="chart-wrap">
@@ -478,6 +478,28 @@
   <script>
   // ── Mock data per period ──
   const nf = new Intl.NumberFormat('en-US');
+
+  // 주 단위 데이터 (오늘=2026-07-23 기준, 마지막 주가 오늘로 끝남 → 반토막 없음)
+  function buildWeeks(n) {
+    const fmt = d => (d.getMonth() + 1) + '/' + d.getDate();
+    const base = new Date(2026, 6, 23);
+    const arr = [];
+    for (let k = n - 1; k >= 0; k--) {
+      const end = new Date(base); end.setDate(base.getDate() - k * 7);
+      const start = new Date(end); start.setDate(end.getDate() - 6);
+      const v = Math.max(120, Math.round(1300 - k * 28 + Math.sin(k * 1.1) * 45));
+      arr.push({ d: fmt(end), tip: fmt(start) + '~' + fmt(end), v: v });
+    }
+    return arr;
+  }
+  function pickAxis(pts, count) {
+    const out = [];
+    for (let i = 0; i < count; i++) out.push(pts[Math.round(i * (pts.length - 1) / (count - 1))].d);
+    return out;
+  }
+  const sumV = pts => pts.reduce((a, p) => a + p.v, 0);
+  const w1 = buildWeeks(5), w3 = buildWeeks(13), w6 = buildWeeks(26);
+
   const DATA = {
     '오늘': {
       label: '오늘',
@@ -512,36 +534,28 @@
     },
     '1개월': {
       label: '최근 1개월',
-      points: [
-        { d: '6/19', v: 720, tip: '6/19~6/25' }, { d: '6/26', v: 880, tip: '6/26~7/2' }, { d: '7/3', v: 960, tip: '7/3~7/9' },
-        { d: '7/10', v: 1080, tip: '7/10~7/16' }, { d: '7/17', v: 1220, tip: '7/17~7/23' }
-      ],
-      axis: ['6/19', '6/26', '7/3', '7/10', '7/17'],
+      points: w1,
+      axis: pickAxis(w1, 5),
       metrics: [
-        { label: '방문', num: '4,860', delta: '18%', up: true },
+        { label: '방문', num: nf.format(sumV(w1)), delta: '18%', up: true },
         { label: '받은 대화', num: '2,940', delta: '5%', up: false }
       ]
     },
     '3개월': {
       label: '최근 3개월',
-      points: [
-        { d: '4월', v: 2800 }, { d: '5월', v: 3400 }, { d: '6월', v: 3900 }, { d: '7월', v: 4300 }
-      ],
-      axis: ['4월', '5월', '6월', '7월'],
+      points: w3,
+      axis: pickAxis(w3, 5),
       metrics: [
-        { label: '방문', num: '14,400', delta: '24%', up: true },
+        { label: '방문', num: nf.format(sumV(w3)), delta: '24%', up: true },
         { label: '받은 대화', num: '8,180', delta: '9%', up: true }
       ]
     },
     '6개월': {
       label: '최근 6개월',
-      points: [
-        { d: '1월', v: 1600 }, { d: '2월', v: 1900 }, { d: '3월', v: 2300 }, { d: '4월', v: 2800 },
-        { d: '5월', v: 3400 }, { d: '6월', v: 3900 }, { d: '7월', v: 4300 }
-      ],
-      axis: ['1월', '2월', '3월', '4월', '5월', '6월', '7월'],
+      points: w6,
+      axis: pickAxis(w6, 6),
       metrics: [
-        { label: '방문', num: '20,200', delta: '31%', up: true },
+        { label: '방문', num: nf.format(sumV(w6)), delta: '31%', up: true },
         { label: '받은 대화', num: '15,300', delta: '7%', up: false }
       ]
     }
@@ -611,8 +625,9 @@
     ).join('');
     lucide.createIcons();
 
-    infoBtn.hidden = key !== '1개월';
-    if (key !== '1개월') infoTip.classList.remove('is-on');
+    const weekly = key === '1개월' || key === '3개월' || key === '6개월';
+    infoBtn.hidden = !weekly;
+    if (!weekly) infoTip.classList.remove('is-on');
 
     hideScrub();
   }
