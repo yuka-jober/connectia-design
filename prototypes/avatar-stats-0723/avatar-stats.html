@@ -479,26 +479,25 @@
   // ── Mock data per period ──
   const nf = new Intl.NumberFormat('en-US');
 
-  // 주 단위 데이터 (오늘=2026-07-23 기준, 마지막 주가 오늘로 끝남 → 반토막 없음)
-  function buildWeeks(n) {
+  // 구간 데이터 (오늘=2026-07-23 기준, 마지막 구간이 오늘로 끝남 → 반토막 없음)
+  function buildBuckets(n, days) {
     const fmt = d => (d.getMonth() + 1) + '/' + d.getDate();
     const base = new Date(2026, 6, 23);
-    const arr = [];
+    const pts = [];
+    let start0;
     for (let k = n - 1; k >= 0; k--) {
-      const end = new Date(base); end.setDate(base.getDate() - k * 7);
-      const start = new Date(end); start.setDate(end.getDate() - 6);
-      const v = Math.max(120, Math.round(1300 - k * 28 + Math.sin(k * 1.1) * 45));
-      arr.push({ d: fmt(end), tip: fmt(start) + '~' + fmt(end), v: v });
+      const end = new Date(base); end.setDate(base.getDate() - k * days);
+      const start = new Date(end); start.setDate(end.getDate() - (days - 1));
+      if (k === n - 1) start0 = fmt(start);
+      const daily = Math.max(20, 186 - (k * days / 7) * 4 + Math.sin(k * 1.1) * 6);
+      pts.push({ d: fmt(end), tip: fmt(start) + '~' + fmt(end), v: Math.round(daily * days), hx: n - k });
     }
-    return arr;
+    return { pts: pts, start: start0, n: n };
   }
-  function pickAxis(pts, count) {
-    const out = [];
-    for (let i = 0; i < count; i++) out.push(pts[Math.round(i * (pts.length - 1) / (count - 1))].d);
-    return out;
-  }
+  const WEEK_NOTE = '각 점은 그 날짜까지 일주일간의 방문 추이예요';
+  const MONTH_NOTE = '각 점은 그 날짜까지 30일간의 방문 추이예요';
   const sumV = pts => pts.reduce((a, p) => a + p.v, 0);
-  const w1 = buildWeeks(5), w3 = buildWeeks(13), w6 = buildWeeks(26);
+  const b1 = buildBuckets(5, 7), b3 = buildBuckets(12, 7), b6 = buildBuckets(6, 30);
 
   const DATA = {
     '오늘': {
@@ -534,28 +533,37 @@
     },
     '1개월': {
       label: '최근 1개월',
-      points: w1,
-      axis: pickAxis(w1, 5),
+      note: WEEK_NOTE,
+      xMax: b1.n,
+      originStart: true,
+      points: b1.pts,
+      axis: [b1.start, ...b1.pts.map(p => p.d)],
       metrics: [
-        { label: '방문', num: nf.format(sumV(w1)), delta: '18%', up: true },
+        { label: '방문', num: nf.format(sumV(b1.pts)), delta: '18%', up: true },
         { label: '받은 대화', num: '2,940', delta: '5%', up: false }
       ]
     },
     '3개월': {
       label: '최근 3개월',
-      points: w3,
-      axis: pickAxis(w3, 5),
+      note: WEEK_NOTE,
+      xMax: b3.n,
+      originStart: true,
+      points: b3.pts,
+      axis: [b3.start, b3.pts[2].d, b3.pts[5].d, b3.pts[8].d, b3.pts[11].d],
       metrics: [
-        { label: '방문', num: nf.format(sumV(w3)), delta: '24%', up: true },
+        { label: '방문', num: nf.format(sumV(b3.pts)), delta: '24%', up: true },
         { label: '받은 대화', num: '8,180', delta: '9%', up: true }
       ]
     },
     '6개월': {
       label: '최근 6개월',
-      points: w6,
-      axis: pickAxis(w6, 6),
+      note: MONTH_NOTE,
+      xMax: b6.n,
+      originStart: true,
+      points: b6.pts,
+      axis: [b6.start, ...b6.pts.map(p => p.d)],
       metrics: [
-        { label: '방문', num: nf.format(sumV(w6)), delta: '31%', up: true },
+        { label: '방문', num: nf.format(sumV(b6.pts)), delta: '31%', up: true },
         { label: '받은 대화', num: '15,300', delta: '7%', up: false }
       ]
     }
@@ -598,9 +606,12 @@
     }));
 
     const first = coords[0], last = coords[n - 1];
-    const linePath = coords.map((c, i) => (i ? 'L' : 'M') + c.x.toFixed(2) + ' ' + c.y.toFixed(2)).join(' ');
+    // originStart: 선을 왼쪽 끝 바닥(구간 시작점, 점·값 없음)에서부터 이음
+    const lineVerts = data.originStart ? [{ x: X_L, y: Y_BASE }].concat(coords) : coords;
+    const linePath = lineVerts.map((c, i) => (i ? 'L' : 'M') + c.x.toFixed(2) + ' ' + c.y.toFixed(2)).join(' ');
     elLine.setAttribute('d', linePath);
-    elArea.setAttribute('d', linePath + ' L' + last.x.toFixed(2) + ' ' + Y_BASE + ' L' + first.x.toFixed(2) + ' ' + Y_BASE + ' Z');
+    const leftX = data.originStart ? X_L : first.x;
+    elArea.setAttribute('d', linePath + ' L' + last.x.toFixed(2) + ' ' + Y_BASE + ' L' + leftX.toFixed(2) + ' ' + Y_BASE + ' Z');
 
     elEndDot.setAttribute('cx', last.x);
     elEndDot.setAttribute('cy', last.y);
@@ -625,9 +636,13 @@
     ).join('');
     lucide.createIcons();
 
-    const weekly = key === '1개월' || key === '3개월' || key === '6개월';
-    infoBtn.hidden = !weekly;
-    if (!weekly) infoTip.classList.remove('is-on');
+    if (data.note) {
+      infoBtn.hidden = false;
+      infoTip.textContent = data.note;
+    } else {
+      infoBtn.hidden = true;
+      infoTip.classList.remove('is-on');
+    }
 
     hideScrub();
   }
