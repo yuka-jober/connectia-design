@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>아바타 관리 허브 — 통계 (빈 상태)</title>
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="../components.css">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-base);
+    background: #e0e0e0;
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ── Frame (390 × 844) ── */
+  .frame {
+    width: 390px;
+    height: 844px;
+    max-height: 100dvh;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 32px 80px -20px rgba(0,0,0,0.28);
+    background: var(--color-bg);
+    transform: translateZ(0);
+  }
+  @media (max-width: 439px) { .frame { width: 100vw; height: 100dvh; max-height: none; } }
+  @media (min-width: 440px) { .frame { border-radius: 44px; max-height: calc(100dvh - 40px); } }
+
+  .screen { position: absolute; inset: 0; display: flex; flex-direction: column; background: var(--color-bg); }
+  .scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+
+  [data-lucide] { display: inline-flex; flex-shrink: 0; }
+
+  /* ── Header ── */
+  .hub-header {
+    background: var(--color-surface);
+    padding: 8px 8px 12px;
+    flex-shrink: 0;
+  }
+  .hub-header-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .hub-header-title {
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .hub-subtitle {
+    padding: 0 8px;
+    margin-top: 4px;
+  }
+
+  /* ── Tabs ── */
+  .hub-tabs {
+    display: flex;
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    flex-shrink: 0;
+  }
+  .hub-tab {
+    flex: 1;
+    position: relative;
+    padding: 12px 4px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-medium);
+    color: var(--color-text-muted);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .hub-tab.is-active {
+    color: var(--color-text);
+    font-weight: var(--fw-bold);
+  }
+  .hub-tab.is-active::after {
+    content: '';
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: -1px;
+    height: 2px;
+    border-radius: var(--r-full);
+    background: var(--color-primary);
+  }
+
+  /* ── Content ── */
+  .hub-body { padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+
+  /* ── Period chip ── */
+  .period-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    align-self: flex-start;
+    padding: 8px 12px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-full);
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .period-chip [data-lucide] { width: 16px; height: 16px; color: var(--color-text-muted); }
+
+  /* ── Card ── */
+  .card {
+    background: var(--color-surface);
+    border-radius: var(--r-md);
+    box-shadow: var(--shadow-1);
+    overflow: hidden;
+  }
+  .card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 16px 8px;
+  }
+  .card-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-medium);
+    color: var(--color-text-muted);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .card-link [data-lucide] { width: 14px; height: 14px; }
+
+  /* ── Chart card ── */
+  .chart-wrap { padding: 16px 16px 0; }
+  .chart-svg { width: 100%; height: auto; display: block; overflow: visible; }
+  .chart-xaxis {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 16px 0;
+  }
+
+  /* ── Metrics row ── */
+  .metrics {
+    display: flex;
+    gap: 8px;
+    padding: 16px;
+  }
+  .metric {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px;
+    background: var(--color-surface-sub);
+    border-radius: var(--r-md);
+  }
+  .metric-num {
+    font-family: var(--font-base);
+    font-size: var(--fs-title);
+    font-weight: var(--fw-bold);
+    letter-spacing: var(--ls-title);
+    color: var(--color-text);
+  }
+  .metric-delta {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-semibold);
+  }
+  .metric-delta [data-lucide] { width: 12px; height: 12px; }
+  .metric-delta.is-up   { color: var(--color-success); }
+  .metric-delta.is-down { color: var(--color-text-muted); }
+
+  /* ── List rows ── */
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 16px;
+  }
+  .row:last-of-type,
+  .faq-row:last-of-type { padding-bottom: 16px; }
+  .row-main { flex: 1; min-width: 0; }
+  .row-phone {
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-regular);
+    color: var(--color-primary);
+    margin-top: 2px;
+  }
+  .row-time {
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    color: var(--color-text-muted);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* ── FAQ row ── */
+  .faq-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 16px;
+  }
+
+  /* ── Recent chat ── */
+  .chat-preview {
+    font-family: var(--font-base);
+    font-size: var(--fs-body-lg);
+    color: var(--color-text-muted);
+    margin-top: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* ── Empty state ── */
+  .empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    text-align: center;
+    padding: 32px 16px;
+  }
+  .empty [data-lucide] { width: 28px; height: 28px; color: var(--color-border); }
+  .chart-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    text-align: center;
+    padding: 40px 16px;
+  }
+  .chart-empty [data-lucide] { width: 32px; height: 32px; color: var(--color-border); }
+</style>
+</head>
+<body>
+  <div class="frame">
+    <div class="screen">
+      <!-- Header -->
+      <div class="hub-header">
+        <div class="hub-header-row">
+          <button class="icon-btn icon-btn-clear" aria-label="뒤로">
+            <i data-lucide="arrow-left"></i>
+          </button>
+          <div class="hub-header-title text-title">엘린 피부과 (유카 테스트)</div>
+          <button class="btn btn-sm btn-weak-dark">고급 설정</button>
+        </div>
+        <div class="hub-subtitle text-caption">아바타 통계와 자료, 설정을 한곳에서 관리하세요</div>
+      </div>
+
+      <!-- Tabs -->
+      <nav class="hub-tabs">
+        <button class="hub-tab is-active">통계</button>
+        <button class="hub-tab">자료</button>
+        <button class="hub-tab">정체성</button>
+        <button class="hub-tab">대화</button>
+        <button class="hub-tab">커뮤니티</button>
+      </nav>
+
+      <!-- Body -->
+      <div class="scroll">
+        <div class="hub-body">
+
+          <!-- Period chip -->
+          <button class="period-chip">
+            최근 7일
+            <i data-lucide="chevron-down"></i>
+          </button>
+
+          <!-- Trend chart card (빈 상태) -->
+          <div class="card">
+            <div class="card-head">
+              <span class="text-heading">방문수 추이</span>
+            </div>
+            <div class="chart-empty">
+              <i data-lucide="line-chart"></i>
+              <span class="text-body" style="color:var(--color-text-muted)">아직 데이터가 없어요</span>
+              <span class="text-caption">방문이 쌓이면 여기에 추이가 그려져요</span>
+            </div>
+
+            <!-- Metrics -->
+            <div class="metrics">
+              <div class="metric">
+                <span class="text-caption">방문</span>
+                <span class="metric-num">0</span>
+              </div>
+              <div class="metric">
+                <span class="text-caption">받은 대화</span>
+                <span class="metric-num">0</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 연락처를 제출한 사람 -->
+          <div class="card">
+            <div class="card-head">
+              <span class="text-heading">연락처를 제출한 사람</span>
+              <button class="card-link">전체 보기</button>
+            </div>
+            <div class="empty">
+              <i data-lucide="user-plus"></i>
+              <span class="text-body" style="color:var(--color-text-muted)">아직 연락처를 남긴 사람이 없어요</span>
+            </div>
+          </div>
+
+          <!-- 자주 묻는 질문 -->
+          <div class="card">
+            <div class="card-head">
+              <span class="text-heading">자주 묻는 질문</span>
+              <button class="card-link">전체 보기</button>
+            </div>
+            <div class="empty">
+              <i data-lucide="message-circle-question"></i>
+              <span class="text-body" style="color:var(--color-text-muted)">아직 받은 질문이 없어요</span>
+            </div>
+          </div>
+
+          <!-- 최근 대화 -->
+          <div class="card">
+            <div class="card-head">
+              <span class="text-heading">최근 대화</span>
+              <button class="card-link">전체 보기</button>
+            </div>
+            <div class="empty">
+              <i data-lucide="messages-square"></i>
+              <span class="text-body" style="color:var(--color-text-muted)">아직 대화가 없어요</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>lucide.createIcons();</script>
+</body>
+</html>

@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>아바타 관리 허브 — 통계</title>
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="../components.css">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-base);
+    background: #e0e0e0;
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ── Frame (390 × 844) ── */
+  .frame {
+    width: 390px;
+    height: 844px;
+    max-height: 100dvh;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 32px 80px -20px rgba(0,0,0,0.28);
+    background: var(--color-bg);
+    transform: translateZ(0);
+  }
+  @media (max-width: 439px) { .frame { width: 100vw; height: 100dvh; max-height: none; } }
+  @media (min-width: 440px) { .frame { border-radius: 44px; max-height: calc(100dvh - 40px); } }
+
+  .screen { position: absolute; inset: 0; display: flex; flex-direction: column; background: var(--color-bg); }
+  .scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+
+  [data-lucide] { display: inline-flex; flex-shrink: 0; }
+
+  /* ── Header ── */
+  .hub-header {
+    background: var(--color-surface);
+    padding: 8px 8px 12px;
+    flex-shrink: 0;
+  }
+  .hub-header-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .hub-header-title {
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .hub-subtitle {
+    padding: 0 8px;
+    margin-top: 4px;
+  }
+
+  /* ── Tabs ── */
+  .hub-tabs {
+    display: flex;
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    flex-shrink: 0;
+  }
+  .hub-tab {
+    flex: 1;
+    position: relative;
+    padding: 12px 4px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-medium);
+    color: var(--color-text-muted);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .hub-tab.is-active {
+    color: var(--color-text);
+    font-weight: var(--fw-bold);
+  }
+  .hub-tab.is-active::after {
+    content: '';
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: -1px;
+    height: 2px;
+    border-radius: var(--r-full);
+    background: var(--color-primary);
+  }
+
+  /* ── Content ── */
+  .hub-body { padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+
+  /* ── Period chip + menu ── */
+  .period-wrap { position: relative; align-self: flex-start; }
+  .period-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 12px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-full);
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .period-chip [data-lucide] { width: 16px; height: 16px; color: var(--color-text-muted); }
+  .period-menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    z-index: 20;
+  }
+  .period-menu[hidden] { display: none; }
+  .menu-check { width: 16px; height: 16px; color: var(--color-primary); opacity: 0; }
+  .menu-item.is-selected .menu-check { opacity: 1; }
+
+  /* ── Card ── */
+  .card {
+    background: var(--color-surface);
+    border-radius: var(--r-md);
+    box-shadow: var(--shadow-1);
+    overflow: hidden;
+  }
+  .card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 16px 8px;
+  }
+  .card-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-medium);
+    color: var(--color-text-muted);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .card-link [data-lucide] { width: 14px; height: 14px; }
+
+  /* ── Chart card ── */
+  .chart-wrap { padding: 8px 16px 0; position: relative; }
+  .chart-svg { width: 100%; height: auto; display: block; overflow: visible; touch-action: none; }
+  .chart-xaxis {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 16px 0;
+  }
+  .chart-tooltip {
+    position: absolute;
+    pointer-events: none;
+    background: var(--color-text);
+    color: var(--color-on-primary);
+    padding: 4px 8px;
+    border-radius: var(--r-xs);
+    font-family: var(--font-base);
+    font-size: var(--fs-caption);
+    font-weight: var(--fw-semibold);
+    white-space: nowrap;
+    text-align: center;
+    line-height: 1.3;
+    transform: translate(-50%, -140%);
+    opacity: 0;
+    transition: opacity var(--motion-fast) var(--ease-standard);
+    z-index: 5;
+  }
+  .chart-tooltip.is-on { opacity: 1; }
+
+  /* ── Metrics row ── */
+  .metrics {
+    display: flex;
+    gap: 8px;
+    padding: 16px;
+  }
+  .metric {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px;
+    background: var(--color-surface-sub);
+    border-radius: var(--r-md);
+  }
+  .metric-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .metric-num {
+    font-family: var(--font-base);
+    font-size: var(--fs-title);
+    font-weight: var(--fw-bold);
+    letter-spacing: var(--ls-title);
+    color: var(--color-text);
+  }
+  .metric-delta {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-semibold);
+  }
+  .metric-delta [data-lucide] { width: 12px; height: 12px; }
+  .metric-delta.is-up   { color: var(--color-success); }
+  .metric-delta.is-down { color: var(--color-text-muted); }
+
+  /* ── List rows ── */
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 16px;
+  }
+  .row-main { flex: 1; min-width: 0; }
+  .row-phone {
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-regular);
+    color: var(--color-primary);
+    margin-top: 2px;
+  }
+  .row-time {
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    color: var(--color-text-muted);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* ── FAQ row ── */
+  .faq-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 16px;
+  }
+  .row:last-of-type,
+  .faq-row:last-of-type { padding-bottom: 16px; }
+
+  /* ── Recent chat ── */
+  .chat-preview {
+    font-family: var(--font-base);
+    font-size: var(--fs-body-lg);
+    color: var(--color-text-muted);
+    margin-top: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* ── Empty state ── */
+  .empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    text-align: center;
+    padding: 32px 16px;
+  }
+  .empty [data-lucide] { width: 28px; height: 28px; color: var(--color-border); }
+  .chart-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    text-align: center;
+    padding: 40px 16px;
+  }
+  .chart-empty [data-lucide] { width: 32px; height: 32px; color: var(--color-border); }
+</style>
+</head>
+<body>
+  <div class="frame">
+    <div class="screen">
+      <!-- Header -->
+      <div class="hub-header">
+        <div class="hub-header-row">
+          <button class="icon-btn icon-btn-clear" aria-label="뒤로">
+            <i data-lucide="arrow-left"></i>
+          </button>
+          <div class="hub-header-title text-title">엘린 피부과 (유카 테스트)</div>
+          <button class="btn btn-sm btn-weak-dark">고급 설정</button>
+        </div>
+        <div class="hub-subtitle text-caption">아바타 통계와 자료, 설정을 한곳에서 관리하세요</div>
+      </div>
+
+      <!-- Tabs -->
+      <nav class="hub-tabs">
+        <button class="hub-tab is-active">통계</button>
+        <button class="hub-tab">자료</button>
+        <button class="hub-tab">정체성</button>
+        <button class="hub-tab">대화</button>
+        <button class="hub-tab">커뮤니티</button>
+      </nav>
+
+      <!-- Body -->
+      <div class="scroll">
+        <div class="hub-body">
+
+          <!-- Period chip + menu -->
+          <div class="period-wrap">
+            <button class="period-chip" id="periodChip" aria-haspopup="true" aria-expanded="false">
+              <span id="periodChipLabel">최근 7일</span>
+              <i data-lucide="chevron-down"></i>
+            </button>
+            <div class="period-menu menu" id="periodMenu" role="menu" hidden>
+              <button class="menu-item is-selected" data-period="7일" role="menuitem">최근 7일<i data-lucide="check" class="menu-check"></i></button>
+              <button class="menu-item" data-period="1개월" role="menuitem">최근 1개월<i data-lucide="check" class="menu-check"></i></button>
+              <button class="menu-item" data-period="3개월" role="menuitem">최근 3개월<i data-lucide="check" class="menu-check"></i></button>
+              <button class="menu-item" data-period="6개월" role="menuitem">최근 6개월<i data-lucide="check" class="menu-check"></i></button>
+            </div>
+          </div>
+
+          <!-- Trend chart card -->
+          <div class="card">
+            <div class="card-head">
+              <span class="text-heading">방문수 추이</span>
+            </div>
+            <div class="chart-wrap">
+              <svg class="chart-svg" id="chartSvg" viewBox="0 0 300 120" preserveAspectRatio="none" role="img" aria-label="방문 추이 그래프">
+                <defs>
+                  <linearGradient id="areaFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="var(--color-primary)" stop-opacity="0.22"/>
+                    <stop offset="100%" stop-color="var(--color-primary)" stop-opacity="0"/>
+                  </linearGradient>
+                </defs>
+                <path id="chartArea" d="" fill="url(#areaFill)"/>
+                <path id="chartLine" d="" fill="none" stroke="var(--color-primary)" stroke-width="2.5"
+                      stroke-linecap="round" stroke-linejoin="round"/>
+                <!-- scrub guide (hidden until drag) -->
+                <line id="scrubGuide" x1="0" y1="16" x2="0" y2="112"
+                      stroke="var(--color-border)" stroke-width="1" visibility="hidden"/>
+                <circle id="scrubMarker" r="4" fill="var(--color-primary)"
+                        stroke="var(--color-surface)" stroke-width="2" visibility="hidden"/>
+                <!-- end dot + label -->
+                <circle id="chartEndDot" cx="0" cy="0" r="4.5" fill="var(--color-primary)"
+                        stroke="var(--color-surface)" stroke-width="2"/>
+                <text id="chartEndLabel" x="0" y="0" text-anchor="end"
+                      font-family="var(--font-base)" font-size="13" font-weight="700"
+                      fill="var(--color-primary)"></text>
+              </svg>
+              <div class="chart-tooltip" id="chartTooltip"></div>
+            </div>
+            <div class="chart-xaxis" id="chartXaxis"></div>
+
+            <!-- Metrics -->
+            <div class="metrics" id="chartMetrics"></div>
+          </div>
+
+          <!-- 연락처를 제출한 사람 -->
+          <div class="card">
+            <div class="card-head">
+              <span class="text-heading">연락처를 제출한 사람</span>
+              <button class="card-link">전체 보기</button>
+            </div>
+            <div class="row">
+              <div class="row-main">
+                <div class="text-body-lg" style="font-weight:var(--fw-medium)">김지현</div>
+                <div class="row-phone">010-2847-1102 · jihyun@gmail.com</div>
+              </div>
+              <span class="row-time">2시간 전</span>
+            </div>
+            <div class="row">
+              <div class="row-main">
+                <div class="text-body-lg" style="font-weight:var(--fw-medium)">박서준</div>
+                <div class="row-phone">010-5531-8890</div>
+              </div>
+              <span class="row-time">어제</span>
+            </div>
+            <div class="row">
+              <div class="row-main">
+                <div class="text-body-lg" style="font-weight:var(--fw-medium)">이도윤</div>
+                <div class="row-phone">010-7742-3361</div>
+              </div>
+              <span class="row-time">3일 전</span>
+            </div>
+          </div>
+
+          <!-- 자주 묻는 질문 -->
+          <div class="card">
+            <div class="card-head">
+              <span class="text-heading">자주 묻는 질문</span>
+              <button class="card-link">전체 보기</button>
+            </div>
+            <div class="faq-row">
+              <span class="badge badge-lg badge-weak-neutral">1건</span>
+              <span class="text-body-lg">예약은 어떻게 하나요?</span>
+            </div>
+            <div class="faq-row">
+              <span class="badge badge-lg badge-weak-neutral">1건</span>
+              <span class="text-body-lg">미팅 일정은 어떻게 잡아요?</span>
+            </div>
+            <div class="faq-row">
+              <span class="badge badge-lg badge-weak-neutral">1건</span>
+              <span class="text-body-lg">회사 소개 자료 받을 수 있나요?</span>
+            </div>
+          </div>
+
+          <!-- 최근 대화 -->
+          <div class="card">
+            <div class="card-head">
+              <span class="text-heading">최근 대화</span>
+              <button class="card-link">전체 보기</button>
+            </div>
+            <div class="row">
+              <div class="row-main">
+                <div class="text-body-lg" style="font-weight:var(--fw-medium)">익명의 사용자</div>
+                <div class="chat-preview">피부과 시술 상담을 받고 싶어요. 여드름 흉터 치료가 가능한가요?</div>
+              </div>
+              <span class="row-time">19시간 전</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+  // ── Mock data per period ──
+  const nf = new Intl.NumberFormat('en-US');
+  const DATA = {
+    '7일': {
+      label: '최근 7일',
+      points: [
+        { d: '7/17', v: 140 }, { d: '7/18', v: 175 }, { d: '7/19', v: 168 },
+        { d: '7/20', v: 120 }, { d: '7/21', v: 210 }, { d: '7/22', v: 231 },
+        { d: '7/23', v: 240 }
+      ],
+      axis: ['7/17', '7/18', '7/19', '7/20', '7/21', '7/22', '7/23'],
+      metrics: [
+        { label: '방문', num: '1,284', delta: '12%', up: true },
+        { label: '받은 대화', num: '512', delta: '12%', up: false }
+      ]
+    },
+    '1개월': {
+      label: '최근 1개월',
+      points: [
+        { d: '6/24', v: 720 }, { d: '7/1', v: 880 }, { d: '7/8', v: 960 },
+        { d: '7/15', v: 1080 }, { d: '7/23', v: 1220 }
+      ],
+      axis: ['6/24', '7/1', '7/8', '7/15', '7/23'],
+      metrics: [
+        { label: '방문', num: '4,860', delta: '18%', up: true },
+        { label: '받은 대화', num: '2,940', delta: '5%', up: false }
+      ]
+    },
+    '3개월': {
+      label: '최근 3개월',
+      points: [
+        { d: '4월', v: 2800 }, { d: '5월', v: 3400 }, { d: '6월', v: 3900 }, { d: '7월', v: 4300 }
+      ],
+      axis: ['4월', '5월', '6월', '7월'],
+      metrics: [
+        { label: '방문', num: '14,400', delta: '24%', up: true },
+        { label: '받은 대화', num: '8,180', delta: '9%', up: true }
+      ]
+    },
+    '6개월': {
+      label: '최근 6개월',
+      points: [
+        { d: '2월', v: 1900 }, { d: '3월', v: 2300 }, { d: '4월', v: 2800 },
+        { d: '5월', v: 3400 }, { d: '6월', v: 3900 }, { d: '7월', v: 4300 }
+      ],
+      axis: ['2월', '3월', '4월', '5월', '6월', '7월'],
+      metrics: [
+        { label: '방문', num: '18,600', delta: '31%', up: true },
+        { label: '받은 대화', num: '15,300', delta: '7%', up: false }
+      ]
+    }
+  };
+
+  // ── Chart geometry (viewBox 0 0 300 120) ──
+  const X_L = 8, X_R = 292, Y_TOP = 20, Y_BOT = 104, Y_BASE = 116;
+  const svg = document.getElementById('chartSvg');
+  const elLine = document.getElementById('chartLine');
+  const elArea = document.getElementById('chartArea');
+  const elEndDot = document.getElementById('chartEndDot');
+  const elEndLabel = document.getElementById('chartEndLabel');
+  const elGuide = document.getElementById('scrubGuide');
+  const elMarker = document.getElementById('scrubMarker');
+  const elTooltip = document.getElementById('chartTooltip');
+  const elXaxis = document.getElementById('chartXaxis');
+  const elMetrics = document.getElementById('chartMetrics');
+  const wrap = svg.parentElement; // .chart-wrap
+
+  let coords = []; // [{x, y, d, v}] in viewBox units
+
+  function render(key) {
+    const data = DATA[key];
+    const pts = data.points;
+    const n = pts.length;
+    const vals = pts.map(p => p.v);
+    let min = Math.min(...vals), max = Math.max(...vals);
+    if (max === min) max = min + 1;
+
+    coords = pts.map((p, i) => ({
+      x: X_L + (X_R - X_L) * (i / (n - 1)),
+      y: Y_BOT - (p.v - min) / (max - min) * (Y_BOT - Y_TOP),
+      d: p.d,
+      v: p.v
+    }));
+
+    const linePath = coords.map((c, i) => (i ? 'L' : 'M') + c.x.toFixed(2) + ' ' + c.y.toFixed(2)).join(' ');
+    elLine.setAttribute('d', linePath);
+    elArea.setAttribute('d', linePath + ' L' + X_R + ' ' + Y_BASE + ' L' + X_L + ' ' + Y_BASE + ' Z');
+
+    const last = coords[n - 1];
+    elEndDot.setAttribute('cx', last.x);
+    elEndDot.setAttribute('cy', last.y);
+    elEndLabel.setAttribute('x', last.x);
+    elEndLabel.setAttribute('y', Math.max(last.y - 10, 10));
+    elEndLabel.textContent = nf.format(last.v);
+
+    // x-axis labels
+    elXaxis.innerHTML = data.axis.map(a => '<span class="text-caption">' + a + '</span>').join('');
+
+    // metrics
+    elMetrics.innerHTML = data.metrics.map(m =>
+      '<div class="metric">' +
+        '<span class="text-caption">' + m.label + '</span>' +
+        '<div class="metric-row">' +
+          '<span class="metric-num">' + m.num + '</span>' +
+          '<span class="metric-delta ' + (m.up ? 'is-up' : 'is-down') + '">' +
+            '<i data-lucide="' + (m.up ? 'arrow-up' : 'arrow-down') + '"></i>' + m.delta +
+          '</span>' +
+        '</div>' +
+      '</div>'
+    ).join('');
+    lucide.createIcons();
+
+    hideScrub();
+  }
+
+  // ── Scrub interaction (Pointer Events: touch + mouse) ──
+  function showScrub(clientX) {
+    if (!coords.length) return;
+    const rect = svg.getBoundingClientRect();
+    const vx = (clientX - rect.left) / rect.width * 300;
+    let idx = 0, best = Infinity;
+    coords.forEach((c, i) => {
+      const dd = Math.abs(c.x - vx);
+      if (dd < best) { best = dd; idx = i; }
+    });
+    const c = coords[idx];
+    elGuide.setAttribute('x1', c.x);
+    elGuide.setAttribute('x2', c.x);
+    elGuide.setAttribute('visibility', 'visible');
+    elMarker.setAttribute('cx', c.x);
+    elMarker.setAttribute('cy', c.y);
+    elMarker.setAttribute('visibility', 'visible');
+
+    const wrapRect = wrap.getBoundingClientRect();
+    const px = (rect.left - wrapRect.left) + (c.x / 300) * rect.width;
+    const py = (rect.top - wrapRect.top) + (c.y / 120) * rect.height;
+    elTooltip.style.left = px + 'px';
+    elTooltip.style.top = py + 'px';
+    elTooltip.textContent = nf.format(c.v);
+    elTooltip.classList.add('is-on');
+  }
+  function hideScrub() {
+    elGuide.setAttribute('visibility', 'hidden');
+    elMarker.setAttribute('visibility', 'hidden');
+    elTooltip.classList.remove('is-on');
+  }
+
+  let scrubbing = false;
+  svg.addEventListener('pointerdown', e => {
+    scrubbing = true;
+    svg.setPointerCapture(e.pointerId);
+    showScrub(e.clientX);
+    e.preventDefault();
+  });
+  svg.addEventListener('pointermove', e => {
+    if (!scrubbing) return;
+    showScrub(e.clientX);
+    e.preventDefault();
+  });
+  const endScrub = () => { scrubbing = false; hideScrub(); };
+  svg.addEventListener('pointerup', endScrub);
+  svg.addEventListener('pointercancel', endScrub);
+  svg.addEventListener('pointerleave', () => { if (scrubbing) endScrub(); });
+
+  // ── Period menu ──
+  const chip = document.getElementById('periodChip');
+  const chipLabel = document.getElementById('periodChipLabel');
+  const menu = document.getElementById('periodMenu');
+
+  function openMenu(open) {
+    menu.hidden = !open;
+    chip.setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+  chip.addEventListener('click', e => {
+    e.stopPropagation();
+    openMenu(menu.hidden);
+  });
+  menu.querySelectorAll('.menu-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const key = item.dataset.period;
+      menu.querySelectorAll('.menu-item').forEach(x => x.classList.toggle('is-selected', x === item));
+      chipLabel.textContent = DATA[key].label;
+      render(key);
+      openMenu(false);
+    });
+  });
+  document.addEventListener('click', () => openMenu(false));
+
+  // ── Init ──
+  render('7일');
+  lucide.createIcons();
+  </script>
+</body>
+</html>
