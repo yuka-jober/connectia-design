@@ -133,6 +133,40 @@
     box-shadow: var(--shadow-1);
     overflow: hidden;
   }
+  .chart-card { overflow: visible; }
+  .chart-title-wrap { position: relative; display: inline-flex; align-items: center; gap: 4px; }
+  .info-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--color-text-muted);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .info-btn[hidden] { display: none; }
+  .info-btn [data-lucide] { width: 16px; height: 16px; }
+  .info-tip {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    z-index: 10;
+    width: max-content;
+    max-width: 240px;
+    padding: 8px 12px;
+    background: var(--color-text);
+    color: var(--color-on-primary);
+    border-radius: var(--r-sm);
+    box-shadow: var(--shadow-2);
+    font-size: var(--fs-caption);
+    font-weight: var(--fw-medium);
+    line-height: 1.4;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity var(--motion-fast) var(--ease-standard);
+  }
+  .info-tip.is-on { opacity: 1; visibility: visible; }
   .card-head {
     display: flex;
     align-items: center;
@@ -181,6 +215,7 @@
     z-index: 5;
   }
   .chart-tooltip.is-on { opacity: 1; }
+  .chart-tooltip .tt-date { font-weight: var(--fw-medium); }
 
   /* ── Metrics row ── */
   .metrics {
@@ -322,6 +357,7 @@
               <i data-lucide="chevron-down"></i>
             </button>
             <div class="period-menu menu" id="periodMenu" role="menu" hidden>
+              <button class="menu-item" data-period="오늘" role="menuitem">오늘<i data-lucide="check" class="menu-check"></i></button>
               <button class="menu-item is-selected" data-period="7일" role="menuitem">최근 7일<i data-lucide="check" class="menu-check"></i></button>
               <button class="menu-item" data-period="1개월" role="menuitem">최근 1개월<i data-lucide="check" class="menu-check"></i></button>
               <button class="menu-item" data-period="3개월" role="menuitem">최근 3개월<i data-lucide="check" class="menu-check"></i></button>
@@ -330,9 +366,13 @@
           </div>
 
           <!-- Trend chart card -->
-          <div class="card">
+          <div class="card chart-card">
             <div class="card-head">
-              <span class="text-heading">방문수 추이</span>
+              <div class="chart-title-wrap">
+                <span class="text-heading">방문수 추이</span>
+                <button class="info-btn" id="chartInfoBtn" aria-label="설명" hidden><i data-lucide="info"></i></button>
+                <span class="info-tip" id="chartInfoTip">각 점은 그 날짜부터 시작하는 일주일간의 추이예요</span>
+              </div>
             </div>
             <div class="chart-wrap">
               <svg class="chart-svg" id="chartSvg" viewBox="0 0 300 120" preserveAspectRatio="none" role="img" aria-label="방문 추이 그래프">
@@ -439,6 +479,24 @@
   // ── Mock data per period ──
   const nf = new Intl.NumberFormat('en-US');
   const DATA = {
+    '오늘': {
+      label: '오늘',
+      xMax: 24,
+      points: [
+        { d: '0시', v: 2, hx: 0 }, { d: '1시', v: 1, hx: 1 }, { d: '2시', v: 1, hx: 2 },
+        { d: '3시', v: 1, hx: 3 }, { d: '4시', v: 2, hx: 4 }, { d: '5시', v: 4, hx: 5 },
+        { d: '6시', v: 7, hx: 6 }, { d: '7시', v: 11, hx: 7 }, { d: '8시', v: 15, hx: 8 },
+        { d: '9시', v: 19, hx: 9 }, { d: '10시', v: 22, hx: 10 }, { d: '11시', v: 24, hx: 11 },
+        { d: '12시', v: 25, hx: 12 }, { d: '13시', v: 24, hx: 13 }, { d: '14시', v: 22, hx: 14 },
+        { d: '15시', v: 20, hx: 15 }, { d: '16시', v: 16, hx: 16 }, { d: '17시', v: 12, hx: 17 },
+        { d: '18시', v: 12, hx: 18 }
+      ],
+      axis: ['0시', '6시', '12시', '18시', '24시'],
+      metrics: [
+        { label: '방문', num: '240', delta: '9%', up: true },
+        { label: '받은 대화', num: '64', delta: '4%', up: false }
+      ]
+    },
     '7일': {
       label: '최근 7일',
       points: [
@@ -455,10 +513,10 @@
     '1개월': {
       label: '최근 1개월',
       points: [
-        { d: '6/24', v: 720 }, { d: '7/1', v: 880 }, { d: '7/8', v: 960 },
-        { d: '7/15', v: 1080 }, { d: '7/23', v: 1220 }
+        { d: '6/19', v: 720, tip: '6/19~6/25' }, { d: '6/26', v: 880, tip: '6/26~7/2' }, { d: '7/3', v: 960, tip: '7/3~7/9' },
+        { d: '7/10', v: 1080, tip: '7/10~7/16' }, { d: '7/17', v: 1220, tip: '7/17~7/23' }
       ],
-      axis: ['6/24', '7/1', '7/8', '7/15', '7/23'],
+      axis: ['6/19', '6/26', '7/3', '7/10', '7/17'],
       metrics: [
         { label: '방문', num: '4,860', delta: '18%', up: true },
         { label: '받은 대화', num: '2,940', delta: '5%', up: false }
@@ -478,12 +536,12 @@
     '6개월': {
       label: '최근 6개월',
       points: [
-        { d: '2월', v: 1900 }, { d: '3월', v: 2300 }, { d: '4월', v: 2800 },
+        { d: '1월', v: 1600 }, { d: '2월', v: 1900 }, { d: '3월', v: 2300 }, { d: '4월', v: 2800 },
         { d: '5월', v: 3400 }, { d: '6월', v: 3900 }, { d: '7월', v: 4300 }
       ],
-      axis: ['2월', '3월', '4월', '5월', '6월', '7월'],
+      axis: ['1월', '2월', '3월', '4월', '5월', '6월', '7월'],
       metrics: [
-        { label: '방문', num: '18,600', delta: '31%', up: true },
+        { label: '방문', num: '20,200', delta: '31%', up: true },
         { label: '받은 대화', num: '15,300', delta: '7%', up: false }
       ]
     }
@@ -501,6 +559,8 @@
   const elTooltip = document.getElementById('chartTooltip');
   const elXaxis = document.getElementById('chartXaxis');
   const elMetrics = document.getElementById('chartMetrics');
+  const infoBtn = document.getElementById('chartInfoBtn');
+  const infoTip = document.getElementById('chartInfoTip');
   const wrap = svg.parentElement; // .chart-wrap
 
   let coords = []; // [{x, y, d, v}] in viewBox units
@@ -514,17 +574,20 @@
     if (max === min) max = min + 1;
 
     coords = pts.map((p, i) => ({
-      x: X_L + (X_R - X_L) * (i / (n - 1)),
+      x: data.xMax != null
+        ? X_L + (X_R - X_L) * (p.hx / data.xMax)
+        : X_L + (X_R - X_L) * (i / (n - 1)),
       y: Y_BOT - (p.v - min) / (max - min) * (Y_BOT - Y_TOP),
       d: p.d,
+      tip: p.tip,
       v: p.v
     }));
 
+    const first = coords[0], last = coords[n - 1];
     const linePath = coords.map((c, i) => (i ? 'L' : 'M') + c.x.toFixed(2) + ' ' + c.y.toFixed(2)).join(' ');
     elLine.setAttribute('d', linePath);
-    elArea.setAttribute('d', linePath + ' L' + X_R + ' ' + Y_BASE + ' L' + X_L + ' ' + Y_BASE + ' Z');
+    elArea.setAttribute('d', linePath + ' L' + last.x.toFixed(2) + ' ' + Y_BASE + ' L' + first.x.toFixed(2) + ' ' + Y_BASE + ' Z');
 
-    const last = coords[n - 1];
     elEndDot.setAttribute('cx', last.x);
     elEndDot.setAttribute('cy', last.y);
     elEndLabel.setAttribute('x', last.x);
@@ -548,6 +611,9 @@
     ).join('');
     lucide.createIcons();
 
+    infoBtn.hidden = key !== '1개월';
+    if (key !== '1개월') infoTip.classList.remove('is-on');
+
     hideScrub();
   }
 
@@ -570,12 +636,14 @@
     elMarker.setAttribute('visibility', 'visible');
 
     const wrapRect = wrap.getBoundingClientRect();
-    const px = (rect.left - wrapRect.left) + (c.x / 300) * rect.width;
+    elTooltip.innerHTML = '<span class="tt-date">' + (c.tip || c.d) + '</span> · ' + nf.format(c.v);
+    elTooltip.classList.add('is-on');
+    const half = elTooltip.offsetWidth / 2;
+    let px = (rect.left - wrapRect.left) + (c.x / 300) * rect.width;
+    px = Math.max(half + 2, Math.min(px, wrapRect.width - half - 2));
     const py = (rect.top - wrapRect.top) + (c.y / 120) * rect.height;
     elTooltip.style.left = px + 'px';
     elTooltip.style.top = py + 'px';
-    elTooltip.textContent = nf.format(c.v);
-    elTooltip.classList.add('is-on');
   }
   function hideScrub() {
     elGuide.setAttribute('visibility', 'hidden');
@@ -622,7 +690,11 @@
       openMenu(false);
     });
   });
-  document.addEventListener('click', () => openMenu(false));
+  infoBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    infoTip.classList.toggle('is-on');
+  });
+  document.addEventListener('click', () => { openMenu(false); infoTip.classList.remove('is-on'); });
 
   // ── Init ──
   render('7일');
