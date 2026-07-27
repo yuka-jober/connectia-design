@@ -106,8 +106,8 @@
     .sheet-wrap.on { pointer-events: auto; }
     .sheet-wrap .bottom-sheet-overlay { opacity: 0; pointer-events: none; transition: opacity var(--motion-standard) var(--ease-enter); }
     .sheet-wrap.on .bottom-sheet-overlay { opacity: 1; pointer-events: auto; }
-    .sheet-wrap .bottom-sheet { transform: translateY(100%); transition: transform var(--motion-standard) var(--ease-enter); }
-    .sheet-wrap.on .bottom-sheet { transform: translateY(0); }
+    .sheet-wrap .bottom-sheet { transform: translateY(100%); transition: transform var(--motion-standard) var(--ease-enter); box-shadow: none; }
+    .sheet-wrap.on .bottom-sheet { transform: translateY(0); box-shadow: var(--shadow-4); }
 
 .banner-wrap { position: relative; background: var(--color-surface); margin-bottom: 8px; }
     .banner-placeholder { width: 100%; aspect-ratio: 9/4; background: var(--color-banner-gradient); display: flex; align-items: center; justify-content: center; }
@@ -536,7 +536,7 @@
     .bottom-action-bar {
       position: absolute; bottom: 0; left: 0; right: 0;
       display: flex; gap: 12px; padding: 16px 20px 0;
-      background: linear-gradient(to bottom, transparent, var(--color-bg) 40%);
+      background: linear-gradient(to bottom, transparent, var(--color-bg));
       pointer-events: none;
     }
     .bottom-action-bar .btn { flex: 1; pointer-events: auto; }
