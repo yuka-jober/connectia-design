@@ -358,6 +358,19 @@
     background: var(--color-bg);
   }
 
+  /* 편집 탭 전용 액션바 — 탭바 바로 위에 딱 붙어 표시 */
+  .a-edit-actions {
+    position: absolute;
+    left: 0; right: 0;
+    display: none;
+    padding: 16px 20px 0;
+    background: linear-gradient(to bottom, transparent, var(--color-bg) 60%);
+    z-index: 15;
+    pointer-events: none;
+  }
+  .a-edit-actions .btn { width: 100%; pointer-events: auto; }
+  body[data-active-tab="edit"] .a-edit-actions { display: block; }
+
   /* 프레임 내부 스코프 토스트 (하단 탭바 위) */
   .a-toast-container {
     position: absolute;
@@ -692,6 +705,14 @@
 
     </div>
 
+    <!-- 편집 탭 전용 액션바 (탭바 바로 위) -->
+    <div class="a-edit-actions" id="a-edit-actions" aria-hidden="true">
+      <button class="btn btn-lg btn-fill-primary btn-pill" type="button" onclick="editOpenSheet()">
+        <i data-lucide="arrow-up-down"></i>
+        항목 관리
+      </button>
+    </div>
+
     <!-- 하단 탭바 -->
     <nav class="a-tabbar" id="a-tabbar"></nav>
 
@@ -785,8 +806,17 @@
     body.style.paddingBottom = tabH + 'px';
     const h = frame.clientHeight - topbar.offsetHeight - tabH;
     document.querySelectorAll('.a-embed').forEach(el => el.style.height = h + 'px');
+    const editActions = document.getElementById('a-edit-actions');
+    if (editActions) editActions.style.bottom = tabH + 'px';
   }
   window.addEventListener('resize', sizeEmbeds);
+
+  // 편집 탭 액션바 → iframe 내부 sheet 열기
+  function editOpenSheet() {
+    const iframe = document.querySelector('#view-edit .a-embed');
+    if (!iframe || !iframe.contentWindow) return;
+    try { iframe.contentWindow.openSheet('sheet-sections'); } catch (e) {}
+  }
 
   // 임베드된 screens/*.html 문서에서 자체 목업 프레임 스타일을 벗겨
   // 셸 안에서 자연스럽게 채워지도록 오버라이드
@@ -811,6 +841,9 @@
           box-shadow: none !important;
           border-radius: 0 !important;
         }
+        /* 셸에 편집 액션바가 별도로 있으므로 iframe 내부 것은 숨김 */
+        .bottom-action-bar { display: none !important; }
+        .scroll-area { padding-bottom: 96px !important; }
       `;
       doc.head.appendChild(style);
 
