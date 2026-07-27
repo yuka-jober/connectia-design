@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>아바타 관리 셸 — 계정 설정</title>
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="../components.css">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-base);
+    background: #e0e0e0;
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ── Frame ── */
+  .frame {
+    width: 390px;
+    height: 844px;
+    max-height: 100dvh;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 32px 80px -20px rgba(0,0,0,0.28);
+    background: var(--color-surface);
+    transform: translateZ(0);
+  }
+  @media (max-width: 439px) { .frame { width: 100vw; height: 100dvh; max-height: none; } }
+  @media (min-width: 440px) { .frame { border-radius: 44px; max-height: calc(100dvh - 40px); } }
+
+  .screen {
+    position: absolute; inset: 0;
+    display: flex;
+    flex-direction: column;
+    background: var(--color-bg);
+  }
+
+  [data-lucide] { display: inline-flex; flex-shrink: 0; }
+
+  /* ── 상단바 (← + 타이틀) ── */
+  .a-topbar {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 8px 8px 4px;
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    flex-shrink: 0;
+  }
+  .a-back {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: none;
+    background: none;
+    color: var(--color-text);
+    cursor: pointer;
+    border-radius: var(--r-sm);
+    -webkit-tap-highlight-color: transparent;
+    transition: background var(--motion-fast) var(--ease-standard);
+  }
+  .a-back:active { background: var(--color-surface-sub); }
+  .a-back [data-lucide] { width: 22px; height: 22px; }
+  .a-topbar-title {
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-bold);
+    color: var(--color-text);
+    letter-spacing: var(--ls-body-lg);
+  }
+
+  /* ── Body ── */
+  .a-body {
+    flex: 1;
+    overflow-y: auto;
+    background: var(--color-bg);
+    padding: 20px 16px 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  /* ── 프로필 카드 ── */
+  .a-profile-card {
+    background: var(--color-surface);
+    border-radius: var(--r-md);
+    border: 1px solid var(--color-border);
+    padding: 20px 16px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .a-profile-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+  .a-profile-name {
+    font-size: var(--fs-heading);
+    font-weight: var(--fw-bold);
+    color: var(--color-text);
+    letter-spacing: var(--ls-heading);
+    padding-left: 8px;
+  }
+  .a-profile-email {
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+    padding-left: 8px;
+  }
+  .a-credit-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    align-self: flex-start;
+    margin-top: 4px;
+    padding: 4px 8px;
+    background: var(--color-surface-sub);
+    border: none;
+    border-radius: var(--r-full);
+    font-family: var(--font-base);
+    font-size: var(--fs-caption);
+    font-weight: var(--fw-medium);
+    color: var(--color-text-sub);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: background var(--motion-fast) var(--ease-standard);
+  }
+  .a-credit-chip:active { background: var(--color-border); }
+  .a-credit-chip [data-lucide] { width: 14px; height: 14px; color: var(--color-text-muted); }
+
+  /* ── 섹션 ── */
+  .a-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .a-section-label {
+    padding: 0 4px;
+    font-size: var(--fs-label);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text-muted);
+    letter-spacing: var(--ls-label);
+  }
+
+  /* ── 카드 (얇은 하단 border로 항목 구분) ── */
+  .a-card {
+    background: var(--color-surface);
+    border-radius: var(--r-md);
+    border: 1px solid var(--color-border);
+    overflow: hidden;
+  }
+  .a-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px;
+    border-bottom: 1px solid var(--color-border);
+    background: transparent;
+    border-left: none;
+    border-right: none;
+    border-top: none;
+    width: 100%;
+    font-family: var(--font-base);
+    cursor: pointer;
+    text-align: left;
+    -webkit-tap-highlight-color: transparent;
+    transition: background var(--motion-fast) var(--ease-standard);
+  }
+  .a-row:last-child { border-bottom: none; }
+  .a-row-static { cursor: default; }
+  .a-row-clickable:active { background: var(--color-surface-sub); }
+  .a-row-label {
+    font-size: var(--fs-body-lg);
+    color: var(--color-text);
+    font-weight: var(--fw-regular);
+  }
+  .a-row-value {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: var(--fs-body);
+    color: var(--color-text-muted);
+  }
+  .a-row-value [data-lucide] { width: 16px; height: 16px; }
+  .a-row-label-icon {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .a-row-label-icon [data-lucide] {
+    width: 20px;
+    height: 20px;
+    color: var(--color-text-sub);
+    flex-shrink: 0;
+  }
+
+  /* ── 세그먼트 컨트롤 ── */
+  .a-seg {
+    display: inline-flex;
+    padding: 2px;
+    background: var(--color-surface-sub);
+    border-radius: var(--r-full);
+    gap: 2px;
+  }
+  .a-seg-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    height: 28px;
+    padding: 0 12px;
+    background: transparent;
+    border: none;
+    color: var(--color-text-sub);
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-medium);
+    border-radius: var(--r-full);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: background var(--motion-fast) var(--ease-standard);
+  }
+  .a-seg-btn.is-active {
+    background: var(--color-surface);
+    color: var(--color-text);
+    box-shadow: var(--shadow-1);
+  }
+  .a-seg-btn [data-lucide] { width: 14px; height: 14px; }
+
+  /* ── 하단 텍스트 액션 ── */
+  .a-danger-links {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    padding: 24px 16px 0;
+  }
+  .a-danger-link {
+    background: none;
+    border: none;
+    padding: 4px 8px;
+    font-family: var(--font-base);
+    font-size: var(--fs-body);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .a-danger-divider {
+    width: 1px;
+    height: 12px;
+    background: var(--color-border);
+  }
+</style>
+</head>
+<body>
+
+<div class="frame">
+
+  <section class="screen">
+
+    <!-- 상단바 -->
+    <header class="a-topbar">
+      <button class="a-back" type="button" onclick="goBack()" aria-label="뒤로가기">
+        <i data-lucide="chevron-left"></i>
+      </button>
+      <div class="a-topbar-title">계정 설정</div>
+    </header>
+
+    <div class="a-body">
+
+      <!-- 1. 프로필 카드 -->
+      <div class="a-profile-card">
+        <div class="avatar avatar-lg">
+          <img src="../assets/profile.svg" alt="프로필">
+        </div>
+        <div class="a-profile-info">
+          <div class="a-profile-name">자버 어드민</div>
+          <div class="a-profile-email">contact@jober.io</div>
+          <button class="a-credit-chip" type="button">
+            크레딧 잔액 1,000
+            <i data-lucide="chevron-right"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- 모드 전환 -->
+      <div class="a-section">
+        <div class="a-card">
+          <button class="a-row a-row-clickable" type="button">
+            <span class="a-row-label a-row-label-icon">
+              <i data-lucide="users-round"></i>
+              모임 모드로 변경
+            </span>
+            <span class="a-row-value">
+              <i data-lucide="chevron-right"></i>
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 2. 계정 -->
+      <div class="a-section">
+        <div class="a-section-label">계정</div>
+        <div class="a-card">
+          <button class="a-row a-row-clickable" type="button">
+            <span class="a-row-label">이름</span>
+            <span class="a-row-value">자버 어드민</span>
+          </button>
+          <button class="a-row a-row-clickable" type="button">
+            <span class="a-row-label">연락처</span>
+            <span class="a-row-value">미등록</span>
+          </button>
+          <button class="a-row a-row-clickable" type="button">
+            <span class="a-row-label">비밀번호 변경</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 3. 화면 표시 -->
+      <div class="a-section">
+        <div class="a-section-label">화면 표시</div>
+        <div class="a-card">
+          <div class="a-row a-row-static" style="padding-top:12px;padding-bottom:12px;">
+            <span class="a-row-label">화면</span>
+            <div class="a-seg" role="group" aria-label="테마 선택">
+              <button type="button" class="a-seg-btn is-active" onclick="setTheme(this,'light')">
+                <i data-lucide="sun"></i>라이트
+              </button>
+              <button type="button" class="a-seg-btn" onclick="setTheme(this,'dark')">
+                <i data-lucide="moon"></i>다크
+              </button>
+            </div>
+          </div>
+          <div class="a-row a-row-static">
+            <span class="a-row-label">큰 글씨 모드</span>
+            <input type="checkbox" class="toggle toggle-sm">
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. 개인정보 -->
+      <div class="a-section">
+        <div class="a-section-label">개인정보</div>
+        <div class="a-card">
+          <div class="a-row a-row-static">
+            <span class="a-row-label">팔로우 바로 허용</span>
+            <input type="checkbox" class="toggle toggle-sm" checked>
+          </div>
+        </div>
+      </div>
+
+      <!-- 하단 텍스트 액션 -->
+      <div class="a-danger-links">
+        <button class="a-danger-link" type="button">로그아웃</button>
+        <span class="a-danger-divider" aria-hidden="true"></span>
+        <button class="a-danger-link" type="button">회원 탈퇴</button>
+      </div>
+
+    </div>
+  </section>
+
+</div>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+  function goBack() {
+    // 히스토리가 있으면 뒤로, 없으면 홈(최종본)으로
+    if (document.referrer && document.referrer.indexOf('avatar-shell-home') !== -1) {
+      history.back();
+    } else {
+      location.href = 'avatar-shell-home-final.html';
+    }
+  }
+  function setTheme(btn, mode) {
+    const group = btn.closest('.a-seg');
+    if (!group) return;
+    group.querySelectorAll('.a-seg-btn').forEach(b => b.classList.remove('is-active'));
+    btn.classList.add('is-active');
+  }
+  lucide.createIcons();
+</script>
+
+</body>
+</html>
