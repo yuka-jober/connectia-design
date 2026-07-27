@@ -141,8 +141,10 @@
     flex: 1;
     overflow-y: auto;
     background: var(--color-bg);
-    padding-bottom: 76px;
+    padding-bottom: calc(60px + env(safe-area-inset-bottom));
+    min-height: 0;
   }
+  .a-view { height: 100%; }
 
   /* =============================================
      하단 탭바 (커뮤니티 셸 스펙 재사용)
@@ -354,6 +356,7 @@
   .a-embed {
     display: block;
     width: 100%;
+    height: 100%;
     border: 0;
     background: var(--color-bg);
   }
@@ -774,17 +777,12 @@
     setTimeout(() => t.remove(), ms);
   }
 
-  // 실제 topbar·tabbar 높이에 맞춰 iframe 높이와 body 하단 여백을 정합
+  // 탭바 실제 높이에 맞춰 body 하단 여백을 정합 (iframe은 CSS height:100%가 처리)
   function sizeEmbeds() {
-    const topbar = document.querySelector('.a-topbar');
     const tabbar = document.getElementById('a-tabbar');
-    const frame = document.querySelector('.frame');
     const body = document.getElementById('a-body');
-    if (!topbar || !tabbar || !frame || !body) return;
-    const tabH = tabbar.offsetHeight;
-    body.style.paddingBottom = tabH + 'px';
-    const h = frame.clientHeight - topbar.offsetHeight - tabH;
-    document.querySelectorAll('.a-embed').forEach(el => el.style.height = h + 'px');
+    if (!tabbar || !body) return;
+    body.style.paddingBottom = tabbar.offsetHeight + 'px';
   }
   window.addEventListener('resize', sizeEmbeds);
 
