@@ -66,6 +66,20 @@
     }
     .scroll-area { flex: 1; overflow-y: auto; padding-bottom: 96px; }
 
+    /* 미리보기 패널 뒤 어두운 반투명 배경 */
+    .preview-scrim {
+      position: absolute; inset: 0;
+      background: var(--color-scrim);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity var(--motion-standard) var(--ease-enter);
+      z-index: 4;
+    }
+    body.is-preview .preview-scrim {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
     /* 미리보기 패널 (오른쪽에서 슬라이드, 목업 라운드) */
     .preview-panel {
       position: absolute; inset: 12px;
@@ -794,6 +808,7 @@
   </nav>
 
   <div class="content-area">
+  <div class="preview-scrim" id="preview-scrim" onclick="togglePreview()"></div>
   <div class="preview-panel" id="preview-panel" aria-hidden="true">
     <iframe class="preview-frame" id="preview-frame" title="프로필 미리보기"></iframe>
   </div>
