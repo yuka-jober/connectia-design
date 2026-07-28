@@ -26,6 +26,7 @@
     overflow: hidden;
     box-shadow: 0 32px 80px -20px rgba(0,0,0,0.28);
     background: var(--color-surface);
+    transform: translateZ(0); /* 다이얼로그(position:fixed)의 컨테이닝 블록 */
   }
   @media (max-width: 439px) { .frame { width: 100vw; height: 100dvh; max-height: none; } }
   @media (min-width: 440px) { .frame { border-radius: 44px; max-height: calc(100dvh - 40px); } }
@@ -380,9 +381,37 @@
   .write-divider {
     height: 1px; background: var(--color-border);
   }
+  .write-head {
+    flex-shrink: 0; padding: 16px 20px;
+  }
+  .write-format-bar {
+    display: flex; align-items: center; gap: 4px;
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-surface);
+    flex-shrink: 0;
+  }
+  .write-format-btn {
+    width: 32px; height: 32px; flex-shrink: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    border: none; background: none; padding: 0;
+    border-radius: var(--r-xs);
+    color: var(--color-text-sub); cursor: pointer;
+  }
+  /* lucide가 <i>를 <svg>로 교체하므로 둘 다 타겟팅 */
+  .write-format-btn i, .write-format-btn svg { width: 16px; height: 16px; }
+  .write-format-btn:hover { background: var(--color-surface-sub); }
+  .write-format-btn.is-active {
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+  }
+  .write-format-sep {
+    width: 1px; height: 16px; background: var(--color-border);
+    margin: 0 8px; flex-shrink: 0;
+  }
   .write-body {
     flex: 1; display: flex; flex-direction: column;
-    padding: 20px; gap: 12px; overflow-y: auto;
+    padding: 16px 20px 20px; gap: 12px; overflow-y: auto;
   }
   .write-title-row {
     display: flex; align-items: center; gap: 12px;
@@ -396,77 +425,93 @@
     padding: 0;
   }
   .write-title::placeholder { color: var(--color-text-muted); font-weight: var(--fw-bold); }
-  .write-content {
+  /* ── 블록 캔버스 (사진·글 병행 인라인 블록 에디터) ── */
+  .write-canvas {
+    display: flex; flex-direction: column; gap: 8px; flex: 1;
+    position: relative;
+  }
+  .write-block-text {
     border: none; outline: none; background: none;
     font-size: var(--fs-body); color: var(--color-text);
-    font-family: var(--font-base); resize: none; min-height: 120px;
-    line-height: 1.6; padding: 0; flex: 1;
+    font-family: var(--font-base);
+    line-height: 1.6; padding: 0; width: 100%;
+    min-height: 28px; display: block;
+    border-radius: var(--r-xs);
+    white-space: pre-wrap; word-break: break-word;
   }
-  .write-content::placeholder { color: var(--color-text-muted); white-space: pre-line; }
-  .write-attach {
-    padding: 12px 20px; flex-shrink: 0;
-    display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none;
-  }
-  .write-attach::-webkit-scrollbar { display: none; }
-  .write-attach-slot {
-    position: relative; width: 72px; height: 72px; flex-shrink: 0;
-    border-radius: var(--r-sm);
-    background: var(--color-surface-sub);
-    display: flex; align-items: center; justify-content: center;
+  .write-block-text:empty::before {
+    content: attr(data-placeholder);
     color: var(--color-text-muted);
+    pointer-events: none;
+  }
+  .write-block-media {
+    position: relative; flex-shrink: 0;
+    border-radius: var(--r-sm); overflow: hidden;
+    background: var(--color-surface-sub);
     transition: transform var(--motion-fast) var(--ease-standard),
                 box-shadow var(--motion-fast) var(--ease-standard),
                 opacity var(--motion-fast) var(--ease-standard);
-    cursor: grab; touch-action: none; user-select: none;
   }
-  .write-attach-slot:active { cursor: grabbing; }
-  .write-attach-slot.is-dragging {
-    transform: scale(1.06); box-shadow: var(--shadow-3);
+  .write-block-media.is-dragging {
+    transform: scale(1.02); box-shadow: var(--shadow-3);
     opacity: 0.92; z-index: 2;
   }
-  .write-attach-slot.is-drop-target {
-    box-shadow: inset 0 0 0 2px var(--color-primary);
+  /* 드래그 중 삽입 위치 표시 라인 (블록 사이 간격 중앙) */
+  .write-drop-indicator {
+    position: absolute; left: 0; right: 0; height: 2px;
+    border-radius: var(--r-full);
+    background: var(--color-primary);
+    pointer-events: none;
+    display: none;
   }
-  .write-attach-slot .attach-thumb {
-    position: absolute; top: 0; left: 0;
-    width: 100%; height: 100%;
-    border-radius: var(--r-sm);
-    object-fit: cover; pointer-events: none;
+  .write-drop-indicator.on { display: block; }
+  .write-block-img { display: block; width: 100%; }
+  .write-block-player {
+    position: relative; width: 100%; aspect-ratio: 16 / 9;
+    background: var(--color-surface-sub);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
   }
-  .write-attach-cover-badge {
-    position: absolute; left: 4px; bottom: 4px;
-    padding: 2px 6px; border-radius: var(--r-xs);
-    background: rgba(0,0,0,0.6); color: #fff;
-    font-size: 10px; font-weight: var(--fw-semibold);
-    letter-spacing: 0.02em; pointer-events: none;
+  .write-block-poster {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%; object-fit: cover;
   }
-  .write-attach-del {
-    position: absolute; top: -6px; right: -6px;
-    width: 20px; height: 20px; border-radius: var(--r-full);
-    background: var(--color-text); color: var(--color-on-primary);
+  .write-block-play {
+    position: relative; width: 52px; height: 52px;
+    z-index: 1; pointer-events: none;
+  }
+  .write-block-player iframe {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%; border: 0;
+  }
+  .write-block-del {
+    position: absolute; top: 8px; right: 8px;
+    width: 28px; height: 28px; border-radius: var(--r-full);
+    background: var(--color-scrim); color: var(--color-on-primary);
     border: none; display: flex; align-items: center; justify-content: center;
-    cursor: pointer; padding: 0; z-index: 1;
+    cursor: pointer; padding: 0; z-index: 3;
   }
+  .write-block-handle {
+    position: absolute; top: 8px; left: 8px;
+    width: 28px; height: 28px; border-radius: var(--r-full);
+    background: var(--color-scrim); color: var(--color-on-primary);
+    border: none; display: flex; align-items: center; justify-content: center;
+    padding: 0; z-index: 3;
+    cursor: grab; touch-action: none; user-select: none;
+  }
+  .write-block-handle:active { cursor: grabbing; }
   .write-toolbar {
-    display: flex; align-items: center; gap: 24px;
+    display: flex; align-items: center; gap: 16px;
     padding: 12px 20px; border-top: 1px solid var(--color-border);
     flex-shrink: 0; background: var(--color-surface);
   }
-  .write-tool-btn {
-    display: inline-flex; align-items: center; gap: 6px;
-    background: none; border: none; padding: 4px;
-    color: var(--color-text-muted); font-size: var(--fs-label);
-    font-family: var(--font-base); cursor: pointer;
-  }
-  .write-tool-btn i { width: 12px; height: 12px; }
-  .write-tool-btn.is-active { color: var(--color-primary); font-weight: var(--fw-semibold); }
   .write-ai-toggle {
     margin-left: auto;
     display: inline-flex; align-items: center; gap: 8px;
     cursor: pointer; font-family: var(--font-base);
   }
   .write-ai-toggle-text {
-    display: inline-flex; align-items: baseline; gap: 6px;
+    display: inline-flex; align-items: baseline; gap: 8px;
   }
   .write-ai-toggle-label {
     font-size: var(--fs-label);
@@ -2150,14 +2195,16 @@
         <div class="lp-section-title">Information</div>
         <div class="lp-info-link">
           <div class="lp-info-left">
-            <div class="lp-info-icon"><i data-lucide="youtube" style="width:20px;height:20px"></i></div>
+            <!-- lucide 최신에서 브랜드 아이콘 삭제 → 구 lucide youtube SVG 인라인 -->
+            <div class="lp-info-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17"/><path d="m10 15 5-3-5-3z"/></svg></div>
             <span class="lp-info-label">Youtube</span>
           </div>
           <i data-lucide="chevron-right" style="width:16px;height:16px;color:var(--color-text-muted)"></i>
         </div>
         <div class="lp-info-link">
           <div class="lp-info-left">
-            <div class="lp-info-icon"><i data-lucide="instagram" style="width:20px;height:20px"></i></div>
+            <!-- lucide 최신에서 브랜드 아이콘 삭제 → 구 lucide instagram SVG 인라인 -->
+            <div class="lp-info-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg></div>
             <span class="lp-info-label">Instagram</span>
           </div>
           <i data-lucide="chevron-right" style="width:16px;height:16px;color:var(--color-text-muted)"></i>
@@ -3134,7 +3181,7 @@
 
   <div class="write-divider"></div>
 
-  <div class="write-body">
+  <div class="write-head">
     <div class="write-title-row">
       <input class="write-title" type="text" placeholder="제목">
       <label class="write-notice-check">
@@ -3142,11 +3189,43 @@
         <span>공지</span>
       </label>
     </div>
-    <div class="write-divider"></div>
-    <textarea class="write-content" placeholder="내용을 입력하세요"></textarea>
+  </div>
+  <div class="write-divider"></div>
+
+  <!-- 에디터 툴바: 서식 먼저, 삽입 나중 (캔버스 스크롤과 무관하게 고정) -->
+  <div class="write-format-bar" onmousedown="event.preventDefault()">
+    <button type="button" class="write-format-btn" data-cmd="bold" onclick="onFormatCmd(event, 'bold')" aria-label="굵게"><i data-lucide="bold"></i></button>
+    <button type="button" class="write-format-btn" data-cmd="italic" onclick="onFormatCmd(event, 'italic')" aria-label="기울임"><i data-lucide="italic"></i></button>
+    <button type="button" class="write-format-btn" data-cmd="underline" onclick="onFormatCmd(event, 'underline')" aria-label="밑줄"><i data-lucide="underline"></i></button>
+    <button type="button" class="write-format-btn" data-cmd="strikeThrough" onclick="onFormatCmd(event, 'strikeThrough')" aria-label="취소선"><i data-lucide="strikethrough"></i></button>
+    <span class="write-format-sep"></span>
+    <button type="button" class="write-format-btn" onclick="onToolPhoto()" aria-label="사진"><i data-lucide="image"></i></button>
+    <button type="button" class="write-format-btn" onclick="onToolVideo()" aria-label="동영상"><i data-lucide="video"></i></button>
+    <!-- lucide 최신에서 브랜드 아이콘 삭제 → 구 lucide youtube SVG 인라인 -->
+    <button type="button" class="write-format-btn" onclick="onToolYoutube()" aria-label="유튜브"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17"/><path d="m10 15 5-3-5-3z"/></svg></button>
   </div>
 
-  <div class="write-attach" id="write-attach" hidden></div>
+  <div class="write-body">
+    <!-- 블록 캔버스: 쓰는 화면 = 노출 화면 (WYSIWYG) -->
+    <div class="write-canvas" id="write-canvas">
+      <div class="write-block-text" contenteditable="true" data-placeholder="내용을 입력하세요">봄 신메뉴 '딸기 생크림 케이크'가 출시됐어요. 제철 딸기를 아낌없이 올렸습니다.</div>
+      <div class="write-block-media" data-type="photo">
+        <img class="write-block-img" src="../assets/thumbnail_1.png" alt="첨부 사진">
+        <button class="write-block-handle" aria-label="순서 이동"><i data-lucide="grip-vertical" style="width:16px;height:16px"></i></button>
+        <button class="write-block-del" aria-label="삭제" onclick="onBlockDelete(event, this)"><i data-lucide="x" style="width:14px;height:14px"></i></button>
+      </div>
+      <div class="write-block-text" contenteditable="true" data-placeholder="내용을 입력하세요">매장에서 직접 구운 시트에 산뜻한 생크림을 더했어요. 포장 주문도 가능합니다.</div>
+      <div class="write-block-media" data-type="youtube" data-video-id="aqz-KE-bpKQ">
+        <div class="write-block-player" onclick="playYtBlock(this)">
+          <img class="write-block-poster" src="https://img.youtube.com/vi/aqz-KE-bpKQ/hqdefault.jpg" alt="유튜브 썸네일">
+          <div class="write-block-play"><svg viewBox="0 0 60 60" fill="none"><circle cx="30" cy="30" r="30" fill="black" fill-opacity="0.4"/><path d="M41 28.268C42.3333 29.0378 42.3333 30.9623 41 31.7321L24.5 41.2583C23.1667 42.0281 21.5 41.0659 21.5 39.5263V20.4737C21.5 18.9341 23.1667 17.9719 24.5 18.7417L41 28.268Z" fill="white"/></svg></div>
+        </div>
+        <button class="write-block-handle" aria-label="순서 이동"><i data-lucide="grip-vertical" style="width:16px;height:16px"></i></button>
+        <button class="write-block-del" aria-label="삭제" onclick="onBlockDelete(event, this)"><i data-lucide="x" style="width:14px;height:14px"></i></button>
+      </div>
+      <div class="write-block-text" contenteditable="true" data-placeholder="내용을 입력하세요">만드는 과정을 영상으로 담았어요. 자세한 소식은 매장에서 확인해주세요.</div>
+    </div>
+  </div>
 
   <div class="write-form-preview" id="write-form-preview" hidden onclick="onWriteFormToolTap()">
     <span class="write-form-preview-label">신청 폼</span>
@@ -3155,10 +3234,6 @@
   </div>
 
   <div class="write-toolbar">
-    <button class="write-tool-btn" onclick="onWriteAttachTap()">
-      <i data-lucide="image"></i>
-      <span>사진</span>
-    </button>
     <label class="write-ai-toggle">
       <span class="write-ai-toggle-text">
         <span class="write-ai-toggle-label">AI 학습</span>
@@ -3980,6 +4055,25 @@
   </div>
 </div>
 
+<!-- ══════════════════════════════ -->
+<!-- 다이얼로그: 유튜브 추가          -->
+<!-- ══════════════════════════════ -->
+<div class="dialog-overlay" id="yt-dialog" hidden onclick="if(event.target===this)closeYtDialog()">
+  <div class="dialog">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;">
+      <p class="dialog-title" style="margin-bottom:0;">유튜브 추가</p>
+      <button class="icon-btn icon-btn-clear" onclick="closeYtDialog()" aria-label="닫기">
+        <i data-lucide="x" style="width:20px;height:20px;color:var(--color-text-muted)"></i>
+      </button>
+    </div>
+    <input class="input" id="yt-url-input" type="url" placeholder="유튜브 영상 링크 붙여넣기" oninput="onYtUrlInput(this)" onkeydown="if(event.key==='Enter')confirmYtDialog()">
+    <p class="dialog-desc" style="margin:8px 0 20px;">영상 링크를 붙여넣으면 글에 재생 가능한<br>유튜브 영상이 들어가요</p>
+    <div class="dialog-actions">
+      <button class="btn btn-lg btn-fill-primary" id="yt-add-btn" onclick="confirmYtDialog()" disabled>추가하기</button>
+    </div>
+  </div>
+</div>
+
 </div><!-- /frame -->
 
 <script src="https://unpkg.com/lucide@latest"></script>
@@ -4169,16 +4263,21 @@
     openSheet('sheet-write-type');
   }
 
-  // 일반 게시글 작성 화면으로 이동
+  // 일반 게시글 작성 화면으로 이동 (캔버스는 빈 텍스트 블록 하나로 초기화)
   function openNormalWrite() {
     closeSheet('sheet-write-type');
     _eventSetupContext = 'write';
     var n = document.getElementById('toggle-notice');
     if (n) n.checked = false;
-    var attach = document.getElementById('write-attach');
-    if (attach) { attach.innerHTML = ''; attach.hidden = true; }
-    _attachCount = 0;
     goTo('s-write');
+    var canvas = document.getElementById('write-canvas');
+    if (canvas) {
+      canvas.innerHTML = '';
+      var ta = buildTextBlock();
+      canvas.appendChild(ta);
+      _activeTextBlock = ta;
+      ta.focus();
+    }
   }
 
   // 이벤트 글쓰기 진입 — 첫 진입이면 예시 화면, 이후엔 바로 편집
@@ -4265,135 +4364,273 @@
     goTo('s-event-setup');
   }
 
-  // ── 사진 첨부 (프로토타입: 데모 이미지 순환) ──
-  var _attachSampleImages = [
-    '../assets/banner-gsdd.png',
-    '../assets/avatar-gsdd.png',
-    '../assets/banner-gsdd.png',
-    '../assets/avatar-gsdd.png',
-    '../assets/banner-gsdd.png'
+  // ── 블록 에디터 (사진·글 병행 인라인 블록) ──
+  var _photoSamples = [
+    '../assets/thumbnail_2.png',
+    '../assets/thumbnail_3.png',
+    '../assets/thumbnail_1.png'
   ];
-  var _attachCount = 0;
+  var _photoCount = 0;
+  var _videoSamples = [
+    '../assets/thumbnail_3.png',
+    '../assets/thumbnail_2.png',
+    '../assets/thumbnail_1.png'
+  ];
+  var _videoCount = 0;
+  var _activeTextBlock = null;
 
-  function onWriteAttachTap() {
-    var attach = document.getElementById('write-attach');
-    if (!attach) return;
-    var src = _attachSampleImages[_attachCount % _attachSampleImages.length];
-    _attachCount++;
-    var slot = buildAttachSlot(src);
-    attach.appendChild(slot);
-    attach.hidden = false;
-    refreshAttachCoverBadge();
-    lucide.createIcons();
+  function bindTextBlock(ta) {
+    ta.addEventListener('focus', function() { _activeTextBlock = ta; syncFormatState(); });
+    ta.addEventListener('keyup', syncFormatState);
+    ta.addEventListener('mouseup', syncFormatState);
   }
 
-  function buildAttachSlot(src) {
-    var slot = document.createElement('div');
-    slot.className = 'write-attach-slot';
-    slot.draggable = true;
-    slot.innerHTML =
-      '<img class="attach-thumb" src="' + src + '" alt="">' +
-      '<span class="write-attach-cover-badge">대표</span>' +
-      '<button class="write-attach-del" aria-label="삭제" onclick="onWriteAttachDelete(event, this)">' +
-        '<i data-lucide="x" style="width:12px;height:12px"></i>' +
-      '</button>';
-    bindAttachDrag(slot);
-    return slot;
+  function buildTextBlock() {
+    var ta = document.createElement('div');
+    ta.className = 'write-block-text';
+    ta.contentEditable = 'true';
+    ta.setAttribute('data-placeholder', '내용을 입력하세요');
+    bindTextBlock(ta);
+    return ta;
   }
 
-  function onWriteAttachDelete(e, btn) {
-    e.stopPropagation();
-    var slot = btn.closest('.write-attach-slot');
-    var attach = document.getElementById('write-attach');
-    if (slot) slot.remove();
-    if (attach && attach.children.length === 0) attach.hidden = true;
-    refreshAttachCoverBadge();
+  // ── 텍스트 서식 (굵게/기울임/밑줄/취소선) ──
+  // 툴바는 mousedown preventDefault로 캔버스 선택 영역을 유지한 채 실행
+  function onFormatCmd(e, cmd) {
+    e.preventDefault();
+    var active = document.activeElement;
+    var inText = active && active.classList && active.classList.contains('write-block-text');
+    if (!inText) {
+      if (!_activeTextBlock || !_activeTextBlock.isConnected) return;
+      _activeTextBlock.focus();
+    }
+    document.execCommand(cmd, false, null);
+    syncFormatState();
   }
 
-  function refreshAttachCoverBadge() {
-    var slots = document.querySelectorAll('#write-attach .write-attach-slot');
-    slots.forEach(function(s, i) {
-      var badge = s.querySelector('.write-attach-cover-badge');
-      if (badge) badge.style.display = (i === 0) ? '' : 'none';
+  function syncFormatState() {
+    document.querySelectorAll('.write-format-btn[data-cmd]').forEach(function(btn) {
+      var on = false;
+      try { on = document.queryCommandState(btn.dataset.cmd); } catch (_) {}
+      btn.classList.toggle('is-active', on);
     });
   }
 
-  // ── 드래그 리오더 (HTML5 DnD + 터치 fallback) ──
-  var _dragSrc = null;
+  function _playOverlayHtml() {
+    return '<div class="write-block-play"><svg viewBox="0 0 60 60" fill="none"><circle cx="30" cy="30" r="30" fill="black" fill-opacity="0.4"/><path d="M41 28.268C42.3333 29.0378 42.3333 30.9623 41 31.7321L24.5 41.2583C23.1667 42.0281 21.5 41.0659 21.5 39.5263V20.4737C21.5 18.9341 23.1667 17.9719 24.5 18.7417L41 28.268Z" fill="white"/></svg></div>';
+  }
 
-  function bindAttachDrag(slot) {
-    slot.addEventListener('dragstart', function(e) {
-      _dragSrc = slot;
-      slot.classList.add('is-dragging');
+  function buildMediaBlock(type, inner) {
+    var div = document.createElement('div');
+    div.className = 'write-block-media';
+    div.dataset.type = type;
+    div.innerHTML = inner +
+      '<button class="write-block-handle" aria-label="순서 이동"><i data-lucide="grip-vertical" style="width:16px;height:16px"></i></button>' +
+      '<button class="write-block-del" aria-label="삭제" onclick="onBlockDelete(event, this)"><i data-lucide="x" style="width:14px;height:14px"></i></button>';
+    bindBlockDrag(div);
+    return div;
+  }
+
+  // 미디어 블록 삽입: 포커스된 텍스트 블록 바로 아래 + 빈 텍스트 블록 자동 추가·포커스
+  function insertMediaBlock(block) {
+    var canvas = document.getElementById('write-canvas');
+    if (!canvas) return;
+    var active = document.activeElement;
+    var anchor = (active && active.classList && active.classList.contains('write-block-text') && active.parentNode === canvas)
+      ? active
+      : (_activeTextBlock && _activeTextBlock.parentNode === canvas)
+        ? _activeTextBlock
+        : canvas.lastElementChild;
+    if (anchor && anchor.nextSibling) canvas.insertBefore(block, anchor.nextSibling);
+    else canvas.appendChild(block);
+    var ta = buildTextBlock();
+    canvas.insertBefore(ta, block.nextSibling);
+    lucide.createIcons();
+    ta.focus();
+    ta.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  // 툴바: 사진 (프로토타입 — 파일 선택 대신 샘플 이미지 순환)
+  function onToolPhoto() {
+    var src = _photoSamples[_photoCount % _photoSamples.length];
+    _photoCount++;
+    insertMediaBlock(buildMediaBlock('photo',
+      '<img class="write-block-img" src="' + src + '" alt="첨부 사진">'));
+  }
+
+  // 툴바: 동영상 (프로토타입 — 업로드 완료 상태의 썸네일+재생 오버레이 카드)
+  function onToolVideo() {
+    var poster = _videoSamples[_videoCount % _videoSamples.length];
+    _videoCount++;
+    insertMediaBlock(buildMediaBlock('video',
+      '<div class="write-block-player">' +
+        '<img class="write-block-poster" src="' + poster + '" alt="동영상 썸네일">' +
+        _playOverlayHtml() +
+      '</div>'));
+  }
+
+  // ── 유튜브 다이얼로그 ──
+  function onToolYoutube() {
+    var d = document.getElementById('yt-dialog');
+    var input = document.getElementById('yt-url-input');
+    var btn = document.getElementById('yt-add-btn');
+    if (!d || !input || !btn) return;
+    input.value = '';
+    btn.disabled = true;
+    d.hidden = false;
+    lucide.createIcons();
+    setTimeout(function() { input.focus(); }, 0);
+  }
+  function closeYtDialog() {
+    var d = document.getElementById('yt-dialog');
+    if (d) d.hidden = true;
+  }
+  function onYtUrlInput(input) {
+    document.getElementById('yt-add-btn').disabled = input.value.trim() === '';
+  }
+  function parseYtId(url) {
+    var m = url.match(/(?:youtu\.be\/|v=|shorts\/|embed\/|live\/)([\w-]{6,})/);
+    return m ? m[1] : null;
+  }
+  function confirmYtDialog() {
+    var input = document.getElementById('yt-url-input');
+    var url = (input.value || '').trim();
+    if (!url) return;
+    var id = parseYtId(url) || 'aqz-KE-bpKQ'; // 프로토타입: 파싱 실패 시 샘플 영상
+    closeYtDialog();
+    var block = buildMediaBlock('youtube',
+      '<div class="write-block-player" onclick="playYtBlock(this)">' +
+        '<img class="write-block-poster" src="https://img.youtube.com/vi/' + id + '/hqdefault.jpg" alt="유튜브 썸네일">' +
+        _playOverlayHtml() +
+      '</div>');
+    block.dataset.videoId = id;
+    insertMediaBlock(block);
+  }
+
+  // 유튜브 카드 탭 → iframe 재생
+  function playYtBlock(player) {
+    var block = player.closest('.write-block-media');
+    var id = block ? block.dataset.videoId : '';
+    if (!id || player.querySelector('iframe')) return;
+    player.innerHTML = '<iframe src="https://www.youtube.com/embed/' + id + '?autoplay=1&playsinline=1" title="YouTube" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>';
+  }
+
+  // 미디어 블록 삭제
+  function onBlockDelete(e, btn) {
+    e.stopPropagation();
+    var block = btn.closest('.write-block-media');
+    if (block) block.remove();
+  }
+
+  // ── 블록 드래그 리오더 (핸들 기반, HTML5 DnD + 터치 fallback) ──
+  var _dragBlock = null;
+
+  function _dropIndicator() {
+    var canvas = document.getElementById('write-canvas');
+    var el = canvas.querySelector('.write-drop-indicator');
+    if (!el) {
+      el = document.createElement('div');
+      el.className = 'write-drop-indicator';
+      canvas.appendChild(el);
+    }
+    return el;
+  }
+  function _hideDropIndicator() {
+    var canvas = document.getElementById('write-canvas');
+    var el = canvas && canvas.querySelector('.write-drop-indicator');
+    if (el) el.classList.remove('on');
+  }
+  // 삽입될 위치(대상 블록 위/아래 간격 중앙)에 라인 표시
+  function _showDropIndicator(target, y) {
+    var el = _dropIndicator();
+    var rect = target.getBoundingClientRect();
+    var before = y < rect.top + rect.height / 2;
+    var top = before ? target.offsetTop - 5 : target.offsetTop + target.offsetHeight + 3;
+    el.style.top = Math.max(top, 0) + 'px';
+    el.classList.add('on');
+  }
+  function _dropTargetAt(x, y) {
+    var hit = document.elementFromPoint(x, y);
+    if (!hit || !hit.closest) return null;
+    var t = hit.closest('#write-canvas > *');
+    if (t && t.classList.contains('write-drop-indicator')) return null;
+    return (t && t !== _dragBlock) ? t : null;
+  }
+  function _moveBlockTo(target, y) {
+    var canvas = document.getElementById('write-canvas');
+    var rect = target.getBoundingClientRect();
+    var before = y < rect.top + rect.height / 2;
+    canvas.insertBefore(_dragBlock, before ? target : target.nextSibling);
+  }
+
+  function bindBlockDrag(block) {
+    var handle = block.querySelector('.write-block-handle');
+    if (!handle) return;
+
+    // 마우스: 핸들에서 시작할 때만 draggable
+    handle.addEventListener('mousedown', function() { block.draggable = true; });
+    block.addEventListener('dragstart', function(e) {
+      _dragBlock = block;
+      block.classList.add('is-dragging');
       if (e.dataTransfer) {
         e.dataTransfer.effectAllowed = 'move';
-        try { e.dataTransfer.setData('text/plain', 'attach'); } catch (_) {}
+        try { e.dataTransfer.setData('text/plain', 'block'); } catch (_) {}
       }
     });
-    slot.addEventListener('dragend', function() {
-      slot.classList.remove('is-dragging');
-      document.querySelectorAll('#write-attach .is-drop-target').forEach(function(el) {
-        el.classList.remove('is-drop-target');
-      });
-      _dragSrc = null;
-      refreshAttachCoverBadge();
-    });
-    slot.addEventListener('dragover', function(e) {
-      e.preventDefault();
-      if (!_dragSrc || _dragSrc === slot) return;
-      slot.classList.add('is-drop-target');
-    });
-    slot.addEventListener('dragleave', function() {
-      slot.classList.remove('is-drop-target');
-    });
-    slot.addEventListener('drop', function(e) {
-      e.preventDefault();
-      slot.classList.remove('is-drop-target');
-      if (!_dragSrc || _dragSrc === slot) return;
-      var parent = slot.parentNode;
-      var rect = slot.getBoundingClientRect();
-      var before = (e.clientX < rect.left + rect.width / 2);
-      parent.insertBefore(_dragSrc, before ? slot : slot.nextSibling);
-      refreshAttachCoverBadge();
+    block.addEventListener('dragend', function() {
+      block.classList.remove('is-dragging');
+      block.draggable = false;
+      _hideDropIndicator();
+      _dragBlock = null;
     });
 
-    // 터치 fallback
-    var touchClone = null;
-    var touchOffsetX = 0, touchOffsetY = 0;
-    slot.addEventListener('touchstart', function(e) {
-      if (e.target.closest('.write-attach-del')) return;
-      _dragSrc = slot;
-      slot.classList.add('is-dragging');
+    // 터치: 핸들 드래그
+    handle.addEventListener('touchstart', function() {
+      _dragBlock = block;
+      block.classList.add('is-dragging');
     }, { passive: true });
-    slot.addEventListener('touchmove', function(e) {
-      if (!_dragSrc || _dragSrc !== slot) return;
+    handle.addEventListener('touchmove', function(e) {
+      if (_dragBlock !== block) return;
       var t = e.touches[0];
-      var hit = document.elementFromPoint(t.clientX, t.clientY);
-      var target = hit && hit.closest && hit.closest('.write-attach-slot');
-      document.querySelectorAll('#write-attach .is-drop-target').forEach(function(el) {
-        el.classList.remove('is-drop-target');
-      });
-      if (target && target !== slot) target.classList.add('is-drop-target');
+      var target = _dropTargetAt(t.clientX, t.clientY);
+      if (target) _showDropIndicator(target, t.clientY);
+      else _hideDropIndicator();
     }, { passive: true });
-    slot.addEventListener('touchend', function(e) {
-      if (!_dragSrc || _dragSrc !== slot) return;
+    handle.addEventListener('touchend', function(e) {
+      if (_dragBlock !== block) return;
       var t = e.changedTouches[0];
-      var hit = document.elementFromPoint(t.clientX, t.clientY);
-      var target = hit && hit.closest && hit.closest('.write-attach-slot');
-      if (target && target !== slot) {
-        var parent = slot.parentNode;
-        var rect = target.getBoundingClientRect();
-        var before = (t.clientX < rect.left + rect.width / 2);
-        parent.insertBefore(slot, before ? target : target.nextSibling);
-      }
-      slot.classList.remove('is-dragging');
-      document.querySelectorAll('#write-attach .is-drop-target').forEach(function(el) {
-        el.classList.remove('is-drop-target');
-      });
-      _dragSrc = null;
-      refreshAttachCoverBadge();
+      var target = _dropTargetAt(t.clientX, t.clientY);
+      if (target) _moveBlockTo(target, t.clientY);
+      block.classList.remove('is-dragging');
+      _hideDropIndicator();
+      _dragBlock = null;
     });
   }
+
+  // 캔버스 초기화: dragover/drop 위임 + 데모 블록 바인딩
+  (function() {
+    var canvas = document.getElementById('write-canvas');
+    if (!canvas) return;
+    canvas.addEventListener('dragover', function(e) {
+      if (!_dragBlock) return;
+      e.preventDefault();
+      var target = _dropTargetAt(e.clientX, e.clientY);
+      if (target) _showDropIndicator(target, e.clientY);
+      else _hideDropIndicator();
+    });
+    canvas.addEventListener('drop', function(e) {
+      if (!_dragBlock) return;
+      e.preventDefault();
+      var target = _dropTargetAt(e.clientX, e.clientY);
+      if (target) _moveBlockTo(target, e.clientY);
+      _hideDropIndicator();
+    });
+
+    canvas.querySelectorAll('.write-block-text').forEach(bindTextBlock);
+    canvas.querySelectorAll('.write-block-media').forEach(bindBlockDrag);
+    var texts = canvas.querySelectorAll('.write-block-text');
+    _activeTextBlock = texts.length ? texts[texts.length - 1] : null;
+  })();
 
   // 이벤트 수정 화면 → 신청 폼 화면 진입
   function openEventSetupFromEdit() {

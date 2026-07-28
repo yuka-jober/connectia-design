@@ -441,6 +441,65 @@
   .sheet-title { font-size: var(--fs-body-lg); font-weight: var(--fw-semibold); color: var(--color-text); margin: 16px 0; }
   .sheet-desc { font-size: var(--fs-caption); color: var(--color-text-sub); margin-bottom: 16px; }
 
+  /* ── 이벤트 추가 분기 선택 ── */
+  .event-add-choice {
+    display: flex; align-items: center; gap: 12px; width: 100%;
+    padding: 16px; background: var(--color-surface);
+    border: 1px solid var(--color-border); border-radius: var(--r-md);
+    font-family: inherit; text-align: left; cursor: pointer;
+    transition: background var(--motion-fast) var(--ease-standard);
+  }
+  .event-add-choice:active { background: var(--color-surface-sub); }
+  .event-add-choice-icon {
+    flex-shrink: 0; width: 44px; height: 44px; border-radius: var(--r-md);
+    background: var(--color-primary-subtle); color: var(--color-primary);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .event-add-choice-icon i { width: 22px; height: 22px; }
+  .event-add-choice-body { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; }
+  .event-add-choice-title { font-size: var(--fs-body); font-weight: var(--fw-semibold); color: var(--color-text); }
+  .event-add-choice-sub { font-size: var(--fs-caption); color: var(--color-text-sub); }
+  .event-add-choice-arrow { flex-shrink: 0; width: 20px; height: 20px; color: var(--color-text-muted); }
+
+  /* ── PDF 업로드 ── */
+  .pdf-dropzone {
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    width: 100%; padding: 32px 16px; background: var(--color-surface-sub);
+    border: 2px dashed var(--color-border); border-radius: var(--r-md);
+    font-family: inherit; cursor: pointer;
+    transition: border-color var(--motion-fast) var(--ease-standard);
+  }
+  .pdf-dropzone:active { border-color: var(--color-primary); }
+  .pdf-dropzone i { width: 32px; height: 32px; color: var(--color-text-muted); }
+  .pdf-dropzone-title { font-size: var(--fs-body); font-weight: var(--fw-medium); color: var(--color-text); }
+  .pdf-dropzone-sub { font-size: var(--fs-caption); color: var(--color-text-muted); }
+  .pdf-file-chip {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 16px; background: var(--color-surface);
+    border: 1px solid var(--color-border); border-radius: var(--r-md);
+  }
+  .pdf-file-chip-icon { flex-shrink: 0; width: 24px; height: 24px; color: var(--color-primary); }
+  .pdf-file-chip-name { flex: 1; min-width: 0; font-size: var(--fs-body); color: var(--color-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* ── 대표 썸네일 업로더 ── */
+  .pdf-field { display: flex; flex-direction: column; gap: 8px; }
+  .pdf-thumb-add {
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+    width: 160px; aspect-ratio: 4 / 3; background: var(--color-surface-sub);
+    border: 2px dashed var(--color-border); border-radius: var(--r-md);
+    font-family: inherit; cursor: pointer;
+    transition: border-color var(--motion-fast) var(--ease-standard);
+  }
+  .pdf-thumb-add:active { border-color: var(--color-primary); }
+  .pdf-thumb-add i { width: 28px; height: 28px; color: var(--color-text-muted); }
+  .pdf-thumb-add-label { font-size: var(--fs-caption); color: var(--color-text-muted); }
+  .pdf-thumb-preview {
+    position: relative; width: 160px; aspect-ratio: 4 / 3;
+    border-radius: var(--r-md); overflow: hidden; background: var(--color-surface-sub);
+  }
+  .pdf-thumb-preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .pdf-thumb-preview .icon-btn { position: absolute; top: 8px; right: 8px; background: var(--color-scrim); color: var(--color-on-primary); }
+
   /* ── 글작성 시트 필드 ── */
   .field-label { font-size: var(--fs-label); font-weight: var(--fw-medium); color: var(--color-text-sub); margin-bottom: 8px; }
   .field-label-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
@@ -2482,7 +2541,7 @@
             <button type="button" class="event-segment" data-eseg="upcoming" onclick="setEventSegment('upcoming')">예정</button>
             <button type="button" class="event-segment" data-eseg="ended" onclick="setEventSegment('ended')">종료</button>
           </div>
-          <button type="button" class="btn btn-sm btn-weak-primary btn-pill" onclick="goTo('s-event-add')" style="display:inline-flex;align-items:center;gap:4px;flex-shrink:0;margin-left:auto;">
+          <button type="button" class="btn btn-sm btn-weak-primary btn-pill" onclick="openSheet('sheet-event-add')" style="display:inline-flex;align-items:center;gap:4px;flex-shrink:0;margin-left:auto;">
             <i data-lucide="plus" style="width:13px;height:13px"></i>
             이벤트 추가
           </button>
@@ -2684,7 +2743,7 @@
       <div class="lp-banner-section" id="lp-banner">
         <div class="lp-banner-header">
           <span class="lp-section-title">Event</span>
-          <button type="button" class="btn btn-sm btn-weak-primary btn-pill" onclick="setLandingTab('event')" style="display:inline-flex;align-items:center;gap:4px;">
+          <button type="button" class="btn btn-sm btn-weak-primary btn-pill" onclick="openSheet('sheet-event-add')" style="display:inline-flex;align-items:center;gap:4px;">
             <i data-lucide="plus" style="width:13px;height:13px"></i>
             이벤트 추가
           </button>
@@ -3016,6 +3075,89 @@
     </div>
   </div>
 </div>
+
+<!-- ══════════════════════════════ -->
+<!-- 시트: 이벤트 추가 분기          -->
+<!-- ══════════════════════════════ -->
+<div class="sheet-wrap" id="sheet-event-add">
+  <div class="bottom-sheet-overlay" onclick="closeSheet('sheet-event-add')"></div>
+  <div class="bottom-sheet">
+    <div class="bottom-sheet-handle"></div>
+    <div class="sheet-title" style="margin-bottom:16px;">이벤트 추가</div>
+    <div style="display:flex;flex-direction:column;gap:12px;padding-bottom:8px;">
+      <button type="button" class="event-add-choice" onclick="closeSheet('sheet-event-add');goTo('s-event-add');">
+        <span class="event-add-choice-icon"><i data-lucide="square-pen"></i></span>
+        <span class="event-add-choice-body">
+          <span class="event-add-choice-title">직접 입력</span>
+          <span class="event-add-choice-sub">빈 양식에 직접 작성해요</span>
+        </span>
+        <i data-lucide="chevron-right" class="event-add-choice-arrow"></i>
+      </button>
+      <button type="button" class="event-add-choice" onclick="switchSheet('sheet-event-add','sheet-event-pdf')">
+        <span class="event-add-choice-icon"><i data-lucide="file-text"></i></span>
+        <span class="event-add-choice-body">
+          <span class="event-add-choice-title">PDF 등록</span>
+          <span class="event-add-choice-sub">PDF를 그대로 보여주는 이벤트</span>
+        </span>
+        <i data-lucide="chevron-right" class="event-add-choice-arrow"></i>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════ -->
+<!-- 시트: PDF로 이벤트 만들기       -->
+<!-- ══════════════════════════════ -->
+<div class="sheet-wrap" id="sheet-event-pdf">
+  <div class="bottom-sheet-overlay" onclick="closeSheet('sheet-event-pdf')"></div>
+  <div class="bottom-sheet">
+    <div class="bottom-sheet-handle"></div>
+    <div class="sheet-title">PDF로 이벤트 등록</div>
+    <div class="sheet-desc">올린 PDF를 그대로 보여줘요</div>
+
+    <!-- ① PDF 파일 (필수) -->
+    <div class="pdf-field">
+      <label class="label label-required">PDF 파일</label>
+
+      <!-- 미선택: 업로드 영역 -->
+      <button type="button" class="pdf-dropzone" id="pdf-dropzone" onclick="selectPdfFile()">
+        <i data-lucide="upload-cloud"></i>
+        <span class="pdf-dropzone-title">PDF 파일 선택</span>
+        <span class="pdf-dropzone-sub">탭하여 PDF를 올려주세요</span>
+      </button>
+
+      <!-- 선택됨: 파일 칩 -->
+      <div class="pdf-file-chip" id="pdf-file-chip" hidden>
+        <i data-lucide="file-text" class="pdf-file-chip-icon"></i>
+        <span class="pdf-file-chip-name">여름_이벤트_안내.pdf</span>
+        <button type="button" class="icon-btn icon-btn-sm icon-btn-clear" onclick="clearPdfFile()" aria-label="파일 제거">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- ② 대표 썸네일 (필수) -->
+    <div class="pdf-field" style="margin-top:16px;">
+      <label class="label label-required">대표 썸네일</label>
+
+      <!-- 미선택: 이미지 추가 영역 -->
+      <button type="button" class="pdf-thumb-add" id="pdf-thumb-add" onclick="selectPdfThumb()">
+        <i data-lucide="image"></i>
+        <span class="pdf-thumb-add-label">대표 이미지 추가</span>
+      </button>
+
+      <!-- 선택됨: 미리보기 -->
+      <div class="pdf-thumb-preview" id="pdf-thumb-preview" hidden>
+        <img src="../assets/thumbnail_1.png" alt="대표 썸네일 미리보기">
+        <button type="button" class="icon-btn icon-btn-sm icon-btn-clear" onclick="clearPdfThumb()" aria-label="이미지 제거">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+    </div>
+
+    <button type="button" class="btn btn-lg btn-block btn-fill-primary" id="pdf-cta" style="margin-top:20px;margin-bottom:8px;" disabled onclick="createEventFromPdf()">이벤트 만들기</button>
+  </div>
+</div>
 </div><!-- /frame -->
 
 <script src="https://unpkg.com/lucide@latest"></script>
@@ -3218,6 +3360,42 @@
   function switchSheet(from, to) {
     closeSheet(from);
     setTimeout(() => openSheet(to), 120);
+  }
+
+  /* ── PDF 업로드 시트 ── */
+  // PDF·썸네일 둘 다 선택돼야 CTA 활성
+  function updatePdfCta() {
+    var hasFile = document.getElementById('pdf-file-chip').hidden === false;
+    var hasThumb = document.getElementById('pdf-thumb-preview').hidden === false;
+    document.getElementById('pdf-cta').disabled = !(hasFile && hasThumb);
+  }
+  function selectPdfFile() {
+    document.getElementById('pdf-dropzone').hidden = true;
+    document.getElementById('pdf-file-chip').hidden = false;
+    updatePdfCta();
+    if (window.lucide) lucide.createIcons();
+  }
+  function clearPdfFile() {
+    document.getElementById('pdf-file-chip').hidden = true;
+    document.getElementById('pdf-dropzone').hidden = false;
+    updatePdfCta();
+    if (window.lucide) lucide.createIcons();
+  }
+  function selectPdfThumb() {
+    document.getElementById('pdf-thumb-add').hidden = true;
+    document.getElementById('pdf-thumb-preview').hidden = false;
+    updatePdfCta();
+    if (window.lucide) lucide.createIcons();
+  }
+  function clearPdfThumb() {
+    document.getElementById('pdf-thumb-preview').hidden = true;
+    document.getElementById('pdf-thumb-add').hidden = false;
+    updatePdfCta();
+    if (window.lucide) lucide.createIcons();
+  }
+  function createEventFromPdf() {
+    goTo('s-event-add');
+    closeSheet('sheet-event-pdf');
   }
 
   // 이벤트 설정 진입 컨텍스트: 'write' | 'edit'

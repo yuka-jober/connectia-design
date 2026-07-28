@@ -19,7 +19,7 @@ assets/       공용 에셋 — 프로토타입에서 재사용하는 이미지�
 
 | 화면 | 확정본 | 원본 (작업 이력) |
 |---|---|---|
-| 게시판(보드) | `screens/board.html` | prototypes/board-gallery-tab-0708/board.html |
+| 게시판(보드) | `screens/board.html` | prototypes/event-add-branch-0715/board.html |
 | 프로필 편집 | `screens/profile-edit.html` | prototypes/gallery-view-change-0708/profile-edit-v4.html |
 | 이벤트 입력폼 | `screens/event-input.html` | prototypes/event-review-remove-0714/event-input.html |
 | 이벤트 랜딩 | `screens/event-landing.html` | prototypes/event-landing-more-menu-0714/event-landing.html |
@@ -30,7 +30,11 @@ assets/       공용 에셋 — 프로토타입에서 재사용하는 이미지�
 | 프로필 시작(온보딩) | `screens/profile-start.html` | prototypes/profile-start-0612/start-v2.html |
 | 답변 플로우(채팅) | `screens/answer-flow.html` | prototypes/answer-flow-0611/chat-inline.html |
 | 커뮤니티 멤버 | `screens/community-member.html` | prototypes/community-member-0630/community-member.html |
-| 글쓰기 | `screens/post-write.html` | prototypes/post-write-0703/post-write.html |
+| 글쓰기 | `screens/post-write.html` | prototypes/post-write-block-editor-0713/post-write.html |
+| 답변 못함 목록 | `screens/answer-flow-list.html` | prototypes/answer-flow-0611/list.html |
+| 아바타 통계 | `screens/avatar-stats.html` | prototypes/avatar-stats-0723/avatar-stats.html |
+| 아바타 통계 (빈 상태) | `screens/avatar-stats-empty.html` | prototypes/avatar-stats-0723/avatar-stats-empty.html |
+| 이벤트 랜딩 (PDF 뷰어) | `screens/event-landing-pdf.html` | prototypes/event-landing-pdf-0716/event-landing-pdf.html |
 | 영업 프로필 이름 | `screens/sales-profile-name.html` | prototypes/sales-profile-name-0701/sales-profile-name.html |
 | 팀 단위 페이지 관리 | `screens/team-page.html` | prototypes/team-ai-page-0707/index.html |
 | 내 AI 아바타 | `screens/my-ai-avatars.html` | prototypes/my-ai-avatars-0701/index.html |
