@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>프로필 미리보기</title>
+<link rel="stylesheet" href="../../tokens.css">
+<link rel="stylesheet" href="../../components.css">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: var(--font-base);
+    background: var(--color-bg);
+    color: var(--color-text);
+    display: flex;
+    flex-direction: column;
+  }
+  [data-lucide] { display: inline-flex; flex-shrink: 0; }
+
+  .lp-scroll {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .lp-header { width: 100%; height: 177px; overflow: hidden; position: relative; flex-shrink: 0; }
+  .lp-header img { width: 100%; height: 211px; object-fit: cover; position: absolute; top: 0; left: 0; }
+  .lp-avatar-wrap { position: absolute; top: 133px; left: 20px; z-index: 2; }
+  .lp-actions-row { position: absolute; top: 190px; right: 20px; z-index: 3; display: flex; gap: 8px; align-items: center; }
+  .lp-inner { padding: 68px 20px 32px; display: flex; flex-direction: column; gap: 20px; }
+  .lp-title { font-weight: var(--fw-semibold); font-size: var(--fs-title); color: var(--color-text); letter-spacing: var(--ls-title); }
+  .lp-name-block { display: flex; flex-direction: column; gap: 4px; }
+  .lp-handle { font-size: var(--fs-label); color: var(--color-text-muted); }
+  .lp-divider { height: 1px; width: 100%; background: var(--color-border); border: none; }
+  .lp-section-title { font-weight: var(--fw-semibold); font-size: var(--fs-heading); color: var(--color-text-sub); letter-spacing: var(--ls-heading); }
+
+  .lp-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-bg);
+    margin: 0 -20px 20px;
+    padding: 0 20px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .lp-tabs::-webkit-scrollbar { display: none; }
+  .lp-tab {
+    flex: none;
+    padding: 14px 16px;
+    border: none;
+    background: transparent;
+    font-size: var(--fs-body);
+    color: var(--color-text-muted);
+    font-weight: var(--fw-medium);
+    cursor: pointer;
+    position: relative;
+    font-family: var(--font-base);
+  }
+  .lp-tab.active { color: var(--color-text); font-weight: var(--fw-semibold); }
+  .lp-tab.active::after {
+    content: '';
+    position: absolute;
+    left: 16px; right: 16px; bottom: -1px;
+    height: 2px;
+    background: var(--color-text);
+  }
+
+  .lp-section { display: flex; flex-direction: column; gap: 12px; width: 100%; }
+  .lp-info-link {
+    background: var(--color-primary-light);
+    border-radius: var(--r-sm);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px;
+    width: 100%;
+    cursor: pointer;
+  }
+  .lp-info-left { display: flex; align-items: center; gap: 12px; }
+  .lp-info-icon {
+    width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; color: var(--color-text-muted);
+  }
+  .lp-info-label { font-size: var(--fs-body); font-weight: var(--fw-semibold); color: var(--color-text); }
+
+  .lp-about {
+    font-size: var(--fs-body);
+    color: var(--color-text);
+    line-height: var(--lh-body);
+  }
+  .lp-about p { margin-bottom: 8px; }
+  .lp-about p:last-child { margin-bottom: 0; }
+
+  .lp-gallery-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; }
+  .lp-gallery-cell {
+    position: relative;
+    aspect-ratio: 4 / 5;
+    overflow: hidden;
+    background: var(--color-surface-sub);
+    border: none; padding: 0; cursor: pointer;
+  }
+  .lp-gallery-cell img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  .lp-post-list { background: var(--color-surface); border-radius: var(--r-md); border: 1px solid var(--color-border); overflow: hidden; width: 100%; }
+  .lp-post { display: flex; align-items: stretch; width: 100%; min-height: 72px; border-bottom: 1px solid var(--color-border); cursor: pointer; }
+  .lp-post:last-child { border-bottom: none; }
+  .lp-post-img { width: 90px; align-self: stretch; overflow: hidden; flex-shrink: 0; background: var(--color-bg); order: 2; }
+  .lp-post-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .lp-post-body { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 4px; padding: 12px; min-width: 0; }
+  .lp-post-tags { display: flex; gap: 8px; align-items: center; }
+  .lp-post-title { font-size: var(--fs-body); font-weight: var(--fw-semibold); color: var(--color-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lp-post-preview { font-size: var(--fs-caption); color: var(--color-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .lp-notice-header { display: flex; align-items: center; justify-content: space-between; width: 100%; }
+
+  .lp-banner-section { width: 100%; display: flex; flex-direction: column; gap: 12px; }
+  .lp-banner-scroll {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    margin-right: -20px;
+    scrollbar-width: none;
+  }
+  .lp-banner-scroll::-webkit-scrollbar { display: none; }
+  .lp-banner-card {
+    flex: 0 0 240px;
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+    background: var(--color-surface);
+    border-radius: var(--r-md);
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+    padding: 0;
+    text-align: left;
+    font-family: var(--font-base);
+  }
+  .lp-banner-img { width: 100%; aspect-ratio: 16 / 9; background: var(--color-surface-sub); overflow: hidden; }
+  .lp-banner-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .lp-banner-text { padding: 12px; display: flex; flex-direction: column; gap: 4px; }
+  .lp-banner-title { font-size: var(--fs-body); font-weight: var(--fw-semibold); color: var(--color-text); }
+  .lp-banner-date {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: var(--fs-caption); color: var(--color-text-muted);
+  }
+  .lp-banner-date [data-lucide] { width: 12px; height: 12px; }
+  .lp-banner-desc {
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+</style>
+</head>
+<body>
+
+<div class="lp-scroll">
+  <div style="position:relative;flex-shrink:0;">
+    <div class="lp-header">
+      <img src="../../assets/banner-board.png" alt="">
+    </div>
+    <div class="lp-avatar-wrap">
+      <div class="avatar" style="width:87px;height:87px;">
+        <img src="../../assets/profile.png" alt="프로필">
+      </div>
+    </div>
+    <div class="lp-actions-row">
+      <button class="btn btn-md btn-weak-dark btn-pill" type="button">
+        <i data-lucide="download" style="width:16px;height:16px"></i>
+        연락처 저장
+      </button>
+      <button class="btn btn-md btn-weak-dark btn-pill" type="button">
+        <i data-lucide="link" style="width:16px;height:16px"></i>
+        공유
+      </button>
+    </div>
+  </div>
+
+  <div class="lp-inner">
+    <div class="lp-name-block">
+      <div class="lp-title">엘린피부과의원</div>
+      <div class="lp-handle">@elin_clinic</div>
+    </div>
+
+    <button class="btn btn-lg btn-fill-gradient btn-block" type="button">
+      <i data-lucide="message-circle" style="width:18px;height:18px"></i>
+      대화하기
+    </button>
+
+    <div class="lp-tabs">
+      <button class="lp-tab active" type="button">홈</button>
+      <button class="lp-tab" type="button">갤러리</button>
+      <button class="lp-tab" type="button">이벤트·행사</button>
+      <button class="lp-tab" type="button">게시판</button>
+      <button class="lp-tab" type="button">리뷰</button>
+    </div>
+
+    <div class="lp-section">
+      <div class="lp-section-title">SNS</div>
+      <div class="lp-info-link">
+        <div class="lp-info-left">
+          <div class="lp-info-icon"><i data-lucide="youtube" style="width:20px;height:20px"></i></div>
+          <span class="lp-info-label">Youtube</span>
+        </div>
+        <i data-lucide="chevron-right" style="width:16px;height:16px;color:var(--color-text-muted)"></i>
+      </div>
+      <div class="lp-info-link">
+        <div class="lp-info-left">
+          <div class="lp-info-icon"><i data-lucide="instagram" style="width:20px;height:20px"></i></div>
+          <span class="lp-info-label">Instagram</span>
+        </div>
+        <i data-lucide="chevron-right" style="width:16px;height:16px;color:var(--color-text-muted)"></i>
+      </div>
+    </div>
+
+    <hr class="lp-divider">
+
+    <div class="lp-section">
+      <div class="lp-section-title">About</div>
+      <div class="lp-about">
+        <p>엘린피부과는 피부 본연의 건강과 자연스러운 아름다움을 추구합니다. 모공, 잡티, 탄력 등 일상 속 작은 고민까지 정성껏 살피며, 시술 전 충분한 상담으로 가장 알맞은 방향을 함께 찾아드려요.</p>
+        <p>원장님이 직접 진료부터 마무리까지 책임지며, 시술 후에는 회복 단계별 케어까지 꼼꼼하게 안내드립니다.</p>
+      </div>
+    </div>
+
+    <hr class="lp-divider">
+
+    <div class="lp-section">
+      <div class="lp-notice-header">
+        <span class="lp-section-title">갤러리</span>
+      </div>
+      <div class="lp-gallery-grid">
+        <button type="button" class="lp-gallery-cell"><img src="https://picsum.photos/seed/shell-1/400/500" alt=""></button>
+        <button type="button" class="lp-gallery-cell"><img src="https://picsum.photos/seed/shell-2/400/500" alt=""></button>
+        <button type="button" class="lp-gallery-cell"><img src="https://picsum.photos/seed/shell-3/400/500" alt=""></button>
+        <button type="button" class="lp-gallery-cell"><img src="https://picsum.photos/seed/shell-4/400/500" alt=""></button>
+        <button type="button" class="lp-gallery-cell"><img src="https://picsum.photos/seed/shell-5/400/500" alt=""></button>
+        <button type="button" class="lp-gallery-cell"><img src="https://picsum.photos/seed/shell-6/400/500" alt=""></button>
+      </div>
+    </div>
+
+    <hr class="lp-divider">
+
+    <div class="lp-banner-section">
+      <div class="lp-notice-header">
+        <span class="lp-section-title">Event</span>
+      </div>
+      <div class="lp-banner-scroll">
+        <button type="button" class="lp-banner-card">
+          <div class="lp-banner-img">
+            <img src="../../assets/thumbnail_1.png" alt="">
+          </div>
+          <div class="lp-banner-text">
+            <div class="lp-banner-title">수면 리쥬베룩 이벤트</div>
+            <div class="lp-banner-date">
+              <i data-lucide="calendar-days"></i>07.05 · 14:00 ~ 18:00
+            </div>
+            <div class="lp-banner-desc">이번 여름 한정 프리미엄 케어 프로그램을 소개드립니다.</div>
+          </div>
+        </button>
+        <button type="button" class="lp-banner-card">
+          <div class="lp-banner-img">
+            <img src="../../assets/thumbnail_2.png" alt="">
+          </div>
+          <div class="lp-banner-text">
+            <div class="lp-banner-title">물광 스킨부스터 이벤트</div>
+            <div class="lp-banner-date">
+              <i data-lucide="calendar-days"></i>07.10 ~ 07.20
+            </div>
+            <div class="lp-banner-desc">물광 관리 프로그램, 새롭게 리뉴얼해서 오픈합니다.</div>
+          </div>
+        </button>
+      </div>
+    </div>
+
+    <hr class="lp-divider">
+
+    <div class="lp-section">
+      <div class="lp-notice-header">
+        <span class="lp-section-title">게시판</span>
+      </div>
+      <div class="lp-post-list">
+        <div class="lp-post">
+          <div class="lp-post-img">
+            <img src="../../assets/thumbnail_1.png" alt="">
+          </div>
+          <div class="lp-post-body">
+            <div class="lp-post-tags">
+              <span class="badge badge-sm badge-weak-primary">이벤트</span>
+              <span class="lp-post-title">수면 리쥬베룩 이벤트</span>
+            </div>
+            <div class="lp-post-preview">맑고 탄력 있는 피부를 위한 특별 케어 프로그램, 한정 인원 선착순 진행.</div>
+          </div>
+        </div>
+        <div class="lp-post">
+          <div class="lp-post-body">
+            <div class="lp-post-tags">
+              <span class="badge badge-sm badge-fill-neutral">공지</span>
+              <span class="lp-post-title">6월 시술 가격 안내</span>
+            </div>
+            <div class="lp-post-preview">6월 한 달간 적용되는 시술별 가격표를 안내드립니다.</div>
+          </div>
+        </div>
+        <div class="lp-post">
+          <div class="lp-post-body">
+            <div class="lp-post-title">시술 후 홈케어 가이드</div>
+            <div class="lp-post-preview">레이저·리프팅 시술 후 회복을 돕는 홈케어 루틴을 정리했어요.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>lucide.createIcons();</script>
+</body>
+</html>
