@@ -468,6 +468,70 @@
   }
   .a-preview-close [data-lucide] { width: 20px; height: 20px; color: var(--color-text); }
   #view-preview { position: relative; }
+
+  /* ── 연락처 저장 다이얼로그 (프레임 스코프) ── */
+  .cs-dialog-overlay {
+    position: absolute;
+    inset: 0;
+    background: var(--color-scrim);
+    z-index: 300;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .cs-dialog-overlay.is-open { display: flex; }
+  .cs-dialog {
+    background: var(--color-surface);
+    border-radius: var(--r-lg);
+    padding: 20px 12px 12px;
+    width: 100%;
+    max-width: 320px;
+    box-shadow: var(--shadow-4);
+    animation: cs-dialog-in var(--motion-standard) var(--ease-enter);
+  }
+  @keyframes cs-dialog-in {
+    from { opacity: 0; transform: scale(0.96); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+  .cs-dialog-title {
+    font-size: var(--fs-heading);
+    font-weight: var(--fw-bold);
+    color: var(--color-text);
+    text-align: center;
+    padding: 8px 0 16px;
+  }
+  .cs-options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .cs-option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    background: transparent;
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-md);
+    font-family: var(--font-base);
+    font-size: var(--fs-body-lg);
+    color: var(--color-text);
+    text-align: left;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: background var(--motion-fast) var(--ease-standard), border-color var(--motion-fast) var(--ease-standard);
+  }
+  .cs-option:active {
+    background: var(--color-surface-sub);
+    border-color: var(--color-text-sub);
+  }
+  .cs-option [data-lucide] {
+    width: 20px;
+    height: 20px;
+    color: var(--color-text-sub);
+    flex-shrink: 0;
+  }
 </style>
 </head>
 <body>
@@ -511,7 +575,7 @@
             </div>
           </div>
           <div class="lp-actions-row">
-            <button class="btn btn-md btn-weak-dark btn-pill" type="button">
+            <button class="btn btn-md btn-weak-dark btn-pill" type="button" onclick="openContactSave()">
               <i data-lucide="download" style="width:16px;height:16px"></i>
               연락처 저장
             </button>
@@ -805,6 +869,23 @@
 
     <!-- 프레임 스코프 토스트 -->
     <div class="a-toast-container" id="a-toast-container"></div>
+
+    <!-- 연락처 저장 다이얼로그 -->
+    <div class="cs-dialog-overlay" id="csDialog" onclick="closeContactSave(event)">
+      <div class="cs-dialog" onclick="event.stopPropagation()">
+        <div class="cs-dialog-title">저장 방식 선택</div>
+        <div class="cs-options">
+          <button class="cs-option" type="button" onclick="chooseContactSave('phone')">
+            <i data-lucide="phone"></i>
+            핸드폰에 저장
+          </button>
+          <button class="cs-option" type="button" onclick="chooseContactSave('follow')">
+            <i data-lucide="heart"></i>
+            팔로우
+          </button>
+        </div>
+      </div>
+    </div>
   </section>
 
 </div>
@@ -950,6 +1031,18 @@
         }
       }
     } catch (e) {}
+  }
+
+  function openContactSave() {
+    document.getElementById('csDialog').classList.add('is-open');
+  }
+  function closeContactSave(e) {
+    if (e && e.target !== e.currentTarget) return;
+    document.getElementById('csDialog').classList.remove('is-open');
+  }
+  function chooseContactSave(kind) {
+    document.getElementById('csDialog').classList.remove('is-open');
+    showToast(kind === 'phone' ? '핸드폰 연락처에 저장했어요' : '팔로우했어요');
   }
 
   document.body.dataset.activeTab = 'home';
