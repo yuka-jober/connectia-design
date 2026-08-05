@@ -28,7 +28,7 @@
 
   <header style="position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; padding: 11px 18px; background: rgba(10,22,40,.72); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
     <img src="logo-white.svg" alt="Connectia" style="height: 15px; display: block;">
-    <a href="#signup" style="display: inline-block; padding: 9px 18px; border-radius: 999px; background: #34E3C8; color: #0A1628; font: 700 13px Archivo, sans-serif;" style-hover="background: #0FA895;">Get started</a>
+    <a href="#signup" style="{{ headerCtaStyle }}" style-hover="{{ headerCtaHover }}">Get started</a>
   </header>
 
   <div style="position: fixed; bottom: 12px; right: 12px; z-index: 101; display: flex; gap: 4px; padding: 4px; background: rgba(10,22,40,.72); backdrop-filter: blur(8px); border-radius: 999px;">
@@ -275,6 +275,8 @@ class Component extends DCLogic {
       isB: v === 'b',
       tabAStyle: tab(v === 'a'),
       tabBStyle: tab(v === 'b'),
+      headerCtaStyle: 'display: inline-block; padding: 9px 18px; border-radius: 999px; background: ' + (v === 'b' ? '#FFC15E' : '#34E3C8') + '; color: #0A1628; font: 700 13px Archivo, sans-serif;',
+      headerCtaHover: 'background: ' + (v === 'b' ? '#E8A03F' : '#0FA895') + ';',
       showA: () => this.setState({ variant: 'a' }),
       showB: () => this.setState({ variant: 'b' }),
       rows: [
