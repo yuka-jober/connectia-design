@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Connectia — Sign up</title>
+<link rel="stylesheet" href="../../tokens.css">
+<link rel="stylesheet" href="../../components.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&display=swap">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; height: 100dvh; }
+  body {
+    font-family: var(--font-base);
+    background: var(--color-bg);
+    color: var(--color-text);
+    display: flex; align-items: center; justify-content: center;
+  }
+  i[data-lucide] { display: inline-flex; }
+
+  .frame {
+    width: 390px;
+    height: 844px;
+    max-height: 100dvh;
+    background: var(--color-surface);
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--shadow-4);
+  }
+  @media (max-width: 439px) { .frame { width: 100vw; height: 100dvh; box-shadow: none; } }
+  @media (min-width: 440px) { .frame { border-radius: var(--r-xl); } }
+
+  /* ── Screen transition ── */
+  .screen {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    padding: 24px 28px 28px;
+    overflow-y: auto;
+    background: var(--color-surface);
+    transform: translateX(100%);
+    opacity: 0;
+    pointer-events: none;
+    transition: transform var(--motion-standard) var(--ease-standard),
+                opacity var(--motion-standard) var(--ease-standard);
+  }
+  .screen.on { transform: translateX(0); opacity: 1; pointer-events: auto; }
+
+  /* ── Header ── */
+  .brand { height: 20px; margin-bottom: 32px; }
+  .brand img { height: 20px; display: block; }
+
+
+  /* ── Hero ── */
+  .hero { text-align: center; margin-top: 52px; margin-bottom: 28px; }
+  .hero-title { margin-bottom: 8px; font-family: 'Poppins', var(--font-base); }
+  .hero-sub { color: var(--color-text-muted); }
+
+  /* ── Form ── */
+  .form { display: flex; flex-direction: column; gap: 12px; }
+
+  .pw-field { position: relative; }
+  .pw-field .input { padding-right: 48px; }
+  .pw-toggle {
+    position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+    display: flex; align-items: center; justify-content: center;
+    padding: 8px; border: none; background: transparent; cursor: pointer;
+    color: var(--color-text-muted);
+    transition: color var(--motion-fast) var(--ease-standard);
+  }
+  .pw-toggle:hover { color: var(--color-text-sub); }
+  .pw-toggle svg { width: 18px; height: 18px; }
+
+  /* ── Connectia address field (connectia.bio/ + username) ── */
+  .addr-field {
+    display: flex; align-items: center;
+    background: rgba(0,0,0,0.02);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-sm);
+    padding: 0 16px;
+    transition: border-color var(--motion-fast) var(--ease-standard);
+  }
+  .addr-field:focus-within { border-color: var(--color-primary); }
+  .addr-field.is-error { border-color: var(--color-destructive); }
+  .addr-field.is-ok { border-color: var(--color-text); }
+  .addr-prefix {
+    font-size: var(--fs-body-lg);
+    color: var(--color-text-muted);
+    white-space: nowrap;
+  }
+  .addr-input {
+    flex: 1; min-width: 0;
+    padding: 14px 0;
+    border: none; background: transparent; outline: none;
+    font-family: var(--font-base);
+    font-size: var(--fs-body-lg);
+    color: var(--color-text);
+  }
+  .addr-input::placeholder { color: var(--color-text-muted); }
+
+  .addr-feedback {
+    display: none;
+    align-items: center; gap: 8px;
+    margin-top: 8px;
+    font-size: var(--fs-caption);
+    font-weight: var(--fw-medium);
+  }
+  .addr-feedback.show { display: flex; }
+  .addr-feedback .fb-icon { display: inline-flex; }
+  .addr-feedback svg { width: 14px; height: 14px; }
+  .addr-feedback.ok { color: var(--color-success); }
+  .addr-feedback.err { color: var(--color-destructive); }
+
+  /* ── Buttons ── */
+  .btn-google svg { width: 18px; height: 18px; }
+
+  /* ── Legal text ── */
+  .legal {
+    margin-top: 16px;
+    font-size: var(--fs-caption);
+    line-height: var(--lh-caption);
+    color: var(--color-text-muted);
+  }
+  .legal a { color: var(--color-primary); text-decoration: underline; }
+
+  /* ── OR divider ── */
+  .or-divider { display: flex; align-items: center; gap: 12px; margin: 24px 0; }
+  .or-divider::before, .or-divider::after {
+    content: ""; flex: 1; height: 1px; background: var(--color-border);
+  }
+  .or-divider span {
+    font-size: var(--fs-caption); font-weight: var(--fw-semibold);
+    color: var(--color-text-muted); letter-spacing: 0.04em;
+  }
+
+  /* ── Footer ── */
+  .spacer { flex: 1; min-height: 24px; }
+  .cookie-link {
+    display: block; text-align: center; margin-top: 20px;
+    font-size: var(--fs-caption); color: var(--color-text-muted);
+    text-decoration: none; cursor: pointer;
+  }
+  .cookie-link:hover { color: var(--color-text-sub); }
+</style>
+</head>
+<body>
+
+  <div class="frame">
+
+    <!-- ══════════ Step 1 — Join ══════════ -->
+    <section class="screen on" id="stepJoin">
+      <div class="hero">
+        <h1 class="text-display hero-title">Create your free page</h1>
+        <p class="text-body hero-sub">Free forever. No credit card.</p>
+      </div>
+
+      <div class="form">
+        <input class="input" type="email" id="emailInput" placeholder="Email" autocomplete="email">
+
+        <div class="pw-field">
+          <input class="input" type="password" id="pwInput" placeholder="Password" autocomplete="new-password">
+          <button class="pw-toggle" id="pwToggle" type="button" aria-label="Show password">
+            <i data-lucide="eye"></i>
+          </button>
+        </div>
+
+        <button class="btn btn-xl btn-block btn-fill-primary" id="btnContinue" disabled>Continue</button>
+
+        <p class="legal">
+          By clicking Continue, you agree to Connectia's
+          <a href="#">privacy notice</a>, <a href="#">T&amp;Cs</a>
+          and to receive offers, news and updates.
+        </p>
+      </div>
+
+      <div class="or-divider"><span>OR</span></div>
+
+      <button class="btn btn-xl btn-block btn-line-dark btn-google" id="btnGoogle" type="button">
+        <!-- Google brand mark — official brand colors required by Google guidelines -->
+        <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+          <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+          <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+          <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+        </svg>
+        Continue with Google
+      </button>
+
+      <div class="spacer"></div>
+      <a class="cookie-link" href="#">Cookie preferences</a>
+    </section>
+
+    <!-- ══════════ Step 2 — Welcome (choose username) ══════════ -->
+    <section class="screen" id="stepWelcome">
+      <div class="hero">
+        <h1 class="text-display hero-title">Welcome to Connectia!</h1>
+        <p class="text-body hero-sub">Choose your page address.<br>You can always change it later.</p>
+      </div>
+
+      <div class="form">
+        <div>
+          <div class="addr-field" id="addrField">
+            <span class="addr-prefix">connectia.bio/</span>
+            <input class="addr-input" type="text" id="usernameInput" placeholder="yourname"
+                   autocomplete="off" autocapitalize="none" spellcheck="false">
+          </div>
+          <p class="addr-feedback" id="addrFeedback"><span class="fb-icon"></span><span class="fb-text"></span></p>
+        </div>
+
+        <button class="btn btn-xl btn-block btn-fill-primary" id="btnFinish" disabled>Continue</button>
+      </div>
+    </section>
+
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    const stepJoin    = document.getElementById('stepJoin');
+    const stepWelcome = document.getElementById('stepWelcome');
+
+    /* ── Step 1: Join ── */
+    const emailInput  = document.getElementById('emailInput');
+    const pwInput     = document.getElementById('pwInput');
+    const pwToggle    = document.getElementById('pwToggle');
+    const btnContinue = document.getElementById('btnContinue');
+    const btnGoogle   = document.getElementById('btnGoogle');
+
+    const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    function validateJoin() {
+      const ok = EMAIL_RE.test(emailInput.value.trim()) && pwInput.value.length >= 8;
+      btnContinue.disabled = !ok;
+    }
+    emailInput.addEventListener('input', validateJoin);
+    pwInput.addEventListener('input', validateJoin);
+
+    pwToggle.addEventListener('click', () => {
+      const hidden = pwInput.type === 'password';
+      pwInput.type = hidden ? 'text' : 'password';
+      pwToggle.innerHTML = '<i data-lucide="' + (hidden ? 'eye-off' : 'eye') + '"></i>';
+      lucide.createIcons();
+    });
+
+    function goWelcome(prefill) {
+      if (prefill != null) {
+        usernameInput.value = prefill;
+        validateUsername();
+      }
+      stepJoin.classList.remove('on');
+      stepWelcome.classList.add('on');
+      setTimeout(() => usernameInput.focus(), 260);
+    }
+    btnContinue.addEventListener('click', () => {
+      if (btnContinue.disabled) return;
+      const id = emailInput.value.trim().split('@')[0].toLowerCase().replace(/[^a-z0-9._]/g, '');
+      goWelcome(id);
+    });
+    btnGoogle.addEventListener('click', () => goWelcome('yuka'));
+
+    /* ── Step 2: Welcome / choose username ── */
+    const usernameInput = document.getElementById('usernameInput');
+    const addrField     = document.getElementById('addrField');
+    const addrFeedback  = document.getElementById('addrFeedback');
+    const addrIcon      = addrFeedback.querySelector('.fb-icon');
+    const addrText      = addrFeedback.querySelector('.fb-text');
+    const btnFinish     = document.getElementById('btnFinish');
+
+    // Demo: addresses already taken / reserved
+    const TAKEN = ['admin', 'connectia', 'support', 'help', 'studiogloss', 'john'];
+
+    function setFeedback(state, msg, iconName) {
+      addrField.classList.toggle('is-ok', state === 'ok');
+      addrField.classList.toggle('is-error', state === 'err');
+      if (!state) { addrFeedback.classList.remove('show'); return; }
+      addrFeedback.classList.add('show');
+      addrFeedback.classList.toggle('ok', state === 'ok');
+      addrFeedback.classList.toggle('err', state === 'err');
+      addrText.textContent = msg;
+      addrIcon.innerHTML = '<i data-lucide="' + iconName + '"></i>';
+      lucide.createIcons();
+    }
+
+    function validateUsername() {
+      const raw = usernameInput.value.trim().toLowerCase();
+      if (raw.length === 0) {
+        setFeedback(null);
+        btnFinish.disabled = true;
+        return;
+      }
+      if (raw.length < 3) {
+        setFeedback('err', 'Use at least 3 characters', 'x');
+        btnFinish.disabled = true;
+        return;
+      }
+      if (TAKEN.includes(raw)) {
+        setFeedback('err', 'That address is taken', 'x');
+        btnFinish.disabled = true;
+        return;
+      }
+      setFeedback('ok', 'Available', 'check');
+      btnFinish.disabled = false;
+    }
+    usernameInput.addEventListener('input', validateUsername);
+
+    btnFinish.addEventListener('click', () => {
+      if (btnFinish.disabled) return;
+      // Mockup: end of flow
+    });
+  </script>
+</body>
+</html>
