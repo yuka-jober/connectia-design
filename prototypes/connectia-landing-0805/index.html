@@ -21,6 +21,11 @@
   @keyframes popIn { from { opacity: 0; transform: translateY(10px) scale(.97); } to { opacity: 1; transform: none; } }
   @keyframes dotPulse { 0%, 60%, 100% { opacity: .25; } 30% { opacity: 1; } }
   @keyframes glowPulse { 0%, 100% { opacity: .55; } 50% { opacity: .95; } }
+  .faq-item summary { list-style: none; }
+  .faq-item summary::-webkit-details-marker { display: none; }
+  .faq-item[open] { border-color: #101827; }
+  .faq-ico { transition: transform .2s ease; }
+  .faq-item[open] .faq-ico { transform: rotate(45deg); }
 </style>
 </helmet>
 
@@ -249,7 +254,31 @@
     </div>
   </section>
 
-  <section id="signup" data-screen-label="08 Close" style="min-height: 100svh; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 24px; padding: 76px 22px; background: #0A1628; text-align: center;">
+  <section data-screen-label="08 FAQ" style="min-height: 100svh; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 36px; padding: 76px 20px; background: #FFFFFF;">
+    <div style="width: 100%; max-width: 520px; text-align: center;">
+      <h2 style="margin: 0; font: 800 clamp(32px, 9.5vw, 46px) Archivo, sans-serif; line-height: 1.02; letter-spacing: -.035em; color: #101827;">Questions, answered.</h2>
+    </div>
+    <div style="width: 100%; max-width: 560px; display: flex; flex-direction: column; gap: 12px;">
+      <details class="faq-item" style="border: 1px solid #E6E9ED; border-radius: 18px; padding: 0 22px; background: #FFFFFF;">
+        <summary style="cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 0; font: 700 clamp(17px, 4.6vw, 20px) Archivo, sans-serif; letter-spacing: -.01em; color: #101827;">What if the AI gets something wrong?<span class="faq-ico" style="flex: none; font: 300 26px/1 Archivo, sans-serif; color: #98A2B0;">+</span></summary>
+        <p style="margin: 0 0 22px; font-size: 16px; line-height: 1.62; color: #5A6675;">You see every conversation and can jump in anytime — same thread, no handoff. Fix an answer once and it sticks.</p>
+      </details>
+      <details class="faq-item" style="border: 1px solid #E6E9ED; border-radius: 18px; padding: 0 22px; background: #FFFFFF;">
+        <summary style="cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 0; font: 700 clamp(17px, 4.6vw, 20px) Archivo, sans-serif; letter-spacing: -.01em; color: #101827;">Where does it learn from?<span class="faq-ico" style="flex: none; font: 300 26px/1 Archivo, sans-serif; color: #98A2B0;">+</span></summary>
+        <p style="margin: 0 0 22px; font-size: 16px; line-height: 1.62; color: #5A6675;">Your page. Instagram posts, photos, a PDF, even a handwritten menu — add it and your AI knows it.</p>
+      </details>
+      <details class="faq-item" style="border: 1px solid #E6E9ED; border-radius: 18px; padding: 0 22px; background: #FFFFFF;">
+        <summary style="cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 0; font: 700 clamp(17px, 4.6vw, 20px) Archivo, sans-serif; letter-spacing: -.01em; color: #101827;">Do visitors need to install anything?<span class="faq-ico" style="flex: none; font: 300 26px/1 Archivo, sans-serif; color: #98A2B0;">+</span></summary>
+        <p style="margin: 0 0 22px; font-size: 16px; line-height: 1.62; color: #5A6675;">No. They just open your link and ask.</p>
+      </details>
+      <details class="faq-item" style="border: 1px solid #E6E9ED; border-radius: 18px; padding: 0 22px; background: #FFFFFF;">
+        <summary style="cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 0; font: 700 clamp(17px, 4.6vw, 20px) Archivo, sans-serif; letter-spacing: -.01em; color: #101827;">Do I need a website?<span class="faq-ico" style="flex: none; font: 300 26px/1 Archivo, sans-serif; color: #98A2B0;">+</span></summary>
+        <p style="margin: 0 0 22px; font-size: 16px; line-height: 1.62; color: #5A6675;">No. Your Connectia page is the website.</p>
+      </details>
+    </div>
+  </section>
+
+  <section id="signup" data-screen-label="09 Close" style="min-height: 100svh; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 24px; padding: 76px 22px; background: #0A1628; text-align: center;">
     <h2 style="margin: 0; max-width: 520px; font: 800 clamp(34px, 10vw, 50px) Archivo, sans-serif; line-height: 1.0; letter-spacing: -.035em; color: #FFFFFF; text-wrap: balance;">Your next client is asking a question right now.</h2>
     <p style="margin: 0; font-size: 19px; color: #34E3C8; font-weight: 600;">Make sure someone answers.</p>
     <a href="#signup" style="display: block; width: 100%; max-width: 340px; margin-top: 6px; padding: 19px 24px; border-radius: 999px; background: #FFFFFF; color: #0A1628; font: 700 17px Archivo, sans-serif;" style-hover="background: #34E3C8;">Claim your page</a>
