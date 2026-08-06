@@ -261,7 +261,7 @@
     <div style="width: 100%; max-width: 560px; display: flex; flex-direction: column; gap: 12px;">
       <details class="faq-item" style="border: 1px solid #E6E9ED; border-radius: 18px; padding: 0 22px; background: #FFFFFF;">
         <summary style="cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 0; font: 700 clamp(17px, 4.6vw, 20px) Archivo, sans-serif; letter-spacing: -.01em; color: #101827;">What if the AI gets something wrong?<span class="faq-ico" style="flex: none; font: 300 26px/1 Archivo, sans-serif; color: #98A2B0;">+</span></summary>
-        <p style="margin: 0 0 22px; font-size: 16px; line-height: 1.62; color: #5A6675;">You see every conversation and can jump in anytime — same thread, no handoff. Fix an answer once and it sticks.</p>
+        <p style="margin: 0 0 22px; font-size: 16px; line-height: 1.62; color: #5A6675;">It only answers from what's on your page — if it doesn't know, it says so instead of guessing. You see every conversation and can jump in anytime, same thread.</p>
       </details>
       <details class="faq-item" style="border: 1px solid #E6E9ED; border-radius: 18px; padding: 0 22px; background: #FFFFFF;">
         <summary style="cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 0; font: 700 clamp(17px, 4.6vw, 20px) Archivo, sans-serif; letter-spacing: -.01em; color: #101827;">Where does it learn from?<span class="faq-ico" style="flex: none; font: 300 26px/1 Archivo, sans-serif; color: #98A2B0;">+</span></summary>
@@ -317,6 +317,7 @@ class Component extends DCLogic {
         { label: 'Answers visitor questions', static: '✗', us: 'AI, 24/7' },
         { label: 'Captures leads', static: '✗', us: 'Name & contact' },
         { label: 'Qualifies inquiries', static: '✗', us: 'Budget, timeline' },
+        { label: 'Handoff to you', static: '✗', us: 'Anytime, same thread' },
         { label: 'Works while you sleep', static: '✗', us: '✓' }
       ],
       qText: q.text,
