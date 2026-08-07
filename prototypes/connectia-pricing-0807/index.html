@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Connectia 요금제</title>
+<link rel="stylesheet" href="../../tokens.css">
+<link rel="stylesheet" href="../../components.css">
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--color-bg);
+    font-family: var(--font-base);
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, p { word-break: keep-all; margin: 0; }
+
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 72px 20px 88px; }
+
+  .head { text-align: center; margin-bottom: 48px; }
+  .eyebrow {
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-bold);
+    letter-spacing: 0.14em;
+    color: var(--color-primary);
+  }
+  .head h1 { margin-top: 12px; }
+  .head p {
+    margin: 12px auto 0;
+    max-width: 30em;
+    color: var(--color-text-muted);
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    align-items: start;
+  }
+  @media (max-width: 900px) {
+    .grid { grid-template-columns: 1fr; max-width: 460px; margin: 0 auto; }
+  }
+
+  .plan {
+    position: relative;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-xl);
+    padding: 32px 28px;
+    display: flex;
+    flex-direction: column;
+  }
+  .plan.featured {
+    border: 2px solid var(--color-primary);
+    box-shadow: var(--shadow-4);
+  }
+
+  .plan-badge { position: absolute; top: 24px; right: 24px; }
+
+  .plan-name { color: var(--color-text); }
+  .plan.featured .plan-name { color: var(--color-primary); }
+  .plan-tag { margin-top: 8px; color: var(--color-text-muted); min-height: 20px; }
+
+  .price { margin: 24px 0 4px; display: flex; align-items: baseline; gap: 4px; }
+  .price .won { font-family: var(--font-base); font-size: var(--fs-title); font-weight: var(--fw-bold); color: var(--color-text); }
+  .price .amt { color: var(--color-text); }
+  .price .per { font-family: var(--font-base); font-size: var(--fs-body-lg); font-weight: var(--fw-semibold); color: var(--color-text-muted); margin-left: 4px; }
+  .subprice { color: var(--color-text-muted); margin-bottom: 4px; min-height: 16px; }
+
+  .cta { margin-top: 24px; text-decoration: none; }
+
+  .rule { height: 1px; background: var(--color-border); margin: 24px 0 20px; }
+  .lead { color: var(--color-text-sub); font-weight: var(--fw-semibold); margin-bottom: 16px; }
+
+  .feat { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 16px; }
+  .feat li { display: flex; align-items: flex-start; gap: 12px; color: var(--color-text-sub); }
+  .feat li i, .feat li svg { flex: none; width: 20px; height: 20px; color: var(--color-primary); }
+  .feat li .fico { flex: none; width: 20px; text-align: center; font-size: var(--fs-body); line-height: var(--lh-body); }
+  .feat b { font-weight: var(--fw-bold); color: var(--color-text); }
+
+  .foot { text-align: center; margin-top: 40px; color: var(--color-text-muted); }
+
+  html { scroll-behavior: smooth; }
+  .tabs-wrap { position: sticky; top: 0; z-index: 10; display: flex; justify-content: center; padding: 8px 20px 40px; background: var(--color-bg); }
+  .tabs { flex: none; max-width: 100%; display: inline-flex; gap: 4px; padding: 4px; background: var(--color-surface-sub); border-radius: var(--r-full); }
+  .tab { flex: none; white-space: nowrap; display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; border: none; background: transparent; border-radius: var(--r-full); font-family: var(--font-base); font-size: var(--fs-body); font-weight: var(--fw-semibold); color: var(--color-text-muted); text-decoration: none; cursor: pointer; transition: background var(--motion-fast) var(--ease-standard), color var(--motion-fast) var(--ease-standard); }
+  .tab:hover { color: var(--color-text-sub); }
+  .tab.active { background: var(--color-surface); color: var(--color-text); box-shadow: var(--shadow-1); }
+  .tab.active:hover { color: var(--color-text); }
+  .plan { scroll-margin-top: 96px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="head">
+    <div class="eyebrow">PRICING</div>
+    <h1 class="text-display">당신에게 딱 맞는 플랜</h1>
+    <p class="text-body-lg">무료로 시작하고, 필요할 때 업그레이드하세요. 언제든 해지할 수 있어요.</p>
+  </div>
+
+  <div class="tabs-wrap">
+    <div class="tabs">
+      <a href="#plan-free" class="tab active">무료</a>
+      <a href="#plan-pro" class="tab">프로 <span class="badge badge-fill-danger badge-sm">HOT</span></a>
+      <a href="#plan-brand" class="tab">브랜드</a>
+    </div>
+  </div>
+
+  <div class="grid">
+
+    <!-- 무료 -->
+    <div class="plan" id="plan-free">
+      <div class="plan-name text-title">무료</div>
+      <div class="plan-tag text-body">영원히 무료</div>
+      <div class="price"><span class="won">₩</span><span class="amt text-metric">0</span></div>
+      <div class="subprice text-caption">신용카드 없이 바로 시작</div>
+      <a href="#" class="btn btn-lg btn-block btn-line-dark cta">무료로 시작하기</a>
+      <div class="rule"></div>
+      <ul class="feat text-body">
+        <li><i data-lucide="check"></i><span>프로필 페이지 <b>1개</b></span></li>
+        <li><i data-lucide="check"></i><span>50가지 블록 (갤러리·이벤트·게시판·리뷰 등)</span></li>
+        <li><i data-lucide="check"></i><span>AI 채팅 <b>월 100회</b></span></li>
+        <li><i data-lucide="check"></i><span>문의 알림 (앱 내 확인)</span></li>
+        <li><i data-lucide="check"></i><span>방문자 통계</span></li>
+        <li><i data-lucide="check"></i><span>QR 코드 · 링크 공유</span></li>
+      </ul>
+    </div>
+
+    <!-- 프로 (featured) -->
+    <div class="plan featured" id="plan-pro">
+      <span class="badge badge-fill-primary badge-md plan-badge">가장 인기</span>
+      <div class="plan-name text-title">프로</div>
+      <div class="plan-tag text-body">문의를 놓치지 않으려면</div>
+      <div class="price"><span class="won">₩</span><span class="amt text-metric">5,900</span><span class="per">/월</span></div>
+      <div class="subprice text-caption">부가세 별도</div>
+      <a href="#" class="btn btn-lg btn-block btn-fill-primary cta">프로 시작하기</a>
+      <div class="rule"></div>
+      <div class="lead text-body">무료의 모든 기능, 그리고</div>
+      <ul class="feat text-body">
+        <li><span class="fico">💬</span><span><b>AI 채팅 무제한</b></span></li>
+        <li><span class="fico">📩</span><span>문의 오면 <b>알림톡 즉시 발송</b></span></li>
+        <li><span class="fico">📤</span><span>고객 정보 내보내기 (엑셀 · 구글시트)</span></li>
+        <li><span class="fico">🌐</span><span>페이지가 방문자 언어로 <b>자동 번역</b></span></li>
+        <li><span class="fico">🗣️</span><span>AI 채팅도 방문자 언어로 응답</span></li>
+        <li><i data-lucide="check"></i><span>AI 말투 설정</span></li>
+        <li><i data-lucide="check"></i><span>상세 방문 분석 (유입 경로 · 기간별 · 자주 묻는 질문)</span></li>
+        <li><i data-lucide="check"></i><span>커넥티아 로고 제거</span></li>
+        <li><i data-lucide="check"></i><span>페이지 <b>3개까지</b></span></li>
+      </ul>
+    </div>
+
+    <!-- 브랜드 -->
+    <div class="plan" id="plan-brand">
+      <div class="plan-name text-title">브랜드</div>
+      <div class="plan-tag text-body">팀과 함께 쓰려면</div>
+      <div class="price"><span class="won">₩</span><span class="amt text-metric">19,900</span><span class="per">/월</span></div>
+      <div class="subprice text-caption">부가세 별도</div>
+      <a href="#" class="btn btn-lg btn-block btn-line-dark cta">브랜드 시작하기</a>
+      <div class="rule"></div>
+      <div class="lead text-body">프로의 모든 기능, 그리고</div>
+      <ul class="feat text-body">
+        <li><i data-lucide="check"></i><span>페이지 <b>무제한</b></span></li>
+        <li><i data-lucide="check"></i><span>커스텀 도메인 연결</span></li>
+        <li><i data-lucide="check"></i><span>팀 멤버 추가</span></li>
+        <li><i data-lucide="check"></i><span>답변 못한 질문 리포트</span></li>
+        <li><i data-lucide="check"></i><span>브랜드 로고 적용</span></li>
+        <li><i data-lucide="check"></i><span>우선 CS 대응</span></li>
+      </ul>
+    </div>
+
+  </div>
+
+  <div class="foot text-caption">모든 요금은 부가세 별도 · 언제든 해지할 수 있어요</div>
+
+</div>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+  lucide.createIcons();
+  (function () {
+    var tabs = Array.prototype.slice.call(document.querySelectorAll('.tabs .tab'));
+    function setActive(id) {
+      tabs.forEach(function (t) { t.classList.toggle('active', t.getAttribute('href') === '#' + id); });
+    }
+    tabs.forEach(function (t) {
+      t.addEventListener('click', function () { setActive(t.getAttribute('href').slice(1)); });
+    });
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) { if (e.isIntersecting) setActive(e.target.id); });
+    }, { rootMargin: '-45% 0px -45% 0px' });
+    document.querySelectorAll('.plan').forEach(function (p) { io.observe(p); });
+  })();
+</script>
+</body>
+</html>
