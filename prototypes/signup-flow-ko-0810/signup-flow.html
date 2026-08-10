@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Connectia — 회원가입</title>
+<link rel="stylesheet" href="../../tokens.css">
+<link rel="stylesheet" href="../../components.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&display=swap">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; height: 100dvh; }
+  body {
+    font-family: var(--font-base);
+    background: var(--color-bg);
+    color: var(--color-text);
+    display: flex; align-items: center; justify-content: center;
+  }
+  i[data-lucide] { display: inline-flex; }
+
+  .frame {
+    width: 390px;
+    height: 844px;
+    max-height: 100dvh;
+    background: var(--color-surface);
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--shadow-4);
+  }
+  @media (max-width: 439px) { .frame { width: 100vw; height: 100dvh; box-shadow: none; } }
+  @media (min-width: 440px) { .frame { border-radius: var(--r-xl); } }
+
+  /* ── Screen transition ── */
+  .screen {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    padding: 24px 28px calc(28px + env(safe-area-inset-bottom));
+    overflow-y: auto;
+    background: var(--color-surface);
+    transform: translateX(100%);
+    opacity: 0;
+    pointer-events: none;
+    transition: transform var(--motion-standard) var(--ease-standard),
+                opacity var(--motion-standard) var(--ease-standard);
+  }
+  .screen.on { transform: translateX(0); opacity: 1; pointer-events: auto; }
+
+  /* ── Hero ── */
+  .hero { text-align: center; margin-top: 52px; margin-bottom: 28px; }
+  .hero-title { margin-bottom: 8px; font-family: 'Poppins', var(--font-base); }
+  .hero-sub { color: var(--color-text-muted); }
+  /* stepJoin 상단 헤더 (로고 + 작은 제목) */
+  .join-head { text-align: center; margin-top: 24px; margin-bottom: 16px; }
+  .join-logo { display: block; height: 18px; margin: 0 auto 12px; }
+  .join-title {
+    font-family: var(--font-base);
+    font-size: var(--fs-title-sm);
+    line-height: var(--lh-title-sm);
+    letter-spacing: var(--ls-title-sm);
+    font-weight: var(--fw-bold);
+    color: var(--color-text);
+  }
+
+  /* ── 상단 예시 페이지 (랜딩 섹션2 화면들 지그재그) ── */
+  /* 상단(로고·제목·목업) 회색 그라데이션 밴드 (full-bleed) */
+  .join-top {
+    margin: -24px -28px 0;
+    padding: 24px 28px 0;
+    background: linear-gradient(180deg, var(--color-surface-sub) 0%, transparent 100%);
+  }
+
+  .examples { display: flex; justify-content: center; align-items: flex-start; gap: 12px; margin: 28px 0 52px; }
+  .ex-card {
+    flex: 0 0 auto;
+    width: 100px; height: 164px;
+    border-radius: 14px;
+    overflow: hidden;
+    background: var(--color-surface);
+  }
+  .ex-card img { width: 100%; display: block; }
+  .ex-card:nth-child(1) { transform: translateY(8px); }
+  .ex-card:nth-child(2) { transform: translateY(-8px); }
+  .ex-card:nth-child(3) { transform: translateY(8px); }
+
+  /* ── 소셜 로그인 버튼 (login.html 컴포넌트) ── */
+  .social-stack { display: flex; flex-direction: column; gap: 10px; }
+  .btn-social {
+    width: 100%;
+    padding: 16px 20px;
+    border: 1px solid transparent;
+    border-radius: var(--r-md);
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-bold);
+    font-family: var(--font-base);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    transition: opacity var(--motion-fast) var(--ease-standard),
+                background var(--motion-fast) var(--ease-standard);
+  }
+  .btn-social svg { width: 20px; height: 20px; flex-shrink: 0; }
+  .btn-social:hover { opacity: 0.88; }
+  .social-kakao { background: #FEE500; color: #191919; border-color: transparent; }
+
+  /* ── 원형 아이콘 버튼 (보조 소셜 + 이메일) ── */
+  .icon-row { display: flex; justify-content: center; gap: 16px; margin-top: 4px; }
+  .btn-icon {
+    width: 52px; height: 52px;
+    border-radius: var(--r-full);
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-text-sub);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    transition: background var(--motion-fast) var(--ease-standard);
+  }
+  .btn-icon svg { width: 22px; height: 22px; }
+  .btn-icon:hover { background: var(--color-surface-sub); }
+
+  /* ── 뒤로가기 (이메일 화면) ── */
+  .email-back {
+    position: absolute; top: 20px; left: 20px;
+    width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center;
+    border: none; background: transparent; color: var(--color-text); cursor: pointer;
+  }
+  .email-back svg { width: 24px; height: 24px; }
+
+  /* ── Form ── */
+  .form { display: flex; flex-direction: column; gap: 12px; }
+
+  .pw-field { position: relative; }
+  .pw-field .input { padding-right: 48px; }
+  .pw-toggle {
+    position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+    display: flex; align-items: center; justify-content: center;
+    padding: 8px; border: none; background: transparent; cursor: pointer;
+    color: var(--color-text-muted);
+    transition: color var(--motion-fast) var(--ease-standard);
+  }
+  .pw-toggle:hover { color: var(--color-text-sub); }
+  .pw-toggle svg { width: 18px; height: 18px; }
+
+  /* ── 약관 동의 ── */
+  .term-row { display: flex; align-items: center; gap: 12px; padding: 3px 4px; cursor: pointer; }
+  .term-label { flex: 1; font-size: var(--fs-body); color: var(--color-text-sub); }
+  .term-link { color: var(--color-primary); text-decoration: underline; }
+  .custom-check { flex-shrink: 0; width: 18px; height: 18px; cursor: pointer; }
+  .custom-check .check-rect { fill: var(--color-surface-sub); transition: fill var(--motion-fast) var(--ease-standard); }
+  .custom-check .check-path { fill: var(--color-border); transition: fill var(--motion-fast) var(--ease-standard); }
+  .custom-check.checked .check-rect { fill: var(--color-primary); }
+  .custom-check.checked .check-path { fill: var(--color-on-primary); }
+
+  /* ── Connectia address field (connectia.bio/ + username) ── */
+  .addr-field {
+    display: flex; align-items: center;
+    background: rgba(0,0,0,0.02);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-sm);
+    padding: 0 16px;
+    transition: border-color var(--motion-fast) var(--ease-standard);
+  }
+  .addr-field:focus-within { border-color: var(--color-primary); }
+  .addr-field.is-error { border-color: var(--color-destructive); }
+  .addr-field.is-ok { border-color: var(--color-text); }
+  .addr-prefix {
+    font-size: var(--fs-body-lg);
+    color: var(--color-text-muted);
+    white-space: nowrap;
+  }
+  .addr-input {
+    flex: 1; min-width: 0;
+    padding: 14px 0;
+    border: none; background: transparent; outline: none;
+    font-family: var(--font-base);
+    font-size: var(--fs-body-lg);
+    color: var(--color-text);
+  }
+  .addr-input::placeholder { color: var(--color-text-muted); }
+  .addr-value { flex: 1; min-width: 0; padding: 14px 0; font-family: var(--font-base); font-size: var(--fs-body-lg); font-weight: var(--fw-semibold); color: var(--color-text); }
+
+  .addr-feedback {
+    display: none;
+    align-items: center; gap: 8px;
+    margin-top: 8px;
+    font-size: var(--fs-caption);
+    font-weight: var(--fw-medium);
+  }
+  .addr-feedback.show { display: flex; }
+  .addr-feedback .fb-icon { display: inline-flex; }
+  .addr-feedback svg { width: 14px; height: 14px; }
+  .addr-feedback.ok { color: var(--color-success); }
+  .addr-feedback.err { color: var(--color-destructive); }
+
+  /* ── OR divider ── */
+  .or-divider { display: flex; align-items: center; gap: 12px; margin: 24px 0; }
+  .or-divider::before, .or-divider::after {
+    content: ""; flex: 1; height: 1px; background: var(--color-border);
+  }
+  .or-divider span {
+    font-size: var(--fs-caption); font-weight: var(--fw-semibold);
+    color: var(--color-text-muted); letter-spacing: 0.04em;
+  }
+
+  /* ── Footer ── */
+  .spacer { flex: 1; min-height: 24px; }
+  .cookie-link {
+    display: block; text-align: center; margin-top: 20px;
+    font-size: var(--fs-caption); color: var(--color-text-muted);
+    text-decoration: none; cursor: pointer;
+  }
+  .cookie-link:hover { color: var(--color-text-sub); }
+
+  /* ── 온보딩 (가입 후) ── */
+  .onb-icon { width: 72px; height: 72px; margin: 0 auto 20px; border-radius: var(--r-full); display: flex; align-items: center; justify-content: center; background: var(--color-primary-light); color: var(--color-primary); }
+  .onb-icon svg { width: 36px; height: 36px; }
+  .onb-spinner { width: 44px; height: 44px; margin: 0 auto 20px; border: 3px solid var(--color-border); border-top-color: var(--color-primary); border-radius: var(--r-full); animation: onb-spin 0.8s linear infinite; }
+  @keyframes onb-spin { to { transform: rotate(360deg); } }
+  .onb-text-link { display: block; width: 100%; margin-top: 4px; padding: 12px; border: none; background: transparent; font-family: var(--font-base); font-size: var(--fs-body); font-weight: var(--fw-semibold); color: var(--color-text-muted); cursor: pointer; }
+  .onb-text-link:hover { color: var(--color-text-sub); }
+
+  .screen-embed { padding: 0; overflow: hidden; }
+  .onb-frame { flex: 1; width: 100%; border: 0; background: var(--color-bg); }
+  .onb-done-addr { margin-top: 8px; font-size: var(--fs-body-lg); font-weight: var(--fw-semibold); color: var(--color-primary); }
+
+  /* 완성 화면 — 폰 목업이 아래에서 올라온 느낌(하단 잘림) */
+  #onbShare { padding: 0; overflow: hidden; }
+  .done-head { flex: none; padding: 36px 28px 16px; text-align: center; }
+  .done-head h1 { margin: 0; }
+  .done-stage { flex: 1; position: relative; overflow: hidden; display: flex; justify-content: center; align-items: flex-start; }
+  .done-stage::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 64px; background: linear-gradient(to bottom, transparent, var(--color-surface)); pointer-events: none; }
+  .done-phone { width: 350px; padding: 10px 10px 0; border-radius: 50px 50px 0 0; background: var(--color-text); box-shadow: var(--shadow-4); }
+  .done-phone-screen { position: relative; width: 330px; height: 620px; overflow: hidden; border-radius: 40px 40px 0 0; background: var(--color-surface); }
+  .done-phone-screen iframe { position: absolute; inset: 0; width: 390px; height: 733px; border: 0; transform: scale(0.8462); transform-origin: top left; pointer-events: none; }
+  .done-cta { flex: none; padding: 8px 28px calc(20px + env(safe-area-inset-bottom)); background: var(--color-surface); }
+
+  /* 공유 모달 (바텀시트) */
+  .share-modal { position: absolute; inset: 0; z-index: 500; display: flex; align-items: flex-end; }
+  .share-modal[hidden] { display: none; }
+  .share-scrim { position: absolute; inset: 0; background: var(--color-scrim); }
+  .share-sheet { position: relative; width: 100%; background: var(--color-surface); border-radius: 24px 24px 0 0; padding: 20px 24px calc(24px + env(safe-area-inset-bottom)); box-shadow: var(--shadow-4); animation: share-up var(--motion-standard) var(--ease-enter); }
+  @keyframes share-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .share-head { text-align: center; margin-bottom: 20px; }
+  .share-title { margin: 0; font-size: var(--fs-title-sm); line-height: var(--lh-title-sm); font-weight: var(--fw-bold); color: var(--color-text); }
+  .share-sub { margin: 6px 0 0; font-size: var(--fs-body); color: var(--color-text-muted); }
+  .share-qr { width: 200px; height: 200px; margin: 0 auto; padding: 18px; border-radius: 20px; background: linear-gradient(135deg, var(--color-primary-light), var(--color-surface-sub)); }
+  .share-qr svg { display: block; width: 100%; height: 100%; }
+  .share-url { margin: 12px 0 20px; text-align: center; font-size: var(--fs-body); color: var(--color-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .share-actions { display: flex; justify-content: center; gap: 24px; }
+  .share-act { display: flex; flex-direction: column; align-items: center; gap: 8px; border: none; background: transparent; cursor: pointer; }
+  .share-act-icon { width: 56px; height: 56px; border-radius: var(--r-full); display: flex; align-items: center; justify-content: center; background: var(--color-surface-sub); color: var(--color-text); }
+  .share-act-icon svg { width: 24px; height: 24px; }
+  .share-act-icon.is-kakao { background: #FEE500; color: #191919; }
+  .share-act-label { font-size: var(--fs-caption); font-weight: var(--fw-medium); color: var(--color-text-sub); }
+</style>
+</head>
+<body>
+
+  <div class="frame">
+
+    <!-- ══════════ Step 1 — Join (landing) ══════════ -->
+    <section class="screen on" id="stepJoin">
+      <div class="join-top">
+      <!-- 로고 + 작은 제목 (목업 위) -->
+      <div class="join-head">
+        <img class="join-logo" src="../../assets/logo-gradient.svg" alt="Connectia">
+        <h1 class="join-title">나만의 AI 명함 · 프로필 페이지<br>무료로 시작하세요</h1>
+      </div>
+
+      <!-- 예시 페이지 (랜딩 섹션2 화면들, 지그재그) -->
+      <div class="examples">
+        <div class="ex-card"><img src="../connectia-landing-ko-0806/page-example@3x.png" alt="예시 페이지"></div>
+        <div class="ex-card"><img src="../connectia-landing-ko-0806/sehalab-page@3x.png" alt="예시 페이지"></div>
+        <div class="ex-card"><img src="../connectia-landing-ko-0806/glossnail-board@3x.png" alt="예시 페이지"></div>
+      </div>
+      </div><!-- /.join-top -->
+
+      <!-- 카카오 (한국: 맨 위) -->
+      <div class="social-stack">
+        <button class="btn-social social-kakao" id="btnKakao" type="button">
+          <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 3C6.477 3 2 6.582 2 11c0 2.862 1.674 5.373 4.2 6.896L5.2 21l4.116-2.163A11.7 11.7 0 0012 19c5.523 0 10-3.582 10-8S17.523 3 12 3z"/></svg>
+          <span>카카오로 3초만에 시작하기</span>
+        </button>
+      </div>
+
+      <div class="or-divider"><span>또는</span></div>
+
+      <!-- 보조 소셜(구글) + 이메일: 원형 아이콘 -->
+      <div class="icon-row">
+        <button class="btn-icon" id="btnGoogle" type="button" aria-label="구글로 시작하기">
+          <!-- Google brand mark — official brand colors required by Google guidelines -->
+          <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+            <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+            <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+            <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+          </svg>
+        </button>
+        <button class="btn-icon" id="btnEmail" type="button" aria-label="이메일로 시작">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="M2 7l10 7 10-7"/></svg>
+        </button>
+      </div>
+
+      <div class="spacer"></div>
+      <a class="cookie-link" href="#">쿠키 설정</a>
+    </section>
+
+    <!-- ══════════ Step 1b — Email sign up ══════════ -->
+    <section class="screen" id="stepEmail">
+      <button class="email-back" id="emailBack" type="button" aria-label="뒤로">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+
+      <div class="hero">
+        <h1 class="text-display hero-title">이메일로 시작하기</h1>
+      </div>
+
+      <div class="form">
+        <input class="input" type="email" id="emailInput" placeholder="이메일" autocomplete="email">
+
+        <div class="pw-field">
+          <input class="input" type="password" id="pwInput" placeholder="비밀번호" autocomplete="new-password">
+          <button class="pw-toggle" id="pwToggle" type="button" aria-label="비밀번호 표시">
+            <i data-lucide="eye"></i>
+          </button>
+        </div>
+
+        <!-- 약관 동의 (단일) -->
+        <div class="term-row" id="signupTermRow">
+          <svg class="custom-check" id="signupCheck" width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <rect class="check-rect" height="16.5" rx="4.25" width="16.5" x="0.75" y="0.75"/>
+            <path class="check-path" d="M14.1128 5.38717C14.4513 5.72563 14.4513 6.27437 14.1128 6.61283L8.11283 12.6128C7.77437 12.9513 7.22563 12.9513 6.88717 12.6128L3.88717 9.61283C3.54872 9.27437 3.54872 8.72563 3.88717 8.38717C4.22563 8.04872 4.77437 8.04872 5.11283 8.38717L7.5 10.7743L12.8872 5.38717C13.2256 5.04872 13.7744 5.04872 14.1128 5.38717Z"/>
+          </svg>
+          <span class="term-label"><a class="term-link" href="#" onclick="return false">서비스 이용약관</a> 및 <a class="term-link" href="#" onclick="return false">개인정보 처리방침</a>에 동의합니다.</span>
+        </div>
+
+        <button class="btn btn-xl btn-block btn-fill-primary" id="btnContinue" disabled>계속하기</button>
+      </div>
+    </section>
+
+    <!-- ══════════ 소셜 가입 완료 (카카오/구글): 주소 자동생성 + 약관 ══════════ -->
+    <section class="screen" id="stepSocial">
+      <button class="email-back" id="socialBack" type="button" aria-label="뒤로">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+
+      <div class="hero">
+        <h1 class="text-display hero-title">커넥티아에 오신 걸 환영해요!</h1>
+        <p class="text-body hero-sub">아래 주소로 내 페이지가 만들어져요.</p>
+      </div>
+
+      <div class="form">
+        <div>
+          <div class="addr-field is-ok">
+            <span class="addr-prefix">connectia.bio/</span>
+            <span class="addr-value" id="socialHandle">me1234</span>
+          </div>
+          <p class="addr-feedback ok show"><span class="fb-icon"><i data-lucide="check"></i></span><span class="fb-text">사용 가능해요</span></p>
+        </div>
+
+        <div class="term-row" id="socialTermRow">
+          <svg class="custom-check" id="socialCheck" width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <rect class="check-rect" height="16.5" rx="4.25" width="16.5" x="0.75" y="0.75"/>
+            <path class="check-path" d="M14.1128 5.38717C14.4513 5.72563 14.4513 6.27437 14.1128 6.61283L8.11283 12.6128C7.77437 12.9513 7.22563 12.9513 6.88717 12.6128L3.88717 9.61283C3.54872 9.27437 3.54872 8.72563 3.88717 8.38717C4.22563 8.04872 4.77437 8.04872 5.11283 8.38717L7.5 10.7743L12.8872 5.38717C13.2256 5.04872 13.7744 5.04872 14.1128 5.38717Z"/>
+          </svg>
+          <span class="term-label"><a class="term-link" href="#" onclick="return false">서비스 이용약관</a> 및 <a class="term-link" href="#" onclick="return false">개인정보 처리방침</a>에 동의합니다.</span>
+        </div>
+
+        <button class="btn btn-xl btn-block btn-fill-primary" id="btnSocialStart" disabled>시작하기</button>
+      </div>
+    </section>
+
+    <!-- ══════════ Step 2 — Welcome (choose username) ══════════ -->
+    <section class="screen" id="stepWelcome">
+      <div class="hero">
+        <h1 class="text-display hero-title">커넥티아에 오신 걸 환영해요!</h1>
+        <p class="text-body hero-sub">페이지 주소를 정해주세요.<br>언제든 바꿀 수 있어요.</p>
+      </div>
+
+      <div class="form">
+        <div>
+          <div class="addr-field" id="addrField">
+            <span class="addr-prefix">connectia.bio/</span>
+            <input class="addr-input" type="text" id="usernameInput" placeholder="yourname"
+                   autocomplete="off" autocapitalize="none" spellcheck="false">
+          </div>
+          <p class="addr-feedback" id="addrFeedback"><span class="fb-icon"></span><span class="fb-text"></span></p>
+        </div>
+
+        <button class="btn btn-xl btn-block btn-fill-primary" id="btnFinish" disabled>계속하기</button>
+      </div>
+    </section>
+
+    <!-- ══════════ 온보딩 1 — 명함 촬영 안내 ══════════ -->
+    <section class="screen" id="onbIntro">
+      <div class="hero" style="margin-top: 72px;">
+        <div class="onb-icon"><i data-lucide="scan-line"></i></div>
+        <h1 class="text-title hero-title">종이 명함이 있다면<br>30초만에 페이지가 완성돼요</h1>
+      </div>
+      <div class="spacer"></div>
+      <div class="form">
+        <button class="btn btn-xl btn-block btn-fill-primary" id="onbShoot" type="button"><i data-lucide="camera" style="width:18px;height:18px"></i>명함 촬영하기</button>
+        <button class="btn btn-xl btn-block btn-line-dark" id="onbUpload" type="button"><i data-lucide="image" style="width:18px;height:18px"></i>명함 사진 업로드</button>
+        <button class="onb-text-link" id="onbManual" type="button">직접 입력할게요</button>
+      </div>
+    </section>
+
+    <!-- ══════════ 온보딩 2 — AI 분석 중 ══════════ -->
+    <section class="screen" id="onbAnalyzing">
+      <div class="hero" style="margin-top: 200px;">
+        <div class="onb-spinner"></div>
+        <h1 class="text-title hero-title">명함을 읽고 있어요…</h1>
+        <p class="text-body hero-sub">이름·직함·연락처를 자동으로 채우는 중</p>
+      </div>
+    </section>
+
+    <!-- ══════════ 온보딩 3 — 편집 (기존 화면 임베드) ══════════ -->
+    <section class="screen screen-embed" id="onbEdit">
+      <iframe class="onb-frame" src="../profile-edit-namecard-mode-0803/profile-edit.html?tpl=card" title="페이지 편집"></iframe>
+    </section>
+
+    <!-- ══════════ 온보딩 4 — 완성 + 미리보기(폰 목업, 하단 잘림) ══════════ -->
+    <section class="screen" id="onbShare">
+      <div class="done-head">
+        <h1 class="text-display">내 페이지가<br>완성됐어요! 🎉</h1>
+        <p class="onb-done-addr" id="shareHandle">connectia.bio/dennis2271</p>
+      </div>
+      <div class="done-stage">
+        <div class="done-phone">
+          <div class="done-phone-screen">
+            <iframe src="../namecard-template-B-0730/namecard-template-B.html" title="페이지 미리보기"></iframe>
+          </div>
+        </div>
+      </div>
+      <div class="done-cta">
+        <button class="btn btn-xl btn-block btn-fill-primary" id="onbConfirm" type="button">확인하기</button>
+      </div>
+    </section>
+
+    <!-- ══════════ 온보딩 5 — 홈 (앱 진입) ══════════ -->
+    <section class="screen screen-embed" id="onbHome">
+      <iframe class="onb-frame" src="../avatar-shell-home-0810/avatar-shell-home.html" title="홈"></iframe>
+    </section>
+
+    <!-- ══════════ 공유 모달 ══════════ -->
+    <div class="share-modal" id="shareModal" hidden>
+      <div class="share-scrim" id="shareScrim"></div>
+      <div class="share-sheet">
+        <div class="share-head">
+          <h2 class="share-title">공유하면 사람들이 볼 수 있어요</h2>
+          <p class="share-sub">첫 번째로 누구에게 보내볼까요?</p>
+        </div>
+        <div class="share-qr"><svg viewBox="0 0 29 29" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><path d="M0 0h1v1h-1zM1 0h1v1h-1zM2 0h1v1h-1zM3 0h1v1h-1zM4 0h1v1h-1zM5 0h1v1h-1zM6 0h1v1h-1zM9 0h1v1h-1zM10 0h1v1h-1zM14 0h1v1h-1zM16 0h1v1h-1zM17 0h1v1h-1zM19 0h1v1h-1zM20 0h1v1h-1zM22 0h1v1h-1zM23 0h1v1h-1zM24 0h1v1h-1zM25 0h1v1h-1zM26 0h1v1h-1zM27 0h1v1h-1zM28 0h1v1h-1zM0 1h1v1h-1zM6 1h1v1h-1zM8 1h1v1h-1zM11 1h1v1h-1zM12 1h1v1h-1zM13 1h1v1h-1zM15 1h1v1h-1zM18 1h1v1h-1zM22 1h1v1h-1zM28 1h1v1h-1zM0 2h1v1h-1zM2 2h1v1h-1zM3 2h1v1h-1zM4 2h1v1h-1zM6 2h1v1h-1zM8 2h1v1h-1zM12 2h1v1h-1zM13 2h1v1h-1zM14 2h1v1h-1zM15 2h1v1h-1zM16 2h1v1h-1zM19 2h1v1h-1zM22 2h1v1h-1zM24 2h1v1h-1zM25 2h1v1h-1zM26 2h1v1h-1zM28 2h1v1h-1zM0 3h1v1h-1zM2 3h1v1h-1zM3 3h1v1h-1zM4 3h1v1h-1zM6 3h1v1h-1zM9 3h1v1h-1zM10 3h1v1h-1zM12 3h1v1h-1zM17 3h1v1h-1zM19 3h1v1h-1zM22 3h1v1h-1zM24 3h1v1h-1zM25 3h1v1h-1zM26 3h1v1h-1zM28 3h1v1h-1zM0 4h1v1h-1zM2 4h1v1h-1zM3 4h1v1h-1zM4 4h1v1h-1zM6 4h1v1h-1zM9 4h1v1h-1zM11 4h1v1h-1zM12 4h1v1h-1zM14 4h1v1h-1zM15 4h1v1h-1zM17 4h1v1h-1zM19 4h1v1h-1zM22 4h1v1h-1zM24 4h1v1h-1zM25 4h1v1h-1zM26 4h1v1h-1zM28 4h1v1h-1zM0 5h1v1h-1zM6 5h1v1h-1zM9 5h1v1h-1zM12 5h1v1h-1zM14 5h1v1h-1zM15 5h1v1h-1zM17 5h1v1h-1zM19 5h1v1h-1zM20 5h1v1h-1zM22 5h1v1h-1zM28 5h1v1h-1zM0 6h1v1h-1zM1 6h1v1h-1zM2 6h1v1h-1zM3 6h1v1h-1zM4 6h1v1h-1zM5 6h1v1h-1zM6 6h1v1h-1zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM14 6h1v1h-1zM16 6h1v1h-1zM18 6h1v1h-1zM20 6h1v1h-1zM22 6h1v1h-1zM23 6h1v1h-1zM24 6h1v1h-1zM25 6h1v1h-1zM26 6h1v1h-1zM27 6h1v1h-1zM28 6h1v1h-1zM11 7h1v1h-1zM12 7h1v1h-1zM14 7h1v1h-1zM16 7h1v1h-1zM17 7h1v1h-1zM18 7h1v1h-1zM19 7h1v1h-1zM1 8h1v1h-1zM2 8h1v1h-1zM3 8h1v1h-1zM5 8h1v1h-1zM6 8h1v1h-1zM10 8h1v1h-1zM14 8h1v1h-1zM17 8h1v1h-1zM26 8h1v1h-1zM27 8h1v1h-1zM3 9h1v1h-1zM4 9h1v1h-1zM9 9h1v1h-1zM12 9h1v1h-1zM14 9h1v1h-1zM17 9h1v1h-1zM19 9h1v1h-1zM20 9h1v1h-1zM21 9h1v1h-1zM22 9h1v1h-1zM23 9h1v1h-1zM24 9h1v1h-1zM25 9h1v1h-1zM26 9h1v1h-1zM28 9h1v1h-1zM0 10h1v1h-1zM6 10h1v1h-1zM7 10h1v1h-1zM8 10h1v1h-1zM10 10h1v1h-1zM12 10h1v1h-1zM14 10h1v1h-1zM15 10h1v1h-1zM18 10h1v1h-1zM20 10h1v1h-1zM22 10h1v1h-1zM24 10h1v1h-1zM27 10h1v1h-1zM1 11h1v1h-1zM3 11h1v1h-1zM10 11h1v1h-1zM13 11h1v1h-1zM14 11h1v1h-1zM15 11h1v1h-1zM20 11h1v1h-1zM23 11h1v1h-1zM24 11h1v1h-1zM28 11h1v1h-1zM1 12h1v1h-1zM2 12h1v1h-1zM3 12h1v1h-1zM5 12h1v1h-1zM6 12h1v1h-1zM7 12h1v1h-1zM9 12h1v1h-1zM11 12h1v1h-1zM12 12h1v1h-1zM17 12h1v1h-1zM19 12h1v1h-1zM21 12h1v1h-1zM23 12h1v1h-1zM26 12h1v1h-1zM27 12h1v1h-1zM28 12h1v1h-1zM2 13h1v1h-1zM4 13h1v1h-1zM5 13h1v1h-1zM8 13h1v1h-1zM9 13h1v1h-1zM10 13h1v1h-1zM11 13h1v1h-1zM13 13h1v1h-1zM14 13h1v1h-1zM15 13h1v1h-1zM17 13h1v1h-1zM19 13h1v1h-1zM22 13h1v1h-1zM23 13h1v1h-1zM25 13h1v1h-1zM26 13h1v1h-1zM28 13h1v1h-1zM0 14h1v1h-1zM2 14h1v1h-1zM3 14h1v1h-1zM5 14h1v1h-1zM6 14h1v1h-1zM7 14h1v1h-1zM8 14h1v1h-1zM10 14h1v1h-1zM16 14h1v1h-1zM17 14h1v1h-1zM19 14h1v1h-1zM20 14h1v1h-1zM21 14h1v1h-1zM22 14h1v1h-1zM23 14h1v1h-1zM24 14h1v1h-1zM25 14h1v1h-1zM28 14h1v1h-1zM0 15h1v1h-1zM1 15h1v1h-1zM2 15h1v1h-1zM3 15h1v1h-1zM7 15h1v1h-1zM8 15h1v1h-1zM9 15h1v1h-1zM11 15h1v1h-1zM13 15h1v1h-1zM15 15h1v1h-1zM18 15h1v1h-1zM19 15h1v1h-1zM21 15h1v1h-1zM24 15h1v1h-1zM25 15h1v1h-1zM3 16h1v1h-1zM4 16h1v1h-1zM5 16h1v1h-1zM6 16h1v1h-1zM7 16h1v1h-1zM9 16h1v1h-1zM12 16h1v1h-1zM15 16h1v1h-1zM20 16h1v1h-1zM21 16h1v1h-1zM23 16h1v1h-1zM24 16h1v1h-1zM25 16h1v1h-1zM2 17h1v1h-1zM12 17h1v1h-1zM13 17h1v1h-1zM14 17h1v1h-1zM16 17h1v1h-1zM18 17h1v1h-1zM20 17h1v1h-1zM25 17h1v1h-1zM0 18h1v1h-1zM6 18h1v1h-1zM11 18h1v1h-1zM12 18h1v1h-1zM14 18h1v1h-1zM15 18h1v1h-1zM16 18h1v1h-1zM22 18h1v1h-1zM23 18h1v1h-1zM26 18h1v1h-1zM3 19h1v1h-1zM8 19h1v1h-1zM10 19h1v1h-1zM11 19h1v1h-1zM13 19h1v1h-1zM17 19h1v1h-1zM18 19h1v1h-1zM19 19h1v1h-1zM21 19h1v1h-1zM22 19h1v1h-1zM24 19h1v1h-1zM25 19h1v1h-1zM26 19h1v1h-1zM1 20h1v1h-1zM3 20h1v1h-1zM6 20h1v1h-1zM7 20h1v1h-1zM11 20h1v1h-1zM13 20h1v1h-1zM14 20h1v1h-1zM16 20h1v1h-1zM17 20h1v1h-1zM18 20h1v1h-1zM20 20h1v1h-1zM21 20h1v1h-1zM22 20h1v1h-1zM23 20h1v1h-1zM24 20h1v1h-1zM25 20h1v1h-1zM26 20h1v1h-1zM28 20h1v1h-1zM8 21h1v1h-1zM10 21h1v1h-1zM11 21h1v1h-1zM12 21h1v1h-1zM13 21h1v1h-1zM16 21h1v1h-1zM18 21h1v1h-1zM20 21h1v1h-1zM24 21h1v1h-1zM25 21h1v1h-1zM27 21h1v1h-1zM28 21h1v1h-1zM0 22h1v1h-1zM1 22h1v1h-1zM2 22h1v1h-1zM3 22h1v1h-1zM4 22h1v1h-1zM5 22h1v1h-1zM6 22h1v1h-1zM9 22h1v1h-1zM14 22h1v1h-1zM19 22h1v1h-1zM20 22h1v1h-1zM22 22h1v1h-1zM24 22h1v1h-1zM26 22h1v1h-1zM27 22h1v1h-1zM0 23h1v1h-1zM6 23h1v1h-1zM8 23h1v1h-1zM9 23h1v1h-1zM10 23h1v1h-1zM11 23h1v1h-1zM12 23h1v1h-1zM20 23h1v1h-1zM24 23h1v1h-1zM27 23h1v1h-1zM28 23h1v1h-1zM0 24h1v1h-1zM2 24h1v1h-1zM3 24h1v1h-1zM4 24h1v1h-1zM6 24h1v1h-1zM9 24h1v1h-1zM10 24h1v1h-1zM13 24h1v1h-1zM15 24h1v1h-1zM16 24h1v1h-1zM17 24h1v1h-1zM18 24h1v1h-1zM20 24h1v1h-1zM21 24h1v1h-1zM22 24h1v1h-1zM23 24h1v1h-1zM24 24h1v1h-1zM25 24h1v1h-1zM26 24h1v1h-1zM27 24h1v1h-1zM28 24h1v1h-1zM0 25h1v1h-1zM2 25h1v1h-1zM3 25h1v1h-1zM4 25h1v1h-1zM6 25h1v1h-1zM8 25h1v1h-1zM11 25h1v1h-1zM14 25h1v1h-1zM15 25h1v1h-1zM17 25h1v1h-1zM18 25h1v1h-1zM19 25h1v1h-1zM24 25h1v1h-1zM28 25h1v1h-1zM0 26h1v1h-1zM2 26h1v1h-1zM3 26h1v1h-1zM4 26h1v1h-1zM6 26h1v1h-1zM8 26h1v1h-1zM11 26h1v1h-1zM13 26h1v1h-1zM17 26h1v1h-1zM20 26h1v1h-1zM23 26h1v1h-1zM28 26h1v1h-1zM0 27h1v1h-1zM6 27h1v1h-1zM8 27h1v1h-1zM9 27h1v1h-1zM12 27h1v1h-1zM13 27h1v1h-1zM14 27h1v1h-1zM16 27h1v1h-1zM20 27h1v1h-1zM24 27h1v1h-1zM25 27h1v1h-1zM27 27h1v1h-1zM0 28h1v1h-1zM1 28h1v1h-1zM2 28h1v1h-1zM3 28h1v1h-1zM4 28h1v1h-1zM5 28h1v1h-1zM6 28h1v1h-1zM10 28h1v1h-1zM11 28h1v1h-1zM12 28h1v1h-1zM14 28h1v1h-1zM16 28h1v1h-1zM18 28h1v1h-1zM19 28h1v1h-1zM20 28h1v1h-1zM21 28h1v1h-1zM23 28h1v1h-1zM27 28h1v1h-1z" fill="#191919"/></svg></div>
+        <p class="share-url">connectia.bio/dennis2271</p>
+        <div class="share-actions">
+          <button class="share-act" type="button">
+            <span class="share-act-icon"><i data-lucide="link"></i></span>
+            <span class="share-act-label">링크 복사</span>
+          </button>
+          <button class="share-act" type="button">
+            <span class="share-act-icon is-kakao"><svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 3C6.477 3 2 6.582 2 11c0 2.862 1.674 5.373 4.2 6.896L5.2 21l4.116-2.163A11.7 11.7 0 0012 19c5.523 0 10-3.582 10-8S17.523 3 12 3z"/></svg></span>
+            <span class="share-act-label">카카오톡으로 공유</span>
+          </button>
+          <button class="share-act" type="button">
+            <span class="share-act-icon"><i data-lucide="share-2"></i></span>
+            <span class="share-act-label">바로 공유</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    const stepJoin    = document.getElementById('stepJoin');
+    const stepEmail   = document.getElementById('stepEmail');
+    const stepSocial  = document.getElementById('stepSocial');
+    const stepWelcome = document.getElementById('stepWelcome');
+
+    /* ── Step 1: 소셜 / 이메일 진입 ── */
+    const btnKakao  = document.getElementById('btnKakao');
+    const btnGoogle = document.getElementById('btnGoogle');
+    const btnEmail  = document.getElementById('btnEmail');
+    const emailBack = document.getElementById('emailBack');
+
+    function showScreen(next) {
+      document.querySelectorAll('.screen').forEach((s) => s.classList.remove('on'));
+      next.classList.add('on');
+    }
+    btnEmail.addEventListener('click', () => {
+      showScreen(stepEmail);
+      setTimeout(() => emailInput.focus(), 260);
+    });
+    emailBack.addEventListener('click', () => showScreen(stepJoin));
+
+    /* ── Step 1b: 이메일 가입 ── */
+    const emailInput  = document.getElementById('emailInput');
+    const pwInput     = document.getElementById('pwInput');
+    const pwToggle    = document.getElementById('pwToggle');
+    const btnContinue = document.getElementById('btnContinue');
+
+    /* 약관 동의 체크박스 (단일) */
+    const isOn = (el) => el.classList.contains('checked');
+    const setOn = (el, v) => el.classList.toggle('checked', v);
+
+    const signupCheck   = document.getElementById('signupCheck');
+    const signupTermRow = document.getElementById('signupTermRow');
+    signupTermRow.addEventListener('click', (e) => {
+      if (e.target.closest('.term-link')) return; // 약관 열기(목업)
+      setOn(signupCheck, !isOn(signupCheck));
+      validateJoin();
+    });
+
+    const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    function validateJoin() {
+      const ok = EMAIL_RE.test(emailInput.value.trim())
+        && pwInput.value.length >= 8
+        && isOn(signupCheck);
+      btnContinue.disabled = !ok;
+    }
+    emailInput.addEventListener('input', validateJoin);
+    pwInput.addEventListener('input', validateJoin);
+
+    pwToggle.addEventListener('click', () => {
+      const hidden = pwInput.type === 'password';
+      pwInput.type = hidden ? 'text' : 'password';
+      pwToggle.innerHTML = '<i data-lucide="' + (hidden ? 'eye-off' : 'eye') + '"></i>';
+      lucide.createIcons();
+    });
+
+    function goWelcome(prefill) {
+      if (prefill != null) {
+        usernameInput.value = prefill;
+        validateUsername();
+      }
+      showScreen(stepWelcome);
+      setTimeout(() => usernameInput.focus(), 260);
+    }
+    btnContinue.addEventListener('click', () => {
+      if (btnContinue.disabled) return;
+      const id = emailInput.value.trim().split('@')[0].toLowerCase().replace(/[^a-z0-9._]/g, '');
+      goWelcome(id);
+    });
+    /* ── 소셜(카카오/구글) 가입: 주소 자동생성 + 약관 동의 ── */
+    const socialCheck    = document.getElementById('socialCheck');
+    const socialTermRow  = document.getElementById('socialTermRow');
+    const socialHandle   = document.getElementById('socialHandle');
+    const btnSocialStart = document.getElementById('btnSocialStart');
+    const socialBack     = document.getElementById('socialBack');
+
+    function openSocial() {
+      socialHandle.textContent = 'me' + Math.floor(1000 + Math.random() * 9000);
+      setOn(socialCheck, false);
+      btnSocialStart.disabled = true;
+      showScreen(stepSocial);
+    }
+    btnKakao.addEventListener('click', openSocial);
+    btnGoogle.addEventListener('click', openSocial);
+    socialBack.addEventListener('click', () => showScreen(stepJoin));
+    socialTermRow.addEventListener('click', (e) => {
+      if (e.target.closest('.term-link')) return; // 약관 열기(목업)
+      setOn(socialCheck, !isOn(socialCheck));
+      btnSocialStart.disabled = !isOn(socialCheck);
+    });
+    btnSocialStart.addEventListener('click', () => {
+      if (btnSocialStart.disabled) return;
+      // Mockup: end of flow
+    });
+
+    /* ── Step 2: Welcome / choose username ── */
+    const usernameInput = document.getElementById('usernameInput');
+    const addrField     = document.getElementById('addrField');
+    const addrFeedback  = document.getElementById('addrFeedback');
+    const addrIcon      = addrFeedback.querySelector('.fb-icon');
+    const addrText      = addrFeedback.querySelector('.fb-text');
+    const btnFinish     = document.getElementById('btnFinish');
+
+    // Demo: addresses already taken / reserved
+    const TAKEN = ['admin', 'connectia', 'support', 'help', 'studiogloss', 'john'];
+
+    function setFeedback(state, msg, iconName) {
+      addrField.classList.toggle('is-ok', state === 'ok');
+      addrField.classList.toggle('is-error', state === 'err');
+      if (!state) { addrFeedback.classList.remove('show'); return; }
+      addrFeedback.classList.add('show');
+      addrFeedback.classList.toggle('ok', state === 'ok');
+      addrFeedback.classList.toggle('err', state === 'err');
+      addrText.textContent = msg;
+      addrIcon.innerHTML = '<i data-lucide="' + iconName + '"></i>';
+      lucide.createIcons();
+    }
+
+    function validateUsername() {
+      const raw = usernameInput.value.trim().toLowerCase();
+      if (raw.length === 0) {
+        setFeedback(null);
+        btnFinish.disabled = true;
+        return;
+      }
+      if (raw.length < 3) {
+        setFeedback('err', '3자 이상 입력해주세요', 'x');
+        btnFinish.disabled = true;
+        return;
+      }
+      if (TAKEN.includes(raw)) {
+        setFeedback('err', '이미 사용 중인 주소예요', 'x');
+        btnFinish.disabled = true;
+        return;
+      }
+      setFeedback('ok', '사용 가능해요', 'check');
+      btnFinish.disabled = false;
+    }
+    usernameInput.addEventListener('input', validateUsername);
+
+    btnFinish.addEventListener('click', () => {
+      if (btnFinish.disabled) return;
+      showScreen(onbIntro);
+    });
+
+    /* ── 온보딩 (가입 후): 명함 촬영 → 편집 → 미리보기 → 공유 ── */
+    const onbIntro     = document.getElementById('onbIntro');
+    const onbAnalyzing = document.getElementById('onbAnalyzing');
+    const onbEdit      = document.getElementById('onbEdit');
+    const onbShare     = document.getElementById('onbShare');
+    const onbHome      = document.getElementById('onbHome');
+
+    // 소셜 가입 완료 → 온보딩 진입
+    btnSocialStart.addEventListener('click', () => showScreen(onbIntro));
+
+    const startAnalyze = () => {
+      showScreen(onbAnalyzing);
+      setTimeout(() => showScreen(onbEdit), 1600);   // 분석중 → 편집(자동)
+    };
+    document.getElementById('onbShoot').addEventListener('click', startAnalyze);   // 촬영
+    document.getElementById('onbUpload').addEventListener('click', startAnalyze);  // 사진 업로드
+    document.getElementById('onbManual').addEventListener('click', () => showScreen(onbEdit)); // 직접 입력
+
+    // 확인하기 → 홈으로 이동 + 공유 모달 노출
+    const shareModal = document.getElementById('shareModal');
+    const openShare = () => { shareModal.hidden = false; };
+    const closeShare = () => { shareModal.hidden = true; };
+    document.getElementById('onbConfirm').addEventListener('click', () => { showScreen(onbHome); openShare(); });
+    document.getElementById('shareScrim').addEventListener('click', closeShare);
+
+    // 편집 화면(iframe)의 '적용' 버튼 신호 → 미리보기+공유(onbShare)로 이동
+    window.addEventListener('message', (e) => {
+      if (e.data === 'onb-edit-applied') showScreen(onbShare);
+    });
+  </script>
+</body>
+</html>

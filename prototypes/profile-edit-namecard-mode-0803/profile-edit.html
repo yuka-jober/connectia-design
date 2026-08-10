@@ -750,7 +750,7 @@
   <nav class="navbar">
     <button class="navbar-action" onclick="history.back()">취소</button>
     <span class="navbar-title">프로필 편집</span>
-    <button class="navbar-action primary" onclick="attemptSave()">적용</button>
+    <button class="navbar-action primary" onclick="if (window.parent !== window) { window.parent.postMessage('onb-edit-applied', '*'); } else { attemptSave(); }">적용</button>
   </nav>
 
   <div class="scroll-area">
@@ -2296,6 +2296,11 @@
         if (!cmd) return;
         btn.classList.toggle('is-active', document.queryCommandState(cmd));
       });
+    }
+
+    // 온보딩 임베드: ?tpl=card 이면 '카드형 명함' 디자인으로 시작
+    if (new URLSearchParams(location.search).get('tpl') === 'card') {
+      applyTemplate(1);
     }
   </script>
 
