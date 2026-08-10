@@ -494,14 +494,16 @@
     display: none;
     align-items: center;
     justify-content: center;
-    width: 44px;
-    height: 44px;
-    border: none;
-    background: transparent;
+    width: 52px;
+    height: 52px;
+    border-radius: var(--r-full);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-3);
     color: var(--color-text);
     cursor: pointer;
   }
-  .a-inquiry-fab i, .a-inquiry-fab svg { width: 28px; height: 28px; }
+  .a-inquiry-fab i, .a-inquiry-fab svg { width: 24px; height: 24px; }
   body[data-active-tab="follow"] .a-inquiry-fab,
   body[data-active-tab="chat"] .a-inquiry-fab,
   body[data-active-tab="stats"] .a-inquiry-fab,
