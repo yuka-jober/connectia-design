@@ -90,6 +90,21 @@
   .tab.active { background: var(--color-surface); color: var(--color-text); box-shadow: var(--shadow-1); }
   .tab.active:hover { color: var(--color-text); }
   .plan { scroll-margin-top: 96px; }
+
+  /* 상담 신청(연락처) 오버레이 */
+  .lead-overlay { position: fixed; inset: 0; z-index: 100; background: var(--color-bg); overflow-y: auto; }
+  .lead-overlay[hidden] { display: none; }
+  .lead-top { display: flex; align-items: center; height: 56px; padding: 0 8px; }
+  .lead-back { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border: none; background: transparent; color: var(--color-text); border-radius: var(--r-sm); cursor: pointer; }
+  .lead-back i, .lead-back svg { width: 24px; height: 24px; }
+  .lead-inner { max-width: 480px; margin: 0 auto; padding: 8px 20px 40px; }
+  .lead-title { margin: 0; }
+  .lead-desc { margin: 12px 0 32px; color: var(--color-text-muted); }
+  .lead-field { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+  .lead-field .input { width: 100%; }
+  .lead-submit { margin-top: 12px; }
+  .lead-done { display: none; flex-direction: column; align-items: center; text-align: center; gap: 12px; padding: 64px 20px; }
+  .lead-done i, .lead-done svg { width: 48px; height: 48px; color: var(--color-primary); }
 </style>
 </head>
 <body>
@@ -117,7 +132,6 @@
       <div class="plan-tag text-body">영원히 무료</div>
       <div class="price"><span class="won">₩</span><span class="amt text-metric">0</span></div>
       <div class="subprice text-caption">신용카드 없이 바로 시작</div>
-      <a href="#" class="btn btn-lg btn-block btn-line-dark cta">무료로 시작하기</a>
       <div class="rule"></div>
       <ul class="feat text-body">
         <li><i data-lucide="check"></i><span>프로필 페이지 <b>1개</b></span></li>
@@ -136,7 +150,7 @@
       <div class="plan-tag text-body">문의를 놓치지 않으려면</div>
       <div class="price"><span class="won">₩</span><span class="amt text-metric">5,900</span><span class="per">/월</span></div>
       <div class="subprice text-caption">부가세 별도</div>
-      <a href="#" class="btn btn-lg btn-block btn-fill-primary cta">프로 시작하기</a>
+      <button type="button" class="btn btn-lg btn-block btn-fill-primary cta" onclick="openLead('프로')">프로 시작하기</button>
       <div class="rule"></div>
       <div class="lead text-body">무료의 모든 기능, 그리고</div>
       <ul class="feat text-body">
@@ -158,7 +172,7 @@
       <div class="plan-tag text-body">팀과 함께 쓰려면</div>
       <div class="price"><span class="won">₩</span><span class="amt text-metric">19,900</span><span class="per">/월</span></div>
       <div class="subprice text-caption">부가세 별도</div>
-      <a href="#" class="btn btn-lg btn-block btn-line-dark cta">브랜드 시작하기</a>
+      <button type="button" class="btn btn-lg btn-block btn-line-dark cta" onclick="openLead('브랜드')">브랜드 시작하기</button>
       <div class="rule"></div>
       <div class="lead text-body">프로의 모든 기능, 그리고</div>
       <ul class="feat text-body">
@@ -177,9 +191,63 @@
 
 </div>
 
+<!-- ── 상담 신청(연락처) 페이지 오버레이 ── -->
+<div class="lead-overlay" id="lead-overlay" hidden>
+  <div class="lead-top">
+    <button class="lead-back" type="button" aria-label="뒤로" onclick="closeLead()"><i data-lucide="chevron-left"></i></button>
+  </div>
+  <div class="lead-inner">
+    <div id="lead-form-wrap">
+      <h1 class="lead-title text-title">연락처를 남겨주세요</h1>
+      <p class="lead-desc text-body">선택하신 <b id="lead-plan">프로</b> 플랜, 담당자가 빠르게 연락드릴게요.</p>
+      <form id="lead-form" onsubmit="return submitLead(event)">
+        <div class="lead-field">
+          <label class="label label-required" for="lead-name">이름</label>
+          <input class="input" id="lead-name" type="text" placeholder="이름을 입력해주세요" required>
+        </div>
+        <div class="lead-field">
+          <label class="label label-required" for="lead-phone">전화번호</label>
+          <input class="input" id="lead-phone" type="tel" placeholder="010-0000-0000" required>
+        </div>
+        <div class="lead-field">
+          <label class="label label-required" for="lead-email">이메일</label>
+          <input class="input" id="lead-email" type="email" placeholder="example@email.com" required>
+        </div>
+        <button type="submit" class="btn btn-lg btn-block btn-fill-primary lead-submit">상담 신청하기</button>
+      </form>
+    </div>
+    <div class="lead-done" id="lead-done">
+      <i data-lucide="circle-check"></i>
+      <h2 class="text-title">신청이 접수되었어요</h2>
+      <p class="text-body" style="color: var(--color-text-muted)">담당자가 남겨주신 연락처로 빠르게 연락드릴게요.</p>
+      <button type="button" class="btn btn-lg btn-block btn-line-dark" onclick="closeLead()" style="margin-top: 12px;">요금제로 돌아가기</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://unpkg.com/lucide@latest"></script>
 <script>
   lucide.createIcons();
+  function openLead(plan) {
+    document.getElementById('lead-plan').textContent = plan;
+    document.getElementById('lead-form-wrap').style.display = '';
+    document.getElementById('lead-done').style.display = 'none';
+    var f = document.getElementById('lead-form'); if (f) f.reset();
+    document.getElementById('lead-overlay').hidden = false;
+    window.scrollTo(0, 0);
+  }
+  function closeLead() { document.getElementById('lead-overlay').hidden = true; }
+  // 셸 안(iframe)에 임베드된 경우, 셸의 뒤로가기가 있으므로 폼 자체 뒤로가기는 숨긴다
+  if (window.self !== window.top) {
+    var _lt = document.querySelector('.lead-top');
+    if (_lt) _lt.style.display = 'none';
+  }
+  function submitLead(e) {
+    e.preventDefault();
+    document.getElementById('lead-form-wrap').style.display = 'none';
+    document.getElementById('lead-done').style.display = 'flex';
+    return false;
+  }
   (function () {
     var tabs = Array.prototype.slice.call(document.querySelectorAll('.tabs .tab'));
     function setActive(id) {
