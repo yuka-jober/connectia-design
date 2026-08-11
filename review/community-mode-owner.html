@@ -2380,6 +2380,7 @@
           <input class="input" id="am-phone" type="tel" placeholder="연락처" autocomplete="off">
           <input class="input" id="am-email" type="email" placeholder="이메일" autocomplete="off">
           <input class="input" id="am-company" type="text" placeholder="소속" autocomplete="off">
+          <input class="input" id="am-dept" type="text" placeholder="부서" autocomplete="off">
           <input class="input" id="am-title" type="text" placeholder="직함" autocomplete="off">
           <button class="btn btn-lg btn-block btn-fill-primary" type="button" onclick="submitAddMember()">추가하기</button>
         </div>
@@ -3665,7 +3666,7 @@
     row.dataset.phone = document.getElementById('am-phone').value.trim();
     row.dataset.email = document.getElementById('am-email').value.trim();
     row.dataset.company = document.getElementById('am-company').value.trim();
-    row.dataset.dept = '';
+    row.dataset.dept = document.getElementById('am-dept').value.trim();
     row.dataset.title = document.getElementById('am-title').value.trim();
     row.querySelector('.c-member-name').textContent = name;
     var sub = row.querySelector('.c-member-sub');
@@ -3674,7 +3675,7 @@
     if (av) av.innerHTML = '';
     list.appendChild(row);
     document.getElementById('c-members-count-label').textContent = memberCountText();
-    ['am-name','am-phone','am-email','am-company','am-title'].forEach(function(id){ document.getElementById(id).value = ''; });
+    ['am-name','am-phone','am-email','am-company','am-dept','am-title'].forEach(function(id){ document.getElementById(id).value = ''; });
     closeAddMemberSheet();
     showToast(name + '님을 추가했어요');
   }
