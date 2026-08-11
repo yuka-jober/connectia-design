@@ -1,0 +1,4089 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>커뮤니티 모드 — 운영자</title>
+<link rel="stylesheet" href="../../tokens.css">
+<link rel="stylesheet" href="../../components.css">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-base);
+    background: #e0e0e0;
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ── Frame (390 × 844, board.html과 동일) ── */
+  .frame {
+    width: 390px;
+    height: 844px;
+    max-height: 100dvh;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 32px 80px -20px rgba(0,0,0,0.28);
+    background: var(--color-surface);
+    transform: translateZ(0); /* overlay가 프레임 내부에 앵커 되도록 */
+  }
+  @media (max-width: 439px) { .frame { width: 100vw; height: 100dvh; max-height: none; } }
+  @media (min-width: 440px) { .frame { border-radius: 44px; max-height: calc(100dvh - 40px); } }
+
+  /* ── 화면 전환 ── */
+  .screen { position: absolute; inset: 0; display: none; flex-direction: column; background: var(--color-bg); }
+  .screen.on { display: flex; }
+
+  /* ── Lucide 기본 ── */
+  [data-lucide] { display: inline-flex; flex-shrink: 0; }
+
+  /* =============================================
+     커뮤니티 셸 헤더
+     좌: 커뮤니티명 + ▼ (스위처 트리거)
+     우: (나) 아바타 배지 = 마이페이지 진입점
+     ============================================= */
+  .c-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--color-border);
+    flex-shrink: 0;
+    background: var(--color-surface);
+    gap: 12px;
+  }
+  .c-switcher {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: none;
+    border: none;
+    padding: 4px 4px 4px 0;
+    font-family: var(--font-base);
+    color: var(--color-text);
+    cursor: pointer;
+    min-width: 0;
+    -webkit-tap-highlight-color: transparent;
+    border-radius: var(--r-sm);
+    transition: background var(--motion-fast) var(--ease-standard);
+  }
+  .c-switcher:active { background: var(--color-surface-sub); }
+  .c-switcher-name {
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-bold);
+    color: var(--color-text);
+    letter-spacing: var(--ls-body-lg);
+    max-width: 220px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .c-switcher [data-lucide] { width: 16px; height: 16px; color: var(--color-text-sub); }
+
+  /* (나) 마이페이지 진입점 — 프로필 사진만 */
+  .c-me {
+    display: inline-flex;
+    align-items: center;
+    padding: 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-family: var(--font-base);
+    -webkit-tap-highlight-color: transparent;
+    border-radius: var(--r-full);
+    transition: opacity var(--motion-fast) var(--ease-standard);
+  }
+  .c-me:active { opacity: 0.7; }
+  .c-me-avatar { box-shadow: var(--shadow-2); }
+
+  /* 마이페이지 상단 모드 전환 바 */
+  .c-mode-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    background: #1F2233;
+    color: #fff;
+  }
+  .c-mode-bar-label {
+    font-size: var(--fs-body);
+    font-weight: var(--fw-semibold);
+  }
+  .c-mypage-placeholder {
+    padding: 40px 20px;
+    text-align: center;
+    color: var(--color-text-muted);
+    font-size: var(--fs-body);
+  }
+
+  /* 이 모임에서 내 프로필 편집 */
+  .c-mcp-avatar-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 24px 0 8px;
+  }
+  .c-mcp-avatar-block .avatar { box-shadow: var(--shadow-1); }
+  .c-mcp-section-title {
+    font-size: var(--fs-label);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text-sub);
+    margin-bottom: 12px;
+  }
+  .c-mcp-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .c-mcp-field:last-child { margin-bottom: 0; }
+  .c-mcp-field-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .c-mcp-field-label {
+    font-size: var(--fs-label);
+    font-weight: var(--fw-medium);
+    color: var(--color-text);
+  }
+  .c-mcp-field-privacy {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+  }
+
+  /* 상세 화면 헤더 (← + 타이틀) */
+  .c-topbar-detail { padding: 8px 8px 8px 4px; }
+  .c-back {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: none;
+    background: none;
+    color: var(--color-text);
+    cursor: pointer;
+    border-radius: var(--r-sm);
+    -webkit-tap-highlight-color: transparent;
+    transition: background var(--motion-fast) var(--ease-standard);
+  }
+  .c-back:active { background: var(--color-surface-sub); }
+  .c-back [data-lucide] { width: 22px; height: 22px; }
+  .c-topbar-detail .c-topbar-title {
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-bold);
+    color: var(--color-text);
+    flex: 1;
+    text-align: left;
+  }
+
+  /* ── Body ── */
+  .c-body {
+    flex: 1;
+    overflow-y: auto;
+    background: var(--color-bg);
+    padding-bottom: 76px; /* tabbar 높이 확보 */
+  }
+
+  /* =============================================
+     커뮤니티 셸 하단 탭바
+     ============================================= */
+  .c-tabbar {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    display: flex;
+    align-items: stretch;
+    background: var(--color-surface);
+    border-radius: var(--r-lg) var(--r-lg) 0 0;
+    box-shadow: var(--shadow-4);
+    padding-bottom: env(safe-area-inset-bottom);
+    z-index: 10;
+  }
+  .c-tab {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 10px 4px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--color-text-muted);
+    font-family: var(--font-base);
+    -webkit-tap-highlight-color: transparent;
+    transition: color var(--motion-fast) var(--ease-standard);
+  }
+  .c-tab [data-lucide] { width: 22px; height: 22px; stroke-width: 2; }
+  .c-tab-label {
+    font-size: var(--fs-nav);
+    font-weight: var(--fw-medium);
+    letter-spacing: var(--ls-nav);
+    line-height: var(--lh-nav);
+  }
+  .c-tab.is-active { color: var(--color-primary); }
+  .c-tab.is-active [data-lucide] { stroke-width: 2.4; }
+
+  /* =============================================
+     공통 섹션 헤더
+     ============================================= */
+  .c-section {
+    padding: 20px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .c-section + .c-section { padding-top: 4px; }
+  .c-section-title {
+    font-size: var(--fs-title);
+    font-weight: var(--fw-bold);
+    color: var(--color-text);
+    letter-spacing: var(--ls-title);
+  }
+  .c-row-between {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  /* =============================================
+     홈 탭 — 프로필 페이지(lp-*) 재사용
+     ============================================= */
+  .lp-header {
+    width: 100%;
+    height: 177px;
+    overflow: hidden;
+    position: relative;
+    flex-shrink: 0;
+  }
+  .lp-header img {
+    width: 100%;
+    height: 211px;
+    object-fit: cover;
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+  .lp-avatar-wrap {
+    position: absolute;
+    top: 133px;
+    left: 20px;
+    z-index: 2;
+  }
+  .lp-inner {
+    padding: 68px 20px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  .lp-name-block {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .lp-title {
+    font-weight: var(--fw-semibold);
+    font-size: var(--fs-title);
+    color: var(--color-text);
+    letter-spacing: var(--ls-title);
+  }
+  .lp-handle {
+    font-size: var(--fs-label);
+    color: var(--color-text-muted);
+  }
+  .lp-actions-row {
+    position: absolute;
+    top: 190px;
+    right: 20px;
+    z-index: 3;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .c-home-shortcut-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .c-shortcut {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px 16px;
+    border-radius: var(--r-md);
+    background: var(--color-primary-light);
+    border: none;
+    cursor: pointer;
+    font-family: var(--font-base);
+    color: var(--color-primary);
+    -webkit-tap-highlight-color: transparent;
+    transition: background var(--motion-fast) var(--ease-standard), transform var(--motion-fast) var(--ease-standard);
+  }
+  .c-shortcut:active { background: var(--color-primary-subtle); transform: scale(0.98); }
+  .c-shortcut-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-semibold);
+  }
+  .c-shortcut-label [data-lucide] { width: 18px; height: 18px; }
+  .c-shortcut i.c-shortcut-arrow { width: 18px; height: 18px; }
+
+  /* board.html 프로필 페이지 재사용 — About/Youtube/Divider/Section */
+  .lp-divider { height: 1px; width: 100%; background: var(--color-border); border: none; }
+  .lp-section-title {
+    font-weight: var(--fw-semibold);
+    font-size: var(--fs-heading);
+    color: var(--color-text-sub);
+    letter-spacing: var(--ls-heading);
+  }
+  .lp-yt {
+    width: 100%;
+    height: 188px;
+    border-radius: var(--r-sm);
+    overflow: hidden;
+    position: relative;
+    background: var(--color-surface-sub);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .lp-yt-play {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 60px;
+    height: 60px;
+  }
+  .lp-about {
+    font-size: var(--fs-body);
+    color: var(--color-text);
+    letter-spacing: -0.22px;
+    line-height: var(--lh-body);
+  }
+  .lp-about p { margin-bottom: 8px; }
+  .lp-about p:last-child { margin-bottom: 0; }
+  .lp-info-link {
+    background: var(--color-primary-light);
+    border-radius: var(--r-sm);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px;
+    width: 100%;
+    cursor: pointer;
+  }
+  .lp-info-left { display: flex; align-items: center; gap: 12px; }
+  .lp-info-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: var(--color-text-muted);
+  }
+  .lp-info-label {
+    font-size: var(--fs-body);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text);
+  }
+
+  /* =============================================
+     멤버 탭
+     ============================================= */
+  .c-members-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .c-members-count {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-bold);
+    color: var(--color-text);
+  }
+  .c-members-count [data-lucide] { width: 18px; height: 18px; color: var(--color-text-sub); }
+
+  /* 검색 인풋: input 컴포넌트를 그대로 쓰고 아이콘만 씌운다 */
+  .c-search-wrap {
+    position: relative;
+    width: 100%;
+  }
+  .c-search-wrap .input {
+    padding: 8px 16px 8px 44px;
+    border-color: transparent;
+    border-radius: var(--r-full);
+  }
+  .c-search-icon {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--color-text-muted);
+    pointer-events: none;
+  }
+  .c-search-icon [data-lucide] { width: 18px; height: 18px; }
+
+  /* 정렬 세그먼트 */
+  .c-seg {
+    display: inline-flex;
+    align-self: flex-start;
+    align-items: center;
+    gap: 4px;
+    padding: 4px;
+    background: var(--color-surface-sub);
+    border-radius: var(--r-full);
+  }
+  .c-seg-btn {
+    padding: 8px 16px;
+    border: none;
+    background: transparent;
+    color: var(--color-text-muted);
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-medium);
+    border-radius: var(--r-full);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: background var(--motion-fast) var(--ease-standard), color var(--motion-fast) var(--ease-standard);
+  }
+  .c-seg-btn.is-active {
+    background: var(--color-surface);
+    color: var(--color-text);
+    font-weight: var(--fw-semibold);
+    box-shadow: var(--shadow-1);
+  }
+  /* 행사 상태 칩 (진행중/예정/종료) */
+  .c-event-chips { display: flex; gap: 20px; margin-top: 14px; margin-left: 20px; }
+  .c-event-chip {
+    position: relative;
+    padding: 6px 0;
+    border: none;
+    background: none;
+    color: var(--color-text-muted);
+    font-family: var(--font-base);
+    font-size: var(--fs-body);
+    font-weight: var(--fw-medium);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: color var(--motion-fast) var(--ease-standard);
+  }
+  .c-event-chip.is-active { color: var(--color-text); font-weight: var(--fw-bold); }
+  .c-event-chip.is-active::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0; bottom: -2px;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--color-text);
+  }
+  .c-event-ph { margin-top: 24px; padding: 40px 0; text-align: center; color: var(--color-text-muted); font-size: var(--fs-body); }
+
+  .c-member-list {
+    background: var(--color-surface);
+    border-radius: var(--r-md);
+    overflow: hidden;
+  }
+  .c-member-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--color-border);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: background var(--motion-fast) var(--ease-standard);
+  }
+  .c-member-row:last-child { border-bottom: none; }
+  .c-member-row:active { background: var(--color-surface-sub); }
+  .c-member-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .c-member-name-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+  .c-member-name {
+    font-size: var(--fs-body);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  /* 서브텍스트 = 소속(회사) */
+  .c-member-sub {
+    font-size: var(--fs-label);
+    color: var(--color-text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  /* 행 우측: chevron(평소) ↔ 역할 드롭다운/소유자표시(편집 모드) */
+  .c-member-trail {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .c-member-chev { width: 20px; height: 20px; color: var(--color-text-muted); }
+  .c-member-role-dd,
+  .c-member-owner-tag { display: none; }
+  .c-member-list.is-editing .c-member-row { cursor: default; }
+  .c-member-list.is-editing .c-member-chev { display: none; }
+  .c-member-list.is-editing .c-member-role-dd { display: block; }
+  .c-member-list.is-editing .c-member-owner-tag { display: inline-flex; }
+  .c-member-role-dd .c-perm-dd-btn { padding: 6px 8px 6px 12px; font-size: var(--fs-label); }
+  .c-member-role-dd .c-role-check { display: none; width: 18px; height: 18px; color: var(--color-primary); }
+  .c-member-role-dd .menu-item.is-selected .c-role-check { display: inline-flex; }
+  .c-role-note { margin-left: 4px; font-size: var(--fs-caption); font-weight: var(--fw-medium); color: var(--color-text-muted); }
+
+  /* =============================================
+     멤버 상세
+     ============================================= */
+  .c-md-body {
+    padding: 40px 20px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .c-md-avatar {
+    width: 96px;
+    height: 96px;
+    border-radius: var(--r-full);
+    background: var(--color-surface-sub);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    font-weight: var(--fw-semibold);
+    color: var(--color-text-muted);
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  .c-md-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .c-md-name {
+    font-size: var(--fs-title);
+    font-weight: var(--fw-bold);
+    color: var(--color-text);
+  }
+  .c-md-role {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .c-md-list {
+    background: var(--color-surface);
+    padding: 0 20px;
+  }
+  .c-md-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    padding: 20px 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .c-md-item:last-child { border-bottom: none; }
+  .c-md-item-k {
+    font-size: var(--fs-body);
+    color: var(--color-text);
+  }
+  .c-md-item-v {
+    font-size: var(--fs-body);
+    color: var(--color-text-muted);
+    text-align: right;
+    word-break: break-all;
+  }
+  .c-md-item-v.is-empty { color: var(--color-text-muted); }
+
+  /* 상세 상단바 우측 편집/저장 버튼 */
+  .c-md-edit-btn {
+    flex-shrink: 0;
+    padding: 8px 12px;
+    background: none;
+    border: none;
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-semibold);
+    color: var(--color-primary);
+    cursor: pointer;
+    border-radius: var(--r-sm);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .c-md-edit-btn:active { background: var(--color-surface-sub); }
+  .c-md-edit-btn i, .c-md-edit-btn svg { width: 22px; height: 22px; color: var(--color-text); }
+
+  /* 상세 편집 모드 인풋 */
+  .c-md-name-input { display: none; width: 100%; max-width: 240px; text-align: center; }
+  .c-md-body.is-editing .c-md-name { display: none; }
+  .c-md-body.is-editing .c-md-name-input { display: block; }
+  .c-md-input { display: none; flex: 1; margin-left: 16px; }
+  .c-md-list.is-editing .c-md-item-v { display: none; }
+  .c-md-list.is-editing .c-md-input { display: block; }
+
+  /* =============================================
+     게시판 탭
+     ============================================= */
+  .c-post-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .c-post-card {
+    background: var(--color-surface);
+    border-radius: var(--r-md);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform var(--motion-fast) var(--ease-standard);
+  }
+  .c-post-card:active { transform: scale(0.99); }
+  .c-post-author-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .c-post-author {
+    font-size: var(--fs-label);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text);
+  }
+  .c-post-time {
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+  }
+  .c-post-dot {
+    color: var(--color-text-muted);
+    font-size: var(--fs-caption);
+  }
+  .c-post-title {
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text);
+    line-height: var(--lh-heading);
+  }
+  .c-post-body {
+    font-size: var(--fs-body);
+    color: var(--color-text-sub);
+    line-height: var(--lh-body);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .c-post-stat-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    color: var(--color-text-muted);
+    font-size: var(--fs-caption);
+  }
+  .c-post-stat {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .c-post-stat [data-lucide] { width: 14px; height: 14px; }
+
+  /* =============================================
+     행사 탭 (목록)
+     ============================================= */
+  .c-month-label {
+    font-size: var(--fs-label);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text-muted);
+    padding-top: 4px;
+    margin-bottom: 12px;
+  }
+  .c-tl-track + .c-month-label { margin-top: 20px; }
+
+  /* 타임라인 (rail = 카드 바깥으로 이어지는 세로선) */
+  .c-tl-track {
+    display: flex;
+    flex-direction: column;
+  }
+  .c-tl-row {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding-bottom: 12px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .c-tl-row:last-child { padding-bottom: 0; }
+  .c-tl-row::before {
+    content: '';
+    position: absolute;
+    left: 3.5px;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: var(--color-border);
+  }
+  .c-tl-row:first-child::before { top: 24px; }
+  .c-tl-row:last-child::before { bottom: calc(100% - 24px); }
+  .c-tl-row:only-child::before { display: none; }
+  .c-tl-dot {
+    position: relative;
+    z-index: 1;
+    flex-shrink: 0;
+    margin-top: 20px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--color-text);
+  }
+  .c-tl-card {
+    flex: 1;
+    min-width: 0;
+    background: var(--color-surface);
+    border-radius: var(--r-md);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    transition: transform var(--motion-fast) var(--ease-standard);
+  }
+  .c-tl-row:active .c-tl-card { transform: scale(0.99); }
+  .c-tl-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .c-tl-date {
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+    font-weight: var(--fw-medium);
+  }
+  .c-tl-head [data-lucide] { width: 16px; height: 16px; color: var(--color-text-muted); }
+  .c-tl-thumb { width: 100%; aspect-ratio: 2 / 1; border-radius: var(--r-sm); overflow: hidden; background: var(--color-surface-sub); }
+  .c-tl-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .c-tl-title {
+    font-size: var(--fs-body-lg);
+    line-height: var(--lh-body-lg);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .c-tl-stats {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: var(--fs-caption);
+    color: var(--color-text-sub);
+    font-weight: var(--fw-medium);
+  }
+  .c-tl-stats b { font-weight: var(--fw-bold); color: var(--color-text); }
+  .c-tl-sep { color: var(--color-text-muted); }
+
+  .c-event-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .c-event-card {
+    display: flex;
+    align-items: stretch;
+    gap: 12px;
+    padding: 16px;
+    background: var(--color-surface);
+    border-radius: var(--r-md);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform var(--motion-fast) var(--ease-standard);
+  }
+  .c-event-card:active { transform: scale(0.99); }
+  .c-event-date {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    min-width: 48px;
+    padding: 8px 4px;
+    background: var(--color-surface-sub);
+    color: var(--color-text);
+    border-radius: var(--r-sm);
+  }
+  .c-event-date-day {
+    font-size: 20px;
+    font-weight: var(--fw-bold);
+    line-height: 1.1;
+    letter-spacing: -0.4px;
+  }
+  .c-event-date-dow {
+    font-size: var(--fs-caption);
+    font-weight: var(--fw-medium);
+  }
+  .c-event-body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .c-event-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .c-event-title {
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text);
+  }
+  .c-event-title-row [data-lucide] { width: 16px; height: 16px; color: var(--color-text-muted); }
+  .c-event-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+    flex-wrap: wrap;
+  }
+  .c-event-meta span {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .c-event-meta [data-lucide] { width: 12px; height: 12px; }
+  .c-event-stats {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: var(--fs-caption);
+    color: var(--color-text-sub);
+    font-weight: var(--fw-medium);
+  }
+  .c-event-stats b { font-weight: var(--fw-bold); color: var(--color-text); }
+
+  /* =============================================
+     행사 · 캘린더 뷰
+     ============================================= */
+  .c-cal {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .c-cal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 0;
+  }
+  .c-cal-month {
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-bold);
+    color: var(--color-text);
+    letter-spacing: var(--ls-title);
+  }
+  .c-cal-nav {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--r-full);
+    border: none;
+    background: transparent;
+    color: var(--color-text-sub);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .c-cal-nav:active { background: var(--color-surface-sub); }
+  .c-cal-nav [data-lucide] { width: 20px; height: 20px; }
+
+  .c-cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    background: var(--color-surface);
+    border-radius: var(--r-md);
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+  }
+  .c-cal-dow {
+    padding: 8px 0;
+    text-align: center;
+    font-size: var(--fs-caption);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text-muted);
+    background: var(--color-surface-sub);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .c-cal-dow.is-sun { color: var(--color-destructive); }
+  .c-cal-dow.is-sat { color: var(--color-primary); }
+
+  .c-cal-cell {
+    min-height: 68px;
+    padding: 4px 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    background: var(--color-surface);
+    border-right: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .c-cal-cell:nth-child(7n) { border-right: none; }
+  .c-cal-cell.is-empty { cursor: default; }
+  .c-cal-day {
+    font-size: var(--fs-caption);
+    font-weight: var(--fw-medium);
+    color: var(--color-text);
+    text-align: right;
+    padding: 0 4px;
+    line-height: 1;
+  }
+  .c-cal-cell.is-other .c-cal-day { color: var(--color-text-muted); opacity: 0.4; }
+  .c-cal-cell.is-selected .c-cal-day { color: var(--color-primary); font-weight: var(--fw-bold); }
+
+  .c-cal-chip {
+    display: block;
+    box-sizing: border-box;
+    max-width: 100%;
+    font-size: var(--fs-badge);
+    font-weight: var(--fw-medium);
+    color: var(--color-primary);
+    background: var(--color-primary-light);
+    padding: 2px 4px;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: clip;
+  }
+  .c-cal-more {
+    font-size: var(--fs-badge);
+    font-weight: var(--fw-medium);
+    color: var(--color-text-muted);
+    padding: 0 4px;
+    line-height: 1.2;
+  }
+
+  /* 선택일 하단 상세 */
+  .c-cal-selected {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 4px;
+  }
+  .c-cal-selected-head {
+    font-size: var(--fs-label);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text-sub);
+  }
+  .c-cal-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 32px 16px;
+    background: var(--color-surface);
+    border-radius: var(--r-md);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-muted);
+    font-size: var(--fs-body);
+  }
+
+  /* =============================================
+     행사 상세
+     ============================================= */
+  /* ── Event landing (embedded copy from screens/event-landing.html) ── */
+  #s-event-detail * { box-sizing: border-box; margin: 0; padding: 0; }  #s-event-detail body {
+    font-family: var(--font-base);
+    background: #e0e0e0;
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  /* ── Frame (embedded, fills #s-event-detail) ── */
+  #s-event-detail .ev-shell {
+    flex: 1;
+    display: flex;
+    min-height: 0;
+  }
+  #s-event-detail .ev-frame {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    background: var(--color-surface);
+    border-radius: 0;
+  }
+  /* ── 화면 전환 ── */
+  .ev-screen { position: absolute; inset: 0; display: none; flex-direction: column; background: var(--color-surface); }  #s-event-detail .ev-screen.ev-on { display: flex; }  #s-event-detail /* 바텀시트를 폰 목업(frame) 기준으로 배치 */
+  .ev-frame .bottom-sheet-overlay, #s-event-detail .ev-frame .bottom-sheet { position: absolute; }  #s-event-detail .topbar-actions { display: flex; align-items: center; gap: 8px; }  #s-event-detail .menu-item-main { display: inline-flex; align-items: center; gap: 12px; }  #s-event-detail /* ── 공통 ── */
+  i[data-lucide] { display: inline-flex; flex-shrink: 0; }  #s-event-detail /* Lucide가 <i>를 <svg>로 치환한 뒤에도 크기/색이 적용되도록 svg에도 동일 규칙을 매치시킨다 */
+  svg.lucide { flex-shrink: 0; }  #s-event-detail /* ── Topbar (floating over hero) ── */
+  .topbar {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 8px;
+    pointer-events: none;
+  }  #s-event-detail .topbar .icon-btn {
+    pointer-events: auto;
+    border-radius: var(--r-full);
+    background: var(--color-scrim);
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    box-shadow: 0 1px 6px rgba(0,0,0,0.08);
+  }  #s-event-detail .topbar .icon-btn:hover { background: var(--color-scrim); }  #s-event-detail .topbar-solid {
+    position: sticky; top: 0; z-index: 10;
+    display: flex; align-items: center; gap: 8px;
+    padding: 12px 8px;
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    flex-shrink: 0;
+  }  #s-event-detail .topbar-solid .topbar-title {
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text);
+  }  #s-event-detail /* ── Scroll body + sticky CTA ── */
+  .scroll-body { flex: 1; overflow-y: auto; background: var(--color-surface); padding-bottom: 96px; }  #s-event-detail .sticky-bar {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    padding: 12px 20px calc(20px + env(safe-area-inset-bottom));
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+    display: flex; flex-direction: column; gap: 8px;
+    z-index: 5;
+  }  #s-event-detail .sticky-meta {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    font-size: var(--fs-caption); color: var(--color-text-muted);
+  }  #s-event-detail .sticky-meta strong { color: var(--color-text-sub); font-weight: var(--fw-semibold); }  #s-event-detail .sticky-actions { display: flex; align-items: stretch; gap: 8px; }  #s-event-detail .sticky-chat {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    border-radius: var(--r-md);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    color: var(--color-primary);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: background var(--motion-fast) var(--ease-standard);
+  }  #s-event-detail .sticky-chat:hover { background: var(--color-surface-sub); }  #s-event-detail .sticky-chat i[data-lucide], #s-event-detail .sticky-chat svg { width: 22px; height: 22px; }  #s-event-detail /* 외부 신청폼 모드 — CTA에 외부 이동 아이콘 병기 */
+  .sticky-actions .btn i[data-lucide], #s-event-detail .sticky-actions .btn svg.lucide { width: 18px; height: 18px; }  #s-event-detail /* ============================================
+     LANDING SCREEN
+     ============================================ */
+
+  /* Hero thumbnail — 4:3 slider */
+  .hero {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    flex-shrink: 0;
+    background: var(--color-primary-light);
+  }  #s-event-detail .hero-slider {
+    width: 100%; height: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    display: flex;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }  #s-event-detail .hero-slider::-webkit-scrollbar { display: none; }  #s-event-detail .hero-slide {
+    flex: 0 0 100%;
+    width: 100%; height: 100%;
+    scroll-snap-align: start;
+    background-size: cover;
+    background-position: center;
+    background-color: var(--color-primary-light);
+    position: relative;
+  }  #s-event-detail .hero-slide::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(0,0,0,0) 50%, rgba(0,0,0,0.35) 100%);
+    pointer-events: none;
+  }  #s-event-detail .hero-pagination {
+    position: absolute; bottom: 12px; right: 12px;
+    z-index: 2;
+    background: rgba(17,19,24,0.55); color: var(--color-on-primary);
+    border-radius: var(--r-full);
+    padding: 4px 10px;
+    font-size: var(--fs-badge); font-weight: var(--fw-medium);
+  }  #s-event-detail /* Hero info block */
+  .hero-info {
+    padding: 24px 20px 16px;
+    display: flex; flex-direction: column; gap: 12px;
+  }  #s-event-detail .hero-clinic-row { display: inline-flex; align-items: center; gap: 2px; cursor: pointer; align-self: flex-start; }  #s-event-detail .hero-clinic-name {
+    font-size: var(--fs-label); font-weight: var(--fw-semibold);
+    color: var(--color-text-sub);
+  }  #s-event-detail .hero-clinic-row i[data-lucide], #s-event-detail .hero-clinic-row svg { width: 16px; height: 16px; color: var(--color-text-muted); }  #s-event-detail .hero-headline {
+    font-size: 24px; font-weight: var(--fw-bold);
+    line-height: 1.35; letter-spacing: -0.5px; color: var(--color-text);
+  }  #s-event-detail .hero-target {
+    font-size: var(--fs-body-lg); color: var(--color-text-sub);
+    line-height: 1.5;
+  }  #s-event-detail .hero-schedule {
+    display: inline-flex; align-items: center; gap: 6px;
+    align-self: flex-start;
+    font-size: var(--fs-label);
+    color: var(--color-text-sub);
+    font-weight: var(--fw-medium);
+  }  #s-event-detail .hero-schedule i[data-lucide], #s-event-detail .hero-schedule svg { width: 16px; height: 16px; color: var(--color-text-muted); }  #s-event-detail .hero-schedule-label { color: var(--color-text-muted); margin-right: 2px; }  #s-event-detail .hero-schedule-date { color: var(--color-text-sub); font-weight: var(--fw-medium); }  #s-event-detail .hero-schedule-sep { color: var(--color-text-muted); }  #s-event-detail .hero-schedule-time { color: var(--color-text-sub); font-weight: var(--fw-medium); }  #s-event-detail .trust-row {
+    display: flex; align-items: center; gap: 6px;
+    flex-wrap: wrap;
+    padding-top: 4px;
+  }  #s-event-detail .trust-dot { font-size: var(--fs-caption); color: var(--color-text-muted); }  #s-event-detail .star-row { display: inline-flex; align-items: center; gap: 4px; }  #s-event-detail .star-row i[data-lucide], #s-event-detail .star-row svg { width: 14px; height: 14px; color: var(--color-star); fill: var(--color-star); }  #s-event-detail .star-score { font-size: var(--fs-label); font-weight: var(--fw-semibold); color: var(--color-text); margin-left: 2px; }  #s-event-detail .star-count { font-size: var(--fs-caption); color: var(--color-text-muted); }  #s-event-detail .tag-official {
+    display: inline-flex; align-self: flex-start;
+    align-items: center; gap: 4px;
+    color: var(--color-primary);
+    font-size: var(--fs-caption);
+    font-weight: var(--fw-semibold);
+  }  #s-event-detail .tag-official i[data-lucide], #s-event-detail .tag-official svg { width: 14px; height: 14px; }  #s-event-detail /* Section divider */
+  .section-divider {
+    height: 8px;
+    background: var(--color-bg);
+    flex-shrink: 0;
+  }  #s-event-detail /* Section */
+  .section {
+    padding: 24px 20px;
+    display: flex; flex-direction: column; gap: 16px;
+  }  #s-event-detail .section-title {
+    font-size: var(--fs-heading);
+    font-weight: var(--fw-bold);
+    color: var(--color-text);
+    letter-spacing: -0.2px;
+  }  #s-event-detail .section-sub {
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+  }  #s-event-detail /* Date pill */
+  .date-card {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--color-surface-sub);
+    border-radius: var(--r-md);
+    padding: 16px 20px;
+  }  #s-event-detail .date-card i[data-lucide], #s-event-detail .date-card svg { width: 20px; height: 20px; color: var(--color-primary); }  #s-event-detail .date-card-text { flex: 1; }  #s-event-detail .date-card-label { font-size: var(--fs-caption); color: var(--color-text-muted); margin-bottom: 2px; }  #s-event-detail .date-card-value { font-size: var(--fs-body); font-weight: var(--fw-semibold); color: var(--color-text); }  #s-event-detail .date-card-tag {
+    font-size: var(--fs-badge); font-weight: var(--fw-semibold);
+    color: var(--color-destructive);
+    padding: 4px 8px;
+    background: rgba(201,64,34,0.10);
+    border-radius: var(--r-full);
+  }  #s-event-detail /* Checklist */
+  .checklist {
+    display: flex; flex-direction: column; gap: 12px;
+  }  #s-event-detail .check-item {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-md);
+  }  #s-event-detail .check-item .check-circle {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-on-primary);
+    flex-shrink: 0;
+    margin-top: 1px;
+  }  #s-event-detail .check-item .check-circle i[data-lucide], #s-event-detail .check-item .check-circle svg {
+    width: 12px; height: 12px;
+    stroke-width: 3;
+  }  #s-event-detail .check-item-text {
+    font-size: var(--fs-body-lg); color: var(--color-text);
+    line-height: 1.5;
+  }  #s-event-detail /* Reviews */
+  .review-scroll {
+    display: flex; gap: 12px;
+    overflow-x: auto;
+    margin: 0 -20px;
+    padding: 0 20px 8px;
+    scrollbar-width: none;
+  }  #s-event-detail .review-scroll::-webkit-scrollbar { display: none; }  #s-event-detail .review-card {
+    width: 240px; flex-shrink: 0;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-md);
+    overflow: hidden;
+    display: flex; flex-direction: column;
+  }  #s-event-detail .review-img {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    background-size: cover; background-position: center;
+    background-color: var(--color-surface-sub);
+  }  #s-event-detail .review-body {
+    padding: 12px 14px 14px;
+    display: flex; flex-direction: column; gap: 8px;
+  }  #s-event-detail .review-stars { display: inline-flex; align-items: center; gap: 2px; }  #s-event-detail .review-stars i[data-lucide], #s-event-detail .review-stars svg { width: 12px; height: 12px; color: var(--color-star); fill: var(--color-star); }  #s-event-detail .review-text {
+    font-size: var(--fs-label); color: var(--color-text);
+    line-height: 1.5;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+  }  #s-event-detail .review-meta {
+    font-size: 10px; color: var(--color-text-muted);
+    display: flex; align-items: center; gap: 4px;
+  }  #s-event-detail .review-meta .verified {
+    display: inline-flex; align-items: center; gap: 2px;
+    color: var(--color-primary);
+    font-weight: var(--fw-medium);
+  }  #s-event-detail .review-meta .verified i[data-lucide], #s-event-detail .review-meta .verified svg { width: 10px; height: 10px; }  #s-event-detail /* Description */
+  .desc {
+    font-size: var(--fs-body); line-height: 1.7;
+    color: var(--color-text-sub);
+    position: relative;
+    max-height: 96px;
+    overflow: hidden;
+    transition: max-height var(--motion-standard) var(--ease-standard);
+  }  #s-event-detail .desc.is-expanded { max-height: 2000px; }  #s-event-detail .desc-fade {
+    position: absolute; bottom: 0; left: 0; right: 0; height: 48px;
+    background: linear-gradient(180deg, rgba(255,255,255,0) 0%, var(--color-surface) 100%);
+    pointer-events: none;
+  }  #s-event-detail .desc.is-expanded + .desc-toggle .desc-toggle-icon { transform: rotate(180deg); }  #s-event-detail .desc.is-expanded ~ .desc-fade { display: none; }  #s-event-detail .desc-toggle {
+    margin-top: 12px;
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: var(--fs-label); font-weight: var(--fw-medium);
+    color: var(--color-text-sub);
+    background: none; border: none; cursor: pointer;
+    font-family: var(--font-base);
+    padding: 0;
+  }  #s-event-detail .desc-toggle i[data-lucide], #s-event-detail .desc-toggle svg {
+    width: 16px; height: 16px;
+    transition: transform var(--motion-fast) var(--ease-standard);
+  }  #s-event-detail /* Clinic page link card */
+  .clinic-link {
+    display: flex; align-items: center; gap: 12px;
+    padding: 16px;
+    background: var(--color-surface-sub);
+    border-radius: var(--r-md);
+    cursor: pointer;
+    border: none;
+    width: 100%;
+    text-align: left;
+    font-family: var(--font-base);
+  }  #s-event-detail .clinic-link:hover { background: var(--color-border); }  #s-event-detail .clinic-link-thumb {
+    width: 44px; height: 44px;
+    border-radius: var(--r-sm);
+    background-color: var(--color-primary-light);
+    background-image: url('../assets/profile.png');
+    background-size: cover; background-position: center;
+    flex-shrink: 0;
+  }  #s-event-detail .clinic-link-text { flex: 1; }  #s-event-detail .clinic-link-name {
+    font-size: var(--fs-body); font-weight: var(--fw-semibold);
+    color: var(--color-text);
+  }  #s-event-detail .clinic-link-sub {
+    font-size: var(--fs-caption); color: var(--color-text-muted);
+    margin-top: 2px;
+  }  #s-event-detail .clinic-link i.chev, #s-event-detail .clinic-link svg.chev { width: 18px; height: 18px; color: var(--color-text-muted); }  #s-event-detail /* ============================================
+     APPLY SCREEN
+     ============================================ */
+  .apply-body {
+    flex: 1; overflow-y: auto;
+    padding: 20px 20px 120px;
+    display: flex; flex-direction: column; gap: 32px;
+  }  #s-event-detail #apply-form-fields {
+    display: flex; flex-direction: column; gap: 24px;
+  }  #s-event-detail .apply-header {
+    display: flex; flex-direction: column; gap: 4px;
+    padding-bottom: 4px;
+  }  #s-event-detail .apply-header-title {
+    font-size: var(--fs-title); font-weight: var(--fw-bold);
+    color: var(--color-text); letter-spacing: -0.3px;
+  }  #s-event-detail .apply-header-sub {
+    font-size: var(--fs-body); color: var(--color-text-muted);
+  }  #s-event-detail .form-group {
+    display: flex; flex-direction: column; gap: 8px;
+  }  #s-event-detail .form-label {
+    font-size: var(--fs-label); font-weight: var(--fw-semibold);
+    color: var(--color-text); display: flex; align-items: center; gap: 4px;
+  }  #s-event-detail .form-label-required::after {
+    content: '*';
+    color: var(--color-destructive);
+    margin-left: 2px;
+  }  #s-event-detail /* Intent (radio chip) */
+  .intent-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }  #s-event-detail .intent-chip {
+    position: relative;
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-md);
+    padding: 16px 8px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    background: var(--color-surface);
+    transition:
+      border-color var(--motion-fast) var(--ease-standard),
+      background var(--motion-fast) var(--ease-standard);
+  }  #s-event-detail .intent-chip i[data-lucide], #s-event-detail .intent-chip svg {
+    width: 24px; height: 24px;
+    color: var(--color-text-muted);
+  }  #s-event-detail .intent-chip-label {
+    font-size: var(--fs-label); font-weight: var(--fw-medium);
+    color: var(--color-text-sub);
+  }  #s-event-detail .intent-chip input { position: absolute; opacity: 0; pointer-events: none; }  #s-event-detail .intent-chip.is-selected {
+    border-color: var(--color-primary);
+    background: var(--color-primary-light);
+  }  #s-event-detail .intent-chip.is-selected i[data-lucide], #s-event-detail .intent-chip.is-selected svg, #s-event-detail .intent-chip.is-selected .intent-chip-label {
+    color: var(--color-primary);
+  }  #s-event-detail .intent-chip.is-selected .intent-chip-label { font-weight: var(--fw-semibold); }  #s-event-detail /* Consent block */
+  .consent {
+    background: var(--color-surface-sub);
+    border-radius: var(--r-md);
+    padding: 16px 20px;
+    display: flex; flex-direction: column; gap: 12px;
+  }  #s-event-detail .consent-row {
+    display: flex; align-items: center; gap: 12px;
+    cursor: pointer;
+  }  #s-event-detail .consent-text {
+    flex: 1;
+    font-size: var(--fs-label); color: var(--color-text);
+    line-height: 1.5;
+  }  #s-event-detail .consent-text .required {
+    color: var(--color-destructive);
+    font-weight: var(--fw-semibold);
+    margin-right: 4px;
+  }  #s-event-detail .consent-link {
+    background: none; border: none;
+    font-size: var(--fs-caption); color: var(--color-text-muted);
+    text-decoration: underline;
+    cursor: pointer;
+    font-family: var(--font-base);
+    padding: 0;
+  }  #s-event-detail .consent-divider {
+    height: 1px;
+    background: var(--color-border);
+  }  #s-event-detail .consent-all {
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--color-border);
+    margin-bottom: 4px;
+  }  #s-event-detail .consent-all .consent-text {
+    font-size: var(--fs-body); font-weight: var(--fw-semibold);
+  }  #s-event-detail /* ============================================
+     DONE SCREEN
+     ============================================ */
+  .done-body {
+    flex: 1;
+    display: flex; flex-direction: column;
+    justify-content: space-between;
+    padding: 32px 20px 20px;
+  }  #s-event-detail .done-top {
+    display: flex; flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 16px;
+    margin-top: 40px;
+  }  #s-event-detail .done-icon-wrap {
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    background: var(--color-primary-light);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--color-primary);
+  }  #s-event-detail .done-icon-wrap i[data-lucide], #s-event-detail .done-icon-wrap svg { width: 36px; height: 36px; }  #s-event-detail .done-title {
+    font-size: var(--fs-title); font-weight: var(--fw-bold);
+    color: var(--color-text); letter-spacing: -0.3px;
+  }  #s-event-detail .done-desc {
+    font-size: var(--fs-body-lg); color: var(--color-text-sub);
+    line-height: 1.6;
+  }  #s-event-detail .done-info-card {
+    margin-top: 32px;
+    width: 100%;
+    background: var(--color-surface-sub);
+    border-radius: var(--r-md);
+    padding: 20px;
+    display: flex; flex-direction: column; gap: 12px;
+  }  #s-event-detail .done-info-row {
+    display: flex; align-items: center; gap: 12px;
+  }  #s-event-detail .done-info-row i[data-lucide], #s-event-detail .done-info-row svg {
+    width: 18px; height: 18px;
+    color: var(--color-primary);
+  }  #s-event-detail .done-info-label {
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+    width: 84px;
+  }  #s-event-detail .done-info-value {
+    font-size: var(--fs-body);
+    color: var(--color-text);
+    font-weight: var(--fw-medium);
+    text-align: right;
+    flex: 1;
+  }  #s-event-detail .done-next {
+    display: flex; flex-direction: column; gap: 12px;
+  }  #s-event-detail /* Lucide stars row */
+  .star-icons-row i[data-lucide], #s-event-detail .star-icons-row svg {
+    width: 14px; height: 14px;
+    color: var(--color-star);
+    fill: var(--color-star);
+  }
+
+
+
+  /* 참석 3버튼 세그먼트 */
+  .c-attend-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+  }
+  .c-attend-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 12px 8px;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-text-sub);
+    font-family: var(--font-base);
+    font-size: var(--fs-body);
+    font-weight: var(--fw-semibold);
+    border-radius: var(--r-sm);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: background var(--motion-fast) var(--ease-standard),
+                border-color var(--motion-fast) var(--ease-standard),
+                color var(--motion-fast) var(--ease-standard);
+  }
+  .c-attend-btn:active { transform: scale(0.98); }
+  .c-attend-btn [data-lucide] { width: 16px; height: 16px; }
+  .c-attend-btn.is-active[data-value="yes"] {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: var(--color-on-primary);
+  }
+  .c-attend-btn.is-active[data-value="no"] {
+    background: var(--color-destructive);
+    border-color: var(--color-destructive);
+    color: var(--color-on-primary);
+  }
+  .c-attend-btn.is-active[data-value="maybe"] {
+    background: var(--color-text-sub);
+    border-color: var(--color-text-sub);
+    color: var(--color-on-primary);
+  }
+  .c-attend-help {
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+  }
+  .c-attend-state {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 12px;
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+    border-radius: var(--r-sm);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-semibold);
+  }
+  .c-attend-state [data-lucide] { width: 16px; height: 16px; }
+
+  .c-attend-tally {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 12px 0 0;
+    font-size: var(--fs-label);
+    color: var(--color-text-sub);
+  }
+  .c-attend-tally b {
+    font-weight: var(--fw-bold);
+    color: var(--color-text);
+    margin-right: 4px;
+  }
+
+  /* 참석여부 등록 화면 */
+  #s-event-detail .c-att-section-title {
+    font-size: var(--fs-heading);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text);
+    margin-bottom: 16px;
+  }
+  #s-event-detail .c-att-choices {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+  }
+  #s-event-detail .c-att-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 16px 8px;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-text-muted);
+    font-family: var(--font-base);
+    font-size: var(--fs-body);
+    font-weight: var(--fw-semibold);
+    border-radius: var(--r-md);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: background var(--motion-fast) var(--ease-standard),
+                color var(--motion-fast) var(--ease-standard),
+                border-color var(--motion-fast) var(--ease-standard);
+  }
+  #s-event-detail .c-att-btn:active { transform: scale(0.98); }
+  #s-event-detail .c-att-btn [data-lucide] { width: 16px; height: 16px; }
+  #s-event-detail .c-att-btn.is-active[data-value="yes"] {
+    background: var(--color-success-subtle, rgba(34,197,94,0.10));
+    color: var(--color-success);
+    border-color: var(--color-success);
+  }
+  #s-event-detail .c-att-btn.is-active[data-value="no"] {
+    background: var(--color-destructive-subtle);
+    color: var(--color-destructive);
+    border-color: var(--color-destructive);
+  }
+  #s-event-detail .c-att-btn.is-active[data-value="maybe"] {
+    background: var(--color-primary-subtle);
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+  }
+  #s-event-detail .c-att-status-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  #s-event-detail .c-att-status-item {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-md);
+    overflow: hidden;
+  }
+  #s-event-detail .c-att-status-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 16px;
+    background: none;
+    border: none;
+    font-family: var(--font-base);
+    text-align: left;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #s-event-detail .c-att-status-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: var(--fs-body);
+    font-weight: var(--fw-medium);
+    color: var(--color-text);
+  }
+  #s-event-detail .c-att-status-label [data-lucide] {
+    width: 16px;
+    height: 16px;
+    color: var(--color-text-muted);
+  }
+  #s-event-detail .c-att-status-row.is-yes .c-att-status-label [data-lucide] { color: var(--color-success); }
+  #s-event-detail .c-att-status-right {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  #s-event-detail .c-att-status-count {
+    font-size: var(--fs-body);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text);
+  }
+  #s-event-detail .c-att-status-chev {
+    width: 18px;
+    height: 18px;
+    color: var(--color-text-muted);
+    transition: transform var(--motion-fast) var(--ease-standard);
+  }
+  #s-event-detail .c-att-status-row.is-open .c-att-status-chev { transform: rotate(180deg); }
+  #s-event-detail .c-att-status-members[hidden] { display: none; }
+  #s-event-detail .c-att-status-members {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    border-top: 1px solid var(--color-border);
+    background: var(--color-surface-sub);
+  }
+  #s-event-detail .c-att-status-member {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    font-size: var(--fs-body);
+    color: var(--color-text);
+  }
+  #s-event-detail .c-att-status-name { color: var(--color-text); }
+  #s-event-detail .c-att-status-empty {
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+    text-align: center;
+    padding: 8px 0;
+  }
+
+  /* 확인 현황 chip (topbar 아래 오른쪽) */
+  #s-event-detail .c-read-chip {
+    position: absolute;
+    top: 60px;
+    right: 12px;
+    z-index: 10;
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 8px 8px 8px 14px;
+    background: var(--color-scrim);
+    color: var(--color-on-primary);
+    border: none;
+    border-radius: var(--r-full);
+    font-family: var(--font-base);
+    font-size: var(--fs-body);
+    font-weight: var(--fw-semibold);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    box-shadow: 0 1px 6px rgba(0,0,0,0.08);
+  }
+  #s-event-detail .c-read-chip [data-lucide] { width: 18px; height: 18px; }
+  #s-event-detail .c-read-chip:active { transform: scale(0.97); }
+
+  /* 확인 현황 페이지 */
+  #s-event-detail .c-read-desc {
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+    margin-bottom: 16px;
+  }
+  #s-event-detail .c-read-list {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-md);
+    background: var(--color-surface);
+  }
+  #s-event-detail .c-read-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--color-border);
+  }
+  #s-event-detail .c-read-row:last-child { border-bottom: none; }
+  #s-event-detail .c-read-name {
+    flex: 1;
+    font-size: var(--fs-body);
+    color: var(--color-text);
+  }
+  #s-event-detail .c-read-status {
+    font-size: var(--fs-caption);
+    color: var(--color-success);
+    font-weight: var(--fw-semibold);
+  }
+  #s-event-detail .c-read-row.is-unread { opacity: 0.5; }
+  #s-event-detail .c-read-row.is-unread .c-read-status { color: var(--color-text-muted); }
+
+  /* 공지 확인 현황 (레거시 - 아래) */
+  .c-confirm-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    font-family: var(--font-base);
+    color: var(--color-text);
+    text-align: left;
+    width: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .c-confirm-summary-l {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: var(--fs-heading);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text);
+  }
+  .c-confirm-count {
+    font-size: var(--fs-body);
+    font-weight: var(--fw-bold);
+    color: var(--color-primary);
+  }
+  .c-confirm-summary [data-lucide] {
+    width: 20px;
+    height: 20px;
+    color: var(--color-text-muted);
+    transition: transform var(--motion-fast) var(--ease-standard);
+  }
+  .c-confirm-summary.is-open [data-lucide] { transform: rotate(180deg); }
+  .c-confirm-detail {
+    display: none;
+    padding-top: 12px;
+    margin-top: 12px;
+    border-top: 1px solid var(--color-border);
+    font-size: var(--fs-label);
+    color: var(--color-text-sub);
+  }
+  .c-confirm-detail.is-open { display: block; }
+
+  /* =============================================
+     설정 탭
+     ============================================= */
+  .c-menu-card {
+    background: var(--color-surface);
+    border-radius: var(--r-md);
+    overflow: hidden;
+  }
+  .c-menu-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px 20px;
+    background: none;
+    border: none;
+    border-bottom: 1px solid var(--color-border);
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    font-family: var(--font-base);
+    -webkit-tap-highlight-color: transparent;
+    transition: background var(--motion-fast) var(--ease-standard);
+  }
+  .c-menu-item:last-child { border-bottom: none; }
+  .c-menu-item:active { background: var(--color-surface-sub); }
+  .c-menu-item-l {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+  .c-menu-item-title {
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text);
+  }
+  .c-menu-item-sub {
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+  }
+  .c-menu-item [data-lucide] { width: 20px; height: 20px; color: var(--color-text-muted); }
+  .c-menu-item.is-danger .c-menu-item-title { color: var(--color-destructive); }
+  .c-menu-item.is-danger [data-lucide] { color: var(--color-destructive); }
+
+  /* 내 설정 카드 (프로필 + 회색 pill 3개) */
+  .c-me-card {
+    background: var(--color-surface);
+    border-radius: var(--r-md);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  .c-me-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: none;
+    border: none;
+    padding: 0;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    font-family: var(--font-base);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .c-me-head:active { opacity: 0.6; }
+  .c-me-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+    flex: 1;
+  }
+  .c-me-name-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .c-me-name {
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text);
+  }
+  .c-me-sub {
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+  }
+  .c-me-head > [data-lucide] {
+    width: 20px;
+    height: 20px;
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+  }
+  .c-me-pills {
+    display: flex;
+    gap: 8px;
+  }
+  .c-me-pill {
+    flex: 1;
+    padding: 12px 8px;
+    background: var(--color-surface-sub);
+    border: none;
+    border-radius: var(--r-md);
+    font-family: var(--font-base);
+    font-size: var(--fs-body);
+    font-weight: var(--fw-medium);
+    color: var(--color-text);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: background var(--motion-fast) var(--ease-standard);
+  }
+  .c-me-pill:active { background: var(--color-border); }
+
+  /* 작성 권한 카드 */
+  .c-perm-card {
+    background: var(--color-surface);
+    border-radius: var(--r-md);
+    padding: 4px 20px;
+  }
+  .c-perm-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .c-perm-row:last-child { border-bottom: none; }
+  .c-perm-label {
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text);
+  }
+  /* 커스텀 드롭다운 (native select는 .frame의 transform 때문에 위치가 깨짐) */
+  .c-perm-dd { position: relative; }
+  .c-perm-dd-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 10px 8px 12px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-input);
+    border-radius: var(--r-sm);
+    font-size: var(--fs-body);
+    color: var(--color-text);
+    font-family: inherit;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .c-perm-dd-btn [data-lucide] {
+    width: 16px;
+    height: 16px;
+    color: var(--color-text-muted);
+    transition: transform var(--motion-fast) var(--ease-standard);
+  }
+  .c-perm-dd.is-open .c-perm-dd-btn { border-color: var(--color-primary); }
+  .c-perm-dd.is-open .c-perm-dd-btn [data-lucide] { transform: rotate(180deg); }
+  .c-perm-dd-menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    z-index: 20;
+    min-width: 160px;
+    display: none;
+  }
+  .c-perm-dd.is-open .c-perm-dd-menu { display: block; }
+
+  /* 하단 소형 텍스트 링크 (커뮤니티 삭제·양도) */
+  .c-text-link-row {
+    display: flex;
+    justify-content: center;
+    padding: 8px 0 0;
+  }
+  .c-text-link-muted {
+    background: none;
+    border: none;
+    padding: 8px 12px;
+    font-family: var(--font-base);
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+    text-decoration: underline;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .c-text-link-muted:active { opacity: 0.6; }
+
+  /* =============================================
+     멤버 관리 · 초대 관리 (설정 진입)
+     ============================================= */
+  .c-member-meta {
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+    font-weight: var(--fw-regular);
+  }
+  .c-mm-chev { width: 18px; height: 18px; color: var(--color-text-muted); flex-shrink: 0; }
+  .c-mm-total {
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+    font-weight: var(--fw-medium);
+  }
+
+  /* 멤버 상세 (관리자) */
+  .c-mm-head {
+    padding: 32px 16px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    background: var(--color-surface);
+  }
+  .c-mm-head .avatar { width: 88px; height: 88px; }
+  .c-mm-head-name {
+    font-size: var(--fs-title);
+    font-weight: var(--fw-bold);
+    color: var(--color-text);
+    letter-spacing: var(--ls-title);
+  }
+  .c-mm-info {
+    background: var(--color-surface);
+    border-radius: var(--r-md);
+    padding: 4px 20px;
+  }
+  .c-mm-info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .c-mm-info-row:last-child { border-bottom: none; }
+  .c-mm-info-k {
+    font-size: var(--fs-body);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text);
+  }
+  .c-mm-info-v {
+    font-size: var(--fs-body);
+    color: var(--color-text-sub);
+    text-align: right;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* 초대 링크 카드 */
+  .c-inv-link-card {
+    background: var(--color-surface);
+    border-radius: var(--r-md);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .c-inv-link-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: var(--fs-label);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text);
+  }
+  .c-inv-link-title [data-lucide] { width: 16px; height: 16px; color: var(--color-primary); }
+  .c-inv-link-url {
+    background: var(--color-bg);
+    border-radius: var(--r-sm);
+    padding: 10px 12px;
+    font-size: var(--fs-caption);
+    color: var(--color-text-sub);
+    word-break: break-all;
+    line-height: var(--lh-body);
+  }
+  .c-inv-link-actions { display: flex; gap: 8px; }
+  .c-inv-link-actions .c-inv-copy { flex: 1; }
+  .c-inv-link-actions .c-inv-regen { flex-shrink: 0; }
+  .c-inv-link-actions .btn [data-lucide] { width: 14px; height: 14px; }
+
+  /* 가입 대기 리스트 */
+  .c-inv-pending-title {
+    font-size: var(--fs-label);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text-sub);
+    padding: 0 4px;
+  }
+  .c-inv-pending-list {
+    background: var(--color-surface);
+    border-radius: var(--r-md);
+    overflow: hidden;
+  }
+  .c-inv-pending-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .c-inv-pending-row:last-child { border-bottom: none; }
+  .c-inv-pending-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .c-inv-pending-name {
+    font-size: var(--fs-body);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .c-inv-pending-meta {
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .c-inv-pending-actions { display: flex; gap: 6px; flex-shrink: 0; }
+  .c-inv-empty {
+    padding: 40px 16px;
+    text-align: center;
+    color: var(--color-text-muted);
+    font-size: var(--fs-body);
+    background: var(--color-surface);
+    border-radius: var(--r-md);
+  }
+
+  /* 다이얼로그·토스트가 프레임 내부에 앵커되도록 */
+  .frame .dialog-overlay,
+  .frame .toast-container { position: absolute; }
+</style>
+</head>
+<body>
+
+<div class="frame">
+
+  <!-- ========================================
+       홈 탭
+       ======================================== -->
+  <section id="s-home" class="screen on">
+    <!-- 공통 셸 헤더 -->
+    <header class="c-topbar">
+      <button class="c-switcher" type="button" onclick="onSwitcher()">
+        <span class="c-switcher-name">서울 파운더스 테이블</span>
+        <i data-lucide="chevron-down"></i>
+      </button>
+      <button class="c-me" type="button" onclick="onMyPage()" aria-label="마이페이지">
+        <span class="avatar avatar-xs c-me-avatar" aria-hidden="true">
+          <img src="../../assets/profile.svg" alt="">
+        </span>
+      </button>
+    </header>
+
+    <div class="c-body">
+      <!-- 커버 + 프로필 (lp-* 재사용) -->
+      <div style="position:relative;flex-shrink:0;">
+        <div class="lp-header">
+          <img src="../../assets/banner-sft.jpg" alt="">
+        </div>
+        <div class="lp-avatar-wrap">
+          <div class="avatar" style="width:87px;height:87px;">
+            <img src="../../assets/avatar-sft.png" alt="">
+          </div>
+        </div>
+        <div class="lp-actions-row">
+          <button class="btn btn-md btn-weak-dark btn-pill" type="button">
+            <i data-lucide="link" style="width:16px;height:16px"></i>
+            공유
+          </button>
+        </div>
+      </div>
+
+      <div class="lp-inner">
+        <div class="lp-name-block">
+          <div class="lp-title">서울 파운더스 테이블</div>
+          <div class="lp-handle">@k_tst_kmnt</div>
+        </div>
+
+        <!-- 대화하기 (AI 채팅) -->
+        <button class="btn btn-lg btn-fill-gradient btn-block" type="button">
+          <i data-lucide="message-circle" style="width:18px;height:18px"></i>
+          대화하기
+        </button>
+
+        <!-- Youtube (커뮤니티 소개 영상) -->
+        <div class="lp-section-title">Youtube</div>
+        <div class="lp-yt">
+          <div class="lp-yt-play">
+            <svg viewBox="0 0 60 60" fill="none"><circle cx="30" cy="30" r="30" fill="black" fill-opacity="0.4"/><path d="M41 28.268C42.3333 29.0378 42.3333 30.9623 41 31.7321L24.5 41.2583C23.1667 42.0281 21.5 41.0659 21.5 39.5263V20.4737C21.5 18.9341 23.1667 17.9719 24.5 18.7417L41 28.268Z" fill="white"/></svg>
+          </div>
+        </div>
+
+        <hr class="lp-divider">
+
+        <!-- About -->
+        <div style="display:flex;flex-direction:column;gap:12px;width:100%;">
+          <div class="lp-section-title">About</div>
+          <div class="lp-about">
+            <p>안녕하세요. 서울에서 초기 창업자들이 모여 매주 화요일 저녁에 만나는 작은 테이블입니다.</p>
+            <p>서로의 진행 상황을 공유하고, 부담 없이 피드백을 주고받는 자리를 지향합니다. 매주 다른 주제로 짧은 세션을 진행하고, 이후엔 자유로운 대화 시간을 갖고 있어요.</p>
+            <p>운영에 대한 문의는 언제든 메시지로 남겨주세요 :)</p>
+          </div>
+        </div>
+
+        <hr class="lp-divider">
+
+        <!-- Information -->
+        <div style="display:flex;flex-direction:column;gap:12px;width:100%;">
+          <div class="lp-section-title">Information</div>
+          <div class="lp-info-link">
+            <div class="lp-info-left">
+              <div class="lp-info-icon"><i data-lucide="globe" style="width:20px;height:20px"></i></div>
+              <span class="lp-info-label">Youtube</span>
+            </div>
+            <i data-lucide="chevron-right" style="width:16px;height:16px;color:var(--color-text-muted)"></i>
+          </div>
+          <div class="lp-info-link">
+            <div class="lp-info-left">
+              <div class="lp-info-icon"><i data-lucide="globe" style="width:20px;height:20px"></i></div>
+              <span class="lp-info-label">Instagram</span>
+            </div>
+            <i data-lucide="chevron-right" style="width:16px;height:16px;color:var(--color-text-muted)"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 하단 탭바 -->
+    <nav class="c-tabbar" id="tabbar-home">
+      <!-- injected by JS -->
+    </nav>
+  </section>
+
+  <!-- ========================================
+       멤버 탭
+       ======================================== -->
+  <section id="s-members" class="screen">
+    <header class="c-topbar">
+      <button class="c-switcher" type="button" onclick="onSwitcher()">
+        <span class="c-switcher-name">서울 파운더스 테이블</span>
+        <i data-lucide="chevron-down"></i>
+      </button>
+      <button class="c-me" type="button" onclick="onMyPage()" aria-label="마이페이지">
+        <span class="avatar avatar-xs c-me-avatar" aria-hidden="true">
+          <img src="../../assets/profile.svg" alt="">
+        </span>
+      </button>
+    </header>
+
+    <div class="c-body">
+      <div class="c-section">
+        <div class="c-members-head">
+          <span class="c-members-count">
+            <i data-lucide="users" class="c-members-count-icon"></i>
+            <span id="c-members-count-label">멤버 5명</span>
+          </span>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <button class="btn btn-sm btn-weak-primary btn-pill" id="c-invite-btn" type="button" onclick="onInvite()">
+              <i data-lucide="user-plus" style="width:14px;height:14px"></i>
+              초대
+            </button>
+            <button class="btn btn-sm btn-weak-dark btn-pill" type="button" onclick="toggleMemberEdit(this)">
+              <span class="c-medit-label">권한 편집</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="c-search-wrap">
+          <span class="c-search-icon"><i data-lucide="search"></i></span>
+          <input class="input" type="text" placeholder="이름, 소속으로 검색">
+        </div>
+
+        <div class="c-member-list" id="c-member-list">
+
+          <div class="c-member-row"
+               data-name="자버 유카" data-role="소유자" data-role-cls="badge-fill-primary"
+               data-avatar="../../assets/profile.png"
+               data-phone="+82 10-1234-5678" data-email="yuka@jober.io"
+               data-company="자버" data-dept="디자인" data-title="프로덕트 디자이너"
+               onclick="onMemberTap(this)">
+            <span class="avatar avatar-md">
+              <img src="../../assets/profile.png" alt="">
+            </span>
+            <div class="c-member-info">
+              <span class="c-member-name">자버 유카</span>
+              <span class="c-member-sub">자버</span>
+            </div>
+            <div class="c-member-trail">
+              <i data-lucide="chevron-right" class="c-member-chev"></i>
+              <span class="badge badge-md badge-fill-primary c-member-owner-tag">소유자</span>
+            </div>
+          </div>
+
+          <div class="c-member-row"
+               data-name="유카 멤버1" data-role="일반 멤버" data-role-cls="badge-weak-neutral"
+               data-phone="" data-email="member1@example.com"
+               data-company="자버" data-dept="" data-title=""
+               onclick="onMemberTap(this)">
+            <span class="avatar avatar-md"></span>
+            <div class="c-member-info">
+              <span class="c-member-name">유카 멤버1</span>
+              <span class="c-member-sub">자버</span>
+            </div>
+            <div class="c-member-trail">
+              <i data-lucide="chevron-right" class="c-member-chev"></i>
+              <div class="c-perm-dd c-member-role-dd" data-role="일반 멤버">
+                <button class="c-perm-dd-btn" type="button" onclick="toggleRoleDd(this, event)">
+                  <span class="c-perm-dd-val">일반 멤버</span>
+                  <i data-lucide="chevron-down"></i>
+                </button>
+                <div class="c-perm-dd-menu menu">
+                  <button class="menu-item" type="button" onclick="pickRole(this, event, '관리자')"><span class="c-role-lbl">관리자</span><i data-lucide="check" class="c-role-check"></i></button>
+                  <button class="menu-item" type="button" onclick="pickRole(this, event, '설정 편집 가능')"><span class="c-role-lbl">설정 편집 가능</span><i data-lucide="check" class="c-role-check"></i></button>
+                  <button class="menu-item" type="button" onclick="pickRole(this, event, '설정 열람 가능')"><span class="c-role-lbl">설정 열람 가능</span><i data-lucide="check" class="c-role-check"></i></button>
+                  <button class="menu-item is-selected" type="button" onclick="pickRole(this, event, '일반 멤버')"><span class="c-role-lbl">일반 멤버 <span class="c-role-note">커뮤니티 전용</span></span><i data-lucide="check" class="c-role-check"></i></button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="c-member-row"
+               data-name="유카 멤버2" data-role="일반 멤버" data-role-cls="badge-weak-neutral"
+               data-phone="+82 10-6234-5678" data-email=""
+               data-company="자버" data-dept="개발" data-title="프론트엔드"
+               onclick="onMemberTap(this)">
+            <span class="avatar avatar-md"></span>
+            <div class="c-member-info">
+              <span class="c-member-name">유카 멤버2</span>
+              <span class="c-member-sub">자버</span>
+            </div>
+            <div class="c-member-trail">
+              <i data-lucide="chevron-right" class="c-member-chev"></i>
+              <div class="c-perm-dd c-member-role-dd" data-role="일반 멤버">
+                <button class="c-perm-dd-btn" type="button" onclick="toggleRoleDd(this, event)">
+                  <span class="c-perm-dd-val">일반 멤버</span>
+                  <i data-lucide="chevron-down"></i>
+                </button>
+                <div class="c-perm-dd-menu menu">
+                  <button class="menu-item" type="button" onclick="pickRole(this, event, '관리자')"><span class="c-role-lbl">관리자</span><i data-lucide="check" class="c-role-check"></i></button>
+                  <button class="menu-item" type="button" onclick="pickRole(this, event, '설정 편집 가능')"><span class="c-role-lbl">설정 편집 가능</span><i data-lucide="check" class="c-role-check"></i></button>
+                  <button class="menu-item" type="button" onclick="pickRole(this, event, '설정 열람 가능')"><span class="c-role-lbl">설정 열람 가능</span><i data-lucide="check" class="c-role-check"></i></button>
+                  <button class="menu-item is-selected" type="button" onclick="pickRole(this, event, '일반 멤버')"><span class="c-role-lbl">일반 멤버 <span class="c-role-note">커뮤니티 전용</span></span><i data-lucide="check" class="c-role-check"></i></button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="c-member-row"
+               data-name="김파운더" data-role="관리자" data-role-cls="badge-fill-dark"
+               data-phone="" data-email="founder@example.com"
+               data-company="파운더스" data-dept="대표" data-title="CEO"
+               onclick="onMemberTap(this)">
+            <span class="avatar avatar-md"></span>
+            <div class="c-member-info">
+              <span class="c-member-name">김파운더</span>
+              <span class="c-member-sub">파운더스</span>
+            </div>
+            <div class="c-member-trail">
+              <i data-lucide="chevron-right" class="c-member-chev"></i>
+              <div class="c-perm-dd c-member-role-dd" data-role="관리자">
+                <button class="c-perm-dd-btn" type="button" onclick="toggleRoleDd(this, event)">
+                  <span class="c-perm-dd-val">관리자</span>
+                  <i data-lucide="chevron-down"></i>
+                </button>
+                <div class="c-perm-dd-menu menu">
+                  <button class="menu-item is-selected" type="button" onclick="pickRole(this, event, '관리자')"><span class="c-role-lbl">관리자</span><i data-lucide="check" class="c-role-check"></i></button>
+                  <button class="menu-item" type="button" onclick="pickRole(this, event, '설정 편집 가능')"><span class="c-role-lbl">설정 편집 가능</span><i data-lucide="check" class="c-role-check"></i></button>
+                  <button class="menu-item" type="button" onclick="pickRole(this, event, '설정 열람 가능')"><span class="c-role-lbl">설정 열람 가능</span><i data-lucide="check" class="c-role-check"></i></button>
+                  <button class="menu-item" type="button" onclick="pickRole(this, event, '일반 멤버')"><span class="c-role-lbl">일반 멤버 <span class="c-role-note">커뮤니티 전용</span></span><i data-lucide="check" class="c-role-check"></i></button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="c-member-row"
+               data-name="이멤버" data-role="일반 멤버" data-role-cls="badge-weak-neutral"
+               data-phone="+82 10-9876-5432" data-email="lee@example.com"
+               data-company="" data-dept="" data-title=""
+               onclick="onMemberTap(this)">
+            <span class="avatar avatar-md"></span>
+            <div class="c-member-info">
+              <span class="c-member-name">이멤버</span>
+              <span class="c-member-sub">-</span>
+            </div>
+            <div class="c-member-trail">
+              <i data-lucide="chevron-right" class="c-member-chev"></i>
+              <div class="c-perm-dd c-member-role-dd" data-role="일반 멤버">
+                <button class="c-perm-dd-btn" type="button" onclick="toggleRoleDd(this, event)">
+                  <span class="c-perm-dd-val">일반 멤버</span>
+                  <i data-lucide="chevron-down"></i>
+                </button>
+                <div class="c-perm-dd-menu menu">
+                  <button class="menu-item" type="button" onclick="pickRole(this, event, '관리자')"><span class="c-role-lbl">관리자</span><i data-lucide="check" class="c-role-check"></i></button>
+                  <button class="menu-item" type="button" onclick="pickRole(this, event, '설정 편집 가능')"><span class="c-role-lbl">설정 편집 가능</span><i data-lucide="check" class="c-role-check"></i></button>
+                  <button class="menu-item" type="button" onclick="pickRole(this, event, '설정 열람 가능')"><span class="c-role-lbl">설정 열람 가능</span><i data-lucide="check" class="c-role-check"></i></button>
+                  <button class="menu-item is-selected" type="button" onclick="pickRole(this, event, '일반 멤버')"><span class="c-role-lbl">일반 멤버 <span class="c-role-note">커뮤니티 전용</span></span><i data-lucide="check" class="c-role-check"></i></button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <nav class="c-tabbar" id="tabbar-members"></nav>
+  </section>
+
+  <!-- ========================================
+       멤버 상세
+       ======================================== -->
+  <section id="s-member-detail" class="screen">
+    <header class="c-topbar c-topbar-detail">
+      <button class="c-back" type="button" aria-label="뒤로" onclick="goTab('members')">
+        <i data-lucide="chevron-left"></i>
+      </button>
+      <span class="c-topbar-title" id="md-detail-title">멤버</span>
+      <button class="c-md-edit-btn" id="md-edit-btn" type="button" onclick="onMdTopAction()" aria-label="더보기"><i data-lucide="more-vertical"></i></button>
+    </header>
+
+    <div class="c-body" style="padding:0;">
+      <div class="c-md-body" id="md-body">
+        <div class="c-md-avatar" id="md-avatar">자</div>
+        <div class="c-md-name" id="md-name">멤버</div>
+        <input class="input c-md-name-input" id="md-name-input" type="text" placeholder="이름">
+        <div class="c-md-role">
+          <span class="badge badge-md" id="md-role">일반</span>
+        </div>
+      </div>
+
+      <div class="c-md-list" id="md-list">
+        <div class="c-md-item">
+          <span class="c-md-item-k">전화번호</span>
+          <span class="c-md-item-v" id="md-phone">-</span>
+          <input class="input c-md-input" id="md-phone-input" type="tel" placeholder="전화번호">
+        </div>
+        <div class="c-md-item">
+          <span class="c-md-item-k">이메일</span>
+          <span class="c-md-item-v" id="md-email">-</span>
+          <input class="input c-md-input" id="md-email-input" type="email" placeholder="이메일">
+        </div>
+        <div class="c-md-item">
+          <span class="c-md-item-k">소속</span>
+          <span class="c-md-item-v" id="md-company">-</span>
+          <input class="input c-md-input" id="md-company-input" type="text" placeholder="소속">
+        </div>
+        <div class="c-md-item">
+          <span class="c-md-item-k">부서</span>
+          <span class="c-md-item-v" id="md-dept">-</span>
+          <input class="input c-md-input" id="md-dept-input" type="text" placeholder="부서">
+        </div>
+        <div class="c-md-item">
+          <span class="c-md-item-k">직함</span>
+          <span class="c-md-item-v" id="md-title">-</span>
+          <input class="input c-md-input" id="md-title-input" type="text" placeholder="직함">
+        </div>
+      </div>
+    </div>
+  <!-- 멤버 관리 바텀시트 (멤버 상세 ⋯) -->
+  <div class="bottom-sheet-overlay" id="member-sheet-overlay" onclick="closeMemberSheet(event)">
+    <div class="bottom-sheet" role="dialog" aria-label="멤버 관리">
+      <div class="bottom-sheet-handle"></div>
+      <div class="menu">
+        <button class="menu-item" type="button" onclick="onMemberSheetEdit()">
+          <span class="menu-item-main">
+            <i data-lucide="pencil" style="width:20px;height:20px;color:var(--color-text-sub);"></i>
+            편집
+          </span>
+        </button>
+        <button class="menu-item is-danger" type="button" onclick="onMemberSheetRemove()">
+          <span class="menu-item-main">
+            <i data-lucide="user-minus" style="width:20px;height:20px;"></i>
+            내보내기
+          </span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 내보내기 확인 다이얼로그 -->
+  <div class="dialog-overlay" id="remove-dialog-overlay" style="display:none;">
+    <div class="dialog" role="alertdialog" aria-labelledby="remove-dialog-title">
+      <div class="dialog-title" id="remove-dialog-title">멤버를 정말 내보낼까요?</div>
+      <div class="dialog-desc">내보낸 멤버는 이 커뮤니티에서 제외돼요.</div>
+      <div class="dialog-actions">
+        <button class="btn btn-md btn-weak-dark" type="button" onclick="closeRemoveDialog()">취소</button>
+        <button class="btn btn-md btn-fill-danger" type="button" onclick="confirmRemoveMember()">내보내기</button>
+      </div>
+    </div>
+  </div>
+  </section>
+
+  <!-- ========================================
+       게시판 탭
+       ======================================== -->
+  <section id="s-board" class="screen">
+    <header class="c-topbar">
+      <button class="c-switcher" type="button" onclick="onSwitcher()">
+        <span class="c-switcher-name">서울 파운더스 테이블</span>
+        <i data-lucide="chevron-down"></i>
+      </button>
+      <button class="c-me" type="button" onclick="onMyPage()" aria-label="마이페이지">
+        <span class="avatar avatar-xs c-me-avatar" aria-hidden="true">
+          <img src="../../assets/profile.svg" alt="">
+        </span>
+      </button>
+    </header>
+
+    <div class="c-body">
+      <div class="c-section">
+        <div class="c-row-between">
+          <div class="c-section-title">게시판</div>
+          <button class="btn btn-sm btn-fill-primary btn-pill" type="button" onclick="onWrite()">
+            <i data-lucide="plus" style="width:14px;height:14px"></i>
+            글쓰기
+          </button>
+        </div>
+
+        <div class="c-post-list">
+
+          <!-- 공지 -->
+          <div class="c-post-card" onclick="onPostTap(this)">
+            <div class="c-post-author-row">
+              <span class="avatar avatar-xs">
+                <img src="../../assets/profile.png" alt="">
+              </span>
+              <span class="c-post-author">자버 유카</span>
+              <span class="c-post-dot">·</span>
+              <span class="c-post-time">어제</span>
+            </div>
+            <span class="badge badge-sm badge-fill-primary" style="align-self:flex-start;">공지</span>
+            <div class="c-post-title">정기모임 장소 변경</div>
+            <div class="c-post-body">이번 주 정기모임은 강남역 스타벅스 2층으로 변경되었습니다. 착오 없으시길 바랍니다.</div>
+            <div class="c-post-stat-row">
+              <span class="c-post-stat"><i data-lucide="message-circle"></i>1</span>
+            </div>
+          </div>
+
+          <!-- 일반 글 -->
+          <div class="c-post-card" onclick="onPostTap(this)">
+            <div class="c-post-author-row">
+              <span class="avatar avatar-xs"></span>
+              <span class="c-post-author">유카 멤버1</span>
+              <span class="c-post-dot">·</span>
+              <span class="c-post-time">2시간 전</span>
+            </div>
+            <div class="c-post-title">제목입니다</div>
+            <div class="c-post-body">본문 미리보기가 두 줄까지 잘려서 보입니다. 실제 게시글에는 더 긴 내용이 들어갈 수 있고, 이 카드에서는 앞부분만 노출됩니다.</div>
+            <div class="c-post-stat-row">
+              <span class="c-post-stat"><i data-lucide="message-circle"></i>3</span>
+            </div>
+          </div>
+
+          <!-- 일반 글 -->
+          <div class="c-post-card" onclick="onPostTap(this)">
+            <div class="c-post-author-row">
+              <span class="avatar avatar-xs"></span>
+              <span class="c-post-author">김파운더</span>
+              <span class="c-post-dot">·</span>
+              <span class="c-post-time">3일 전</span>
+            </div>
+            <div class="c-post-title">이번 주 스터디 안건 공유</div>
+            <div class="c-post-body">지난주 논의된 사항 정리와 이번 주 각자 준비해오면 좋을 자료 목록입니다. 부담 없이 참여해주세요.</div>
+            <div class="c-post-stat-row">
+              <span class="c-post-stat"><i data-lucide="message-circle"></i>5</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <nav class="c-tabbar" id="tabbar-board"></nav>
+  </section>
+
+  <!-- ========================================
+       행사 탭 (목록)
+       ======================================== -->
+  <section id="s-event" class="screen">
+    <header class="c-topbar">
+      <button class="c-switcher" type="button" onclick="onSwitcher()">
+        <span class="c-switcher-name">서울 파운더스 테이블</span>
+        <i data-lucide="chevron-down"></i>
+      </button>
+      <button class="c-me" type="button" onclick="onMyPage()" aria-label="마이페이지">
+        <span class="avatar avatar-xs c-me-avatar" aria-hidden="true">
+          <img src="../../assets/profile.svg" alt="">
+        </span>
+      </button>
+    </header>
+
+    <div class="c-body">
+      <div class="c-section">
+        <div class="c-row-between">
+          <div class="c-section-title">행사</div>
+          <button class="btn btn-sm btn-fill-primary btn-pill" type="button" onclick="onCreateEvent()">
+            <i data-lucide="plus" style="width:14px;height:14px"></i>
+            만들기
+          </button>
+        </div>
+
+        <div class="c-seg" role="tablist">
+          <button class="c-seg-btn is-active" type="button" onclick="setEventView(this, 'timeline')">타임라인</button>
+          <button class="c-seg-btn" type="button" onclick="setEventView(this, 'calendar')">캘린더</button>
+        </div>
+
+        <div id="event-view-timeline">
+        <div class="c-event-chips" role="tablist">
+          <button class="c-event-chip is-active" type="button" onclick="setEventChip(this)">진행중</button>
+          <button class="c-event-chip" type="button" onclick="setEventChip(this)">예정</button>
+          <button class="c-event-chip" type="button" onclick="setEventChip(this)">종료</button>
+        </div>
+          <div class="c-event-ph">기존과 동일하게 표시</div>
+        </div>
+        <div id="event-view-calendar" hidden>
+          <div class="c-cal">
+            <div class="c-cal-head">
+              <button class="c-cal-nav" type="button" aria-label="이전 달"><i data-lucide="chevron-left"></i></button>
+              <span class="c-cal-month">2026년 7월</span>
+              <button class="c-cal-nav" type="button" aria-label="다음 달"><i data-lucide="chevron-right"></i></button>
+            </div>
+
+            <div class="c-cal-grid">
+              <div class="c-cal-dow is-sun">일</div>
+              <div class="c-cal-dow">월</div>
+              <div class="c-cal-dow">화</div>
+              <div class="c-cal-dow">수</div>
+              <div class="c-cal-dow">목</div>
+              <div class="c-cal-dow">금</div>
+              <div class="c-cal-dow is-sat">토</div>
+
+              <!-- Row 1: _ _ _ 1 2 3 4  (2026-07-01 = 수) -->
+              <div class="c-cal-cell is-empty"></div>
+              <div class="c-cal-cell is-empty"></div>
+              <div class="c-cal-cell is-empty"></div>
+              <div class="c-cal-cell"><span class="c-cal-day">1</span></div>
+              <div class="c-cal-cell"><span class="c-cal-day">2</span></div>
+              <div class="c-cal-cell"><span class="c-cal-day">3</span></div>
+              <div class="c-cal-cell"><span class="c-cal-day">4</span></div>
+
+              <!-- Row 2: 5~11 -->
+              <div class="c-cal-cell"><span class="c-cal-day">5</span></div>
+              <div class="c-cal-cell"><span class="c-cal-day">6</span></div>
+              <div class="c-cal-cell"><span class="c-cal-day">7</span></div>
+              <div class="c-cal-cell">
+                <span class="c-cal-day">8</span>
+                <span class="c-cal-chip">팀 스탠드업</span>
+                <span class="c-cal-chip">신규 온보딩</span>
+              </div>
+              <div class="c-cal-cell"><span class="c-cal-day">9</span></div>
+              <div class="c-cal-cell"><span class="c-cal-day">10</span></div>
+              <div class="c-cal-cell"><span class="c-cal-day">11</span></div>
+
+              <!-- Row 3: 12~18 -->
+              <div class="c-cal-cell"><span class="c-cal-day">12</span></div>
+              <div class="c-cal-cell"><span class="c-cal-day">13</span></div>
+              <div class="c-cal-cell"><span class="c-cal-day">14</span></div>
+              <div class="c-cal-cell">
+                <span class="c-cal-day">15</span>
+                <span class="c-cal-chip">IR 미팅</span>
+                <span class="c-cal-chip">파트너 콜</span>
+                <span class="c-cal-more">+1</span>
+              </div>
+              <div class="c-cal-cell"><span class="c-cal-day">16</span></div>
+              <div class="c-cal-cell"><span class="c-cal-day">17</span></div>
+              <div class="c-cal-cell"><span class="c-cal-day">18</span></div>
+
+              <!-- Row 4: 19~25 (21 선택 · 정기모임) -->
+              <div class="c-cal-cell"><span class="c-cal-day">19</span></div>
+              <div class="c-cal-cell"><span class="c-cal-day">20</span></div>
+              <div class="c-cal-cell is-selected">
+                <span class="c-cal-day">21</span>
+                <span class="c-cal-chip">정기모임</span>
+              </div>
+              <div class="c-cal-cell"><span class="c-cal-day">22</span></div>
+              <div class="c-cal-cell"><span class="c-cal-day">23</span></div>
+              <div class="c-cal-cell"><span class="c-cal-day">24</span></div>
+              <div class="c-cal-cell">
+                <span class="c-cal-day">25</span>
+                <span class="c-cal-chip">여름 MT</span>
+              </div>
+
+              <!-- Row 5: 26~31 _ (26,27 = MT / 28 = 스터디 / 30,31 = 워크샵) -->
+              <div class="c-cal-cell">
+                <span class="c-cal-day">26</span>
+                <span class="c-cal-chip">여름 MT</span>
+              </div>
+              <div class="c-cal-cell">
+                <span class="c-cal-day">27</span>
+                <span class="c-cal-chip">여름 MT</span>
+              </div>
+              <div class="c-cal-cell">
+                <span class="c-cal-day">28</span>
+                <span class="c-cal-chip">스터디</span>
+              </div>
+              <div class="c-cal-cell"><span class="c-cal-day">29</span></div>
+              <div class="c-cal-cell">
+                <span class="c-cal-day">30</span>
+                <span class="c-cal-chip">여름 워크샵</span>
+              </div>
+              <div class="c-cal-cell">
+                <span class="c-cal-day">31</span>
+                <span class="c-cal-chip">여름 워크샵</span>
+              </div>
+              <div class="c-cal-cell is-empty"></div>
+            </div>
+
+            <!-- 선택일 상세 (7/21 정기모임) -->
+            <div class="c-cal-selected">
+              <div class="c-cal-selected-head">7월 21일 (화) · 행사 1건</div>
+              <div class="c-event-list">
+                <div class="c-event-card" onclick="goDetail()">
+                  <div class="c-event-body">
+                    <div class="c-event-title-row">
+                      <span class="c-event-title">정기모임</span>
+                      <i data-lucide="chevron-right"></i>
+                    </div>
+                    <div class="c-event-meta">
+                      <span><i data-lucide="clock"></i>19:34</span>
+                    </div>
+                    <div class="c-event-stats">
+                      <span><b>3</b>참석 · <b>0</b>불참 · <b>2</b>미정</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <nav class="c-tabbar" id="tabbar-event"></nav>
+  </section>
+
+  <!-- ========================================
+       행사 상세
+       ======================================== -->
+  <section id="s-event-detail" class="screen">
+    <div class="ev-shell">
+<div class="ev-frame">
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- SCREEN 1 — LANDING                            -->
+  <!-- ════════════════════════════════════════════ -->
+  <div class="ev-screen ev-on" id="ev-screen-landing">
+      <div class="scroll-body">
+
+        <!-- Floating topbar -->
+        <div class="topbar">
+          <button class="icon-btn icon-btn-clear" aria-label="뒤로" onclick="goEdit()">
+            <i data-lucide="chevron-left" style="width:22px;height:22px;color:var(--color-on-primary);"></i>
+          </button>
+          <div class="topbar-actions">
+            <button class="icon-btn icon-btn-clear" aria-label="공유">
+              <i data-lucide="share-2" style="width:20px;height:20px;color:var(--color-on-primary);"></i>
+            </button>
+            <button class="icon-btn icon-btn-clear" aria-label="더보기" onclick="openMoreSheet()">
+              <i data-lucide="ellipsis" style="width:22px;height:22px;color:var(--color-on-primary);"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- 확인 현황 chip -->
+        <button class="c-read-chip" type="button" onclick="evNav('ev-screen-read')">
+          <span>확인 현황</span>
+        </button>
+
+        <!-- Slot: 썸네일 (4:3) -->
+        <div class="hero">
+          <div class="hero-slider" id="hero-slider">
+            <div class="hero-slide" style="background-image:url('../../assets/thumbnail_1.png');"></div>
+          </div>
+        </div>
+
+        <!-- Slot: Hero / 신뢰줄 -->
+        <div class="hero-info">
+          <div class="hero-clinic-row">
+            <span class="hero-clinic-name">엘린 피부과</span>
+          </div>
+          <h1 class="hero-headline">수면 리쥬베룩 50% 감사 이벤트</h1>
+          <p class="hero-schedule">
+            <i data-lucide="calendar-check"></i>
+            <span class="hero-schedule-label">일정</span>
+            <span class="hero-schedule-date">2026.07.10 ~ 07.31</span>
+            <span class="hero-schedule-time">14:00 ~ 18:00</span>
+          </p>
+          <div class="trust-row">
+            <div class="star-row star-icons-row">
+              <i data-lucide="star"></i>
+              <span class="star-score">5.0</span>
+              <span class="star-count">· 후기 28개</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-divider"></div>
+
+        <!-- Slot: 일정 -->
+        <div class="section">
+          <div class="date-card">
+            <i data-lucide="calendar-days"></i>
+            <div class="date-card-text">
+              <div class="date-card-label">신청 기간</div>
+              <div class="date-card-value">2026.06.26 ~ 07.05</div>
+            </div>
+            <span class="date-card-tag">D-9</span>
+          </div>
+        </div>
+
+        <div class="section-divider"></div>
+
+        <!-- Slot: 설명 -->
+        <div class="section">
+          <div class="section-title">이벤트 안내</div>
+          <div>
+            <div class="desc" id="desc-block">
+              <p>엘린 피부과는 피부 재생·항노화 분야에서 다년간 노하우를 쌓아온 피부과 전문 병원입니다.</p>
+              <br>
+              <p>이번 이벤트는 그동안 엘린 피부과를 찾아주신 고객분들께 감사드리는 마음으로, 시그니처 시술인 ‘수면 리쥬베룩’을 50% 할인된 금액으로 제공해드리는 한정 프로모션입니다.</p>
+              <br>
+              <p>수면 리쥬베룩은 수면 마취 하에 진행되는 복합 피부 재생 시술로, 피부 톤과 결을 동시에 개선하고 처짐 케어까지 한 번에 받을 수 있는 프로그램입니다. 시술 전 의료진과의 1:1 상담을 통해 피부 상태에 맞춘 케어 강도가 안내됩니다.</p>
+              <br>
+              <p>의료광고 심의 필 (제2026-서울-456호)</p>
+            </div>
+            <div class="desc-fade" id="desc-fade"></div>
+            <button class="desc-toggle" id="desc-toggle" onclick="toggleDesc()">
+              <span id="desc-toggle-label">더보기</span>
+              <i data-lucide="chevron-down" class="desc-toggle-icon"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="section-divider"></div>
+
+        <!-- Slot: 후기 모음 -->
+        <div class="section">
+          <div class="section-title">실제 후기</div>
+          <div class="review-scroll" id="review-scroll">
+            <div class="review-card">
+              <div class="review-img" style="background-image:url('https://images.unsplash.com/photo-1559941707-c1bafc8c8f60?w=400&auto=format&fit=crop');"></div>
+              <div class="review-body">
+                <div class="review-stars">
+                  <i data-lucide="star"></i>
+                  <i data-lucide="star"></i>
+                  <i data-lucide="star"></i>
+                  <i data-lucide="star"></i>
+                  <i data-lucide="star"></i>
+                </div>
+                <p class="review-text">상담부터 시술까지 친절하게 안내받았어요. 피부 상태를 꼼꼼히 봐주셔서 안심하고 진행했습니다.</p>
+                <div class="review-meta">
+                  <span class="verified"><i data-lucide="badge-check"></i>실제 후기</span>
+                  <span>·</span>
+                  <span>김○○ · 리쥬베룩</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="review-card">
+              <div class="review-img" style="background-image:url('https://images.unsplash.com/photo-1551601651-bc60f254d532?w=400&auto=format&fit=crop');"></div>
+              <div class="review-body">
+                <div class="review-stars">
+                  <i data-lucide="star"></i>
+                  <i data-lucide="star"></i>
+                  <i data-lucide="star"></i>
+                  <i data-lucide="star"></i>
+                  <i data-lucide="star"></i>
+                </div>
+                <p class="review-text">미뤄왔던 피부 관리, 진작 받을 걸 그랬어요. 시술 다음 날부터 톤이 확 밝아진 게 보였습니다.</p>
+                <div class="review-meta">
+                  <span class="verified"><i data-lucide="badge-check"></i>실제 후기</span>
+                  <span>·</span>
+                  <span>이○○ · 리쥬베룩</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="review-card">
+              <div class="review-img" style="background-image:url('https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&auto=format&fit=crop');"></div>
+              <div class="review-body">
+                <div class="review-stars">
+                  <i data-lucide="star"></i>
+                  <i data-lucide="star"></i>
+                  <i data-lucide="star"></i>
+                  <i data-lucide="star"></i>
+                  <i data-lucide="star"></i>
+                </div>
+                <p class="review-text">피부 상태에 맞춰 강도를 조절해 주셔서 부담 없이 받았어요. 의료진이 다 친절했습니다.</p>
+                <div class="review-meta">
+                  <span class="verified"><i data-lucide="badge-check"></i>실제 후기</span>
+                  <span>·</span>
+                  <span>박○○ · 리쥬베룩</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-divider"></div>
+
+        <!-- Slot: 병원 페이지 가기 -->
+        <div class="section">
+          <button class="clinic-link" aria-label="병원 페이지 가기">
+            <div class="clinic-link-thumb"></div>
+            <div class="clinic-link-text">
+              <div class="clinic-link-name">엘린 피부과</div>
+              <div class="clinic-link-sub">병원 정보 · 의료진 · 위치 보기</div>
+            </div>
+            <i data-lucide="chevron-right" class="chev"></i>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- Sticky CTA -->
+      <div class="sticky-bar">
+        <button class="btn btn-xl btn-block btn-fill-primary" onclick="evNav('ev-screen-attend')">
+          참석여부 등록
+        </button>
+      </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- SCREEN — ATTEND (참석여부 등록)              -->
+  <!-- ════════════════════════════════════════════ -->
+  <div class="ev-screen" id="ev-screen-attend">
+    <div class="topbar-solid">
+      <button class="icon-btn icon-btn-clear" aria-label="뒤로" onclick="evNav('ev-screen-landing')">
+        <i data-lucide="chevron-left" style="width:22px;height:22px;color:var(--color-text);"></i>
+      </button>
+      <span class="topbar-title">참석여부 등록</span>
+    </div>
+
+    <div class="scroll-body">
+      <!-- 참석여부를 알려주세요 -->
+      <div class="section">
+        <div class="c-att-section-title">참석여부를 알려주세요</div>
+        <div class="c-att-choices">
+          <button class="c-att-btn is-active" data-value="yes" type="button" onclick="setAttendChoice(this)">
+            <i data-lucide="check"></i>
+            <span>참석</span>
+          </button>
+          <button class="c-att-btn" data-value="no" type="button" onclick="setAttendChoice(this)">
+            <i data-lucide="x"></i>
+            <span>불참</span>
+          </button>
+          <button class="c-att-btn" data-value="maybe" type="button" onclick="setAttendChoice(this)">
+            <i data-lucide="help-circle"></i>
+            <span>미정</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="section-divider"></div>
+
+      <!-- 참석여부 현황 -->
+      <div class="section">
+        <div class="c-att-section-title">참석여부 현황</div>
+        <div class="c-att-status-list">
+          <div class="c-att-status-item">
+            <button class="c-att-status-row is-yes" type="button" onclick="toggleStatusRow(this)">
+              <span class="c-att-status-label"><i data-lucide="check"></i>참석</span>
+              <span class="c-att-status-right">
+                <span class="c-att-status-count">1명</span>
+                <i data-lucide="chevron-down" class="c-att-status-chev"></i>
+              </span>
+            </button>
+            <div class="c-att-status-members" hidden>
+              <div class="c-att-status-member">
+                <span class="avatar avatar-sm">
+                  <img src="../../assets/profile.png" alt="">
+                </span>
+                <span class="c-att-status-name">자버 유카</span>
+              </div>
+            </div>
+          </div>
+          <div class="c-att-status-item">
+            <button class="c-att-status-row" type="button" onclick="toggleStatusRow(this)">
+              <span class="c-att-status-label"><i data-lucide="x"></i>불참</span>
+              <span class="c-att-status-right">
+                <span class="c-att-status-count">0명</span>
+                <i data-lucide="chevron-down" class="c-att-status-chev"></i>
+              </span>
+            </button>
+            <div class="c-att-status-members" hidden>
+              <div class="c-att-status-empty">아직 없어요</div>
+            </div>
+          </div>
+          <div class="c-att-status-item">
+            <button class="c-att-status-row" type="button" onclick="toggleStatusRow(this)">
+              <span class="c-att-status-label"><i data-lucide="help-circle"></i>미정</span>
+              <span class="c-att-status-right">
+                <span class="c-att-status-count">0명</span>
+                <i data-lucide="chevron-down" class="c-att-status-chev"></i>
+              </span>
+            </button>
+            <div class="c-att-status-members" hidden>
+              <div class="c-att-status-empty">아직 없어요</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- SCREEN — READ STATUS (확인 현황)             -->
+  <!-- ════════════════════════════════════════════ -->
+  <div class="ev-screen" id="ev-screen-read">
+    <div class="topbar-solid">
+      <button class="icon-btn icon-btn-clear" aria-label="뒤로" onclick="evNav('ev-screen-landing')">
+        <i data-lucide="chevron-left" style="width:22px;height:22px;color:var(--color-text);"></i>
+      </button>
+      <span class="topbar-title">확인 현황</span>
+    </div>
+
+    <div class="scroll-body">
+      <div class="section">
+        <div class="c-read-desc">이벤트 공지를 확인한 멤버 목록입니다.</div>
+        <div class="c-read-list">
+          <div class="c-read-row">
+            <span class="avatar avatar-sm">
+              <img src="../../assets/profile.png" alt="">
+            </span>
+            <span class="c-read-name">자버 유카</span>
+            <span class="c-read-status">확인</span>
+          </div>
+          <div class="c-read-row is-unread">
+            <span class="avatar avatar-sm"></span>
+            <span class="c-read-name">양은주</span>
+            <span class="c-read-status">미확인</span>
+          </div>
+          <div class="c-read-row is-unread">
+            <span class="avatar avatar-sm"></span>
+            <span class="c-read-name">유카 멤버1</span>
+            <span class="c-read-status">미확인</span>
+          </div>
+          <div class="c-read-row is-unread">
+            <span class="avatar avatar-sm"></span>
+            <span class="c-read-name">이멤버</span>
+            <span class="c-read-status">미확인</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- SCREEN 2 — APPLY                              -->
+  <!-- ════════════════════════════════════════════ -->
+  <div class="ev-screen" id="ev-screen-apply">
+    <!-- Topbar (solid) -->
+    <div class="topbar-solid">
+      <button class="icon-btn icon-btn-clear" aria-label="뒤로" onclick="evNav('ev-screen-landing')">
+        <i data-lucide="chevron-left" style="width:22px;height:22px;color:var(--color-text);"></i>
+      </button>
+      <span class="topbar-title">이벤트 참여하기</span>
+    </div>
+
+    <div class="apply-body">
+
+        <div class="apply-header">
+          <div class="apply-header-title">수면 리쥬베룩 50% 감사 이벤트</div>
+          <div class="apply-header-sub">엘린 피부과 · 2026.06.26 ~ 07.05</div>
+        </div>
+
+        <!-- Dynamic fields (rebuilt from localStorage on load) -->
+        <div id="apply-form-fields">
+          <!-- Name -->
+          <div class="form-group">
+            <label class="form-label form-label-required">이름</label>
+            <input class="input" type="text" placeholder="실명을 입력해주세요">
+          </div>
+
+          <!-- Phone -->
+          <div class="form-group">
+            <label class="form-label form-label-required">전화번호</label>
+            <input class="input" type="tel" placeholder="010-0000-0000" inputmode="tel">
+          </div>
+
+          <!-- Intent (custom question) -->
+          <div class="form-group">
+            <label class="form-label form-label-required">시술 경험</label>
+            <div class="intent-grid">
+              <label class="intent-chip is-selected" onclick="selectIntent(this)">
+                <input type="radio" name="intent" value="first" checked>
+                <span class="intent-chip-label">처음이에요</span>
+              </label>
+              <label class="intent-chip" onclick="selectIntent(this)">
+                <input type="radio" name="intent" value="experienced">
+                <span class="intent-chip-label">경험있어요</span>
+              </label>
+              <label class="intent-chip" onclick="selectIntent(this)">
+                <input type="radio" name="intent" value="undecided">
+                <span class="intent-chip-label">고민 중</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Consent -->
+        <div class="form-group">
+          <label class="form-label">약관 동의</label>
+          <div class="consent">
+            <label class="consent-row">
+              <input type="checkbox" class="checkbox consent-item">
+              <span class="consent-text">
+                <span class="required">[필수]</span> 개인정보 수집·이용에 동의합니다
+              </span>
+            </label>
+          </div>
+        </div>
+
+      </div>
+
+    <!-- Sticky CTA -->
+    <div class="sticky-bar">
+      <button class="btn btn-xl btn-block btn-fill-primary" onclick="evNav('ev-screen-done')">
+        신청 완료
+      </button>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- SCREEN 3 — DONE                               -->
+  <!-- ════════════════════════════════════════════ -->
+  <div class="ev-screen" id="ev-screen-done">
+    <!-- Topbar (solid) -->
+    <div class="topbar-solid">
+      <button class="icon-btn icon-btn-clear" aria-label="닫기" onclick="evNav('ev-screen-landing')">
+        <i data-lucide="x" style="width:22px;height:22px;color:var(--color-text);"></i>
+      </button>
+    </div>
+
+    <div class="done-body">
+        <div>
+          <div class="done-top">
+            <div class="done-icon-wrap">
+              <i data-lucide="check"></i>
+            </div>
+            <div class="done-title">신청이 접수됐어요</div>
+            <div class="done-desc">곧 엘린 피부과에서<br>연락드릴 예정이에요</div>
+          </div>
+
+          <div class="done-info-card">
+            <div class="done-info-row">
+              <i data-lucide="hospital"></i>
+              <div class="done-info-label">신청 이벤트</div>
+              <div class="done-info-value">수면 리쥬베룩 50% 감사 이벤트</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="done-next">
+          <button class="btn btn-lg btn-block btn-weak-primary" onclick="evNav('ev-screen-landing')">
+            닫기
+          </button>
+        </div>
+      </div>
+  </div>
+
+  <!-- 더보기 바텀시트 -->
+  <div class="bottom-sheet-overlay" id="more-sheet-overlay" onclick="closeMoreSheet(event)">
+    <div class="bottom-sheet" role="dialog" aria-label="더보기">
+      <div class="bottom-sheet-handle"></div>
+      <div class="menu">
+        <button class="menu-item" onclick="goWriteReview()">
+          <span class="menu-item-main">
+            <i data-lucide="star" style="width:20px;height:20px;color:var(--color-star);"></i>
+            리뷰 작성하기
+          </span>
+          <i data-lucide="chevron-right" style="width:18px;height:18px;color:var(--color-text-muted);"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>
+    </div>
+  </section>
+
+  <!-- ========================================
+       설정 탭 (일반 멤버)
+       ======================================== -->
+  <section id="s-settings" class="screen">
+    <header class="c-topbar">
+      <button class="c-switcher" type="button" onclick="onSwitcher()">
+        <span class="c-switcher-name">서울 파운더스 테이블</span>
+        <i data-lucide="chevron-down"></i>
+      </button>
+      <button class="c-me" type="button" onclick="onMyPage()" aria-label="마이페이지">
+        <span class="avatar avatar-xs c-me-avatar" aria-hidden="true">
+          <img src="../../assets/profile.svg" alt="">
+        </span>
+      </button>
+    </header>
+
+    <div class="c-body">
+      <div class="c-section">
+        <div class="c-section-title">설정</div>
+      </div>
+
+      <!-- 내 설정 카드 (프로필 + 회색 pill 3개) -->
+      <div class="c-section">
+        <div class="c-me-card">
+          <button class="c-me-head" type="button" onclick="onGoProfile()">
+            <span class="avatar avatar-lg">
+              <img src="../../assets/profile.png" alt="">
+            </span>
+            <div class="c-me-info">
+              <span class="c-me-sub">이 모임에서 내 프로필</span>
+              <div class="c-me-name-row">
+                <span class="c-me-name">자버 유카</span>
+                <span class="badge badge-sm badge-fill-primary">소유자</span>
+              </div>
+            </div>
+          </button>
+          <div class="c-me-pills">
+            <button class="c-me-pill" type="button" onclick="onEditHome()">통계</button>
+            <button class="c-me-pill" type="button" onclick="onAiChatSettings()">모임 설정</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 커뮤니티 관리 -->
+      <div class="c-section">
+        <div class="c-menu-card">
+          <button class="c-menu-item" type="button" onclick="onManageMembers()">
+            <span class="c-menu-item-l">
+              <span class="c-menu-item-title">멤버 관리</span>
+              <span class="c-menu-item-sub">역할·권한 변경, 내보내기</span>
+            </span>
+          </button>
+          <button class="c-menu-item" type="button" onclick="onManageInvites()">
+            <span class="c-menu-item-l">
+              <span class="c-menu-item-title">초대 관리</span>
+              <span class="c-menu-item-sub">초대 현황, 승인 대기</span>
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 작성 권한 -->
+      <div class="c-section">
+        <div class="c-perm-card">
+          <div class="c-perm-row">
+            <span class="c-perm-label">글쓰기 권한</span>
+            <div class="c-perm-dd" data-perm="write">
+              <button class="c-perm-dd-btn" type="button" onclick="togglePermDd(this)">
+                <span class="c-perm-dd-val">일반 멤버 이상</span>
+                <i data-lucide="chevron-down"></i>
+              </button>
+              <div class="c-perm-dd-menu menu">
+                <button class="menu-item is-selected" type="button" onclick="pickPerm(this,'일반 멤버 이상')">일반 멤버 이상</button>
+                <button class="menu-item" type="button" onclick="pickPerm(this,'관리자만')">관리자만</button>
+                <button class="menu-item" type="button" onclick="pickPerm(this,'누구나')">누구나</button>
+              </div>
+            </div>
+          </div>
+          <div class="c-perm-row">
+            <span class="c-perm-label">댓글 권한</span>
+            <div class="c-perm-dd" data-perm="comment">
+              <button class="c-perm-dd-btn" type="button" onclick="togglePermDd(this)">
+                <span class="c-perm-dd-val">누구나</span>
+                <i data-lucide="chevron-down"></i>
+              </button>
+              <div class="c-perm-dd-menu menu">
+                <button class="menu-item is-selected" type="button" onclick="pickPerm(this,'누구나')">누구나</button>
+                <button class="menu-item" type="button" onclick="pickPerm(this,'일반 멤버 이상')">일반 멤버 이상</button>
+                <button class="menu-item" type="button" onclick="pickPerm(this,'관리자만')">관리자만</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 커뮤니티 삭제 (최하단) -->
+      <div class="c-section">
+        <div class="c-text-link-row">
+          <button class="c-text-link-muted" type="button" onclick="onDeleteCommunity()">커뮤니티 삭제</button>
+        </div>
+      </div>
+    </div>
+
+    <nav class="c-tabbar" id="tabbar-settings"></nav>
+  </section>
+
+  <!-- ========================================
+       초대 관리 (설정 진입)
+       ======================================== -->
+  <section id="s-invite-manage" class="screen">
+    <header class="c-topbar c-topbar-detail">
+      <button class="c-back" type="button" aria-label="뒤로" onclick="goTab('settings')">
+        <i data-lucide="chevron-left"></i>
+      </button>
+      <span class="c-topbar-title">초대 관리</span>
+    </header>
+
+    <div class="c-body">
+      <div class="c-section">
+        <div class="c-inv-link-card">
+          <span class="c-inv-link-title">
+            <i data-lucide="user-plus"></i>
+            멤버 초대하기
+          </span>
+          <div class="c-inv-link-url" id="c-inv-url">https://connectia.app/i/abc123xyz</div>
+          <div class="c-inv-link-actions">
+            <button class="btn btn-sm btn-weak-primary c-inv-copy" type="button" onclick="copyInviteLink()">
+              <i data-lucide="copy"></i>
+              링크 복사
+            </button>
+            <button class="btn btn-sm btn-weak-dark c-inv-regen" type="button" onclick="regenInviteLink()">
+              재발급
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="c-section">
+        <span class="c-inv-pending-title">가입 대기 · <span id="c-inv-pending-count">2</span>명</span>
+        <div class="c-inv-pending-list" id="c-inv-pending-list">
+          <div class="c-inv-pending-row" data-pid="p1">
+            <span class="avatar avatar-md"></span>
+            <div class="c-inv-pending-info">
+              <span class="c-inv-pending-name">박지혜</span>
+              <span class="c-inv-pending-meta">방금 전 · jiehye@example.com</span>
+            </div>
+            <div class="c-inv-pending-actions">
+              <button class="btn btn-sm btn-weak-dark" type="button" onclick="rejectPending(this)">거절</button>
+              <button class="btn btn-sm btn-fill-primary" type="button" onclick="approvePending(this)">승인</button>
+            </div>
+          </div>
+          <div class="c-inv-pending-row" data-pid="p2">
+            <span class="avatar avatar-md"></span>
+            <div class="c-inv-pending-info">
+              <span class="c-inv-pending-name">최우진</span>
+              <span class="c-inv-pending-meta">1시간 전 · woojin@example.com</span>
+            </div>
+            <div class="c-inv-pending-actions">
+              <button class="btn btn-sm btn-weak-dark" type="button" onclick="rejectPending(this)">거절</button>
+              <button class="btn btn-sm btn-fill-primary" type="button" onclick="approvePending(this)">승인</button>
+            </div>
+          </div>
+        </div>
+        <div class="c-inv-empty" id="c-inv-empty" hidden>
+          아직 가입 대기 중인 사람이 없어요.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 마이페이지 -->
+  <section id="s-mypage" class="screen">
+    <header class="c-topbar c-topbar-detail">
+      <button class="c-back" type="button" aria-label="뒤로" onclick="goTab('home')">
+        <i data-lucide="chevron-left"></i>
+      </button>
+      <span class="c-topbar-title">마이페이지</span>
+    </header>
+
+    <div class="c-mode-bar">
+      <span class="c-mode-bar-label" id="c-mode-bar-label">일반 모드로 전환</span>
+      <label class="toggle-wrap" aria-label="모드 전환">
+        <input type="checkbox" class="toggle" id="c-mode-toggle" checked onchange="onModeToggle(this)">
+      </label>
+    </div>
+
+    <div class="c-body">
+      <div class="c-mypage-placeholder">기존 화면 표시</div>
+    </div>
+  </section>
+
+  <!-- 이 모임에서 내 프로필 편집 -->
+  <section id="s-my-community-profile" class="screen">
+    <header class="c-topbar c-topbar-detail">
+      <button class="c-back" type="button" aria-label="뒤로" onclick="goTab('settings')">
+        <i data-lucide="chevron-left"></i>
+      </button>
+      <span class="c-topbar-title">이 모임에서 내 프로필</span>
+    </header>
+
+    <div class="c-body">
+      <!-- 프로필 사진 -->
+      <div class="c-section">
+        <div class="c-mcp-avatar-block">
+          <span class="avatar avatar-xl" aria-hidden="true">
+            <img src="../../assets/profile.png" alt="">
+          </span>
+          <button class="btn btn-sm btn-weak-dark" type="button">사진 변경</button>
+        </div>
+      </div>
+
+      <!-- 이름 (필수 · 공개 고정) -->
+      <div class="c-section">
+        <div class="c-mcp-field">
+          <div class="c-mcp-field-head">
+            <label class="c-mcp-field-label" for="c-mcp-name">이름</label>
+          </div>
+          <input id="c-mcp-name" class="input" type="text" value="자버 유카">
+        </div>
+      </div>
+
+      <!-- 정보 (수정 + 공개 여부) -->
+      <div class="c-section">
+        <div class="c-mcp-section-title">멤버에게 공개할 정보</div>
+
+        <div class="c-mcp-field">
+          <div class="c-mcp-field-head">
+            <label class="c-mcp-field-label" for="c-mcp-phone">전화번호</label>
+            <label class="c-mcp-field-privacy">
+              공개
+              <input type="checkbox" class="toggle toggle-sm" checked>
+            </label>
+          </div>
+          <input id="c-mcp-phone" class="input" type="tel" value="010-1234-5678" inputmode="tel">
+        </div>
+
+        <div class="c-mcp-field">
+          <div class="c-mcp-field-head">
+            <label class="c-mcp-field-label" for="c-mcp-email">이메일</label>
+            <label class="c-mcp-field-privacy">
+              공개
+              <input type="checkbox" class="toggle toggle-sm" checked>
+            </label>
+          </div>
+          <input id="c-mcp-email" class="input" type="email" value="contact@jober.io">
+        </div>
+
+        <div class="c-mcp-field">
+          <div class="c-mcp-field-head">
+            <label class="c-mcp-field-label" for="c-mcp-company">소속</label>
+            <label class="c-mcp-field-privacy">
+              공개
+              <input type="checkbox" class="toggle toggle-sm" checked>
+            </label>
+          </div>
+          <input id="c-mcp-company" class="input" type="text" value="Jober">
+        </div>
+
+        <div class="c-mcp-field">
+          <div class="c-mcp-field-head">
+            <label class="c-mcp-field-label" for="c-mcp-dept">부서</label>
+            <label class="c-mcp-field-privacy">
+              공개
+              <input type="checkbox" class="toggle toggle-sm">
+            </label>
+          </div>
+          <input id="c-mcp-dept" class="input" type="text" value="경영지원">
+        </div>
+
+        <div class="c-mcp-field">
+          <div class="c-mcp-field-head">
+            <label class="c-mcp-field-label" for="c-mcp-title">직함</label>
+            <label class="c-mcp-field-privacy">
+              공개
+              <input type="checkbox" class="toggle toggle-sm" checked>
+            </label>
+          </div>
+          <input id="c-mcp-title" class="input" type="text" value="CEO">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 토스트 -->
+  <div class="toast-container" id="toast-container"></div>
+
+</div>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+  // ─────────── 하단 탭바 렌더 ───────────
+  const TABS = [
+    { key: 'home',     screen: 's-home',     icon: 'home',           label: '홈' },
+    { key: 'members',  screen: 's-members',  icon: 'users',          label: '멤버' },
+    { key: 'board',    screen: 's-board',    icon: 'message-square', label: '게시판' },
+    { key: 'event',    screen: 's-event',    icon: 'calendar',       label: '행사' },
+    { key: 'settings', screen: 's-settings', icon: 'settings',       label: '설정' },
+  ];
+
+  // 각 화면의 탭바 요소에 동일한 탭 리스트를 주입
+  function renderTabbar(container, activeKey) {
+    if (!container) return;
+    container.innerHTML = TABS.map(t => `
+      <button class="c-tab ${t.key === activeKey ? 'is-active' : ''}"
+              type="button"
+              data-key="${t.key}"
+              onclick="goTab('${t.key}')">
+        <i data-lucide="${t.icon}"></i>
+        <span class="c-tab-label">${t.label}</span>
+      </button>
+    `).join('');
+  }
+
+  // 각 화면에서 활성 탭이 다름
+  renderTabbar(document.getElementById('tabbar-home'),     'home');
+  renderTabbar(document.getElementById('tabbar-members'),  'members');
+  renderTabbar(document.getElementById('tabbar-board'),    'board');
+  renderTabbar(document.getElementById('tabbar-event'),    'event');
+  renderTabbar(document.getElementById('tabbar-settings'), 'settings');
+
+  // ─────────── 화면 전환 ───────────
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'));
+    const el = document.getElementById(id);
+    if (el) el.classList.add('on');
+    // 스크롤 리셋
+    el.querySelectorAll('.c-body, .c-ed-body').forEach(b => b.scrollTop = 0);
+    window.lucide && lucide.createIcons();
+  }
+
+  function goTab(key) {
+    const t = TABS.find(x => x.key === key);
+    if (!t) return;
+    showScreen(t.screen);
+  }
+
+  function goDetail() {
+    showScreen('s-event-detail');
+    if (window.evNav) evNav('ev-screen-landing');
+  }
+
+  // ─────────── 상단 헤더 액션 (데모용) ───────────
+  function onSwitcher() { /* 데모: 스위처 시트는 생략, 눌리는 표시만 */ }
+  function onMyPage()   { showScreen('s-mypage'); }
+  function onModeToggle(el) {
+    var label = document.getElementById('c-mode-bar-label');
+    label.textContent = el.checked ? '일반 모드로 전환' : '모임 모드로 전환';
+  }
+
+  // ─────────── 세그먼트/서브탭 활성 토글 ───────────
+  function setSeg(btn) {
+    const parent = btn.parentElement;
+    parent.querySelectorAll('.c-seg-btn').forEach(b => b.classList.remove('is-active'));
+    btn.classList.add('is-active');
+  }
+
+  // ─────────── 행사 뷰(타임라인/캘린더) 전환 ───────────
+  function setEventView(btn, view) {
+    setSeg(btn);
+    var _tl = document.getElementById('event-view-timeline');
+    var _cal = document.getElementById('event-view-calendar');
+    if (_tl) _tl.hidden = (view !== 'timeline');
+    if (_cal) _cal.hidden = (view !== 'calendar');
+    window.lucide && lucide.createIcons();
+  }
+
+  function setEventChip(btn) {
+    btn.parentElement.querySelectorAll('.c-event-chip').forEach(function(b){ b.classList.remove('is-active'); });
+    btn.classList.add('is-active');
+  }
+
+  // ─────────── 멤버/게시글/행사 액션 (데모) ───────────
+  let currentMemberRow = null;
+  function onMemberTap(row) {
+    // 편집 모드에서는 상세로 이동하지 않고 드롭다운만 조작
+    if (document.getElementById('c-member-list').classList.contains('is-editing')) return;
+    currentMemberRow = row;
+    resetMemberDetailEdit();
+    const d = row.dataset;
+    const setText = (id, v) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.textContent = v && v.length ? v : '-';
+      el.classList.toggle('is-empty', !(v && v.length));
+    };
+    // 아바타
+    const av = document.getElementById('md-avatar');
+    if (av) {
+      if (d.avatar) {
+        av.innerHTML = '<img src="' + d.avatar + '" alt="">';
+      } else {
+        av.textContent = (d.name || '?').charAt(0);
+      }
+    }
+    setText('md-name', d.name);
+    // 역할 뱃지
+    const roleEl = document.getElementById('md-role');
+    if (roleEl) {
+      roleEl.className = 'badge badge-md ' + (d.roleCls || 'badge-weak-neutral');
+      roleEl.textContent = d.role || '-';
+    }
+    setText('md-phone', d.phone);
+    setText('md-email', d.email);
+    setText('md-company', d.company);
+    setText('md-dept', d.dept);
+    setText('md-title', d.title);
+    showScreen('s-member-detail');
+  }
+  function onPostTap(card) { /* 데모: 게시글 상세는 생략 */ }
+  function onWrite() { /* 데모: 글쓰기 시트 생략 */ }
+  function onCreateEvent() { /* 데모: 행사 만들기 생략 */ }
+  function onInvite() { /* 데모: 초대 시트 생략 */ }
+  function onGoProfile() { showScreen('s-my-community-profile'); }
+  function onLeave() { /* 데모: 탈퇴 확인 다이얼로그 생략 */ }
+  function onEditHome() { /* 데모: 홈 편집 진입 */ }
+  function onAiChatSettings() { /* 데모: AI 채팅 설정 진입 */ }
+  function onManageMembers() { showToast('고급설정 > 멤버 및 권한으로 이동해주세요'); }
+  function onManageInvites() { showScreen('s-invite-manage'); }
+
+  // 초대 관리
+  function copyInviteLink() {
+    var url = document.getElementById('c-inv-url').textContent.trim();
+    if (navigator.clipboard) { try { navigator.clipboard.writeText(url); } catch(e){} }
+    showToast('링크를 복사했어요');
+  }
+  function regenInviteLink() {
+    var newId = Math.random().toString(36).slice(2, 11);
+    document.getElementById('c-inv-url').textContent = 'https://connectia.app/i/' + newId;
+    showToast('새 링크가 발급됐어요');
+  }
+  function approvePending(btn) {
+    var row = btn.closest('.c-inv-pending-row');
+    var name = row.querySelector('.c-inv-pending-name').textContent;
+    row.remove();
+    refreshPendingCount();
+    showToast(name + '님을 승인했어요');
+  }
+  function rejectPending(btn) {
+    var row = btn.closest('.c-inv-pending-row');
+    var name = row.querySelector('.c-inv-pending-name').textContent;
+    row.remove();
+    refreshPendingCount();
+    showToast(name + '님을 거절했어요');
+  }
+  function refreshPendingCount() {
+    var list = document.getElementById('c-inv-pending-list');
+    var count = list.querySelectorAll('.c-inv-pending-row').length;
+    document.getElementById('c-inv-pending-count').textContent = count;
+    document.getElementById('c-inv-empty').hidden = count > 0;
+    list.hidden = count === 0;
+  }
+
+  // 토스트
+  function showToast(msg) {
+    var c = document.getElementById('toast-container');
+    var t = document.createElement('div');
+    t.className = 'toast';
+    t.textContent = msg;
+    c.appendChild(t);
+    setTimeout(function(){ t.style.transition = 'opacity 200ms'; t.style.opacity = '0'; }, 1600);
+    setTimeout(function(){ t.remove(); }, 2000);
+  }
+  function onDeleteCommunity() { /* 데모: 커뮤니티 삭제·양도 진입 */ }
+
+
+  // ─────────── Event Landing (embedded copy) — bare fns for onclick handlers ───────────
+// 더보기 바텀시트
+  function openMoreSheet() {
+    document.getElementById('more-sheet-overlay').classList.add('is-open');
+    document.querySelector('#more-sheet-overlay .bottom-sheet').classList.add('is-open');
+  }
+  function closeMoreSheet(e) {
+    if (e && e.target !== e.currentTarget) return; // 시트 내부 클릭은 무시
+    document.getElementById('more-sheet-overlay').classList.remove('is-open');
+    document.querySelector('#more-sheet-overlay .bottom-sheet').classList.remove('is-open');
+  }
+  function goWriteReview() {
+    closeMoreSheet();
+    // TODO: 리뷰 작성 화면 연결 (현재 프로토타입에는 미구현)
+  }
+
+  // ─── 멤버 상세: ⋯ 메뉴 / 편집 / 내보내기 ───
+  function onMdTopAction() {
+    if (document.getElementById('md-list').classList.contains('is-editing')) {
+      toggleMemberDetailEdit(); // 편집 모드 → 저장
+    } else {
+      openMemberSheet();
+    }
+  }
+  function openMemberSheet() {
+    document.getElementById('member-sheet-overlay').classList.add('is-open');
+    document.querySelector('#member-sheet-overlay .bottom-sheet').classList.add('is-open');
+  }
+  function closeMemberSheet(e) {
+    if (e && e.target !== e.currentTarget) return;
+    document.getElementById('member-sheet-overlay').classList.remove('is-open');
+    document.querySelector('#member-sheet-overlay .bottom-sheet').classList.remove('is-open');
+  }
+  function onMemberSheetEdit() {
+    closeMemberSheet();
+    if (!document.getElementById('md-list').classList.contains('is-editing')) toggleMemberDetailEdit();
+  }
+  function onMemberSheetRemove() {
+    closeMemberSheet();
+    var name = (currentMemberRow && currentMemberRow.dataset.name) || '멤버';
+    document.getElementById('remove-dialog-title').textContent = name + '님을 정말 내보낼까요?';
+    document.getElementById('remove-dialog-overlay').style.display = 'flex';
+  }
+  function closeRemoveDialog() {
+    document.getElementById('remove-dialog-overlay').style.display = 'none';
+  }
+  function confirmRemoveMember() {
+    var name = (currentMemberRow && currentMemberRow.dataset.name) || '멤버';
+    if (currentMemberRow) currentMemberRow.remove();
+    closeRemoveDialog();
+    goTab('members');
+    showToast(name + '님을 내보냈어요');
+  }
+
+  // 권한 드롭다운 (native select는 .frame의 transform으로 위치 깨짐 → 커스텀)
+  function togglePermDd(btn) {
+    var dd = btn.closest('.c-perm-dd');
+    var wasOpen = dd.classList.contains('is-open');
+    document.querySelectorAll('.c-perm-dd.is-open').forEach(function(el){ el.classList.remove('is-open'); });
+    if (!wasOpen) dd.classList.add('is-open');
+  }
+  function pickPerm(item, val) {
+    var dd = item.closest('.c-perm-dd');
+    dd.querySelectorAll('.menu-item').forEach(function(mi){ mi.classList.remove('is-selected'); });
+    item.classList.add('is-selected');
+    dd.querySelector('.c-perm-dd-val').textContent = val;
+    dd.classList.remove('is-open');
+  }
+  document.addEventListener('click', function(e){
+    if (!e.target.closest('.c-perm-dd')) {
+      document.querySelectorAll('.c-perm-dd.is-open').forEach(function(el){ el.classList.remove('is-open'); });
+    }
+  });
+
+  // ─────────── 멤버 권한 편집 모드 ───────────
+  function toggleMemberEdit(btn) {
+    var list = document.getElementById('c-member-list');
+    var editing = list.classList.toggle('is-editing');
+    btn.querySelector('.c-medit-label').textContent = editing ? '완료' : '권한 편집';
+    document.getElementById('c-members-count-label').textContent = editing ? '권한 편집' : '멤버 5명';
+    var icon = document.querySelector('.c-members-count-icon');
+    if (icon) icon.style.display = editing ? 'none' : '';
+    document.getElementById('c-invite-btn').style.display = editing ? 'none' : '';
+    if (!editing) {
+      document.querySelectorAll('.c-perm-dd.is-open').forEach(function(el){ el.classList.remove('is-open'); });
+    }
+  }
+  // 행 역할 드롭다운 열기 (행 onclick으로 버블 방지)
+  function toggleRoleDd(btn, ev) {
+    if (ev) ev.stopPropagation();
+    // 프로토타입: 권한 드롭다운은 아직 동작하지 않음 (메뉴 열지 않음)
+  }
+  var ROLE_CLS = { '관리자': 'badge-fill-dark', '설정 편집 가능': 'badge-weak-primary', '설정 열람 가능': 'badge-weak-neutral', '일반 멤버': 'badge-weak-neutral' };
+  function pickRole(item, ev, val) {
+    if (ev) ev.stopPropagation();
+    var dd = item.closest('.c-perm-dd');
+    var row = item.closest('.c-member-row');
+    if (val === '내보내기') {
+      dd.classList.remove('is-open');
+      showToast((row.dataset.name || '멤버') + '님을 내보냈어요');
+      return;
+    }
+    dd.querySelectorAll('.menu-item').forEach(function(mi){ mi.classList.remove('is-selected'); });
+    item.classList.add('is-selected');
+    dd.querySelector('.c-perm-dd-val').textContent = val;
+    dd.dataset.role = val;
+    dd.classList.remove('is-open');
+    // 상세에서 쓰도록 행 데이터도 갱신
+    row.dataset.role = val;
+    row.dataset.roleCls = ROLE_CLS[val] || 'badge-weak-neutral';
+  }
+
+  // ─────────── 멤버 상세 편집 모드 ───────────
+  var MD_FIELDS = ['phone', 'email', 'company', 'dept', 'title'];
+  function resetMemberDetailEdit() {
+    document.getElementById('md-body').classList.remove('is-editing');
+    document.getElementById('md-list').classList.remove('is-editing');
+    document.getElementById('md-detail-title').textContent = '멤버';
+    document.getElementById('md-edit-btn').innerHTML = '<i data-lucide="more-vertical"></i>';
+    window.lucide && lucide.createIcons();
+  }
+  function toggleMemberDetailEdit() {
+    var body = document.getElementById('md-body');
+    var list = document.getElementById('md-list');
+    var editing = list.classList.contains('is-editing');
+    if (!editing) {
+      // 진입: 현재 표시값을 인풋에 채움
+      fillInput('md-name', 'md-name-input');
+      MD_FIELDS.forEach(function(f){ fillInput('md-' + f, 'md-' + f + '-input'); });
+      body.classList.add('is-editing');
+      list.classList.add('is-editing');
+      document.getElementById('md-detail-title').textContent = '멤버 정보 편집';
+      document.getElementById('md-edit-btn').textContent = '저장';
+    } else {
+      // 저장: 인풋값을 화면과 원본 행에 반영
+      var nameVal = document.getElementById('md-name-input').value.trim();
+      document.getElementById('md-name').textContent = nameVal || '멤버';
+      MD_FIELDS.forEach(function(f){ saveField('md-' + f, 'md-' + f + '-input'); });
+      if (currentMemberRow) {
+        currentMemberRow.dataset.name = nameVal;
+        var nameEl = currentMemberRow.querySelector('.c-member-name');
+        if (nameEl) nameEl.textContent = nameVal || '멤버';
+        MD_FIELDS.forEach(function(f){
+          currentMemberRow.dataset[f] = document.getElementById('md-' + f + '-input').value.trim();
+        });
+        var subEl = currentMemberRow.querySelector('.c-member-sub');
+        if (subEl) { var c = currentMemberRow.dataset.company; subEl.textContent = c && c.length ? c : '-'; }
+      }
+      resetMemberDetailEdit();
+    }
+  }
+  function fillInput(spanId, inputId) {
+    var span = document.getElementById(spanId);
+    var input = document.getElementById(inputId);
+    if (!span || !input) return;
+    var t = span.textContent.trim();
+    input.value = (t === '-') ? '' : t;
+  }
+  function saveField(spanId, inputId) {
+    var span = document.getElementById(spanId);
+    var input = document.getElementById(inputId);
+    if (!span || !input) return;
+    var v = input.value.trim();
+    span.textContent = v.length ? v : '-';
+    span.classList.toggle('is-empty', !v.length);
+  }
+
+  // Description expand
+  function toggleDesc() {
+    var block = document.getElementById('desc-block');
+    var fade = document.getElementById('desc-fade');
+    var label = document.getElementById('desc-toggle-label');
+    var expanded = block.classList.toggle('is-expanded');
+    fade.style.display = expanded ? 'none' : 'block';
+    label.textContent = expanded ? '접기' : '더보기';
+    var icon = document.querySelector('#desc-toggle .desc-toggle-icon');
+    if (icon) icon.style.transform = expanded ? 'rotate(180deg)' : '';
+  }
+
+  // Intent selection
+  function selectIntent(el) {
+    var chips = el.parentElement.querySelectorAll('.intent-chip');
+    chips.forEach(function(c){ c.classList.remove('is-selected'); });
+    el.classList.add('is-selected');
+    var input = el.querySelector('input');
+    if (input) input.checked = true;
+  }
+
+  // Consent
+  function toggleAllConsent(master) {
+    var items = document.querySelectorAll('.consent-item');
+    items.forEach(function(i){ i.checked = master.checked; });
+  }
+  document.querySelectorAll('.consent-item').forEach(function(item){
+    item.addEventListener('change', function(){
+      var all = document.querySelectorAll('.consent-item');
+      var allChecked = Array.from(all).every(function(i){ return i.checked; });
+      document.getElementById('consent-all').checked = allChecked;
+    });
+  });
+
+  // Hero slider pagination
+  (function() {
+    var slider = document.getElementById('hero-slider');
+    var page = document.getElementById('hero-pagination');
+    if (!slider || !page) return;
+    var total = slider.querySelectorAll('.hero-slide').length;
+    slider.addEventListener('scroll', function() {
+      var index = Math.round(slider.scrollLeft / slider.clientWidth);
+      page.textContent = (index + 1) + ' / ' + total;
+    });
+  })();
+
+  // Screen navigation
+  function evNav(id) {
+    document.querySelectorAll('#s-event-detail .ev-screen').forEach(function(s){ s.classList.remove('ev-on'); });
+    var target = document.getElementById(id);
+    if (target) {
+      target.classList.add('ev-on');
+      var scroller = target.querySelector('.scroll-body, .apply-body, .done-body');
+      if (scroller) scroller.scrollTop = 0;
+    }
+  }
+
+  // ── 참석여부 등록 ──
+  function setAttendChoice(btn) {
+    var row = btn.parentElement;
+    if (!row) return;
+    row.querySelectorAll('.c-att-btn').forEach(function(b){ b.classList.remove('is-active'); });
+    btn.classList.add('is-active');
+  }
+  function toggleStatusRow(rowBtn) {
+    var members = rowBtn.nextElementSibling;
+    if (!members) return;
+    var isOpen = !members.hasAttribute('hidden');
+    if (isOpen) {
+      members.setAttribute('hidden', '');
+      rowBtn.classList.remove('is-open');
+    } else {
+      members.removeAttribute('hidden');
+      rowBtn.classList.add('is-open');
+    }
+  }
+
+
+  // ── 입력폼에서 발행한 이벤트 데이터 적용 ──
+  function goEdit() { goTab('event'); }
+
+  // ── 외부 신청폼 모드: sticky CTA를 외부 링크 이동으로 전환 ──
+  function applyExternalCta(url, ctaText) {
+    var meta = document.querySelector('#ev-screen-landing .sticky-meta');
+    if (meta) meta.style.display = 'none'; // 외부 폼은 신청자 집계 불가
+    var ctaBtn = document.querySelector('#ev-screen-landing .sticky-actions .btn-fill-primary');
+    if (!ctaBtn) return;
+    var text = ctaText || ctaBtn.textContent.trim();
+    ctaBtn.innerHTML = '<span>' + escapeHTML(text) + '</span><i data-lucide="external-link"></i>';
+    ctaBtn.onclick = function(){ window.open(url, '_blank', 'noopener'); };
+  }
+
+  function escapeHTML(s) {
+    return String(s).replace(/[&<>"']/g, function(c) {
+      return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+    });
+  }
+  function fmtDate(iso) {
+    if (!iso) return '';
+    var p = iso.split('-');
+    return p[0] + '.' + p[1] + '.' + p[2];
+  }
+  function fmtDateShort(iso) {
+    if (!iso) return '';
+    var p = iso.split('-');
+    return p[1] + '.' + p[2];
+  }
+  function fmtRange(start, end) {
+    if (start && end) return fmtDate(start) + ' ~ ' + fmtDateShort(end);
+    if (start) return fmtDate(start);
+    return '';
+  }
+  function fmtTimeRange(start, end) {
+    if (start && end) return start + ' ~ ' + end;
+    if (start) return start;
+    return '';
+  }
+
+  function applyEventData(d) {
+    // 타이틀
+    if (d.title) {
+      document.querySelector('.hero-headline').textContent = d.title;
+      document.querySelector('.apply-header-title').textContent = d.title;
+      var doneVal = document.querySelector('#ev-screen-done .done-info-value');
+      if (doneVal) doneVal.textContent = d.title;
+    }
+
+    // 일정 (행사 일정)
+    var sched = d.eventSchedule || {};
+    var dateStr = fmtRange(sched.start, sched.end);
+    var timeStr = fmtTimeRange(sched.startTime, sched.endTime);
+    var schedEl = document.querySelector('.hero-schedule');
+    if (!dateStr && !timeStr) {
+      if (schedEl) schedEl.style.display = 'none';
+    } else {
+      document.querySelector('.hero-schedule-date').textContent = dateStr;
+      var timeNode = document.querySelector('.hero-schedule-time');
+      if (timeStr) timeNode.textContent = timeStr;
+      else timeNode.style.display = 'none';
+    }
+
+    // 신청 기간
+    var ap = d.applyPeriod || {};
+    var dateCardSection = document.querySelector('.date-card').closest('.section');
+    if (ap.start && ap.end) {
+      var periodStr = fmtRange(ap.start, ap.end);
+      document.querySelector('.date-card-value').textContent = periodStr;
+      var tag = document.querySelector('.date-card-tag');
+      var today = new Date(); today.setHours(0,0,0,0);
+      var endD = new Date(ap.end + 'T00:00:00');
+      var diff = Math.ceil((endD - today) / 86400000);
+      if (diff > 0) { tag.textContent = 'D-' + diff; tag.style.display = ''; }
+      else if (diff === 0) { tag.textContent = 'D-DAY'; tag.style.display = ''; }
+      else { tag.style.display = 'none'; }
+      // apply header sub
+      var sub = document.querySelector('.apply-header-sub');
+      if (sub) {
+        var clinic = sub.textContent.split(' · ')[0] || '엘린 피부과';
+        sub.textContent = clinic + ' · ' + periodStr;
+      }
+    } else {
+      if (dateCardSection) {
+        dateCardSection.style.display = 'none';
+        var div = dateCardSection.nextElementSibling;
+        if (div && div.classList.contains('section-divider')) div.style.display = 'none';
+      }
+    }
+
+    // 설명
+    var descBlock = document.getElementById('desc-block');
+    var descSection = descBlock.closest('.section');
+    if (d.description) {
+      descBlock.innerHTML = '';
+      var lines = d.description.split(/\n+/).filter(function(l){ return l.trim(); });
+      lines.forEach(function(line, i){
+        if (i > 0) descBlock.appendChild(document.createElement('br'));
+        var p = document.createElement('p');
+        p.textContent = line;
+        descBlock.appendChild(p);
+      });
+      requestAnimationFrame(function(){
+        if (descBlock.scrollHeight <= descBlock.clientHeight + 4) {
+          var fade = document.getElementById('desc-fade');
+          var toggle = document.getElementById('desc-toggle');
+          if (fade) fade.style.display = 'none';
+          if (toggle) toggle.style.display = 'none';
+        }
+      });
+    } else if (descSection) {
+      descSection.style.display = 'none';
+      var divNext = descSection.nextElementSibling;
+      if (divNext && divNext.classList.contains('section-divider')) divNext.style.display = 'none';
+    }
+
+    // 이미지
+    if (d.images && d.images.length) {
+      var slider = document.getElementById('hero-slider');
+      slider.innerHTML = '';
+      d.images.forEach(function(img){
+        var slide = document.createElement('div');
+        slide.className = 'hero-slide';
+        if (img.src) slide.style.backgroundImage = 'url("' + encodeURI(img.src) + '")';
+        else if (img.bg) slide.style.background = img.bg + ' center/cover';
+        slider.appendChild(slide);
+      });
+      var existingPage = document.getElementById('hero-pagination');
+      if (existingPage) existingPage.remove();
+      if (d.images.length > 1) {
+        var page = document.createElement('div');
+        page.className = 'hero-pagination';
+        page.id = 'hero-pagination';
+        page.textContent = '1 / ' + d.images.length;
+        slider.parentElement.appendChild(page);
+        slider.addEventListener('scroll', function(){
+          var idx = Math.round(slider.scrollLeft / slider.clientWidth);
+          page.textContent = (idx + 1) + ' / ' + d.images.length;
+        });
+      }
+    }
+
+    // CTA
+    if (d.cta) {
+      var ctaBtn = document.querySelector('.sticky-actions .btn-fill-primary');
+      if (ctaBtn) ctaBtn.textContent = d.cta;
+    }
+
+    // 외부 신청폼 모드 (구글폼 등)
+    var ext = d.externalForm || {};
+    if (ext.enabled && ext.url) {
+      applyExternalCta(ext.url, d.cta || '신청하기');
+    }
+
+    // 리뷰 노출 (on/off) — 기존 하드코딩된 후기 섹션을 그대로 표시하거나 숨긴다.
+    var showReviews = d.reviews === true;
+    if (!showReviews) {
+      var reviewSection = document.querySelector('.review-scroll');
+      if (reviewSection) {
+        var sec = reviewSection.closest('.section');
+        if (sec) {
+          sec.style.display = 'none';
+          var prev = sec.previousElementSibling;
+          if (prev && prev.classList.contains('section-divider')) prev.style.display = 'none';
+        }
+      }
+      var trustRow = document.querySelector('.trust-row');
+      if (trustRow) trustRow.style.display = 'none';
+    }
+
+    // 신청 폼 필드 재구성
+    var fieldsWrap = document.getElementById('apply-form-fields');
+    fieldsWrap.innerHTML = '';
+    var f = d.fields || {};
+    if (f.name && f.name.enabled) {
+      fieldsWrap.appendChild(buildField('이름', 'text', '실명을 입력해주세요', f.name.required));
+    }
+    if (f.phone && f.phone.enabled) {
+      fieldsWrap.appendChild(buildField('전화번호', 'tel', '010-0000-0000', f.phone.required));
+    }
+    if (f.email && f.email.enabled) {
+      fieldsWrap.appendChild(buildField('이메일', 'email', 'example@email.com', f.email.required));
+    }
+    (d.questions || []).forEach(function(q){
+      fieldsWrap.appendChild(buildQuestion(q));
+    });
+  }
+
+  function buildField(labelText, inputType, placeholder, required) {
+    var group = document.createElement('div');
+    group.className = 'form-group';
+    var labelCls = 'form-label' + (required ? ' form-label-required' : '');
+    var optMark = required ? '' : ' <span style="color:var(--color-text-muted); font-weight:var(--fw-regular);">(선택)</span>';
+    var inputmode = inputType === 'tel' ? ' inputmode="tel"' : '';
+    group.innerHTML =
+      '<label class="' + labelCls + '">' + escapeHTML(labelText) + optMark + '</label>' +
+      '<input class="input" type="' + inputType + '" placeholder="' + escapeHTML(placeholder) + '"' + inputmode + '>';
+    return group;
+  }
+
+  function buildQuestion(q) {
+    var group = document.createElement('div');
+    group.className = 'form-group';
+    var labelCls = 'form-label' + (q.required ? ' form-label-required' : '');
+    var optMark = q.required ? '' : ' <span style="color:var(--color-text-muted); font-weight:var(--fw-regular);">(선택)</span>';
+    var label = '<label class="' + labelCls + '">' + escapeHTML(q.text) + optMark + '</label>';
+    if (q.type === 'short') {
+      group.innerHTML = label + '<input class="input" type="text" placeholder="답변 입력">';
+    } else {
+      var name = 'q-' + Math.random().toString(36).slice(2, 8);
+      var inputType = q.multi ? 'checkbox' : 'radio';
+      var optsHTML = (q.options || []).map(function(opt){
+        return '<label style="display:flex; align-items:center; gap:10px; padding:8px 0; cursor:pointer;">' +
+          '<input type="' + inputType + '" name="' + name + '" class="' + inputType + '">' +
+          '<span style="font-size:var(--fs-label); color:var(--color-text);">' + escapeHTML(opt) + '</span>' +
+          '</label>';
+      }).join('');
+      group.innerHTML = label +
+        '<div style="display:flex; flex-direction:column; background:var(--color-surface-sub); padding:8px 16px; border-radius:var(--r-md);">' + optsHTML + '</div>';
+    }
+    return group;
+  }
+
+
+
+  // 캘린더 칩: 실제 데이터는 풀 네임, 화면 표기만 공백 제거 후 앞 4글자로 자름 (title로 원본 보존)
+  document.querySelectorAll('.c-cal-chip').forEach(function(el){
+    var full = el.textContent.trim();
+    el.setAttribute('title', full);
+    var stripped = full.replace(/\s+/g, '');
+    el.textContent = stripped.length > 4 ? stripped.slice(0, 4) : stripped;
+  });
+
+  // 초기 렌더
+  window.lucide && lucide.createIcons();
+</script>
+
+</body>
+</html>
