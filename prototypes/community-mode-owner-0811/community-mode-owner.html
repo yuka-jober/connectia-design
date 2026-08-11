@@ -559,6 +559,8 @@
   .c-member-role-dd .c-role-check { display: none; width: 18px; height: 18px; color: var(--color-primary); }
   .c-member-role-dd .menu-item.is-selected .c-role-check { display: inline-flex; }
   .c-role-note { margin-left: 4px; font-size: var(--fs-caption); font-weight: var(--fw-medium); color: var(--color-text-muted); }
+  .c-add-form { display: flex; flex-direction: column; gap: 12px; padding-top: 8px; }
+  .c-add-title { margin-bottom: 4px; font-size: var(--fs-title-sm); line-height: var(--lh-title-sm); font-weight: var(--fw-bold); color: var(--color-text); }
 
   /* =============================================
      멤버 상세
@@ -2218,6 +2220,10 @@
               <i data-lucide="user-plus" style="width:14px;height:14px"></i>
               초대
             </button>
+            <button class="btn btn-sm btn-weak-primary btn-pill" id="c-add-btn" type="button" onclick="openAddMemberSheet()">
+              <i data-lucide="plus" style="width:14px;height:14px"></i>
+              추가
+            </button>
             <button class="btn btn-sm btn-weak-dark btn-pill" type="button" onclick="toggleMemberEdit(this)">
               <span class="c-medit-label">권한 편집</span>
             </button>
@@ -2363,6 +2369,22 @@
     </div>
 
     <nav class="c-tabbar" id="tabbar-members"></nav>
+
+    <!-- 멤버 직접 추가 바텀시트 -->
+    <div class="bottom-sheet-overlay" id="add-member-overlay" onclick="closeAddMemberSheet(event)">
+      <div class="bottom-sheet" role="dialog" aria-label="멤버 추가">
+        <div class="bottom-sheet-handle"></div>
+        <div class="c-add-form">
+          <div class="c-add-title">멤버 추가</div>
+          <input class="input" id="am-name" type="text" placeholder="이름 (필수)" autocomplete="off">
+          <input class="input" id="am-phone" type="tel" placeholder="연락처" autocomplete="off">
+          <input class="input" id="am-email" type="email" placeholder="이메일" autocomplete="off">
+          <input class="input" id="am-company" type="text" placeholder="소속" autocomplete="off">
+          <input class="input" id="am-title" type="text" placeholder="직함" autocomplete="off">
+          <button class="btn btn-lg btn-block btn-fill-primary" type="button" onclick="submitAddMember()">추가하기</button>
+        </div>
+      </div>
+    </div>
   </section>
 
   <!-- ========================================
@@ -3619,6 +3641,44 @@
     // TODO: 리뷰 작성 화면 연결 (현재 프로토타입에는 미구현)
   }
 
+  // ─── 멤버 직접 추가 ───
+  function memberCountText() {
+    return '멤버 ' + document.querySelectorAll('#c-member-list .c-member-row').length + '명';
+  }
+  function openAddMemberSheet() {
+    document.getElementById('add-member-overlay').classList.add('is-open');
+    document.querySelector('#add-member-overlay .bottom-sheet').classList.add('is-open');
+  }
+  function closeAddMemberSheet(e) {
+    if (e && e.target !== e.currentTarget) return;
+    document.getElementById('add-member-overlay').classList.remove('is-open');
+    document.querySelector('#add-member-overlay .bottom-sheet').classList.remove('is-open');
+  }
+  function submitAddMember() {
+    var name = document.getElementById('am-name').value.trim();
+    if (!name) { document.getElementById('am-name').focus(); return; }
+    var list = document.getElementById('c-member-list');
+    var tmpl = list.querySelector('.c-member-row[data-role="일반 멤버"]');
+    if (!tmpl) return;
+    var row = tmpl.cloneNode(true);
+    row.dataset.name = name;
+    row.dataset.phone = document.getElementById('am-phone').value.trim();
+    row.dataset.email = document.getElementById('am-email').value.trim();
+    row.dataset.company = document.getElementById('am-company').value.trim();
+    row.dataset.dept = '';
+    row.dataset.title = document.getElementById('am-title').value.trim();
+    row.querySelector('.c-member-name').textContent = name;
+    var sub = row.querySelector('.c-member-sub');
+    if (sub) sub.textContent = row.dataset.company || '-';
+    var av = row.querySelector('.avatar');
+    if (av) av.innerHTML = '';
+    list.appendChild(row);
+    document.getElementById('c-members-count-label').textContent = memberCountText();
+    ['am-name','am-phone','am-email','am-company','am-title'].forEach(function(id){ document.getElementById(id).value = ''; });
+    closeAddMemberSheet();
+    showToast(name + '님을 추가했어요');
+  }
+
   // ─── 멤버 상세: ⋯ 메뉴 / 편집 / 내보내기 ───
   function onMdTopAction() {
     if (document.getElementById('md-list').classList.contains('is-editing')) {
@@ -3652,6 +3712,8 @@
   function confirmRemoveMember() {
     var name = (currentMemberRow && currentMemberRow.dataset.name) || '멤버';
     if (currentMemberRow) currentMemberRow.remove();
+    var lbl = document.getElementById('c-members-count-label');
+    if (lbl) lbl.textContent = memberCountText();
     closeRemoveDialog();
     goTab('members');
     showToast(name + '님을 내보냈어요');
@@ -3682,10 +3744,11 @@
     var list = document.getElementById('c-member-list');
     var editing = list.classList.toggle('is-editing');
     btn.querySelector('.c-medit-label').textContent = editing ? '완료' : '권한 편집';
-    document.getElementById('c-members-count-label').textContent = editing ? '권한 편집' : '멤버 5명';
+    document.getElementById('c-members-count-label').textContent = editing ? '권한 편집' : memberCountText();
     var icon = document.querySelector('.c-members-count-icon');
     if (icon) icon.style.display = editing ? 'none' : '';
     document.getElementById('c-invite-btn').style.display = editing ? 'none' : '';
+    document.getElementById('c-add-btn').style.display = editing ? 'none' : '';
     if (!editing) {
       document.querySelectorAll('.c-perm-dd.is-open').forEach(function(el){ el.classList.remove('is-open'); });
     }
