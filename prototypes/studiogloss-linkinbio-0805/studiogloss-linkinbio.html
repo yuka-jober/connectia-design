@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Studio Gloss — Link in bio</title>
+<link rel="stylesheet" href="../../tokens.css">
+<style>
+  body { margin:0; background:var(--color-bg); -webkit-font-smoothing:antialiased; }
+  a { color:inherit; text-decoration:none; }
+  a:hover { opacity:.75; }
+  .nc-event-scroll::-webkit-scrollbar { display:none; }
+  .nc-gallery-scroll::-webkit-scrollbar { display:none; }
+  .nc-review-photos::-webkit-scrollbar { display:none; }
+  .nc-tabs::-webkit-scrollbar { display:none; }
+  .nc-tab { flex:0 0 auto; background:none; border:none; padding:0; cursor:pointer; font-family:var(--font-base); font-size:var(--fs-title); font-weight:var(--fw-bold); color:var(--color-border); letter-spacing:var(--ls-title); }
+  .nc-tab.is-active { color:#1A1A1A; }
+</style>
+</head>
+<body>
+
+<div style="width:390px;background:var(--color-bg);overflow:hidden;font-family:var(--font-base)">
+
+  <div style="position:relative">
+    <div style="position:relative;height:208px;background:url(../../assets/studiogloss-cover.png) 0% 75%/cover;overflow:hidden">
+      <div style="position:absolute;top:0;left:0;right:0;display:flex;justify-content:flex-end;gap:8px;padding:16px 20px;background:linear-gradient(180deg,rgba(0,0,0,.42) 0%,rgba(0,0,0,0) 100%)">
+        <button type="button" id="nc-follow-btn" onclick="toggleFollow()" data-following="false" style="display:inline-flex;align-items:center;gap:4px;height:32px;padding:0 14px 0 12px;border-radius:999px;background:#1A1A1A;color:var(--color-on-primary);font-size:var(--fs-label);font-weight:500;border:none;cursor:pointer;font-family:var(--font-base)"><i data-lucide="plus" style="width:14px;height:14px"></i><span>Follow</span></button>
+        <a href="#" style="display:inline-flex;align-items:center;justify-content:center;height:32px;padding:0 14px;border-radius:999px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.35);color:var(--color-on-primary);font-size:var(--fs-label);font-weight:500;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)">Share</a>
+      </div>
+      <div style="position:absolute;left:0;right:0;bottom:0;height:128px;background:linear-gradient(180deg,rgba(242,242,247,0) 0%,rgba(242,242,247,.7) 60%,var(--color-bg) 100%);pointer-events:none"></div>
+    </div>
+
+    <div style="margin-top:-60px;position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;padding:0 24px 24px">
+      <div style="width:112px;height:112px;border-radius:var(--r-full);border:4px solid var(--color-surface);background:url(../../assets/studiogloss-avatar.png) center/cover;box-shadow:0 16px 32px -16px rgba(26,20,10,.45)"></div>
+      <div style="margin-top:12px;font-weight:700;font-size:var(--fs-display);letter-spacing:-.01em;color:#1A1A1A">Studio Gloss</div>
+      <div style="margin-top:6px;font-size:var(--fs-body-lg);color:var(--color-text-sub)">@studiogloss</div>
+    </div>
+  </div>
+
+  <div class="nc-tabs" style="display:flex;justify-content:center;gap:22px;overflow-x:auto;scrollbar-width:none;padding:6px 20px 18px">
+    <button type="button" class="nc-tab is-active" data-nc-tab="home" onclick="setNcTab('home')">Home</button>
+    <button type="button" class="nc-tab" data-nc-tab="review" onclick="setNcTab('review')">Reviews</button>
+    <button type="button" class="nc-tab" data-nc-tab="event" onclick="setNcTab('event')">Events</button>
+    <button type="button" class="nc-tab" data-nc-tab="board" onclick="setNcTab('board')">Board</button>
+  </div>
+
+  <div data-nc-section="talk" style="margin:0 10px 10px;background:var(--color-surface);border-radius:26px;padding:16px;box-shadow:var(--shadow-1)">
+    <a href="#" style="display:flex;align-items:center;justify-content:center;height:52px;border-radius:16px;color:var(--color-on-primary);font-family:var(--font-base);font-weight:700;font-size:var(--fs-heading);background:var(--color-text)">Message us</a>
+  </div>
+
+  <div data-nc-section="sns" style="margin:0 10px 10px;background:var(--color-surface);border-radius:26px;padding:22px 18px 24px;box-shadow:var(--shadow-1)">
+    <div style="font-family:var(--font-base);font-weight:700;font-size:var(--fs-body);color:#1A1A1A;padding-bottom:14px">Socials</div>
+    <div style="display:flex;justify-content:center;gap:12px">
+      <a href="#" style="display:flex;align-items:center;justify-content:center;background:var(--color-text);border-radius:12px;width:48px;height:48px"><img src="../../assets/Platform=Instagram,%20Color=Negative.svg" alt="Instagram" style="width:20px;height:20px"></a>
+      <a href="#" style="display:flex;align-items:center;justify-content:center;background:var(--color-text);border-radius:12px;width:48px;height:48px"><img src="../../assets/Platform=LinkedIn,%20Color=Negative.svg" alt="LinkedIn" style="width:20px;height:20px"></a>
+      <a href="#" style="display:flex;align-items:center;justify-content:center;background:var(--color-text);border-radius:12px;width:48px;height:48px"><img src="../../assets/Platform=X%20(Twitter),%20Color=Negative.svg" alt="X" style="width:20px;height:20px"></a>
+      <a href="#" style="display:flex;align-items:center;justify-content:center;background:var(--color-text);border-radius:12px;width:48px;height:48px"><img src="../../assets/Platform=YouTube,%20Color=Negative.svg" alt="YouTube" style="width:20px;height:20px"></a>
+      <a href="#" style="display:flex;align-items:center;justify-content:center;background:var(--color-text);border-radius:12px;width:48px;height:48px"><img src="../../assets/Platform=TikTok,%20Color=Negative.svg" alt="TikTok" style="width:20px;height:20px"></a>
+    </div>
+  </div>
+
+  <div data-nc-section="event" style="margin:0 10px 10px;background:var(--color-surface);border-radius:26px;padding:22px 18px 24px;box-shadow:var(--shadow-1)">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:12px">
+      <div style="font-family:var(--font-base);font-weight:700;font-size:var(--fs-body);color:#1A1A1A">Events</div>
+          </div>
+    <div style="display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:4px;scrollbar-width:none" class="nc-event-scroll">
+      <a href="#" style="flex:0 0 200px;scroll-snap-align:start;display:flex;flex-direction:column;font-family:var(--font-base)">
+        <div style="width:100%;aspect-ratio:4/3;border-radius:14px;overflow:hidden;background:url(../../assets/studiogloss-event1.png) center/cover"></div>
+        <div style="padding:10px 2px 0;display:flex;flex-direction:column;gap:4px">
+          <div style="font-weight:var(--fw-semibold);font-size:var(--fs-body-lg);color:#1A1A1A;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">Chrome Nails Pop-up</div>
+          <div style="display:inline-flex;align-items:center;gap:4px;font-size:var(--fs-caption);color:var(--color-text-muted);line-height:1.3"><i data-lucide="calendar-days" style="width:12px;height:12px"></i>08.14 · 14:00 – 18:00</div>
+          <div style="font-size:var(--fs-caption);color:var(--color-text-muted);line-height:1.45;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden">Walk-ins welcome · 20 spots.</div>
+        </div>
+      </a>
+      <a href="#" style="flex:0 0 200px;scroll-snap-align:start;display:flex;flex-direction:column;font-family:var(--font-base)">
+        <div style="width:100%;aspect-ratio:4/3;border-radius:14px;overflow:hidden;background:url(../../assets/studiogloss-event2.png) center/cover"></div>
+        <div style="padding:10px 2px 0;display:flex;flex-direction:column;gap:4px">
+          <div style="font-weight:var(--fw-semibold);font-size:var(--fs-body-lg);color:#1A1A1A;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">Gel Fill Happy Hour</div>
+          <div style="display:inline-flex;align-items:center;gap:4px;font-size:var(--fs-caption);color:var(--color-text-muted);line-height:1.3"><i data-lucide="calendar-days" style="width:12px;height:12px"></i>09.02 · 19:00 – 21:00</div>
+          <div style="font-size:var(--fs-caption);color:var(--color-text-muted);line-height:1.45;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden">20% off gel fills after 7pm.</div>
+        </div>
+      </a>
+      <a href="#" style="flex:0 0 200px;scroll-snap-align:start;display:flex;flex-direction:column;font-family:var(--font-base)">
+        <div style="width:100%;aspect-ratio:4/3;border-radius:14px;overflow:hidden;background:url(https://picsum.photos/seed/glossevent3/600/450) center/cover"></div>
+        <div style="padding:10px 2px 0;display:flex;flex-direction:column;gap:4px">
+          <div style="font-weight:var(--fw-semibold);font-size:var(--fs-body-lg);color:#1A1A1A;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">Bridal Nail Preview Night</div>
+          <div style="display:inline-flex;align-items:center;gap:4px;font-size:var(--fs-caption);color:var(--color-text-muted);line-height:1.3"><i data-lucide="calendar-days" style="width:12px;height:12px"></i>09.20 · 20:00 – 22:00</div>
+          <div style="font-size:var(--fs-caption);color:var(--color-text-muted);line-height:1.45;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden">Invite-only, book ahead.</div>
+        </div>
+      </a>
+      <a href="#" style="flex:0 0 200px;scroll-snap-align:start;display:flex;flex-direction:column;font-family:var(--font-base)">
+        <div style="width:100%;aspect-ratio:4/3;border-radius:14px;overflow:hidden;background:url(https://picsum.photos/seed/glossevent4/600/450) center/cover"></div>
+        <div style="padding:10px 2px 0;display:flex;flex-direction:column;gap:4px">
+          <div style="font-weight:var(--fw-semibold);font-size:var(--fs-body-lg);color:#1A1A1A;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">Fall Color Launch</div>
+          <div style="display:inline-flex;align-items:center;gap:4px;font-size:var(--fs-caption);color:var(--color-text-muted);line-height:1.3"><i data-lucide="calendar-days" style="width:12px;height:12px"></i>10.05 – 10.12 · 10:00 – 17:00</div>
+          <div style="font-size:var(--fs-caption);color:var(--color-text-muted);line-height:1.45;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden">New season shades all week.</div>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <div data-nc-section="event-list" style="display:none;margin:0 10px 10px;background:var(--color-surface);border-radius:26px;padding:22px 18px 24px;box-shadow:var(--shadow-1)">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:16px">
+      <div style="display:inline-flex;gap:6px">
+        <button type="button" class="nc-evfilter is-active" onclick="setNcEvFilter(this,'ongoing')" style="height:30px;padding:0 14px;border-radius:999px;border:none;background:var(--color-text);color:var(--color-on-primary);font-family:var(--font-base);font-size:var(--fs-label);font-weight:600;cursor:pointer">Ongoing</button>
+        <button type="button" class="nc-evfilter" onclick="setNcEvFilter(this,'upcoming')" style="height:30px;padding:0 14px;border-radius:999px;border:none;background:transparent;color:var(--color-text-muted);font-family:var(--font-base);font-size:var(--fs-label);font-weight:500;cursor:pointer">Upcoming</button>
+        <button type="button" class="nc-evfilter" onclick="setNcEvFilter(this,'ended')" style="height:30px;padding:0 14px;border-radius:999px;border:none;background:transparent;color:var(--color-text-muted);font-family:var(--font-base);font-size:var(--fs-label);font-weight:500;cursor:pointer">Ended</button>
+      </div>
+          </div>
+    <div style="display:flex;flex-direction:column">
+      <a href="#" style="display:flex;gap:14px;padding:14px 2px;border-bottom:1px solid #EFECE5;font-family:var(--font-base)">
+        <div style="flex:0 0 116px;width:116px;aspect-ratio:4/3;border-radius:12px;background:url(../../assets/studiogloss-event1.png) center/cover"></div>
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px;padding-top:2px">
+          <div style="font-weight:var(--fw-semibold);font-size:var(--fs-body-lg);color:#1A1A1A;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">Chrome Nails Pop-up</div>
+          <div style="display:inline-flex;align-items:center;gap:4px;font-size:var(--fs-caption);color:var(--color-text-muted);line-height:1.3"><i data-lucide="calendar-days" style="width:12px;height:12px"></i>08.14 · 14:00 – 18:00</div>
+          <div style="font-size:var(--fs-caption);color:var(--color-text-muted);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">Walk-ins welcome · 20 spots.</div>
+        </div>
+      </a>
+      <a href="#" style="display:flex;gap:14px;padding:14px 2px;border-bottom:1px solid #EFECE5;font-family:var(--font-base)">
+        <div style="flex:0 0 116px;width:116px;aspect-ratio:4/3;border-radius:12px;background:url(../../assets/studiogloss-event2.png) center/cover"></div>
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px;padding-top:2px">
+          <div style="font-weight:var(--fw-semibold);font-size:var(--fs-body-lg);color:#1A1A1A;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">Gel Fill Happy Hour</div>
+          <div style="display:inline-flex;align-items:center;gap:4px;font-size:var(--fs-caption);color:var(--color-text-muted);line-height:1.3"><i data-lucide="calendar-days" style="width:12px;height:12px"></i>09.02 · 19:00 – 21:00</div>
+          <div style="font-size:var(--fs-caption);color:var(--color-text-muted);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">20% off gel fills after 7pm.</div>
+        </div>
+      </a>
+      <a href="#" style="display:flex;gap:14px;padding:14px 2px;border-bottom:1px solid #EFECE5;font-family:var(--font-base)">
+        <div style="flex:0 0 116px;width:116px;aspect-ratio:4/3;border-radius:12px;background:url(https://picsum.photos/seed/glossevent3/400/300) center/cover"></div>
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px;padding-top:2px">
+          <div style="font-weight:var(--fw-semibold);font-size:var(--fs-body-lg);color:#1A1A1A;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">Bridal Nail Preview Night</div>
+          <div style="display:inline-flex;align-items:center;gap:4px;font-size:var(--fs-caption);color:var(--color-text-muted);line-height:1.3"><i data-lucide="calendar-days" style="width:12px;height:12px"></i>09.20 · 20:00 – 22:00</div>
+          <div style="font-size:var(--fs-caption);color:var(--color-text-muted);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">Invite-only, book ahead.</div>
+        </div>
+      </a>
+      <a href="#" style="display:flex;gap:14px;padding:14px 2px;font-family:var(--font-base)">
+        <div style="flex:0 0 116px;width:116px;aspect-ratio:4/3;border-radius:12px;background:url(https://picsum.photos/seed/glossevent4/400/300) center/cover"></div>
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px;padding-top:2px">
+          <div style="font-weight:var(--fw-semibold);font-size:var(--fs-body-lg);color:#1A1A1A;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">Fall Color Launch</div>
+          <div style="display:inline-flex;align-items:center;gap:4px;font-size:var(--fs-caption);color:var(--color-text-muted);line-height:1.3"><i data-lucide="calendar-days" style="width:12px;height:12px"></i>10.05 – 10.12 · 10:00 – 17:00</div>
+          <div style="font-size:var(--fs-caption);color:var(--color-text-muted);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">New season shades all week.</div>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <div data-nc-section="gallery" style="margin:0 10px 10px;background:var(--color-surface);border-radius:26px;padding:22px 18px 24px;box-shadow:var(--shadow-1)">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:12px">
+      <div style="font-family:var(--font-base);font-weight:700;font-size:var(--fs-body);color:#1A1A1A">Gallery</div>
+          </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:2px">
+      <div style="position:relative;aspect-ratio:4/5;border-radius:12px 0 0 0;overflow:hidden;background:url(../../assets/studiogloss-gallery1.png) center/cover">
+        <i data-lucide="play" style="position:absolute;top:6px;right:6px;width:16px;height:16px;color:var(--color-on-primary);fill:currentColor;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.4))"></i>
+      </div>
+      <div style="aspect-ratio:4/5;background:url(../../assets/studiogloss-gallery2.png) center/cover"></div>
+      <div style="aspect-ratio:4/5;border-radius:0 12px 0 0;overflow:hidden;background:url(../../assets/studiogloss-gallery3.png) center/cover"></div>
+      <div style="aspect-ratio:4/5;border-radius:0 0 0 12px;overflow:hidden;background:url(../../assets/studiogloss-gallery4.png) center/cover"></div>
+      <div style="aspect-ratio:4/5;background:url(../../assets/studiogloss-gallery5.png) center/cover"></div>
+      <div style="aspect-ratio:4/5;border-radius:0 0 12px 0;overflow:hidden;background:url(../../assets/studiogloss-gallery6.png) center/cover"></div>
+    </div>
+  </div>
+
+  <div data-nc-section="gallery-h" style="display:none;margin:0 10px 10px;background:var(--color-surface);border-radius:26px;padding:22px 18px 24px;box-shadow:var(--shadow-1)">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:12px">
+      <div style="font-family:var(--font-base);font-weight:700;font-size:var(--fs-body);color:#1A1A1A">Studio snaps</div>
+          </div>
+    <div class="nc-gallery-scroll" style="display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:4px;scrollbar-width:none">
+      <div style="flex:0 0 168px;aspect-ratio:4/5;scroll-snap-align:start;border-radius:12px;background:url(https://picsum.photos/seed/gh1/400/500) center/cover"></div>
+      <div style="flex:0 0 168px;aspect-ratio:4/5;scroll-snap-align:start;border-radius:12px;background:url(https://picsum.photos/seed/gh2/400/500) center/cover"></div>
+      <div style="flex:0 0 168px;aspect-ratio:4/5;scroll-snap-align:start;border-radius:12px;background:url(https://picsum.photos/seed/gh3/400/500) center/cover"></div>
+      <div style="flex:0 0 168px;aspect-ratio:4/5;scroll-snap-align:start;border-radius:12px;background:url(https://picsum.photos/seed/gh4/400/500) center/cover"></div>
+      <div style="flex:0 0 168px;aspect-ratio:4/5;scroll-snap-align:start;border-radius:12px;background:url(https://picsum.photos/seed/gh5/400/500) center/cover"></div>
+    </div>
+  </div>
+
+  <div data-nc-section="gallery-v" style="display:none;margin:0 10px 10px;background:var(--color-surface);border-radius:26px;padding:22px 18px 24px;box-shadow:var(--shadow-1)">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:12px">
+      <div style="font-family:var(--font-base);font-weight:700;font-size:var(--fs-body);color:#1A1A1A">Portfolio</div>
+          </div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="width:100%;aspect-ratio:4/3;border-radius:12px;background:url(https://picsum.photos/seed/gv1/800/600) center/cover"></div>
+      <div style="width:100%;aspect-ratio:4/3;border-radius:12px;background:url(https://picsum.photos/seed/gv2/800/600) center/cover"></div>
+      <div style="width:100%;aspect-ratio:4/3;border-radius:12px;background:url(https://picsum.photos/seed/gv3/800/600) center/cover"></div>
+    </div>
+  </div>
+
+  <div data-nc-section="intro" style="margin:0 10px 10px;background:var(--color-surface);border-radius:26px;padding:22px 18px 24px;box-shadow:var(--shadow-1)">
+    <div style="font-family:var(--font-base);font-weight:700;font-size:var(--fs-body);color:#1A1A1A;padding-bottom:12px">About</div>
+    <p style="margin:0;font-size:var(--fs-body);line-height:1.85;color:#33302B">Hand-painted nail art, chrome sets, and extensions in South Austin. Questions about booking or pricing? Message us anytime — we usually reply in minutes.</p>
+  </div>
+
+  <div data-nc-section="basic" style="margin:0 10px 10px;background:var(--color-surface);border-radius:26px;padding:22px 18px 24px;box-shadow:var(--shadow-1)">
+    <div style="font-family:var(--font-base);font-weight:700;font-size:var(--fs-body);color:#1A1A1A;padding-bottom:6px">Contact</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:15px 2px;border-bottom:1px solid #EFECE5">
+      <span style="font-size:var(--fs-caption);color:var(--color-text-muted);flex-shrink:0;min-width:64px">Studio</span>
+      <span style="flex:1;text-align:right;font-size:var(--fs-body);color:#1A1A1A">Studio Gloss</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:15px 2px;border-bottom:1px solid #EFECE5">
+      <span style="font-size:var(--fs-caption);color:var(--color-text-muted);flex-shrink:0;min-width:64px">Hours</span>
+      <span style="flex:1;text-align:right;font-size:var(--fs-body);color:#1A1A1A">Tue–Sun · 11:00–19:00</span>
+    </div>
+    <a href="tel:+15125550142" style="display:flex;justify-content:space-between;align-items:center;padding:15px 2px;border-bottom:1px solid #EFECE5">
+      <span style="font-size:var(--fs-caption);color:var(--color-text-muted);flex-shrink:0;min-width:64px">Phone</span>
+      <span style="flex:1;text-align:right;font-size:var(--fs-body);color:#1A1A1A">(512) 555-0142</span>
+      <i data-lucide="arrow-up-right" style="width:16px;height:16px;color:#8B857B;margin-left:8px"></i>
+    </a>
+    <a href="mailto:hello@studiogloss.co" style="display:flex;justify-content:space-between;align-items:center;padding:15px 2px;border-bottom:1px solid #EFECE5">
+      <span style="font-size:var(--fs-caption);color:var(--color-text-muted);flex-shrink:0;min-width:64px">Email</span>
+      <span style="flex:1;text-align:right;font-size:var(--fs-body);color:#1A1A1A;word-break:break-all">hello@studiogloss.co</span>
+      <i data-lucide="arrow-up-right" style="width:16px;height:16px;color:#8B857B;margin-left:8px"></i>
+    </a>
+    <a href="https://maps.google.com/?q=S%20Lamar%20Blvd%2C%20Austin%2C%20TX" target="_blank" rel="noopener" style="display:flex;justify-content:space-between;align-items:center;padding:15px 2px">
+      <span style="font-size:var(--fs-caption);color:var(--color-text-muted);flex-shrink:0;min-width:64px">Address</span>
+      <span style="flex:1;text-align:right;font-size:var(--fs-body);color:#1A1A1A">S Lamar Blvd, Austin, TX</span>
+      <i data-lucide="arrow-up-right" style="width:16px;height:16px;color:#8B857B;margin-left:8px"></i>
+    </a>
+  </div>
+
+  <div data-nc-section="link" style="margin:0 10px 10px;background:var(--color-surface);border-radius:26px;padding:22px 18px 24px;box-shadow:var(--shadow-1)">
+    <div style="font-family:var(--font-base);font-weight:700;font-size:var(--fs-body);color:#1A1A1A;padding-bottom:10px">Links</div>
+    <a href="#" style="display:flex;justify-content:space-between;align-items:center;padding:15px 2px;border-bottom:1px solid #EFECE5"><span style="font-size:var(--fs-body);color:#1A1A1A">Book an appointment</span><i data-lucide="arrow-up-right" style="width:16px;height:16px;color:#8B857B"></i></a>
+    <a href="#" style="display:flex;justify-content:space-between;align-items:center;padding:15px 2px;border-bottom:1px solid #EFECE5"><span style="font-size:var(--fs-body);color:#1A1A1A">Services &amp; pricing</span><i data-lucide="arrow-up-right" style="width:16px;height:16px;color:#8B857B"></i></a>
+    <a href="#" style="display:flex;justify-content:space-between;align-items:center;padding:15px 2px"><span style="font-size:var(--fs-body);color:#1A1A1A">Gift cards</span><i data-lucide="arrow-up-right" style="width:16px;height:16px;color:#8B857B"></i></a>
+  </div>
+
+  <div data-nc-section="board" style="margin:0 10px 10px;background:var(--color-surface);border-radius:26px;padding:22px 18px 24px;box-shadow:var(--shadow-1)">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:10px">
+      <div style="font-family:var(--font-base);font-weight:700;font-size:var(--fs-body);color:#1A1A1A">Board</div>
+          </div>
+    <a href="#" style="display:block;padding:15px 2px;border-bottom:1px solid #EFECE5"><span style="display:block;font-size:var(--fs-body);line-height:1.5;color:#1A1A1A">New chrome collection just dropped</span><span style="display:block;margin-top:5px;font-size:var(--fs-badge);color:#A39D93"><span style="color:var(--color-text-sub);font-weight:600">NOTICE</span> · 2026.07.21</span></a>
+    <a href="#" style="display:flex;align-items:center;gap:12px;padding:15px 2px;border-bottom:1px solid #EFECE5"><span style="flex:1;min-width:0"><span style="display:block;font-size:var(--fs-body);line-height:1.5;color:#1A1A1A">Holiday hours this weekend</span><span style="display:block;margin-top:5px;font-size:var(--fs-badge);color:#A39D93">2026.07.02</span></span><span style="flex:0 0 auto;width:56px;height:56px;border-radius:10px;background:url(../../assets/studiogloss-board-nails.png) center/cover"></span></a>
+    <a href="#" style="display:block;padding:15px 2px"><span style="display:block;font-size:var(--fs-body);line-height:1.5;color:#1A1A1A">We're hiring a nail tech — come join us</span><span style="display:block;margin-top:5px;font-size:var(--fs-badge);color:#A39D93">2026.06.18</span></a>
+    <div class="nc-seeall" style="display:flex;justify-content:flex-end;padding-top:12px"><a href="#" style="display:inline-flex;align-items:center;gap:2px;font-size:var(--fs-caption);color:#8B857B">See all</a></div>
+  </div>
+
+  <div data-nc-section="review" style="margin:0 10px 10px;background:var(--color-surface);border-radius:26px;padding:22px 18px 24px;box-shadow:var(--shadow-1)">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:14px">
+      <div style="font-family:var(--font-base);font-weight:700;font-size:var(--fs-body);color:#1A1A1A">Reviews</div>
+          </div>
+    <div style="display:flex;align-items:baseline;gap:10px;padding-bottom:14px;border-bottom:1px solid #EFECE5">
+      <span style="font-family:var(--font-base);font-weight:800;font-size:34px;line-height:1;color:#1A1A1A">4.9</span>
+      <span style="display:inline-flex;gap:2px;color:var(--color-star)"><i data-lucide="star" style="width:14px;height:14px;fill:currentColor"></i><i data-lucide="star" style="width:14px;height:14px;fill:currentColor"></i><i data-lucide="star" style="width:14px;height:14px;fill:currentColor"></i><i data-lucide="star" style="width:14px;height:14px;fill:currentColor"></i><i data-lucide="star" style="width:14px;height:14px;fill:currentColor"></i></span>
+      <button type="button" style="margin-left:auto;display:inline-flex;align-items:center;gap:3px;background:none;border:none;padding:0;cursor:pointer;font-family:var(--font-base);font-size:var(--fs-label);color:var(--color-text-muted)"><i data-lucide="arrow-up-down" style="width:12px;height:12px"></i>Newest</button>
+    </div>
+    <div style="padding:16px 2px;border-bottom:1px solid #EFECE5">
+      <div style="display:flex;justify-content:space-between;align-items:center"><span style="display:inline-flex;gap:2px;color:var(--color-star)"><i data-lucide="star" style="width:12px;height:12px;fill:currentColor"></i><i data-lucide="star" style="width:12px;height:12px;fill:currentColor"></i><i data-lucide="star" style="width:12px;height:12px;fill:currentColor"></i><i data-lucide="star" style="width:12px;height:12px;fill:currentColor"></i><i data-lucide="star" style="width:12px;height:12px;fill:currentColor"></i></span><span style="font-family:var(--font-base);font-size:var(--fs-nav);color:#A39D93">2026.07.11</span></div>
+      <p style="margin:9px 0 7px;font-size:13.5px;line-height:1.7;color:#33302B">Booked at 1am through the chat and woke up to a confirmed full set. The chrome came out exactly like the photo.</p>
+      <div style="font-size:var(--fs-badge);color:#8B857B">Jenna W.</div>
+    </div>
+    <div style="padding:16px 2px">
+      <div style="display:flex;justify-content:space-between;align-items:center"><span style="display:inline-flex;gap:2px;color:var(--color-star)"><i data-lucide="star" style="width:12px;height:12px;fill:currentColor"></i><i data-lucide="star" style="width:12px;height:12px;fill:currentColor"></i><i data-lucide="star" style="width:12px;height:12px;fill:currentColor"></i><i data-lucide="star" style="width:12px;height:12px;fill:currentColor"></i><i data-lucide="star" style="width:12px;height:12px;color:#E7E1D6;fill:currentColor"></i></span><span style="font-family:var(--font-base);font-size:var(--fs-nav);color:#A39D93">2026.06.29</span></div>
+      <p style="margin:9px 0 10px;font-size:13.5px;line-height:1.7;color:#33302B">Clean studio, right on time, and the hand-painted art was exactly what I asked for. My new go-to spot.</p>
+      <div class="nc-review-photos" style="display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin-bottom:10px">
+        <div style="flex:0 0 72px;width:72px;height:72px;border-radius:8px;background:url(../../assets/studiogloss-review1.png) center/cover"></div>
+        <div style="flex:0 0 72px;width:72px;height:72px;border-radius:8px;background:url(../../assets/studiogloss-review2.png) center/cover"></div>
+        <div style="flex:0 0 72px;width:72px;height:72px;border-radius:8px;background:url(../../assets/studiogloss-review3.png) center/cover"></div>
+        <div style="position:relative;flex:0 0 72px;width:72px;height:72px;border-radius:8px;background:url(../../assets/studiogloss-review4.png) center/cover;overflow:hidden">
+          <div style="position:absolute;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;color:var(--color-on-primary);font-family:var(--font-base);font-size:var(--fs-body);font-weight:600">+2</div>
+        </div>
+      </div>
+      <div style="font-size:var(--fs-badge);color:#8B857B">Maya O.</div>
+    </div>
+    <div class="nc-seeall" style="display:flex;justify-content:flex-end;padding-top:12px"><a href="#" style="display:inline-flex;align-items:center;gap:2px;font-size:var(--fs-caption);color:#8B857B">See all</a></div>
+  </div>
+
+</div>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+  lucide.createIcons();
+  var NC_TAB_MAP = {
+    home:    ['talk','intro','basic','sns','gallery','event','link','board','review'],
+    gallery: ['gallery','gallery-h','gallery-v'],
+    event:   ['event-list'],
+    board:   ['board'],
+    review:  ['review']
+  };
+  function setNcTab(name) {
+    document.querySelectorAll('.nc-tab').forEach(function(t) {
+      t.classList.toggle('is-active', t.dataset.ncTab === name);
+    });
+    var visible = NC_TAB_MAP[name] || [];
+    document.querySelectorAll('[data-nc-section]').forEach(function(s) {
+      s.style.display = visible.indexOf(s.dataset.ncSection) !== -1 ? '' : 'none';
+    });
+    document.querySelectorAll('.nc-seeall').forEach(function(el) {
+      el.style.display = name === 'home' ? 'flex' : 'none';
+    });
+    document.querySelectorAll('.nc-tabonly').forEach(function(el) {
+      el.style.display = name === 'home' ? 'none' : 'inline-flex';
+    });
+  }
+  function setNcEvFilter(el, key) {
+    document.querySelectorAll('.nc-evfilter').forEach(function(b) {
+      var active = (b === el);
+      b.classList.toggle('is-active', active);
+      b.style.background = active ? 'var(--color-text)' : 'transparent';
+      b.style.color = active ? 'var(--color-on-primary)' : 'var(--color-text-muted)';
+      b.style.fontWeight = active ? '600' : '500';
+    });
+  }
+  function toggleFollow() {
+    var btn = document.getElementById('nc-follow-btn');
+    var following = btn.dataset.following === 'true';
+    if (following) {
+      btn.dataset.following = 'false';
+      btn.style.background = '#1A1A1A';
+      btn.style.color = 'var(--color-on-primary)';
+      btn.style.border = 'none';
+      btn.innerHTML = '<i data-lucide="plus" style="width:14px;height:14px"></i><span>Follow</span>';
+    } else {
+      btn.dataset.following = 'true';
+      btn.style.background = 'rgba(255,255,255,.14)';
+      btn.style.color = 'var(--color-on-primary)';
+      btn.style.border = '1px solid rgba(255,255,255,.35)';
+      btn.innerHTML = '<i data-lucide="check" style="width:14px;height:14px"></i><span>Following</span>';
+    }
+    lucide.createIcons();
+  }
+</script>
+</body>
+</html>
