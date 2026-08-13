@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Connectia 요금제</title>
+<title>Connectia Pricing</title>
 <link rel="stylesheet" href="../../tokens.css">
 <link rel="stylesheet" href="../../components.css">
 <style>
@@ -98,7 +98,7 @@
   .tab.active:hover { color: var(--color-text); }
   .plan { scroll-margin-top: 96px; }
 
-  /* 상담 신청(연락처) 오버레이 */
+  /* Contact / lead overlay */
   .lead-overlay { position: fixed; inset: 0; z-index: 100; background: var(--color-bg); overflow-y: auto; }
   .lead-overlay[hidden] { display: none; }
   .lead-top { display: flex; align-items: center; height: 56px; padding: 0 8px; }
@@ -119,75 +119,75 @@
 
   <div class="head">
     <div class="eyebrow">PRICING</div>
-    <h1 class="text-display">당신에게 딱 맞는 플랜</h1>
-    <p class="text-body-lg">무료로 시작하고, 필요할 때 업그레이드하세요. 언제든 해지할 수 있어요.</p>
+    <h1 class="text-display">Find the plan that fits you</h1>
+    <p class="text-body-lg">Start free and upgrade when you need to. Cancel anytime.</p>
   </div>
 
   <div class="tabs-wrap">
     <div class="tabs">
-      <a href="#plan-free" class="tab active">무료</a>
-      <a href="#plan-pro" class="tab">프로 <span class="badge badge-fill-danger badge-sm">HOT</span></a>
-      <a href="#plan-brand" class="tab">브랜드</a>
+      <a href="#plan-free" class="tab active">Free</a>
+      <a href="#plan-pro" class="tab">Pro <span class="badge badge-fill-danger badge-sm">HOT</span></a>
+      <a href="#plan-brand" class="tab">Brand</a>
     </div>
   </div>
 
   <div class="grid">
 
-    <!-- 무료 -->
+    <!-- Free -->
     <div class="plan" id="plan-free">
-      <div class="plan-name text-title">무료</div>
-      <div class="plan-tag text-body">영원히 무료</div>
-      <div class="price"><span class="won">₩</span><span class="amt text-metric">0</span></div>
-      <div class="subprice text-caption">신용카드 없이 바로 시작</div>
+      <div class="plan-name text-title">Free</div>
+      <div class="plan-tag text-body">Free forever</div>
+      <div class="price"><span class="won">$</span><span class="amt text-metric">0</span></div>
+      <div class="subprice text-caption">No credit card to start</div>
       <div class="rule"></div>
       <ul class="feat text-body">
-        <li><i data-lucide="check"></i><span>프로필 페이지 <b>1개</b></span></li>
-        <li><i data-lucide="check"></i><span>갤러리·이벤트·게시판·리뷰 등 다양한 블록</span></li>
-        <li><i data-lucide="check"></i><span>AI 채팅 <b>월 30회</b></span></li>
-        <li><i data-lucide="check"></i><span>문의 알림 (앱 내 확인)</span></li>
-        <li><i data-lucide="check"></i><span>방문자 통계</span></li>
-        <li><i data-lucide="check"></i><span>QR 코드 · 링크 공유</span></li>
+        <li><i data-lucide="check"></i><span><b>1</b> profile page</span></li>
+        <li><i data-lucide="check"></i><span>Gallery, events, board, reviews &amp; more blocks</span></li>
+        <li><i data-lucide="check"></i><span>AI chat, <b>30/mo</b></span></li>
+        <li><i data-lucide="check"></i><span>Inquiry alerts (in-app)</span></li>
+        <li><i data-lucide="check"></i><span>Visitor stats</span></li>
+        <li><i data-lucide="check"></i><span>QR code &amp; link sharing</span></li>
       </ul>
     </div>
 
-    <!-- 프로 (featured) -->
+    <!-- Pro (featured) -->
     <div class="plan featured" id="plan-pro">
-      <span class="badge badge-fill-primary badge-md plan-badge">가장 인기</span>
-      <div class="plan-name text-title">프로</div>
-      <div class="plan-tag text-body">문의를 놓치지 않으려면</div>
-      <div class="price"><span class="won">₩</span><span class="amt text-metric">2,900</span><span class="per">/월</span></div>
-      <div class="subprice text-caption">부가세 별도</div>
-      <button type="button" class="btn btn-lg btn-block btn-fill-primary cta" onclick="openLead('프로')">프로 시작하기</button>
+      <span class="badge badge-fill-primary badge-md plan-badge">Most popular</span>
+      <div class="plan-name text-title">Pro</div>
+      <div class="plan-tag text-body">Never miss an inquiry</div>
+      <div class="price"><span class="won">$</span><span class="amt text-metric">2</span><span class="per">/mo</span></div>
+      <div class="subprice text-caption">Plus tax</div>
+      <button type="button" class="btn btn-lg btn-block btn-fill-primary cta" onclick="openLead('Pro')">Get Pro</button>
       <div class="rule"></div>
-      <div class="lead text-body">무료의 모든 기능, 그리고</div>
+      <div class="lead text-body">Everything in Free, plus</div>
       <ul class="feat text-body">
-        <li><span class="fico">💬</span><span>AI 채팅 <b>월 150회</b></span></li>
-        <li><span class="fico">📤</span><span>고객 정보 내보내기 (엑셀 · 구글시트)</span></li>
-        <li><span class="fico">🌐</span><span>페이지가 방문자 언어로 <b>자동 번역</b></span></li>
-        <li><span class="fico">🗣️</span><span>AI 채팅도 방문자 언어로 응답</span></li>
-        <li><i data-lucide="check"></i><span>AI 말투 설정</span></li>
-        <li><i data-lucide="check"></i><span>상세 방문 분석 (기간별 · 자주 묻는 질문)</span></li>
-        <li><i data-lucide="check"></i><span>페이지 <b>3개까지</b></span></li>
+        <li><span class="fico">💬</span><span>AI chat, <b>150/mo</b></span></li>
+        <li><span class="fico">📤</span><span>Export customer info (Excel, Google Sheets)</span></li>
+        <li><span class="fico">🌐</span><span>Page <b>auto-translates</b> to the visitor's language</span></li>
+        <li><span class="fico">🗣️</span><span>AI chat replies in the visitor's language</span></li>
+        <li><i data-lucide="check"></i><span>Custom AI tone</span></li>
+        <li><i data-lucide="check"></i><span>Detailed analytics (by period, top questions)</span></li>
+        <li><i data-lucide="check"></i><span>Up to <b>3 pages</b></span></li>
       </ul>
     </div>
 
-    <!-- 브랜드 -->
+    <!-- Brand -->
     <div class="plan" id="plan-brand">
-      <div class="plan-name text-title">브랜드</div>
-      <div class="plan-tag text-body">팀과 함께 쓰려면</div>
-      <div class="price"><span class="won">₩</span><span class="amt text-metric">9,900</span><span class="per">/월</span></div>
-      <div class="subprice text-caption">부가세 별도</div>
-      <button type="button" class="btn btn-lg btn-block btn-line-dark cta" onclick="openLead('브랜드')">브랜드 시작하기</button>
+      <div class="plan-name text-title">Brand</div>
+      <div class="plan-tag text-body">For working with your team</div>
+      <div class="price"><span class="won">$</span><span class="amt text-metric">7</span><span class="per">/mo</span></div>
+      <div class="subprice text-caption">Plus tax</div>
+      <button type="button" class="btn btn-lg btn-block btn-line-dark cta" onclick="openLead('Brand')">Get Brand</button>
       <div class="rule"></div>
-      <div class="lead text-body">프로의 모든 기능, 그리고</div>
+      <div class="lead text-body">Everything in Pro, plus</div>
       <ul class="feat text-body">
-        <li><i data-lucide="check"></i><span><b>커넥티아 로고 완전 제거</b> · 내 브랜드 로고 적용</span></li>
-        <li><i data-lucide="check"></i><span>AI 채팅 <b>월 300회</b></span></li>
-        <li><i data-lucide="check"></i><span>페이지 <b>무제한</b></span></li>
-        <li><i data-lucide="check"></i><span>커스텀 도메인 연결</span></li>
-        <li><i data-lucide="check"></i><span>팀 멤버 추가</span></li>
-        <li><i data-lucide="check"></i><span>답변 못한 질문 리포트</span></li>
-        <li><i data-lucide="check"></i><span>우선 CS 대응</span></li>
+        <li><i data-lucide="check"></i><span><b>Remove Connectia branding</b> · add your own logo</span></li>
+        <li><i data-lucide="check"></i><span>AI chat, <b>300/mo</b></span></li>
+        <li><i data-lucide="check"></i><span><b>Unlimited</b> pages</span></li>
+        <li><i data-lucide="check"></i><span>Custom domain</span></li>
+        <li><i data-lucide="check"></i><span>Add team members</span></li>
+        <li><i data-lucide="check"></i><span>Unanswered-question reports</span></li>
+        <li><i data-lucide="check"></i><span>Priority support</span></li>
       </ul>
     </div>
 
@@ -196,45 +196,45 @@
   <div class="overage">
     <div class="overage-icon"><i data-lucide="message-circle-more"></i></div>
     <div class="overage-text">
-      <div class="overage-title text-heading">채팅 한도를 넘어도 멈추지 않아요</div>
-      <p class="text-body">월 채팅을 다 쓰면 <b>건당 50원</b>으로 계속 이용할 수 있어요. 쓴 만큼만 내면 됩니다.</p>
+      <div class="overage-title text-heading">You're never cut off</div>
+      <p class="text-body">Run out of monthly chats? Keep going at <b>$0.035 per chat</b> — pay only for what you use.</p>
     </div>
   </div>
 
-  <div class="foot text-caption">모든 요금은 부가세 별도 · 언제든 해지할 수 있어요</div>
+  <div class="foot text-caption">All prices exclude tax · Cancel anytime</div>
 
 </div>
 
-<!-- ── 상담 신청(연락처) 페이지 오버레이 ── -->
+<!-- ── Contact (lead) overlay ── -->
 <div class="lead-overlay" id="lead-overlay" hidden>
   <div class="lead-top">
-    <button class="lead-back" type="button" aria-label="뒤로" onclick="closeLead()"><i data-lucide="chevron-left"></i></button>
+    <button class="lead-back" type="button" aria-label="Back" onclick="closeLead()"><i data-lucide="chevron-left"></i></button>
   </div>
   <div class="lead-inner">
     <div id="lead-form-wrap">
-      <h1 class="lead-title text-title">연락처를 남겨주세요</h1>
-      <p class="lead-desc text-body">선택하신 <b id="lead-plan">프로</b> 플랜, 담당자가 빠르게 연락드릴게요.</p>
+      <h1 class="lead-title text-title">Leave your contact</h1>
+      <p class="lead-desc text-body">We'll reach out about your <b id="lead-plan">Pro</b> plan shortly.</p>
       <form id="lead-form" onsubmit="return submitLead(event)">
         <div class="lead-field">
-          <label class="label label-required" for="lead-name">이름</label>
-          <input class="input" id="lead-name" type="text" placeholder="이름을 입력해주세요" required>
+          <label class="label label-required" for="lead-name">Name</label>
+          <input class="input" id="lead-name" type="text" placeholder="Enter your name" required>
         </div>
         <div class="lead-field">
-          <label class="label label-required" for="lead-phone">전화번호</label>
-          <input class="input" id="lead-phone" type="tel" placeholder="010-0000-0000" required>
+          <label class="label label-required" for="lead-phone">Phone</label>
+          <input class="input" id="lead-phone" type="tel" placeholder="(555) 000-0000" required>
         </div>
         <div class="lead-field">
-          <label class="label label-required" for="lead-email">이메일</label>
+          <label class="label label-required" for="lead-email">Email</label>
           <input class="input" id="lead-email" type="email" placeholder="example@email.com" required>
         </div>
-        <button type="submit" class="btn btn-lg btn-block btn-fill-primary lead-submit">상담 신청하기</button>
+        <button type="submit" class="btn btn-lg btn-block btn-fill-primary lead-submit">Request a call</button>
       </form>
     </div>
     <div class="lead-done" id="lead-done">
       <i data-lucide="circle-check"></i>
-      <h2 class="text-title">신청이 접수되었어요</h2>
-      <p class="text-body" style="color: var(--color-text-muted)">담당자가 남겨주신 연락처로 빠르게 연락드릴게요.</p>
-      <button type="button" class="btn btn-lg btn-block btn-line-dark" onclick="closeLead()" style="margin-top: 12px;">요금제로 돌아가기</button>
+      <h2 class="text-title">Request received</h2>
+      <p class="text-body" style="color: var(--color-text-muted)">We'll get back to you at the contact you provided.</p>
+      <button type="button" class="btn btn-lg btn-block btn-line-dark" onclick="closeLead()" style="margin-top: 12px;">Back to pricing</button>
     </div>
   </div>
 </div>
@@ -251,7 +251,7 @@
     window.scrollTo(0, 0);
   }
   function closeLead() { document.getElementById('lead-overlay').hidden = true; }
-  // 셸 안(iframe)에 임베드된 경우, 셸의 뒤로가기가 있으므로 폼 자체 뒤로가기는 숨긴다
+  // When embedded in a shell (iframe), the shell provides its own back button, so hide the form's own back button
   if (window.self !== window.top) {
     var _lt = document.querySelector('.lead-top');
     if (_lt) _lt.style.display = 'none';
