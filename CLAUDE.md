@@ -27,8 +27,8 @@
 - 디자인 작업 요청 시 `/design-team` 스킬 사용 (기획→승인→디자이너→QA 파이프라인).
 
 ## 사용 가능한 토큰 (tokens.css)
-- **색상(semantic):** `--color-primary / -dark / -light / -subtle`, `--color-brand-gradient / -banner-gradient`, `--color-bg / -surface / -surface-sub / -card`, `--color-text / -sub / -muted`, `--color-border / -input`, `--color-destructive / -destructive-subtle / -success / -star / -star-empty`, `--color-on-primary / -on-primary-sub / -on-primary-faint`, `--color-scrim`
-- **타이포(유틸 클래스):** `.text-display .text-title .text-heading .text-body-lg .text-body .text-label .text-caption .text-badge .text-link .text-metric .text-nav`
+- **색상(semantic):** `--color-primary / -dark / -light / -subtle`, `--color-brand-gradient / -banner-gradient`, `--color-bg / -surface / -surface-sub / -surface-glass / -card`, `--color-text / -sub / -muted`, `--color-border / -input`, `--color-destructive / -destructive-subtle / -success / -star / -star-empty`, `--color-on-primary / -on-primary-sub / -on-primary-faint`, `--color-scrim`
+- **타이포(유틸 클래스):** `.text-display .text-title .text-heading .text-body-lg .text-body .text-label .text-caption .text-badge .text-link .text-metric .text-nav` (title-sm 18px는 유틸 없이 `var(--fs-title-sm)`·`--lh-title-sm`·`--ls-title-sm` 토큰만 사용)
 - **radius:** `--r-xs/sm/md/lg/xl/full` · **shadow:** `--shadow-1`~`--shadow-4` · **motion:** `--motion-fast/standard/slow`, `--ease-enter/exit/standard`
 
 ## 사용 가능한 컴포넌트 (components.css)

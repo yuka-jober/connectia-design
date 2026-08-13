@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>가입 정보 입력</title>
+<link rel="stylesheet" href="../../tokens.css">
+<link rel="stylesheet" href="../../components.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font-base); background: var(--color-bg); -webkit-font-smoothing: antialiased; }
+  .frame {
+    width: 390px; height: 844px; max-height: 100dvh; margin: 0 auto;
+    background: var(--color-bg); display: flex; flex-direction: column; position: relative; overflow: hidden;
+  }
+  @media (max-width: 439px) { .frame { width: 100vw; height: 100dvh; max-height: none; } }
+  i[data-lucide] { display: inline-flex; flex-shrink: 0; }
+
+  .topbar { display: flex; align-items: center; height: 56px; padding: 0 8px; flex-shrink: 0; }
+  .topbar-back {
+    width: 40px; height: 40px; border: none; background: transparent; border-radius: var(--r-sm);
+    display: inline-flex; align-items: center; justify-content: center; color: var(--color-text); cursor: pointer;
+  }
+  .topbar-back i { width: 24px; height: 24px; }
+
+  .body { flex: 1; overflow-y: auto; padding: 8px 20px 24px; }
+  .ji-title { margin: 0; letter-spacing: -.01em; }
+  .ji-desc { margin: 12px 0 28px; color: var(--color-text-muted); }
+  .ji-field { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+  .ji-field .input, .ji-field .textarea { width: 100%; }
+
+  .footer { padding: 12px 20px calc(16px + env(safe-area-inset-bottom)); flex-shrink: 0; background: var(--color-bg); border-top: 1px solid var(--color-border); }
+</style>
+</head>
+<body>
+<div class="frame">
+
+  <header class="topbar">
+    <button class="topbar-back" type="button" onclick="history.back()" aria-label="뒤로"><i data-lucide="chevron-left"></i></button>
+  </header>
+
+  <div class="body">
+    <h1 class="ji-title text-title">서울 파운더스 테이블에<br>가입할 정보를 입력하세요</h1>
+    <p class="ji-desc text-body">커뮤니티 멤버들에게 보여질 정보예요.</p>
+
+    <div class="ji-field">
+      <label class="label label-required" for="ji-name">이름</label>
+      <input class="input" id="ji-name" type="text" value="김민수">
+    </div>
+    <div class="ji-field">
+      <label class="label label-required" for="ji-phone">전화번호</label>
+      <input class="input" id="ji-phone" type="tel" value="010-1234-5678">
+    </div>
+    <div class="ji-field">
+      <label class="label label-required" for="ji-email">이메일</label>
+      <input class="input" id="ji-email" type="email" value="minsu.kim@gmail.com">
+    </div>
+    <div class="ji-field">
+      <label class="label label-required" for="ji-org">소속</label>
+      <input class="input" id="ji-org" type="text" value="(주)넥스트그로스">
+    </div>
+    <div class="ji-field">
+      <label class="label label-required" for="ji-dept">부서</label>
+      <input class="input" id="ji-dept" type="text" placeholder="부서를 입력해주세요">
+    </div>
+    <div class="ji-field">
+      <label class="label label-required" for="ji-title">직함</label>
+      <input class="input" id="ji-title" type="text" value="프로덕트 매니저">
+    </div>
+  </div>
+
+  <div class="footer">
+    <button class="btn btn-lg btn-block btn-fill-primary" type="button" onclick="onSubmit()">가입 신청</button>
+  </div>
+
+</div>
+
+<script>
+  lucide.createIcons();
+  function onSubmit(){
+    location.href = 'community-mode-guest.html?applied=1';
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,3474 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>이벤트 만들기 — 미리보기 작성</title>
+<link rel="stylesheet" href="../../tokens.css">
+<link rel="stylesheet" href="../../components.css">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* iOS Safari: prevent auto-zoom on focus by ensuring editable font-size ≥ 16px */
+  input, textarea, [contenteditable]:not(.pv-title) { font-size: 16px !important; }
+
+  body {
+    font-family: var(--font-base);
+    background: #e0e0e0;
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .frame {
+    width: 390px;
+    height: 844px;
+    max-height: 100dvh;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 32px 80px -20px rgba(0,0,0,0.28);
+    background: var(--color-surface);
+    border-radius: 44px;
+    display: flex;
+    flex-direction: column;
+  }
+  @media (max-width: 439px) {
+    .frame { width: 100vw; height: 100dvh; max-height: none; border-radius: 0; }
+  }
+
+  i[data-lucide] { display: inline-flex; flex-shrink: 0; }
+  svg.lucide { flex-shrink: 0; }
+
+  /* ── Topbar ── */
+  .topbar {
+    position: relative;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 8px;
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    flex-shrink: 0;
+    gap: 4px;
+    z-index: 10;
+  }
+  .topbar-title {
+    position: absolute;
+    left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text);
+    pointer-events: none;
+  }
+  .topbar-spacer { width: 40px; height: 40px; }
+  .topbar-preview-btn {
+    height: 40px;
+    padding: 0 14px;
+    background: transparent;
+    border: none;
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-semibold);
+    color: var(--color-primary);
+    cursor: pointer;
+  }
+  .topbar-preview-btn:hover { color: var(--color-primary-dark); }
+
+  /* ── 미리보기 화면 (frame-scoped overlay) ── */
+  .pv-preview {
+    position: absolute; inset: 0;
+    z-index: 80;
+    background: var(--color-surface);
+    display: none;
+    flex-direction: column;
+  }
+  .pv-preview.is-open { display: flex; }
+  .pv-preview [hidden] { display: none !important; }
+  .pv-preview-topbar {
+    position: sticky; top: 0; z-index: 10;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 8px;
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    flex-shrink: 0;
+  }
+  .pv-preview-topbar-title {
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text);
+    padding-left: 8px;
+  }
+  .pv-preview-body {
+    flex: 1;
+    overflow-y: auto;
+    background: var(--color-surface);
+    padding-bottom: 96px;
+  }
+  .pv-prev-hero {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    background: var(--color-surface-sub);
+  }
+  .pv-prev-hero-slider {
+    width: 100%; height: 100%;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    display: flex;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .pv-prev-hero-slider::-webkit-scrollbar { display: none; }
+  .pv-prev-hero-slide {
+    flex: 0 0 100%;
+    width: 100%; height: 100%;
+    scroll-snap-align: start;
+    background-size: cover;
+    background-position: center;
+    position: relative;
+  }
+  .pv-prev-hero-slide::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(0,0,0,0) 50%, rgba(0,0,0,0.35) 100%);
+    pointer-events: none;
+  }
+  .pv-prev-hero-pagination {
+    position: absolute; bottom: 12px; right: 12px;
+    z-index: 2;
+    background: rgba(17,19,24,0.55); color: var(--color-on-primary);
+    border-radius: var(--r-full);
+    padding: 4px 10px;
+    font-size: var(--fs-badge); font-weight: var(--fw-medium);
+  }
+  .pv-prev-info {
+    padding: 24px 20px 16px;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .pv-prev-clinic-row {
+    display: inline-flex; align-items: center; gap: 2px; cursor: pointer; align-self: flex-start;
+  }
+  .pv-prev-clinic-name {
+    font-size: var(--fs-label); color: var(--color-text-sub); font-weight: var(--fw-medium);
+  }
+  .pv-prev-clinic-row i[data-lucide],
+  .pv-prev-clinic-row svg { width: 16px; height: 16px; color: var(--color-text-muted); }
+  .pv-prev-headline {
+    font-size: 24px; font-weight: var(--fw-bold);
+    line-height: var(--lh-display); letter-spacing: var(--ls-display); color: var(--color-text);
+    word-break: keep-all;
+  }
+  .pv-prev-schedule {
+    display: inline-flex; align-items: center; gap: 6px;
+    align-self: flex-start;
+    font-size: var(--fs-label);
+    color: var(--color-text-sub);
+    font-weight: var(--fw-medium);
+  }
+  .pv-prev-schedule i[data-lucide],
+  .pv-prev-schedule svg { width: 16px; height: 16px; color: var(--color-text-muted); }
+  .pv-prev-schedule-label { color: var(--color-text-muted); margin-right: 2px; }
+  .pv-prev-schedule-date { color: var(--color-text-sub); font-weight: var(--fw-medium); }
+  .pv-prev-schedule-time { color: var(--color-text-sub); font-weight: var(--fw-medium); }
+  .pv-prev-target {
+    font-size: var(--fs-body-lg); color: var(--color-text-sub);
+    line-height: 1.5; word-break: keep-all;
+  }
+  .pv-prev-trust-row {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    margin-top: 4px;
+  }
+  .pv-prev-trust-dot { font-size: var(--fs-caption); color: var(--color-text-muted); }
+  .pv-prev-star-row { display: inline-flex; align-items: center; gap: 4px; }
+  .pv-prev-star-row i[data-lucide],
+  .pv-prev-star-row svg { width: 14px; height: 14px; color: var(--color-star); fill: var(--color-star); }
+  .pv-prev-star-score { font-size: var(--fs-label); font-weight: var(--fw-semibold); color: var(--color-text); margin-left: 2px; }
+  .pv-prev-star-count { font-size: var(--fs-caption); color: var(--color-text-muted); }
+  .pv-prev-tag-official {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: var(--fs-label); font-weight: var(--fw-medium);
+    color: var(--color-primary);
+  }
+  .pv-prev-tag-official i[data-lucide],
+  .pv-prev-tag-official svg { width: 14px; height: 14px; }
+  .pv-prev-divider {
+    height: 8px;
+    background: var(--color-bg);
+    flex-shrink: 0;
+  }
+  .pv-prev-section {
+    padding: 24px 20px;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  .pv-prev-section-title {
+    font-size: var(--fs-heading);
+    font-weight: var(--fw-bold);
+    color: var(--color-text);
+    letter-spacing: -0.2px;
+  }
+  .pv-prev-date-card {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--color-surface-sub);
+    border-radius: var(--r-md);
+    padding: 16px 20px;
+  }
+  .pv-prev-date-card i[data-lucide], .pv-prev-date-card svg.lucide {
+    width: 20px; height: 20px; color: var(--color-primary);
+  }
+  .pv-prev-date-card-text { flex: 1; }
+  .pv-prev-date-label {
+    font-size: var(--fs-caption); color: var(--color-text-muted); margin-bottom: 2px;
+  }
+  .pv-prev-date-value {
+    font-size: var(--fs-body); font-weight: var(--fw-semibold); color: var(--color-text);
+  }
+  .pv-prev-date-tag {
+    font-size: var(--fs-badge); font-weight: var(--fw-semibold);
+    color: var(--color-destructive);
+    padding: 4px 8px;
+    background: rgba(201,64,34,0.10);
+    border-radius: var(--r-full);
+  }
+  .pv-prev-desc {
+    font-size: var(--fs-body); line-height: 1.7;
+    color: var(--color-text-sub);
+    white-space: pre-wrap;
+    word-break: keep-all;
+  }
+  .pv-prev-checklist {
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .pv-prev-check-item {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-md);
+  }
+  .pv-prev-check-circle {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--color-on-primary);
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .pv-prev-check-circle i[data-lucide], .pv-prev-check-circle svg.lucide {
+    width: 12px; height: 12px;
+    stroke-width: 3;
+  }
+  .pv-prev-check-text {
+    font-size: var(--fs-body-lg); color: var(--color-text);
+    line-height: 1.5; word-break: keep-all;
+  }
+  .pv-prev-empty-section {
+    font-size: var(--fs-label); color: var(--color-text-muted);
+    text-align: center;
+    padding: 8px 0;
+  }
+  .pv-prev-review-scroll {
+    display: flex; gap: 12px;
+    overflow-x: auto;
+    margin: 0 -20px;
+    padding: 0 20px 8px;
+    scrollbar-width: none;
+  }
+  .pv-prev-review-scroll::-webkit-scrollbar { display: none; }
+  .pv-prev-review-card {
+    width: 240px; flex-shrink: 0;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-md);
+    overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .pv-prev-review-img {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    background-size: cover; background-position: center;
+    background-color: var(--color-surface-sub);
+  }
+  .pv-prev-review-body {
+    padding: 12px 14px 14px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .pv-prev-review-stars { display: inline-flex; align-items: center; gap: 2px; }
+  .pv-prev-review-stars i[data-lucide],
+  .pv-prev-review-stars svg { width: 12px; height: 12px; color: var(--color-star); fill: var(--color-star); }
+  .pv-prev-review-text {
+    font-size: var(--fs-label); color: var(--color-text);
+    line-height: 1.5;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .pv-prev-review-meta {
+    font-size: var(--fs-nav); color: var(--color-text-muted);
+    display: flex; align-items: center; gap: 4px;
+  }
+  .pv-prev-review-meta .verified {
+    display: inline-flex; align-items: center; gap: 2px;
+    color: var(--color-primary);
+    font-weight: var(--fw-medium);
+  }
+  .pv-prev-review-meta .verified i[data-lucide],
+  .pv-prev-review-meta .verified svg { width: 10px; height: 10px; }
+  .pv-prev-clinic-link {
+    display: flex; align-items: center; gap: 12px;
+    padding: 16px;
+    background: var(--color-surface-sub);
+    border-radius: var(--r-md);
+    cursor: pointer;
+    border: none;
+    width: 100%;
+    text-align: left;
+    font-family: var(--font-base);
+  }
+  .pv-prev-clinic-link:hover { background: var(--color-border); }
+  .pv-prev-clinic-link-thumb {
+    width: 44px; height: 44px;
+    border-radius: var(--r-sm);
+    background-color: var(--color-primary-light);
+    background-size: cover; background-position: center;
+    flex-shrink: 0;
+  }
+  .pv-prev-clinic-link-text { flex: 1; }
+  .pv-prev-clinic-link-name {
+    font-size: var(--fs-body); font-weight: var(--fw-semibold);
+    color: var(--color-text);
+  }
+  .pv-prev-clinic-link-sub {
+    font-size: var(--fs-caption); color: var(--color-text-muted);
+    margin-top: 2px;
+  }
+  .pv-prev-clinic-link i.chev,
+  .pv-prev-clinic-link svg.chev { width: 18px; height: 18px; color: var(--color-text-muted); }
+  .pv-prev-sticky {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    padding: 12px 20px calc(20px + env(safe-area-inset-bottom));
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+    display: flex; flex-direction: column; gap: 8px;
+    z-index: 5;
+  }
+
+  /* ── Edit body ── */
+  .edit-body {
+    flex: 1;
+    overflow-y: auto;
+    background: var(--color-surface);
+  }
+
+  /* ── Hero / image uploader ── */
+  .pv-hero {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    background-color: var(--color-surface-sub);
+    overflow: hidden;
+  }
+  .pv-hero-track {
+    width: 100%; height: 100%;
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .pv-hero-track::-webkit-scrollbar { display: none; }
+  .pv-hero-slide {
+    flex: 0 0 100%;
+    width: 100%; height: 100%;
+    background-size: cover;
+    background-position: center;
+    scroll-snap-align: start;
+  }
+  .pv-hero-empty {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 8px;
+    color: var(--color-text-muted);
+    background: var(--color-surface-sub);
+    border: none;
+    cursor: pointer;
+    font-family: var(--font-base);
+  }
+  .pv-hero-empty svg,
+  .pv-hero-empty i[data-lucide] { width: 32px; height: 32px; color: var(--color-primary); }
+  .pv-hero-empty .label { font-size: var(--fs-body); font-weight: var(--fw-medium); color: var(--color-text-sub); }
+  .pv-hero-empty .sub { font-size: var(--fs-caption); color: var(--color-text-muted); }
+
+  .pv-hero-counter {
+    position: absolute;
+    right: 12px;
+    bottom: 12px;
+    padding: 4px 12px;
+    background: rgba(17,19,24,0.6);
+    color: var(--color-on-primary);
+    font-size: var(--fs-caption);
+    font-weight: var(--fw-semibold);
+    border-radius: var(--r-full);
+    z-index: 3;
+    display: none;
+  }
+  .pv-hero-cover {
+    position: absolute; top: 12px; left: 12px;
+    padding: 4px 10px;
+    background: rgba(17,19,24,0.65);
+    color: var(--color-on-primary);
+    border-radius: var(--r-full);
+    font-size: var(--fs-nav);
+    font-weight: var(--fw-semibold);
+    z-index: 3;
+    display: none;
+  }
+
+  /* ── Thumbnail strip ── */
+  .pv-thumb-strip {
+    display: flex; gap: 8px;
+    padding: 12px 16px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .pv-thumb-strip::-webkit-scrollbar { display: none; }
+  .pv-thumb {
+    position: relative;
+    flex-shrink: 0;
+    width: 56px; height: 56px;
+    border-radius: var(--r-sm);
+    background: var(--color-surface-sub);
+    background-size: cover;
+    background-position: center;
+    cursor: pointer;
+    border: none;
+    padding: 0;
+    overflow: visible;
+  }
+  .pv-thumb-remove {
+    position: absolute;
+    top: -4px; right: -4px;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--color-text);
+    color: var(--color-on-primary);
+    border: none;
+    display: inline-flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    padding: 0;
+  }
+  .pv-thumb-remove i[data-lucide], .pv-thumb-remove svg.lucide {
+    width: 10px; height: 10px;
+    stroke-width: 2.5;
+  }
+  .pv-thumb-add {
+    flex-shrink: 0;
+    width: 56px; height: 56px;
+    border-radius: var(--r-sm);
+    background: var(--color-surface-sub);
+    border: 1.5px dashed var(--color-border);
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    padding: 0;
+  }
+  .pv-thumb-add:hover { border-color: var(--color-primary); color: var(--color-primary); }
+  .pv-thumb-add i[data-lucide] { width: 18px; height: 18px; }
+
+  /* ── 업로드 영역 (템플릿 모달 상단) ── */
+  .pv-upload-zone {
+    margin: 12px 16px 0;
+    padding: 16px;
+    background: var(--color-surface-sub);
+    border: 1.5px dashed var(--color-border);
+    border-radius: var(--r-md);
+    text-align: center;
+    cursor: pointer;
+    transition: border-color var(--motion-fast) var(--ease-standard);
+  }
+  .pv-upload-zone:hover { border-color: var(--color-primary); }
+  .pv-upload-title {
+    font-size: var(--fs-body);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text);
+  }
+  .pv-upload-sub {
+    margin-top: 4px;
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+  }
+  .pv-upload-input { display: none; }
+
+  /* ── Info (clinic + editable title/target) ── */
+  .pv-info {
+    padding: 32px 20px 8px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .pv-clinic-row {
+    display: inline-flex; align-items: center; gap: 2px;
+    align-self: flex-start;
+  }
+  .pv-clinic {
+    font-size: var(--fs-label);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text-sub);
+  }
+  .pv-clinic-row svg,
+  .pv-clinic-row i[data-lucide] { width: 16px; height: 16px; color: var(--color-text-muted); }
+
+  /* ── Editable (contenteditable) ── */
+  .editable {
+    outline: none;
+    border-radius: var(--r-xs);
+    padding: 4px 6px;
+    margin: 0 -6px;
+    cursor: text;
+    transition: background var(--motion-fast) var(--ease-standard);
+  }
+  .editable:hover:not(:focus) {
+    background: var(--color-surface-sub);
+  }
+  .editable:empty::before {
+    content: attr(data-placeholder);
+    color: var(--color-text-muted);
+    pointer-events: none;
+  }
+
+  .pv-title {
+    font-size: 24px;
+    font-weight: var(--fw-bold);
+    line-height: var(--lh-display);
+    letter-spacing: var(--ls-display);
+    color: var(--color-text);
+    min-height: 34px;
+  }
+  .pv-title.is-error {
+    background: var(--color-destructive-subtle);
+    box-shadow: 0 0 0 4px var(--color-destructive-subtle);
+    border-radius: var(--r-xs);
+  }
+  .pv-target {
+    font-size: var(--fs-body-lg);
+    color: var(--color-text-sub);
+    line-height: 1.5;
+    min-height: 26px;
+  }
+  .pv-trust-row {
+    display: flex; align-items: center; gap: 6px;
+    flex-wrap: wrap;
+    padding-top: 4px;
+  }
+  .pv-trust-row svg,
+  .pv-trust-row i[data-lucide] { width: 14px; height: 14px; }
+  .pv-star-row { display: inline-flex; align-items: center; gap: 4px; }
+  .pv-star-row svg,
+  .pv-star-row i[data-lucide] { color: var(--color-star); fill: var(--color-star); }
+  .pv-star-score { font-size: var(--fs-label); font-weight: var(--fw-semibold); color: var(--color-text); margin-left: 2px; }
+  .pv-star-count { font-size: var(--fs-caption); color: var(--color-text-muted); }
+  .pv-trust-dot { font-size: var(--fs-caption); color: var(--color-text-muted); }
+  .pv-tag-official {
+    display: inline-flex; align-items: center; gap: 4px;
+    color: var(--color-primary);
+    font-size: var(--fs-caption);
+    font-weight: var(--fw-semibold);
+  }
+
+  /* ── Divider (visual divider removed; keeps top-only spacing) ── */
+  .pv-divider {
+    height: 0;
+    background: transparent;
+    margin: 4px 0 0;
+  }
+
+  /* ── Section ── */
+  .pv-section {
+    padding: 6px 20px;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .pv-section-title-meta {
+    color: var(--color-text-muted);
+    font-weight: var(--fw-regular);
+  }
+  .pv-section-title {
+    font-size: var(--fs-label);
+    font-weight: var(--fw-medium);
+    color: var(--color-text-sub);
+    letter-spacing: -0.1px;
+    margin-top: 8px;
+  }
+
+  /* ── Date timeline (시작 / 종료) ── */
+  .pv-date-card {
+    position: relative;
+    background: var(--color-surface-sub);
+    border-radius: var(--r-md);
+    padding: 12px 20px;
+    display: flex; flex-direction: column;
+    gap: 4px;
+  }
+  .pv-date-card-title {
+    font-size: var(--fs-label);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text-sub);
+    flex-shrink: 0;
+  }
+  .pv-date-card-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .pv-date-card-row .pv-date-row {
+    flex: 1;
+    min-width: 0;
+    justify-content: flex-end;
+  }
+  .pv-date-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .pv-date-row[hidden] { display: none; }
+  .pv-date-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 4px;
+  }
+  .pv-datetime-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .pv-datetime-row + .pv-datetime-row {
+    margin-top: 8px;
+  }
+  .pv-datetime-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: var(--fs-label);
+    font-weight: var(--fw-medium);
+    color: var(--color-text-sub);
+    width: 48px;
+    flex-shrink: 0;
+  }
+  .pv-datetime-label::before {
+    content: '';
+    display: inline-block;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--color-border);
+    flex-shrink: 0;
+  }
+  .pv-datetime-label-end::before {
+    background: transparent;
+    box-shadow: inset 0 0 0 1.5px var(--color-border);
+  }
+  .pv-datetime-label-start {
+    position: relative;
+  }
+  .pv-datetime-label-start::after {
+    content: '';
+    position: absolute;
+    left: 4.5px;
+    top: calc(50% + 8px);
+    width: 0;
+    transform: translateX(-50%);
+    height: 30px;
+    border-left: 1.5px dashed var(--color-border);
+    pointer-events: none;
+  }
+  .pv-datetime-row .pv-date-pill {
+    flex: 1;
+    text-align: left;
+  }
+  .pv-datetime-row .pv-time-input {
+    flex: 0 0 92px;
+    text-align: center;
+  }
+  .pv-date-card:not(.has-time) .pv-datetime-row .pv-time-input { display: none; }
+  .pv-date-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 4px;
+  }
+  .pv-date-footer .pv-time-toggle { margin-top: 0; }
+  .pv-date-footer .pv-date-dday {
+    margin-top: 0;
+    padding-left: 0;
+    margin-left: auto;
+  }
+  .pv-date-toggle-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-medium);
+    color: var(--color-text-sub);
+  }
+  .pv-date-group {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+  .pv-date-sep {
+    color: var(--color-text-muted);
+    font-size: var(--fs-body);
+    flex-shrink: 0;
+  }
+  .pv-timeline-label {
+    font-size: var(--fs-label);
+    color: var(--color-text-sub);
+    font-weight: var(--fw-medium);
+    flex-shrink: 0;
+  }
+  .pv-date-pill {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    box-sizing: border-box;
+    height: 36px;
+    background: var(--color-border);
+    border: none;
+    border-radius: var(--r-sm);
+    padding: 0 12px;
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-medium);
+    line-height: 36px;
+    color: var(--color-text);
+    cursor: pointer;
+    text-align: center;
+    transition: background var(--motion-fast) var(--ease-standard);
+  }
+  .pv-date-pill-text {
+    pointer-events: none;
+    display: inline-block;
+  }
+  .pv-date-pill.is-empty .pv-date-pill-text {
+    color: var(--color-text-muted);
+  }
+  .pv-pill-input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    font-family: var(--font-base);
+    padding: 0;
+  }
+  .pv-pill-input::-webkit-calendar-picker-indicator {
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    opacity: 0;
+  }
+  .pv-date-dday {
+    font-size: var(--fs-caption);
+    color: var(--color-primary);
+    margin-top: 10px;
+    padding-left: 28px;
+    display: none;
+  }
+  .pv-date-dday.on { display: block; }
+  .pv-native-date {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    font-family: var(--font-base);
+    padding: 0;
+  }
+  .pv-native-date::-webkit-calendar-picker-indicator {
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    opacity: 0;
+  }
+  .pv-time-input {
+    -webkit-appearance: none;
+    appearance: none;
+    text-align: center;
+    cursor: pointer;
+    font-size: var(--fs-label) !important;
+  }
+  .pv-time-input::-webkit-calendar-picker-indicator {
+    opacity: 0;
+    cursor: pointer;
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+  .pv-time-input::-webkit-date-and-time-value { text-align: center; }
+  .pv-date-toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 0;
+    margin-top: 8px;
+    cursor: pointer;
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-medium);
+    color: var(--color-text-sub);
+  }
+  .pv-card-divider {
+    height: 1px;
+    background: var(--color-border);
+    margin: 8px 0 4px;
+  }
+  .pv-time-toggle {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: transparent;
+    border: none;
+    color: var(--color-text-muted);
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-medium);
+    padding: 4px 0;
+    margin-top: 4px;
+    cursor: pointer;
+  }
+  .pv-time-toggle:hover { color: var(--color-primary); }
+  .pv-time-toggle.is-on { color: var(--color-primary); }
+  .pv-time-toggle i[data-lucide], .pv-time-toggle svg.lucide { width: 14px; height: 14px; }
+
+  /* ── Picker overlay (calendar) ── */
+  .pv-calendar {
+    position: absolute;
+    left: 8px;
+    right: 8px;
+    background: var(--color-surface);
+    border-radius: var(--r-lg);
+    box-shadow: var(--shadow-3);
+    padding: 16px 16px 12px;
+    z-index: 20;
+  }
+  .pv-calendar[hidden],
+  .pv-mc-editor[hidden] { display: none !important; }
+  .pv-cal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4px;
+  }
+  .pv-cal-month {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: transparent;
+    border: none;
+    padding: 6px 0;
+    font-family: var(--font-base);
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-bold);
+    color: var(--color-text);
+    cursor: pointer;
+  }
+  .pv-cal-month svg,
+  .pv-cal-month i[data-lucide] {
+    width: 14px; height: 14px;
+    color: var(--color-text-muted);
+  }
+  .pv-cal-nav button {
+    color: var(--color-primary);
+  }
+  .pv-cal-nav button svg,
+  .pv-cal-nav button i[data-lucide] { width: 20px; height: 20px; }
+  .pv-cal-weekdays {
+    grid-template-columns: repeat(7, 1fr);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-medium);
+    color: var(--color-text-sub);
+    margin-bottom: 0;
+  }
+  .pv-cal-grid {
+    row-gap: 2px;
+  }
+  .pv-cal-day {
+    border-radius: 50%;
+    aspect-ratio: 1;
+    font-weight: var(--fw-medium);
+  }
+  .pv-cal-day:hover { background: var(--color-surface-sub); }
+  .pv-cal-day.is-outside { visibility: hidden; }
+  .pv-cal-day.is-selected {
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+    font-weight: var(--fw-bold);
+  }
+  .pv-cal-day.is-selected:hover { background: var(--color-primary); }
+  .pv-cal-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--color-border);
+  }
+  .pv-cal-footer button {
+    background: transparent;
+    border: none;
+    color: var(--color-primary);
+    font-family: var(--font-base);
+    font-size: var(--fs-body);
+    font-weight: var(--fw-medium);
+    cursor: pointer;
+    padding: 6px 4px;
+  }
+  .pv-cal-footer button.is-strong { font-weight: var(--fw-bold); }
+  .pv-cal-footer .pv-date-toggle-row { flex: 1; margin-top: 0; padding: 4px 0; }
+
+  /* Shared bits used by the calendar picker */
+  .pv-cal-nav {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .pv-cal-nav button {
+    background: transparent;
+    border: none;
+    width: 32px; height: 32px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    border-radius: var(--r-sm);
+    padding: 0;
+  }
+  .pv-cal-nav button:hover { background: var(--color-surface-sub); }
+  .pv-cal-weekdays {
+    display: grid;
+    text-align: center;
+  }
+  .pv-cal-weekdays span {
+    padding: 8px 0;
+  }
+  .pv-cal-weekdays span:first-child,
+  .pv-cal-weekdays span:last-child {
+    color: var(--color-text-muted);
+  }
+  .pv-cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+  }
+  .pv-cal-day {
+    display: flex; align-items: center; justify-content: center;
+    background: transparent;
+    border: none;
+    font-family: var(--font-base);
+    font-size: var(--fs-body);
+    color: var(--color-text);
+    cursor: pointer;
+    padding: 0;
+  }
+  .pv-cal-day.is-disabled {
+    color: var(--color-text-muted);
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .pv-cal-day.is-disabled:hover { background: transparent; }
+  .pv-date-pill.is-active { background: var(--color-bg); box-shadow: inset 0 0 0 1.5px var(--color-primary); }
+
+  /* ── Conditions checklist ── */
+  .pv-checklist { display: flex; flex-direction: column; gap: 12px; align-items: stretch; }
+  .pv-check-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-md);
+  }
+  .pv-check-circle {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--color-on-primary);
+    flex-shrink: 0;
+  }
+  .pv-check-circle svg,
+  .pv-check-circle i[data-lucide] { width: 11px; height: 11px; stroke-width: 3; }
+  .pv-check-text {
+    flex: 1;
+    font-size: var(--fs-label) !important;
+    line-height: 1.5;
+    color: var(--color-text);
+    outline: none;
+    cursor: text;
+    border-radius: var(--r-xs);
+    padding: 2px 4px;
+    margin: 0 -4px;
+    min-width: 0;
+  }
+  .pv-check-text:hover:not(:focus) {
+    background: var(--color-surface-sub);
+  }
+  .pv-check-text:empty::before {
+    content: attr(data-placeholder);
+    color: var(--color-text-muted);
+    pointer-events: none;
+  }
+  .pv-check-remove {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    color: var(--color-text-muted);
+    display: inline-flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    margin-right: -4px;
+  }
+  .pv-check-remove svg,
+  .pv-check-remove i[data-lucide] { width: 14px; height: 14px; }
+  .pv-check-remove:hover { color: var(--color-destructive); background: var(--color-surface-sub); }
+
+  .pv-check-add {
+    display: flex; align-items: center; gap: 12px;
+    width: 100%;
+    padding: 16px;
+    background: var(--color-surface);
+    border: 1px dashed var(--color-border);
+    border-radius: var(--r-md);
+    color: var(--color-text-muted);
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-medium);
+    font-family: var(--font-base);
+    cursor: pointer;
+    text-align: left;
+    transition: color var(--motion-fast) var(--ease-standard), border-color var(--motion-fast) var(--ease-standard), background var(--motion-fast) var(--ease-standard);
+  }
+  .pv-check-add:hover {
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+    background: var(--color-primary-light);
+  }
+  .pv-check-add-circle {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: var(--color-surface-sub);
+    color: var(--color-text-muted);
+    display: inline-flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+    transition: background var(--motion-fast) var(--ease-standard), color var(--motion-fast) var(--ease-standard);
+  }
+  .pv-check-add:hover .pv-check-add-circle {
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+  }
+  .pv-check-add-circle svg,
+  .pv-check-add-circle i[data-lucide] { width: 12px; height: 12px; stroke-width: 3; }
+
+  /* ── Description ── */
+  .pv-desc {
+    font-size: var(--fs-body);
+    line-height: 1.7;
+    color: var(--color-text-sub);
+    min-height: 24px;
+    white-space: pre-wrap;
+    flex: 1;
+  }
+  .pv-desc-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    cursor: text;
+  }
+  .pv-desc-row i[data-lucide], .pv-desc-row svg.lucide {
+    width: 18px; height: 18px;
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+    margin-top: 4px;
+  }
+
+  /* ── Luma-style content card (자격 조건 · 이벤트 안내) ── */
+  .pv-luma-card {
+    background: var(--color-surface-sub);
+    border-radius: var(--r-md);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  .pv-luma-head {
+    display: flex; align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 16px 16px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-family: var(--font-base);
+    text-align: left;
+  }
+  .pv-luma-head i[data-lucide], .pv-luma-head svg.lucide {
+    width: 16px; height: 16px;
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+  }
+  .pv-luma-label {
+    flex: 1;
+    font-size: var(--fs-body);
+    font-weight: var(--fw-medium);
+    color: var(--color-text);
+  }
+  .pv-luma-action { color: var(--color-text-muted); }
+  .pv-luma-action-label {
+    font-size: var(--fs-label);
+    color: var(--color-text-muted);
+    font-weight: var(--fw-medium);
+    margin-right: 4px;
+  }
+  .pv-luma-card .pv-checklist {
+    width: 100%;
+    padding: 0 16px 16px;
+    gap: 8px;
+  }
+  .pv-luma-card .pv-check-item {
+    background: var(--color-surface);
+  }
+
+  /* 이벤트 설명 card */
+  #desc-card {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 16px 20px;
+    gap: 12px;
+    cursor: text;
+    min-height: 200px;
+  }
+  #desc-card .pv-desc { flex: 1; margin: 0; }
+  .pv-desc-label {
+    font-size: var(--fs-label);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text-sub);
+  }
+  .pv-luma-card .pv-desc {
+    background: transparent;
+    border: none;
+    padding: 0;
+    color: var(--color-text);
+    white-space: pre-wrap;
+  }
+  .pv-luma-card .pv-desc:hover:not(:focus) { background: transparent; }
+  .pv-luma-card .pv-desc:empty::before {
+    color: var(--color-text-muted);
+    font-weight: var(--fw-regular);
+    font-size: var(--fs-body);
+    white-space: pre-wrap;
+  }
+  .pv-luma-card .pv-desc:empty {
+    line-height: 1.5;
+    min-height: 21px;
+  }
+  .pv-luma-card[hidden],
+  .pv-checklist[hidden] { display: none !important; }
+
+  /* ── Inline add (자격 조건 빈 상태 등) ── */
+  .pv-inline-add {
+    display: flex; align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 4px 0;
+    background: transparent;
+    border: none;
+    color: var(--color-text-sub);
+    font-family: var(--font-base);
+    font-size: var(--fs-body);
+    font-weight: var(--fw-medium);
+    cursor: pointer;
+    text-align: left;
+  }
+  .pv-inline-add:hover { color: var(--color-primary); }
+  .pv-inline-add i[data-lucide], .pv-inline-add svg.lucide {
+    width: 18px; height: 18px;
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+  }
+  .pv-inline-add:hover i[data-lucide], .pv-inline-add:hover svg.lucide {
+    color: var(--color-primary);
+  }
+
+  /* ── Options block ── */
+  .pv-options {
+    background: var(--color-surface);
+  }
+  .pv-options .pv-section {
+    gap: 20px;
+  }
+  .pv-option-block {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .pv-option-label {
+    font-size: var(--fs-body);
+    font-weight: var(--fw-medium);
+    color: var(--color-text);
+  }
+  .pv-option-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-md);
+    padding: 16px 20px;
+  }
+  .pv-option-card input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    font-family: var(--font-base);
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-medium);
+    color: var(--color-text);
+    outline: none;
+    padding: 0;
+  }
+  .pv-option-card input::placeholder { color: var(--color-text-muted); }
+
+  /* 신청폼 구성 — default + added questions */
+  .pv-form-card {
+    background: var(--color-surface-sub);
+    border-radius: var(--r-md);
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  .pv-field-row {
+    display: flex; align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+  }
+  .pv-form-card .pv-field-row { border-top: 1px solid var(--color-border); }
+  .pv-form-card > .pv-field-row:first-child { border-top: none; }
+  .pv-field-row > .checkbox { cursor: pointer; }
+  .pv-field-row-q { padding-left: 36px; }
+  .pv-field-label {
+    flex: 1;
+    font-size: var(--fs-body);
+    color: var(--color-text);
+    font-weight: var(--fw-semibold);
+    min-width: 0;
+    word-break: break-word;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    cursor: pointer;
+  }
+  .pv-q-text { font-weight: var(--fw-semibold); }
+  .pv-q-meta {
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+    font-weight: var(--fw-regular);
+  }
+  .pv-req-seg {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  .pv-req-seg-btn {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-full);
+    padding: 4px 14px;
+    font-family: var(--font-base);
+    font-size: var(--fs-caption);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition: background var(--motion-fast) var(--ease-standard), color var(--motion-fast) var(--ease-standard), border-color var(--motion-fast) var(--ease-standard);
+  }
+  .pv-req-seg-btn.is-selected {
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+    border-color: var(--color-primary);
+  }
+  .pv-req-seg.is-disabled .pv-req-seg-btn { opacity: 0.4; pointer-events: none; }
+  .pv-field-add {
+    display: flex; align-items: center; justify-content: center;
+    gap: 6px;
+    background: transparent;
+    border: 1px dashed var(--color-border);
+    border-radius: var(--r-sm);
+    padding: 12px;
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-medium);
+    color: var(--color-text-sub);
+    cursor: pointer;
+    margin-top: 12px;
+  }
+  .pv-field-add:hover {
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+  }
+  .pv-field-add i[data-lucide], .pv-field-add svg.lucide {
+    width: 14px; height: 14px;
+  }
+  .pv-form-notice {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--color-surface-sub);
+    border-radius: var(--r-md);
+    padding: 12px 16px;
+    color: var(--color-text);
+    font-size: var(--fs-body);
+    font-weight: var(--fw-semibold);
+    margin: 4px 0 8px;
+  }
+  .pv-form-notice i[data-lucide], .pv-form-notice svg {
+    width: 16px; height: 16px;
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+  }
+  .pv-form-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 4px;
+    color: var(--color-text);
+    font-size: var(--fs-body);
+  }
+  .pv-form-row + .pv-form-row {
+    border-top: 1px solid var(--color-border);
+  }
+  .pv-form-row-label { flex: 1; }
+  .pv-form-row-badge {
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+  }
+  .pv-form-row svg, .pv-form-row i[data-lucide] {
+    width: 16px; height: 16px;
+    color: var(--color-text-muted);
+  }
+  .pv-form-row .pv-form-row-remove {
+    background: transparent;
+    border: none;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    padding: 4px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: var(--r-xs);
+  }
+  .pv-form-row .pv-form-row-remove:hover { background: var(--color-surface-sub); }
+  .pv-form-row .pv-form-question-text {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: var(--font-base);
+    font-size: var(--fs-body);
+    color: var(--color-text);
+    padding: 0;
+  }
+  .pv-form-row .pv-form-question-text::placeholder { color: var(--color-text-muted); }
+  .pv-form-mc-options {
+    display: flex; flex-direction: column;
+    gap: 6px;
+    padding: 6px 4px 10px 28px;
+  }
+  .pv-form-mc-option {
+    display: flex; align-items: center; gap: 8px;
+    font-size: var(--fs-label);
+    color: var(--color-text);
+  }
+  .pv-form-mc-option-circle {
+    width: 14px; height: 14px;
+    border: 1.5px solid var(--color-text-muted);
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .pv-form-mc-option input {
+    background: transparent;
+    border: none;
+    outline: none;
+    flex: 1;
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    color: var(--color-text);
+    padding: 2px 0;
+  }
+  .pv-form-mc-option input::placeholder { color: var(--color-text-muted); }
+  .pv-form-mc-option .pv-form-mc-remove {
+    background: transparent; border: none;
+    color: var(--color-text-muted);
+    cursor: pointer; padding: 2px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .pv-form-mc-option .pv-form-mc-remove svg,
+  .pv-form-mc-option .pv-form-mc-remove i[data-lucide] { width: 14px; height: 14px; }
+  .pv-form-mc-add {
+    margin-left: 28px;
+    margin-top: 4px;
+    background: transparent;
+    border: none;
+    color: var(--color-text-sub);
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    cursor: pointer;
+    align-self: flex-start;
+    padding: 4px 0;
+  }
+  /* 추가된 질문 카드 */
+  .pv-questions-list {
+    display: flex; flex-direction: column;
+    gap: 8px;
+  }
+  .pv-questions-list:empty { display: none; }
+  .pv-question-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-md);
+    padding: 12px 16px;
+    display: flex; flex-direction: column;
+    gap: 8px;
+  }
+  .pv-question-head {
+    display: flex; align-items: center;
+    gap: 8px;
+  }
+  .pv-question-type-badge {
+    font-size: var(--fs-caption);
+    font-weight: var(--fw-medium);
+    color: var(--color-primary);
+    background: var(--color-primary-light);
+    padding: 2px 8px;
+    border-radius: var(--r-full);
+    flex-shrink: 0;
+  }
+  .pv-question-text {
+    flex: 1;
+    font-size: var(--fs-body);
+    color: var(--color-text);
+    word-break: break-word;
+  }
+  .pv-question-remove {
+    background: transparent; border: none;
+    color: var(--color-text-muted);
+    cursor: pointer; padding: 4px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .pv-question-remove i[data-lucide], .pv-question-remove svg { width: 16px; height: 16px; }
+  .pv-question-options {
+    list-style: none;
+    padding: 0; margin: 0;
+    display: flex; flex-direction: column;
+    gap: 4px;
+  }
+  .pv-question-options li {
+    font-size: var(--fs-label);
+    color: var(--color-text-sub);
+    padding-left: 16px;
+    position: relative;
+  }
+  .pv-question-options li::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 8px;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--color-text-muted);
+  }
+
+  /* 추가 질문 모달 내부 */
+  .pv-qtype-row {
+    display: flex; gap: 8px;
+  }
+  .pv-qtype-row .pv-chip { flex: 1; justify-content: center; display: flex; }
+  .pv-mc-editor {
+    display: flex; flex-direction: column;
+    gap: 8px;
+  }
+  .pv-mc-editor-row {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .pv-mc-editor-row .pv-form-mc-option-circle {
+    width: 14px; height: 14px;
+    border: 1.5px solid var(--color-text-muted);
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .pv-mc-editor-row input {
+    flex: 1;
+    min-width: 0;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-sm);
+    padding: 10px 12px;
+    font-family: var(--font-base);
+    font-size: var(--fs-body);
+    color: var(--color-text);
+    outline: none;
+  }
+  .pv-mc-editor-row input:focus { border-color: var(--color-primary); }
+  .pv-mc-editor-row .pv-mc-editor-remove {
+    background: transparent; border: none;
+    color: var(--color-text-muted);
+    cursor: pointer; padding: 4px;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .pv-mc-editor-add {
+    align-self: flex-start;
+    background: transparent;
+    border: none;
+    color: var(--color-primary);
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-medium);
+    cursor: pointer;
+    padding: 4px 0;
+  }
+  .pv-sheet-actions {
+    display: flex; gap: 8px;
+  }
+  .pv-sheet-actions .btn { flex: 1; }
+  .pv-sheet-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 0;
+    font-size: var(--fs-body);
+    color: var(--color-text);
+    font-weight: var(--fw-medium);
+    cursor: pointer;
+  }
+  .pv-sheet-toggle[hidden] { display: none !important; }
+  .pv-sheet-link-danger {
+    align-self: center;
+    background: transparent;
+    border: none;
+    color: var(--color-destructive);
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-medium);
+    cursor: pointer;
+    padding: 4px 8px;
+  }
+  .pv-sheet-link-danger[hidden] { display: none !important; }
+
+  /* 옵션 리스트 (luma-style) */
+  .pv-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    width: 100%;
+    padding: 14px 20px;
+    background: var(--color-surface-sub);
+    border: 0;
+    border-radius: var(--r-md);
+    cursor: pointer;
+    font-family: var(--font-base);
+  }
+  .pv-section-header .pv-section-title {
+    margin-top: 0;
+    color: var(--color-text-sub);
+    font-weight: var(--fw-medium);
+    font-size: var(--fs-label);
+    letter-spacing: -0.1px;
+  }
+  .pv-section-header-text {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+    min-width: 0;
+    flex: 1;
+  }
+  .pv-section-summary {
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+    font-weight: var(--fw-regular);
+    line-height: 1.4;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+  }
+  .pv-section-header.is-open .pv-section-summary { display: none; }
+  .pv-section-chevron {
+    width: 18px;
+    height: 18px;
+    color: var(--color-text-muted);
+    transition: transform var(--motion-fast) var(--ease-standard);
+  }
+  .pv-section-header.is-open .pv-section-chevron {
+    transform: rotate(180deg);
+  }
+  .pv-section-header.is-open {
+    border-radius: var(--r-md) var(--r-md) 0 0;
+  }
+  .pv-section-header.is-open + .pv-opt-list {
+    border-radius: 0 0 var(--r-md) var(--r-md);
+    margin-top: -12px;
+  }
+  .pv-opt-list {
+    background: var(--color-surface-sub);
+    border-radius: var(--r-md);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  .pv-opt-list[hidden] { display: none; }
+  .pv-opt-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 16px;
+    background: transparent;
+    border: none;
+    font-family: var(--font-base);
+    color: var(--color-text);
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+    transition: background var(--motion-fast) var(--ease-standard);
+  }
+  .pv-opt-row:hover { background: rgba(0,0,0,0.02); }
+  .pv-opt-row.pv-opt-row-static { cursor: default; }
+  .pv-opt-row.pv-opt-row-static:hover { background: transparent; }
+  .pv-opt-row.pv-opt-row-static .pv-opt-row-label {
+    color: var(--color-text);
+    font-weight: var(--fw-medium);
+  }
+  .pv-opt-row.pv-opt-row-toggle { cursor: pointer; }
+  .pv-opt-row.pv-opt-row-toggle .toggle { flex-shrink: 0; }
+  .pv-opt-row + .pv-opt-row {
+    border-top: 1px solid var(--color-border);
+  }
+  .pv-opt-row i[data-lucide], .pv-opt-row svg.lucide {
+    width: 16px; height: 16px;
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+  }
+  .pv-opt-row .pv-opt-icon-edit {
+    width: 14px; height: 14px;
+    color: var(--color-text-muted);
+    opacity: 0.6;
+    margin-left: 4px;
+  }
+  .pv-opt-row-label {
+    flex: 1;
+    font-size: var(--fs-body);
+    font-weight: var(--fw-medium);
+    color: var(--color-text);
+  }
+  .pv-opt-row-label:has(.pv-opt-row-sub) {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    min-width: 0;
+    flex-wrap: wrap;
+  }
+  .pv-opt-row-sub {
+    font-size: var(--fs-caption);
+    font-weight: var(--fw-regular);
+    color: var(--color-text-muted);
+    line-height: 1.4;
+    white-space: nowrap;
+  }
+  .pv-opt-row-value {
+    font-size: var(--fs-body);
+    color: var(--color-text-muted);
+    display: inline-flex; align-items: center; gap: 0;
+  }
+
+  /* 옵션 편집 모달 (frame-scoped) */
+  .pv-sheet-overlay {
+    position: absolute; inset: 0;
+    background: rgba(17,19,24,0.5);
+    z-index: 50;
+    opacity: 0; pointer-events: none;
+    transition: opacity var(--motion-standard) var(--ease-enter);
+  }
+  .pv-sheet-overlay.is-open { opacity: 1; pointer-events: auto; }
+  .pv-sheet {
+    position: absolute;
+    top: 50%; left: 20px; right: 20px;
+    background: var(--color-surface);
+    border-radius: var(--r-lg);
+    padding: 24px 20px 20px;
+    z-index: 51;
+    box-shadow: var(--shadow-4);
+    opacity: 0;
+    transform: translateY(-50%) scale(0.96);
+    transition: opacity var(--motion-standard) var(--ease-enter),
+                transform var(--motion-standard) var(--ease-enter);
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .pv-sheet.is-open {
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+    pointer-events: auto;
+  }
+  .pv-sheet-handle { display: none; }
+  .pv-sheet-title {
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-bold);
+    color: var(--color-text);
+  }
+  .pv-sheet-input {
+    width: 100%;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-md);
+    padding: 14px 16px;
+    font-family: var(--font-base);
+    font-size: var(--fs-body);
+    color: var(--color-text);
+    outline: none;
+  }
+  .pv-sheet-input:focus { border-color: var(--color-primary); }
+  .pv-sheet-suggestions {
+    display: flex; flex-wrap: wrap; gap: 8px;
+  }
+  .pv-sheet-suggestion {
+    background: var(--color-surface-sub);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-full);
+    padding: 8px 14px;
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    color: var(--color-text-sub);
+    cursor: pointer;
+  }
+  .pv-sheet-suggestion:hover {
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+  }
+
+  /* ── 이미지 템플릿 선택 모달 ── */
+  .pv-sheet.sheet-template {
+    top: 24px; bottom: 24px;
+    left: 16px; right: 16px;
+    transform: translateY(0) scale(0.96);
+    padding: 0;
+    overflow: hidden;
+  }
+  .pv-sheet.sheet-template.is-open {
+    transform: translateY(0) scale(1);
+  }
+  .pv-tmpl-head {
+    display: flex; align-items: center;
+    padding: 16px 16px 12px;
+    border-bottom: 1px solid var(--color-border);
+    flex-shrink: 0;
+  }
+  .pv-tmpl-title {
+    flex: 1;
+    text-align: center;
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-bold);
+    color: var(--color-text);
+  }
+  .pv-tmpl-close {
+    width: 32px; height: 32px;
+    border: none; background: transparent;
+    color: var(--color-text-sub);
+    cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .pv-tmpl-tabs {
+    display: flex; gap: 8px;
+    padding: 8px 16px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .pv-tmpl-tabs::-webkit-scrollbar { display: none; }
+  .pv-tmpl-tab {
+    flex-shrink: 0;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-full);
+    padding: 8px 16px;
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-medium);
+    color: var(--color-text-sub);
+    cursor: pointer;
+  }
+  .pv-tmpl-tab.is-selected {
+    background: var(--color-text);
+    border-color: var(--color-text);
+    color: var(--color-on-primary);
+  }
+  .pv-tmpl-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+  }
+  .pv-tmpl-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .pv-tmpl-card {
+    aspect-ratio: 4 / 3;
+    background: var(--color-surface-sub);
+    border-radius: var(--r-md);
+    overflow: hidden;
+    cursor: pointer;
+    border: none;
+    padding: 0;
+    background-size: cover;
+    background-position: center;
+    position: relative;
+  }
+  /* ── 리뷰 선택 (리뷰 큐레이션) ── */
+  .pv-opt-row-nested {
+    background: var(--color-border);
+    margin: 0 12px 12px;
+    padding: 12px 16px;
+    border-radius: var(--r-sm);
+    width: auto;
+  }
+  .pv-opt-row + .pv-opt-row-nested {
+    border-top: none;
+  }
+  .pv-opt-row-nested:hover { background: var(--color-border); }
+  .pv-opt-row[hidden] { display: none; }
+  .pv-tmpl-done {
+    height: 32px;
+    padding: 0 12px;
+    border: none; background: transparent;
+    color: var(--color-primary);
+    font-family: var(--font-base);
+    font-size: var(--fs-body);
+    font-weight: var(--fw-semibold);
+    cursor: pointer;
+  }
+  .pv-tmpl-done:hover { color: var(--color-primary-dark); }
+  .pv-review-pick-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px 4px;
+    background: var(--color-surface);
+  }
+  .pv-review-pick-sort {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: transparent;
+    border: none;
+    padding: 0;
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    color: var(--color-text-sub);
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  .pv-review-pick-sort i[data-lucide],
+  .pv-review-pick-sort svg.lucide { width: 14px; height: 14px; }
+  .pv-review-pick-sort:hover { color: var(--color-text); }
+  .pv-review-pick-search {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--color-surface-sub);
+    border-radius: var(--r-sm);
+    padding: 0 12px;
+    height: 36px;
+  }
+  .pv-review-pick-search i[data-lucide],
+  .pv-review-pick-search svg.lucide {
+    width: 16px; height: 16px;
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+  }
+  .pv-review-pick-search input {
+    flex: 1; min-width: 0;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    color: var(--color-text);
+    padding: 0;
+  }
+  .pv-review-pick-search input::placeholder { color: var(--color-text-muted); }
+  .pv-review-pick-empty {
+    padding: 32px 0;
+    text-align: center;
+    font-size: var(--fs-label);
+    color: var(--color-text-muted);
+  }
+  .pv-review-pick-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-surface);
+  }
+  .pv-review-pick-header-label {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: var(--fs-label);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text);
+    cursor: pointer;
+  }
+  .pv-review-pick-count {
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+  }
+  .pv-review-pick-list {
+    display: flex; flex-direction: column;
+    gap: 8px;
+  }
+  .pv-review-pick-item {
+    display: flex; align-items: flex-start;
+    gap: 12px;
+    padding: 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-md);
+    background: var(--color-surface);
+    cursor: pointer;
+    transition: border-color var(--motion-fast) var(--ease-standard),
+                background var(--motion-fast) var(--ease-standard);
+  }
+  .pv-review-pick-item.is-selected {
+    border-color: var(--color-primary);
+    background: var(--color-primary-light);
+  }
+  .pv-review-pick-item .checkbox { flex-shrink: 0; margin-top: 2px; }
+  .pv-review-pick-content {
+    flex: 1; min-width: 0;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .pv-review-pick-imgs {
+    display: flex; gap: 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    margin: 0 -12px;
+    padding: 0 12px;
+  }
+  .pv-review-pick-imgs::-webkit-scrollbar { display: none; }
+  .pv-review-pick-img {
+    width: 112px; height: 84px;
+    border-radius: var(--r-sm);
+    background-size: cover; background-position: center;
+    background-color: var(--color-surface-sub);
+    flex-shrink: 0;
+  }
+  .pv-review-pick-body {
+    min-width: 0;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .pv-review-pick-stars {
+    display: inline-flex; align-items: center; gap: 2px;
+  }
+  .pv-review-pick-stars i[data-lucide],
+  .pv-review-pick-stars svg {
+    width: 12px; height: 12px;
+    color: var(--color-star); fill: var(--color-star);
+  }
+  .pv-review-pick-text {
+    font-size: var(--fs-label);
+    color: var(--color-text);
+    line-height: 1.5;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .pv-review-pick-author {
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+  }
+
+  .pv-tmpl-empty {
+    grid-column: 1 / -1;
+    padding: 48px 20px;
+    text-align: center;
+    color: var(--color-text-muted);
+    font-size: var(--fs-label);
+  }
+
+  .pv-chip {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-full);
+    padding: 10px 18px;
+    font-family: var(--font-base);
+    font-size: var(--fs-body);
+    font-weight: var(--fw-medium);
+    color: var(--color-text);
+    cursor: pointer;
+    transition: background var(--motion-fast) var(--ease-standard);
+  }
+  .pv-chip:hover { background: var(--color-surface-sub); }
+  .pv-chip.is-selected {
+    background: var(--color-primary-light);
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+    font-weight: var(--fw-bold);
+  }
+
+  /* ── Publish bar (scrolls with content) ── */
+  .publish-bar {
+    padding: 16px 20px calc(24px + env(safe-area-inset-bottom));
+    background: var(--color-surface);
+    display: flex; flex-direction: column;
+  }
+
+  /* ── Required asterisk ── */
+  .pv-required::after {
+    content: '*';
+    color: var(--color-destructive);
+    font-weight: var(--fw-semibold);
+    margin-left: 4px;
+  }
+  .pv-title.pv-required:not(:empty)::after { display: none; }
+
+  :focus-visible { outline: none; }
+</style>
+</head>
+<body>
+
+<div class="frame">
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <button class="icon-btn icon-btn-clear" aria-label="뒤로">
+      <i data-lucide="chevron-left" style="width:22px;height:22px;color:var(--color-text);"></i>
+    </button>
+    <span class="topbar-title">이벤트 만들기</span>
+    <button class="topbar-preview-btn" type="button" onclick="openPreview()">미리보기</button>
+  </div>
+
+  <!-- Editable body -->
+  <div class="edit-body">
+
+    <!-- Hero / image uploader -->
+    <div class="pv-hero" id="pv-hero">
+      <div class="pv-hero-track" id="pv-hero-track" style="display:none;" onscroll="updateHeroCounter()"></div>
+      <button type="button" class="pv-hero-empty" id="pv-hero-empty" onclick="addImage(event)">
+        <i data-lucide="image-plus"></i>
+        <span class="label">대표 사진을 추가하세요</span>
+      </button>
+      <span class="pv-hero-cover" id="pv-hero-cover">대표</span>
+      <span class="pv-hero-counter" id="pv-hero-counter"></span>
+    </div>
+
+    <!-- Thumbnail strip -->
+    <div class="pv-thumb-strip" id="pv-thumb-strip"></div>
+
+    <!-- Title -->
+    <div class="pv-info">
+      <div class="editable pv-title" id="f-title" contenteditable="true" data-placeholder="이벤트 이름" oninput="onInput()" onkeydown="blockEnter(event)"></div>
+    </div>
+
+    <div class="pv-divider"></div>
+
+    <!-- 이벤트 설명 -->
+    <div class="pv-section">
+      <div class="pv-luma-card" id="desc-card" onclick="document.getElementById('f-desc').focus()">
+        <div class="pv-desc-label">이벤트 설명</div>
+        <div class="editable pv-desc" id="f-desc" contenteditable="true" data-placeholder="어떤 이벤트인지 자유롭게 적어보세요.&#10;예) 진행 일정, 참여 방법, 혜택, 유의 사항 등" oninput="onInput()"></div>
+      </div>
+    </div>
+
+    <!-- 신청폼 구성 -->
+    <div class="pv-section">
+      <div class="pv-section-title">신청폼 구성</div>
+      <div class="pv-form-card" id="f-form-card">
+        <div class="pv-field-row">
+          <input type="checkbox" class="checkbox" id="field-name-enabled" checked onchange="toggleFieldEnabled('name')">
+          <label class="pv-field-label" for="field-name-enabled">이름</label>
+          <div class="pv-req-seg" data-field="name">
+            <button type="button" class="pv-req-seg-btn is-selected" onclick="setFieldRequired('name', true)">필수</button>
+            <button type="button" class="pv-req-seg-btn" onclick="setFieldRequired('name', false)">선택</button>
+          </div>
+        </div>
+        <div class="pv-field-row">
+          <input type="checkbox" class="checkbox" id="field-phone-enabled" checked onchange="toggleFieldEnabled('phone')">
+          <label class="pv-field-label" for="field-phone-enabled">전화번호</label>
+          <div class="pv-req-seg" data-field="phone">
+            <button type="button" class="pv-req-seg-btn is-selected" onclick="setFieldRequired('phone', true)">필수</button>
+            <button type="button" class="pv-req-seg-btn" onclick="setFieldRequired('phone', false)">선택</button>
+          </div>
+        </div>
+        <div class="pv-field-row">
+          <input type="checkbox" class="checkbox" id="field-email-enabled" checked onchange="toggleFieldEnabled('email')">
+          <label class="pv-field-label" for="field-email-enabled">이메일</label>
+          <div class="pv-req-seg" data-field="email">
+            <button type="button" class="pv-req-seg-btn" onclick="setFieldRequired('email', true)">필수</button>
+            <button type="button" class="pv-req-seg-btn is-selected" onclick="setFieldRequired('email', false)">선택</button>
+          </div>
+        </div>
+        <div class="pv-questions-list" id="pv-questions-list"></div>
+        <button type="button" class="pv-field-add" onclick="openAddQuestion()">
+          <i data-lucide="plus"></i>
+          <span>질문 추가</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="pv-divider"></div>
+
+    <!-- 일정 -->
+    <div class="pv-section">
+      <div class="pv-section-title">일정 <span class="pv-section-title-meta">(선택)</span></div>
+      <div class="pv-date-card" id="apply-card">
+        <div class="pv-date-card-title">신청 기간</div>
+        <div class="pv-datetime-row">
+          <span class="pv-datetime-label pv-datetime-label-start">시작</span>
+          <button type="button" class="pv-date-pill is-empty" id="pill-start-date" onclick="openCalendar('start', event)">
+            <span class="pv-date-pill-text" id="disp-start-date">날짜 선택</span>
+            <input type="hidden" id="f-start">
+          </button>
+          <input type="time" class="pv-date-pill pv-time-input" id="f-start-time" oninput="onInput()" onclick="this.showPicker && this.showPicker()">
+        </div>
+        <div class="pv-datetime-row">
+          <span class="pv-datetime-label pv-datetime-label-end">종료</span>
+          <button type="button" class="pv-date-pill is-empty" id="pill-end-date" onclick="openCalendar('end', event)">
+            <span class="pv-date-pill-text" id="disp-end-date">날짜 선택</span>
+            <input type="hidden" id="f-end">
+          </button>
+          <input type="time" class="pv-date-pill pv-time-input" id="f-end-time" oninput="onInput()" onclick="this.showPicker && this.showPicker()">
+        </div>
+        <div class="pv-date-footer">
+          <button type="button" class="pv-time-toggle" id="apply-time-toggle" onclick="toggleTime('apply')">
+            <i data-lucide="plus"></i>
+            <span>시간 추가</span>
+          </button>
+          <div class="pv-date-dday" id="f-dday"></div>
+        </div>
+        <div class="pv-calendar" id="pv-calendar" hidden>
+          <div class="pv-cal-header">
+            <button type="button" class="pv-cal-month" id="pv-cal-month">2026년 6월<i data-lucide="chevron-right"></i></button>
+            <div class="pv-cal-nav">
+              <button type="button" onclick="changeMonth(-1)" aria-label="이전 달"><i data-lucide="chevron-left"></i></button>
+              <button type="button" onclick="changeMonth(1)" aria-label="다음 달"><i data-lucide="chevron-right"></i></button>
+            </div>
+          </div>
+          <div class="pv-cal-weekdays">
+            <span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span>
+          </div>
+          <div class="pv-cal-grid" id="pv-cal-grid"></div>
+        </div>
+      </div>
+
+      <div class="pv-date-card" id="event-card">
+        <div class="pv-date-card-header">
+          <div class="pv-date-card-title">행사 일정</div>
+          <label class="pv-date-toggle-inline">
+            <span>신청 기간과 동일</span>
+            <input type="checkbox" class="toggle toggle-sm" id="event-same-toggle" checked onchange="toggleEventSameAsApply()">
+          </label>
+        </div>
+        <div id="event-datetime-group" data-card="event" hidden>
+          <div class="pv-datetime-row">
+            <span class="pv-datetime-label pv-datetime-label-start">시작</span>
+            <button type="button" class="pv-date-pill is-empty" id="pill-event-start-date" onclick="openCalendar('event-start', event)">
+              <span class="pv-date-pill-text" id="disp-event-start-date">날짜 선택</span>
+              <input type="hidden" id="f-event-start">
+            </button>
+            <input type="time" class="pv-date-pill pv-time-input" id="f-event-start-time" oninput="onInput()" onclick="this.showPicker && this.showPicker()">
+          </div>
+          <div class="pv-datetime-row">
+            <span class="pv-datetime-label pv-datetime-label-end">종료</span>
+            <button type="button" class="pv-date-pill is-empty" id="pill-event-end-date" onclick="openCalendar('event-end', event)">
+              <span class="pv-date-pill-text" id="disp-event-end-date">날짜 선택</span>
+              <input type="hidden" id="f-event-end">
+            </button>
+            <input type="time" class="pv-date-pill pv-time-input" id="f-event-end-time" oninput="onInput()" onclick="this.showPicker && this.showPicker()">
+          </div>
+          <button type="button" class="pv-time-toggle" id="event-time-toggle" onclick="toggleTime('event')">
+            <i data-lucide="plus"></i>
+            <span>시간 추가</span>
+          </button>
+          <div class="pv-calendar" id="pv-calendar-event" hidden>
+            <div class="pv-cal-header">
+              <button type="button" class="pv-cal-month" id="pv-cal-event-month">2026년 6월<i data-lucide="chevron-right"></i></button>
+              <div class="pv-cal-nav">
+                <button type="button" onclick="changeMonth(-1)" aria-label="이전 달"><i data-lucide="chevron-left"></i></button>
+                <button type="button" onclick="changeMonth(1)" aria-label="다음 달"><i data-lucide="chevron-right"></i></button>
+              </div>
+            </div>
+            <div class="pv-cal-weekdays">
+              <span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span>
+            </div>
+            <div class="pv-cal-grid" id="pv-cal-event-grid"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 이벤트 설정 -->
+    <div class="pv-section" style="margin-top: 20px;">
+      <button type="button" class="pv-section-header" id="opt-section-header" onclick="toggleOptions()">
+        <span class="pv-section-header-text">
+          <span class="pv-section-title">이벤트 설정</span>
+          <span class="pv-section-summary">리뷰, 댓글, 신청자수 등</span>
+        </span>
+        <i data-lucide="chevron-down" class="pv-section-chevron"></i>
+      </button>
+      <div class="pv-opt-list" id="opt-list" hidden>
+        <button type="button" class="pv-opt-row" onclick="openSheet('cta')">
+          <i data-lucide="mouse-pointer-click"></i>
+          <span class="pv-opt-row-label">신청 버튼 문구</span>
+          <span class="pv-opt-row-value" id="disp-cta">신청하기</span>
+          <i data-lucide="chevron-right" class="pv-opt-icon-edit"></i>
+        </button>
+        <label class="pv-opt-row pv-opt-row-toggle">
+          <i data-lucide="star"></i>
+          <span class="pv-opt-row-label">리뷰 노출</span>
+          <input type="checkbox" class="toggle toggle-sm" id="opt-reviews" onchange="onReviewsToggle()">
+        </label>
+        <button type="button" class="pv-opt-row pv-opt-row-nested" id="opt-reviews-picker" hidden onclick="openReviewsPicker()">
+          <span class="pv-opt-row-label">노출할 후기</span>
+          <span class="pv-opt-row-value" id="disp-review-count">전체</span>
+          <i data-lucide="chevron-right" class="pv-opt-icon-edit"></i>
+        </button>
+        <label class="pv-opt-row pv-opt-row-toggle">
+          <i data-lucide="message-square"></i>
+          <span class="pv-opt-row-label">댓글 허용</span>
+          <input type="checkbox" class="toggle toggle-sm" id="opt-comments">
+        </label>
+        <label class="pv-opt-row pv-opt-row-toggle">
+          <i data-lucide="users"></i>
+          <span class="pv-opt-row-label">신청자 수 노출</span>
+          <input type="checkbox" class="toggle toggle-sm" id="opt-show-applicants">
+        </label>
+        <label class="pv-opt-row pv-opt-row-toggle">
+          <i data-lucide="sparkles"></i>
+          <span class="pv-opt-row-label">AI 학습 <span class="pv-opt-row-sub">채팅 답변에 반영</span></span>
+          <input type="checkbox" class="toggle toggle-sm" id="opt-ai-training" checked>
+        </label>
+      </div>
+    </div>
+
+    <!-- Publish -->
+    <div class="publish-bar">
+      <button class="btn btn-xl btn-block btn-fill-primary" id="publish-btn" onclick="publishEvent()">발행하기</button>
+    </div>
+  </div>
+
+  <!-- Sheets -->
+  <div class="pv-sheet-overlay" id="sheet-overlay" onclick="closeSheet()"></div>
+
+  <div class="pv-sheet" id="sheet-cta">
+    <div class="pv-sheet-handle"></div>
+    <div class="pv-sheet-title">신청 버튼 문구</div>
+    <input type="text" class="pv-sheet-input" id="f-cta" value="신청하기" placeholder="예) 신청하기" oninput="onSheetInput('cta')">
+    <div class="pv-sheet-suggestions">
+      <button type="button" class="pv-sheet-suggestion" onclick="pickSuggestion('cta','신청하기')">신청하기</button>
+      <button type="button" class="pv-sheet-suggestion" onclick="pickSuggestion('cta','지금 신청하기')">지금 신청하기</button>
+      <button type="button" class="pv-sheet-suggestion" onclick="pickSuggestion('cta','참여 신청')">참여 신청</button>
+      <button type="button" class="pv-sheet-suggestion" onclick="pickSuggestion('cta','상담 신청')">상담 신청</button>
+    </div>
+    <button class="btn btn-lg btn-block btn-fill-primary" onclick="closeSheet()">완료</button>
+  </div>
+
+  <div class="pv-sheet" id="sheet-addq">
+    <div class="pv-sheet-title" id="addq-title">질문 추가</div>
+    <div class="pv-qtype-row" id="addq-qtype">
+      <button type="button" class="pv-chip is-selected" data-qtype="short" onclick="setQType('short')">주관식</button>
+      <button type="button" class="pv-chip" data-qtype="mc" onclick="setQType('mc')">객관식</button>
+    </div>
+    <input type="text" class="pv-sheet-input" id="addq-text" placeholder="질문을 입력하세요">
+    <div class="pv-mc-editor" id="addq-mc-editor" hidden>
+      <div class="pv-mc-editor-row">
+        <input type="text" placeholder="보기 1">
+        <button type="button" class="pv-mc-editor-remove" onclick="removeMcEditorRow(this)"><i data-lucide="x"></i></button>
+      </div>
+      <div class="pv-mc-editor-row">
+        <input type="text" placeholder="보기 2">
+        <button type="button" class="pv-mc-editor-remove" onclick="removeMcEditorRow(this)"><i data-lucide="x"></i></button>
+      </div>
+      <button type="button" class="pv-mc-editor-add" onclick="addMcEditorRow()">+ 보기 추가</button>
+    </div>
+    <label class="pv-sheet-toggle" id="addq-multi-row" hidden>
+      <span>복수 선택 허용</span>
+      <input type="checkbox" class="toggle toggle-sm" id="addq-multi">
+    </label>
+    <div class="pv-sheet-actions">
+      <button class="btn btn-lg btn-weak-dark" onclick="closeSheet()">취소</button>
+      <button class="btn btn-lg btn-fill-primary" id="addq-submit" onclick="submitQuestion()">추가</button>
+    </div>
+    <button type="button" class="pv-sheet-link-danger" id="addq-delete" onclick="deleteQuestion()" hidden>질문 삭제</button>
+  </div>
+
+  <!-- 이미지 템플릿 선택 -->
+  <div class="pv-sheet sheet-template" id="sheet-template">
+    <div class="pv-tmpl-head">
+      <span style="width:32px"></span>
+      <div class="pv-tmpl-title">이미지 선택</div>
+      <button type="button" class="pv-tmpl-close" aria-label="닫기" onclick="closeSheet()"><i data-lucide="x"></i></button>
+    </div>
+    <label class="pv-upload-zone" for="tmpl-upload">
+      <div class="pv-upload-title">여기를 탭하여 업로드하세요</div>
+      <div class="pv-upload-sub">이미지를 선택해 사진 목록에 추가됩니다 (4:3 권장)</div>
+      <input class="pv-upload-input" type="file" id="tmpl-upload" accept="image/*" multiple onchange="onUploadFiles(event)">
+    </label>
+    <div class="pv-tmpl-tabs" id="tmpl-tabs">
+      <button type="button" class="pv-tmpl-tab is-selected" data-cat="event" onclick="selectTmplTab('event')">이벤트</button>
+      <button type="button" class="pv-tmpl-tab" data-cat="hospital" onclick="selectTmplTab('hospital')">병원</button>
+      <button type="button" class="pv-tmpl-tab" data-cat="eye" onclick="selectTmplTab('eye')">안과</button>
+      <button type="button" class="pv-tmpl-tab" data-cat="derma" onclick="selectTmplTab('derma')">피부과</button>
+      <button type="button" class="pv-tmpl-tab" data-cat="oriental" onclick="selectTmplTab('oriental')">한의원</button>
+    </div>
+    <div class="pv-tmpl-body">
+      <div class="pv-tmpl-grid" id="tmpl-grid"></div>
+    </div>
+  </div>
+
+  <!-- 리뷰 선택 -->
+  <div class="pv-sheet sheet-template" id="sheet-reviews">
+    <div class="pv-tmpl-head">
+      <span style="width:48px"></span>
+      <div class="pv-tmpl-title">노출할 후기 선택</div>
+      <button type="button" class="pv-tmpl-done" onclick="closeSheet()">완료</button>
+    </div>
+    <div class="pv-review-pick-toolbar">
+      <div class="pv-review-pick-search">
+        <i data-lucide="search"></i>
+        <input type="text" placeholder="후기 검색" oninput="onReviewSearch(this.value)">
+      </div>
+      <button type="button" class="pv-review-pick-sort" id="reviews-sort-btn" onclick="toggleReviewSort()">
+        <i data-lucide="arrow-up-down"></i>
+        <span id="reviews-sort-label">최신순</span>
+      </button>
+    </div>
+    <div class="pv-review-pick-header">
+      <label class="pv-review-pick-header-label">
+        <input type="checkbox" class="checkbox" id="reviews-select-all" onchange="toggleSelectAllReviews(this.checked)">
+        <span>전체 선택</span>
+      </label>
+      <span class="pv-review-pick-count" id="reviews-pick-count">총 0개 중 0개 선택</span>
+    </div>
+    <div class="pv-tmpl-body">
+      <div class="pv-review-pick-list" id="reviews-pick-list"></div>
+    </div>
+  </div>
+
+  <!-- 미리보기 -->
+  <div class="pv-preview" id="pv-preview">
+    <div class="pv-preview-topbar">
+      <span class="pv-preview-topbar-title">미리보기</span>
+      <button class="icon-btn icon-btn-clear" type="button" aria-label="미리보기 닫기" onclick="closePreview()">
+        <i data-lucide="x" style="width:22px;height:22px;color:var(--color-text);"></i>
+      </button>
+    </div>
+    <div class="pv-preview-body" id="pv-preview-body">
+      <div class="pv-prev-hero" id="pv-prev-hero" hidden>
+        <div class="pv-prev-hero-slider" id="pv-prev-slider"></div>
+        <div class="pv-prev-hero-pagination" id="pv-prev-pagination" hidden></div>
+      </div>
+
+      <div class="pv-prev-info">
+        <div class="pv-prev-clinic-row">
+          <span class="pv-prev-clinic-name">페이지 이름</span>
+          <i data-lucide="chevron-right"></i>
+        </div>
+        <h1 class="pv-prev-headline" id="pv-prev-title"></h1>
+        <p class="pv-prev-schedule" id="pv-prev-schedule" hidden>
+          <i data-lucide="calendar-check"></i>
+          <span class="pv-prev-schedule-label">일정</span>
+          <span class="pv-prev-schedule-date" id="pv-prev-schedule-date"></span>
+          <span class="pv-prev-schedule-time" id="pv-prev-schedule-time"></span>
+        </p>
+        <div class="pv-prev-trust-row" id="pv-prev-trust-row">
+          <div class="pv-prev-star-row">
+            <i data-lucide="star"></i>
+            <span class="pv-prev-star-score" id="pv-prev-star-score">5.0</span>
+            <span class="pv-prev-star-count" id="pv-prev-star-count">· 후기 0개</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="pv-prev-divider" id="pv-prev-date-divider" hidden></div>
+      <div class="pv-prev-section" id="pv-prev-date-section" hidden>
+        <div class="pv-prev-date-card">
+          <i data-lucide="calendar-days"></i>
+          <div class="pv-prev-date-card-text">
+            <div class="pv-prev-date-label">신청 기간</div>
+            <div class="pv-prev-date-value" id="pv-prev-period"></div>
+          </div>
+          <span class="pv-prev-date-tag" id="pv-prev-dday" hidden></span>
+        </div>
+      </div>
+
+      <div class="pv-prev-divider" id="pv-prev-desc-divider" hidden></div>
+      <div class="pv-prev-section" id="pv-prev-desc-section" hidden>
+        <div class="pv-prev-section-title">이벤트 안내</div>
+        <div class="pv-prev-desc" id="pv-prev-desc"></div>
+      </div>
+
+      <div class="pv-prev-divider" id="pv-prev-review-divider"></div>
+      <div class="pv-prev-section" id="pv-prev-review-section">
+        <div class="pv-prev-section-title">실제 후기</div>
+        <div class="pv-prev-review-scroll" id="pv-prev-review-scroll"></div>
+      </div>
+
+      <div class="pv-prev-divider"></div>
+      <div class="pv-prev-section">
+        <button class="pv-prev-clinic-link" type="button" aria-label="병원 페이지 가기">
+          <div class="pv-prev-clinic-link-thumb" style="background-image:url('https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=300&auto=format&fit=crop');"></div>
+          <div class="pv-prev-clinic-link-text">
+            <div class="pv-prev-clinic-link-name">병원 페이지</div>
+            <div class="pv-prev-clinic-link-sub">병원 정보 · 의료진 · 위치 보기</div>
+          </div>
+          <i data-lucide="chevron-right" class="chev"></i>
+        </button>
+      </div>
+    </div>
+
+    <div class="pv-prev-sticky">
+      <button class="btn btn-xl btn-block btn-fill-primary" id="pv-prev-cta">신청하기</button>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+  lucide.createIcons();
+
+  /* ── Image uploader ── */
+  var images = [{ src: '../../assets/event_thumbnail.png' }];
+  var stockColors = [
+    'linear-gradient(135deg,#a9a9ee,#5555cc)',
+    'linear-gradient(135deg,#fcd34d,#f59e0b)',
+    'linear-gradient(135deg,#93c5fd,#3b82f6)',
+    'linear-gradient(135deg,#f9a8d4,#ec4899)',
+    'linear-gradient(135deg,#34d399,#10b981)'
+  ];
+
+  /* ── 이미지 템플릿 카탈로그 ── */
+  var TMPL_DIR = '../../assets/event_thumbnail_image/';
+  var TEMPLATES = {
+    event: [
+      TMPL_DIR + 'event_basic_1.png',
+      TMPL_DIR + 'event_basic_2.png',
+      TMPL_DIR + 'event_basic_3.png'
+    ],
+    hospital: [
+      TMPL_DIR + 'event_hospital_1.png'
+    ],
+    eye: [
+      TMPL_DIR + 'event_eye clinic_1.png',
+      TMPL_DIR + 'event_eye clinic_2.png'
+    ],
+    derma: [
+      TMPL_DIR + 'event_dermatology_1.png',
+      TMPL_DIR + 'event_dermatology_2.png',
+      TMPL_DIR + 'event_dermatology_3.png',
+      TMPL_DIR + 'event_dermatology_4.png'
+    ],
+    oriental: [
+      TMPL_DIR + 'event_oriental_1.png',
+      TMPL_DIR + 'event_oriental_2.png',
+      TMPL_DIR + 'event_oriental_3.png',
+      TMPL_DIR + 'event_oriental_4.png',
+      TMPL_DIR + 'event_oriental_5.png'
+    ]
+  };
+  var tmplCat = 'event';
+
+  function blockEnter(e) {
+    if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); }
+  }
+
+  /* contenteditable에 남는 <br>·빈 노드를 제거해 :empty 가 다시 매칭되도록 함 */
+  document.addEventListener('input', function(e) {
+    var el = e.target;
+    if (!el.isContentEditable) return;
+    if (el.textContent.trim() === '') el.innerHTML = '';
+  });
+
+  function addImage(e) {
+    if (e) e.preventDefault();
+    if (images.length >= 5) return;
+    openTemplatePicker();
+  }
+
+  function openTemplatePicker() {
+    selectTmplTab(tmplCat);
+    openSheet('template');
+  }
+
+  function selectTmplTab(cat) {
+    tmplCat = cat;
+    document.querySelectorAll('#tmpl-tabs .pv-tmpl-tab').forEach(function(t){
+      t.classList.toggle('is-selected', t.dataset.cat === cat);
+    });
+    var grid = document.getElementById('tmpl-grid');
+    grid.innerHTML = '';
+    var items = TEMPLATES[cat] || [];
+    if (items.length === 0) {
+      var empty = document.createElement('div');
+      empty.className = 'pv-tmpl-empty';
+      empty.textContent = '준비 중인 카테고리예요';
+      grid.appendChild(empty);
+      return;
+    }
+    items.forEach(function(src){
+      var card = document.createElement('button');
+      card.type = 'button';
+      card.className = 'pv-tmpl-card';
+      card.style.backgroundImage = 'url("' + encodeURI(src) + '")';
+      card.onclick = function(){ selectTemplate(src); };
+      grid.appendChild(card);
+    });
+  }
+
+  function selectTemplate(src) {
+    if (images.length >= 5) { closeSheet(); return; }
+    images.push({ src: src });
+    renderImages();
+    closeSheet();
+    onInput();
+  }
+
+  function renderImages() {
+    var emptyEl = document.getElementById('pv-hero-empty');
+    var trackEl = document.getElementById('pv-hero-track');
+    var counterEl = document.getElementById('pv-hero-counter');
+    var coverEl = document.getElementById('pv-hero-cover');
+
+    trackEl.innerHTML = '';
+    if (images.length === 0) {
+      emptyEl.style.display = 'flex';
+      trackEl.style.display = 'none';
+      counterEl.style.display = 'none';
+      coverEl.style.display = 'none';
+      renderThumbStrip(0);
+      return;
+    }
+    emptyEl.style.display = 'none';
+    trackEl.style.display = 'flex';
+    coverEl.style.display = 'block';
+
+    images.forEach(function(img) {
+      var slide = document.createElement('div');
+      slide.className = 'pv-hero-slide';
+      if (img.src) {
+        slide.style.backgroundImage = 'url("' + encodeURI(img.src) + '")';
+      } else if (img.bg) {
+        slide.style.background = img.bg;
+      }
+      slide.style.backgroundSize = 'cover';
+      slide.style.backgroundPosition = 'center';
+      trackEl.appendChild(slide);
+    });
+    trackEl.scrollLeft = 0;
+
+    if (images.length > 1) {
+      counterEl.style.display = 'inline-block';
+      counterEl.textContent = '1 / ' + images.length;
+    } else {
+      counterEl.style.display = 'none';
+    }
+    renderThumbStrip(0);
+    lucide.createIcons();
+  }
+
+  function renderThumbStrip(activeIdx) {
+    var strip = document.getElementById('pv-thumb-strip');
+    if (!strip) return;
+    strip.innerHTML = '';
+    if (images.length === 0) { strip.style.display = 'none'; return; }
+    strip.style.display = 'flex';
+    images.forEach(function(img, idx) {
+      var thumb = document.createElement('button');
+      thumb.type = 'button';
+      thumb.className = 'pv-thumb' + (idx === activeIdx ? ' is-active' : '');
+      if (img.src) thumb.style.backgroundImage = 'url("' + encodeURI(img.src) + '")';
+      else if (img.bg) thumb.style.background = img.bg + ' center/cover';
+      thumb.onclick = function(){ scrollHeroToIndex(idx); };
+      var remove = document.createElement('button');
+      remove.type = 'button';
+      remove.className = 'pv-thumb-remove';
+      remove.setAttribute('aria-label', '사진 삭제');
+      remove.innerHTML = '<i data-lucide="x"></i>';
+      remove.onclick = function(e){ e.stopPropagation(); removeImageAt(idx); };
+      thumb.appendChild(remove);
+      strip.appendChild(thumb);
+    });
+    if (images.length < 5) {
+      var add = document.createElement('button');
+      add.type = 'button';
+      add.className = 'pv-thumb-add';
+      add.setAttribute('aria-label', '사진 추가');
+      add.innerHTML = '<i data-lucide="plus"></i>';
+      add.onclick = function(e){ addImage(e); };
+      strip.appendChild(add);
+    }
+    lucide.createIcons();
+  }
+
+  function scrollHeroToIndex(idx) {
+    var track = document.getElementById('pv-hero-track');
+    if (!track || images.length === 0) return;
+    track.scrollTo({ left: idx * track.clientWidth, behavior: 'smooth' });
+  }
+
+  function removeImageAt(idx) {
+    if (idx < 0 || idx >= images.length) return;
+    images.splice(idx, 1);
+    renderImages();
+    onInput();
+  }
+
+  function onUploadFiles(e) {
+    var files = e.target.files;
+    if (!files || files.length === 0) return;
+    var remaining = 5 - images.length;
+    var slice = Array.prototype.slice.call(files, 0, Math.max(0, remaining));
+    if (slice.length === 0) { e.target.value = ''; closeSheet(); return; }
+    var pending = slice.length;
+    slice.forEach(function(file){
+      var reader = new FileReader();
+      reader.onload = function(){
+        images.push({ src: reader.result });
+        pending -= 1;
+        if (pending === 0) {
+          renderImages();
+          closeSheet();
+          onInput();
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+    e.target.value = '';
+  }
+
+  function updateHeroCounter() {
+    var track = document.getElementById('pv-hero-track');
+    var counter = document.getElementById('pv-hero-counter');
+    var coverEl = document.getElementById('pv-hero-cover');
+    if (images.length === 0) return;
+    var idx = Math.round(track.scrollLeft / track.clientWidth);
+    if (images.length > 1) {
+      counter.textContent = (idx + 1) + ' / ' + images.length;
+    }
+    coverEl.style.display = idx === 0 ? 'block' : 'none';
+    document.querySelectorAll('#pv-thumb-strip .pv-thumb').forEach(function(el, i){
+      el.classList.toggle('is-active', i === idx);
+    });
+  }
+
+  /* ── 추가 질문 (다중 질문) ── */
+  var questions = [];
+  var editingIdx = -1;
+
+  function setFieldRequired(field, required) {
+    var seg = document.querySelector('.pv-req-seg[data-field="' + field + '"]');
+    if (!seg) return;
+    var btns = seg.querySelectorAll('.pv-req-seg-btn');
+    btns[0].classList.toggle('is-selected', required);
+    btns[1].classList.toggle('is-selected', !required);
+  }
+
+  function toggleFieldEnabled(field) {
+    var cb = document.getElementById('field-' + field + '-enabled');
+    var seg = document.querySelector('.pv-req-seg[data-field="' + field + '"]');
+    if (!seg) return;
+    seg.classList.toggle('is-disabled', !cb.checked);
+  }
+
+  function resetMcEditor(values) {
+    var editor = document.getElementById('addq-mc-editor');
+    var addBtn = editor.querySelector('.pv-mc-editor-add');
+    editor.querySelectorAll('.pv-mc-editor-row').forEach(function(r){ r.remove(); });
+    var defaults = values && values.length ? values : ['', ''];
+    if (defaults.length < 2) defaults.push('');
+    defaults.forEach(function(v, idx){
+      var row = document.createElement('div');
+      row.className = 'pv-mc-editor-row';
+      row.innerHTML =
+        '<input type="text" placeholder="보기 ' + (idx + 1) + '">' +
+        '<button type="button" class="pv-mc-editor-remove" onclick="removeMcEditorRow(this)"><i data-lucide="x"></i></button>';
+      editor.insertBefore(row, addBtn);
+      row.querySelector('input').value = v;
+    });
+    lucide.createIcons();
+  }
+
+  var addqRequired = false;
+
+  function openAddQuestion() {
+    editingIdx = -1;
+    setQType('short');
+    document.getElementById('addq-text').value = '';
+    addqRequired = false;
+    document.getElementById('addq-multi').checked = false;
+    resetMcEditor(null);
+    document.getElementById('addq-title').textContent = '질문 추가';
+    document.getElementById('addq-submit').textContent = '추가';
+    document.getElementById('addq-delete').hidden = true;
+    openSheet('addq');
+    setTimeout(function(){ document.getElementById('addq-text').focus(); }, 100);
+  }
+
+  function editQuestion(idx) {
+    var q = questions[idx];
+    if (!q) return;
+    editingIdx = idx;
+    setQType(q.type);
+    document.getElementById('addq-text').value = q.text;
+    addqRequired = !!q.required;
+    document.getElementById('addq-multi').checked = !!q.multi;
+    resetMcEditor(q.type === 'mc' ? q.options : null);
+    document.getElementById('addq-title').textContent = '질문 편집';
+    document.getElementById('addq-submit').textContent = '저장';
+    document.getElementById('addq-delete').hidden = false;
+    openSheet('addq');
+    setTimeout(function(){ document.getElementById('addq-text').focus(); }, 100);
+  }
+
+  function deleteQuestion() {
+    if (editingIdx >= 0) {
+      questions.splice(editingIdx, 1);
+      renderQuestions();
+    }
+    closeSheet();
+  }
+
+  function setQType(type) {
+    document.querySelectorAll('#addq-qtype .pv-chip').forEach(function(c){
+      c.classList.toggle('is-selected', c.dataset.qtype === type);
+    });
+    document.getElementById('addq-mc-editor').hidden = type !== 'mc';
+    document.getElementById('addq-multi-row').hidden = type !== 'mc';
+    document.getElementById('addq-text').placeholder = type === 'mc'
+      ? '객관식 질문을 입력하세요' : '주관식 질문을 입력하세요';
+  }
+
+  function addMcEditorRow() {
+    var editor = document.getElementById('addq-mc-editor');
+    var addBtn = editor.querySelector('.pv-mc-editor-add');
+    var rows = editor.querySelectorAll('.pv-mc-editor-row');
+    var idx = rows.length + 1;
+    var row = document.createElement('div');
+    row.className = 'pv-mc-editor-row';
+    row.innerHTML =
+      '<input type="text" placeholder="보기 ' + idx + '">' +
+      '<button type="button" class="pv-mc-editor-remove" onclick="removeMcEditorRow(this)"><i data-lucide="x"></i></button>';
+    editor.insertBefore(row, addBtn);
+    lucide.createIcons();
+    row.querySelector('input').focus();
+  }
+
+  function removeMcEditorRow(btn) {
+    var editor = document.getElementById('addq-mc-editor');
+    if (editor.querySelectorAll('.pv-mc-editor-row').length <= 2) return;
+    btn.closest('.pv-mc-editor-row').remove();
+  }
+
+  function submitQuestion() {
+    var type = document.querySelector('#addq-qtype .pv-chip.is-selected').dataset.qtype;
+    var text = document.getElementById('addq-text').value.trim();
+    if (!text) { document.getElementById('addq-text').focus(); return; }
+    var required = addqRequired;
+    var multi = document.getElementById('addq-multi').checked;
+    var options = [];
+    if (type === 'mc') {
+      document.querySelectorAll('#addq-mc-editor .pv-mc-editor-row input').forEach(function(i){
+        var v = i.value.trim();
+        if (v) options.push(v);
+      });
+      if (options.length < 2) return;
+    }
+    var q = { type: type, text: text, required: required, multi: multi, options: options };
+    if (editingIdx >= 0) questions[editingIdx] = q;
+    else questions.push(q);
+    renderQuestions();
+    closeSheet();
+  }
+
+  function renderQuestions() {
+    var list = document.getElementById('pv-questions-list');
+    list.innerHTML = '';
+    questions.forEach(function(q, idx){
+      var row = document.createElement('div');
+      row.className = 'pv-field-row pv-field-row-q';
+      var typeLabel = q.type === 'mc' ? (q.multi ? '객관식 · 복수' : '객관식') : '주관식';
+      row.innerHTML =
+        '<span class="pv-field-label"><span class="pv-q-text">' + escapeHTML(q.text) + '</span><span class="pv-q-meta">' + typeLabel + '</span></span>' +
+        '<div class="pv-req-seg" data-field="q-' + idx + '">' +
+          '<button type="button" class="pv-req-seg-btn ' + (q.required ? 'is-selected' : '') + '" onclick="setQuestionRequired(' + idx + ', true, event)">필수</button>' +
+          '<button type="button" class="pv-req-seg-btn ' + (q.required ? '' : 'is-selected') + '" onclick="setQuestionRequired(' + idx + ', false, event)">선택</button>' +
+        '</div>';
+      row.querySelector('.pv-field-label').onclick = function(){ editQuestion(idx); };
+      list.appendChild(row);
+    });
+    lucide.createIcons();
+  }
+
+  function setQuestionRequired(idx, required, e) {
+    if (e) e.stopPropagation();
+    if (!questions[idx]) return;
+    questions[idx].required = required;
+    renderQuestions();
+  }
+
+  function escapeHTML(s) {
+    return String(s).replace(/[&<>"']/g, function(c){
+      return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+    });
+  }
+
+  /* ── Option bottom sheets ── */
+  function openSheet(key) {
+    var sheet = document.getElementById('sheet-' + key);
+    var overlay = document.getElementById('sheet-overlay');
+    if (!sheet || !overlay) return;
+    document.querySelectorAll('.pv-sheet').forEach(function(s){ s.classList.remove('is-open'); });
+    sheet.classList.add('is-open');
+    overlay.classList.add('is-open');
+  }
+  function closeSheet() {
+    document.querySelectorAll('.pv-sheet').forEach(function(s){ s.classList.remove('is-open'); });
+    var overlay = document.getElementById('sheet-overlay');
+    if (overlay) overlay.classList.remove('is-open');
+  }
+  function onSheetInput(key) {
+    if (key === 'cta') {
+      var v = document.getElementById('f-cta').value.trim();
+      document.getElementById('disp-cta').textContent = v || '신청하기';
+    }
+  }
+
+  /* ── 리뷰 큐레이션 ── */
+  var PAGE_REVIEWS = [
+    { id:'r1', imgs:[], stars:5, text:'상담부터 시술까지 친절하게 안내받았어요. 검사가 꼼꼼해서 안심하고 진행했습니다.', author:'김○○', date:'2026-06-28' },
+    { id:'r2', imgs:[
+      'https://images.unsplash.com/photo-1551601651-bc60f254d532?w=400&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=400&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1512290923902-8a9f81dc236c?w=400&auto=format&fit=crop'
+    ], stars:5, text:'미뤄왔는데 진작 할 걸 그랬어요. 결과도 만족스럽고 회복도 빨랐습니다.', author:'이○○', date:'2026-07-05' },
+    { id:'r3', imgs:['https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&auto=format&fit=crop'], stars:5, text:'설명을 알기 쉽게 해주셔서 좋았어요. 의료진이 다 친절했습니다.', author:'박○○', date:'2026-05-14' },
+    { id:'r4', imgs:[
+      'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=400&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1559941707-c1bafc8c8f60?w=400&auto=format&fit=crop'
+    ], stars:4, text:'대기시간이 조금 있었지만 진료는 만족스러웠어요. 다음에도 방문할 예정입니다.', author:'최○○', date:'2026-06-02' },
+    { id:'r5', imgs:['https://images.unsplash.com/photo-1512290923902-8a9f81dc236c?w=400&auto=format&fit=crop'], stars:5, text:'분위기가 편안하고 스탭분들도 친절하셨어요. 재방문 의사 100%.', author:'정○○', date:'2026-07-01' }
+  ];
+  var selectedReviewIds = null; // null = 미초기화, Set = 사용자 선택 상태
+  var reviewsInitialized = false;
+  var reviewPickSort = 'recent'; // 'recent' | 'stars'
+  var reviewPickQuery = '';
+
+  function selectedReviews() {
+    if (!selectedReviewIds) return [];
+    return PAGE_REVIEWS.filter(function(r){ return selectedReviewIds.has(r.id); });
+  }
+
+  function initReviewsSelectionIfNeeded() {
+    if (reviewsInitialized) return;
+    reviewsInitialized = true;
+    // 기본값: '직접 선택' — 초기 선택 0개 상태에서 사용자가 고른다.
+    selectedReviewIds = new Set();
+  }
+
+  function onReviewsToggle() {
+    var on = document.getElementById('opt-reviews').checked;
+    var picker = document.getElementById('opt-reviews-picker');
+    if (on) {
+      initReviewsSelectionIfNeeded();
+      picker.hidden = false;
+      updateReviewCountLabel();
+      // 리뷰 노출 ON → 선택을 건너뛰지 못하게 시트를 즉시 연다.
+      openReviewsPicker();
+    } else {
+      picker.hidden = true;
+      updateReviewCountLabel();
+    }
+  }
+
+  function updateReviewCountLabel() {
+    var el = document.getElementById('disp-review-count');
+    if (!el) return;
+    var total = PAGE_REVIEWS.length;
+    var count = selectedReviewIds ? selectedReviewIds.size : 0;
+    if (count === total && total > 0) el.textContent = '전체 ' + total + '개';
+    else if (count === 0) el.textContent = '선택 안 함';
+    else el.textContent = count + '개 선택됨';
+  }
+
+  function openReviewsPicker() {
+    initReviewsSelectionIfNeeded();
+    renderReviewsPickList();
+    openSheet('reviews');
+  }
+
+  function pickVisibleReviews() {
+    var q = reviewPickQuery.trim().toLowerCase();
+    var rows = PAGE_REVIEWS.filter(function(r){
+      if (!q) return true;
+      return (r.text + ' ' + r.author).toLowerCase().indexOf(q) !== -1;
+    });
+    rows.sort(function(a, b){
+      if (reviewPickSort === 'stars') {
+        if (b.stars !== a.stars) return b.stars - a.stars;
+        return a.date < b.date ? 1 : -1;
+      }
+      return a.date < b.date ? 1 : (a.date > b.date ? -1 : 0);
+    });
+    return rows;
+  }
+
+  function toggleReviewSort() {
+    reviewPickSort = reviewPickSort === 'recent' ? 'stars' : 'recent';
+    var label = document.getElementById('reviews-sort-label');
+    if (label) label.textContent = reviewPickSort === 'recent' ? '최신순' : '별점순';
+    renderReviewsPickList();
+  }
+
+  function onReviewSearch(value) {
+    reviewPickQuery = value;
+    renderReviewsPickList();
+  }
+
+  function renderReviewsPickList() {
+    var list = document.getElementById('reviews-pick-list');
+    if (!list) return;
+    list.innerHTML = '';
+    var rows = pickVisibleReviews();
+    if (rows.length === 0) {
+      var empty = document.createElement('div');
+      empty.className = 'pv-review-pick-empty';
+      empty.textContent = '검색 결과가 없어요';
+      list.appendChild(empty);
+      updatePickHeader();
+      return;
+    }
+    rows.forEach(function(r){
+      var isSel = selectedReviewIds.has(r.id);
+      var stars = '';
+      for (var i = 0; i < r.stars; i++) stars += '<i data-lucide="star"></i>';
+      var item = document.createElement('label');
+      item.className = 'pv-review-pick-item' + (isSel ? ' is-selected' : '');
+      var imgs = Array.isArray(r.imgs) ? r.imgs : (r.img ? [r.img] : []);
+      var imgsHTML = imgs.length ?
+        '<div class="pv-review-pick-imgs">' +
+          imgs.map(function(src){
+            return '<div class="pv-review-pick-img" style="background-image:url(\'' + src + '\');"></div>';
+          }).join('') +
+        '</div>' : '';
+      item.innerHTML =
+        '<input type="checkbox" class="checkbox"' + (isSel ? ' checked' : '') + '>' +
+        '<div class="pv-review-pick-content">' +
+          imgsHTML +
+          '<div class="pv-review-pick-body">' +
+            '<div class="pv-review-pick-stars">' + stars + '</div>' +
+            '<div class="pv-review-pick-text">' + escapeText(r.text) + '</div>' +
+            '<div class="pv-review-pick-author">' + escapeText(r.author) + '</div>' +
+          '</div>' +
+        '</div>';
+      var cb = item.querySelector('input');
+      cb.addEventListener('change', function(){
+        if (cb.checked) selectedReviewIds.add(r.id);
+        else selectedReviewIds.delete(r.id);
+        item.classList.toggle('is-selected', cb.checked);
+        updateReviewCountLabel();
+        updatePickHeader();
+      });
+      list.appendChild(item);
+    });
+    updatePickHeader();
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function updatePickHeader() {
+    var total = PAGE_REVIEWS.length;
+    var count = selectedReviewIds ? selectedReviewIds.size : 0;
+    var countEl = document.getElementById('reviews-pick-count');
+    if (countEl) countEl.textContent = '총 ' + total + '개 중 ' + count + '개 선택';
+    var allCb = document.getElementById('reviews-select-all');
+    if (allCb) allCb.checked = count === total && total > 0;
+  }
+
+  function toggleSelectAllReviews(checked) {
+    initReviewsSelectionIfNeeded();
+    if (checked) selectedReviewIds = new Set(PAGE_REVIEWS.map(function(r){ return r.id; }));
+    else selectedReviewIds = new Set();
+    renderReviewsPickList();
+    updateReviewCountLabel();
+  }
+
+  function escapeText(s) {
+    return String(s).replace(/[&<>"']/g, function(c){
+      return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+    });
+  }
+
+  function renderPreviewReviews() {
+    var scroll = document.getElementById('pv-prev-review-scroll');
+    if (!scroll) return;
+    var reviewsOn = document.getElementById('opt-reviews').checked;
+    if (reviewsOn) initReviewsSelectionIfNeeded();
+    scroll.innerHTML = '';
+    selectedReviews().forEach(function(r){
+      var stars = '';
+      for (var i = 0; i < r.stars; i++) stars += '<i data-lucide="star"></i>';
+      var card = document.createElement('div');
+      card.className = 'pv-prev-review-card';
+      var firstImg = (Array.isArray(r.imgs) && r.imgs[0]) || r.img || '';
+      var imgHTML = firstImg ? '<div class="pv-prev-review-img" style="background-image:url(\'' + firstImg + '\');"></div>' : '';
+      card.innerHTML =
+        imgHTML +
+        '<div class="pv-prev-review-body">' +
+          '<div class="pv-prev-review-stars">' + stars + '</div>' +
+          '<p class="pv-prev-review-text">' + escapeText(r.text) + '</p>' +
+          '<div class="pv-prev-review-meta">' +
+            '<span class="verified"><i data-lucide="badge-check"></i>실제 후기</span><span>·</span><span>' + escapeText(r.author) + '</span>' +
+          '</div>' +
+        '</div>';
+      scroll.appendChild(card);
+    });
+    if (window.lucide) lucide.createIcons();
+  }
+  function pickSuggestion(key, text) {
+    var input = document.getElementById('f-cta');
+    if (input) input.value = text;
+    onSheetInput(key);
+  }
+
+  /* ── Date/Time pill formatters ── */
+  var WEEKDAYS = ['일','월','화','수','목','금','토'];
+  function formatDate(val) {
+    var d = new Date(val + 'T00:00:00');
+    return (d.getMonth()+1) + '월 ' + d.getDate() + '일 (' + WEEKDAYS[d.getDay()] + ')';
+  }
+
+  function toggleEventSameAsApply() {
+    var on = document.getElementById('event-same-toggle').checked;
+    document.getElementById('event-datetime-group').hidden = on;
+    if (on) closeCalendar();
+    onInput();
+  }
+
+  function toggleOptions() {
+    var header = document.getElementById('opt-section-header');
+    var list = document.getElementById('opt-list');
+    var open = list.hidden;
+    list.hidden = !open;
+    header.classList.toggle('is-open', open);
+  }
+
+
+
+  function toggleTime(which) {
+    var card = document.getElementById(which + '-card');
+    var toggle = document.getElementById(which + '-time-toggle');
+    var on = !card.classList.contains('has-time');
+    card.classList.toggle('has-time', on);
+    var iconEl = toggle.querySelector('i, svg');
+    if (iconEl) {
+      var newIcon = document.createElement('i');
+      newIcon.setAttribute('data-lucide', on ? 'x' : 'plus');
+      iconEl.replaceWith(newIcon);
+    }
+    toggle.querySelector('span').textContent = on ? '시간 제거' : '시간 추가';
+    toggle.classList.toggle('is-on', on);
+    if (window.lucide) lucide.createIcons();
+    if (!on) {
+      var prefix = which === 'apply' ? 'f-' : 'f-event-';
+      document.getElementById(prefix + 'start-time').value = '';
+      document.getElementById(prefix + 'end-time').value = '';
+    }
+    onInput();
+  }
+  /* ── Custom calendar (reusable across cards) ── */
+  var calState = { field: null, pair: null, calId: null, monthId: null, gridId: null, viewYear: 0, viewMonth: 0 };
+  function pad2(n) { return n < 10 ? '0' + n : '' + n; }
+  function toISO(y, m, d) { return y + '-' + pad2(m + 1) + '-' + pad2(d); }
+  function parseISO(s) {
+    var p = s.split('-');
+    return { y: +p[0], m: +p[1] - 1, d: +p[2] };
+  }
+  function getCalCtx(field) {
+    if (field === 'start' || field === 'end') {
+      return { pair: ['start', 'end'], calId: 'pv-calendar', monthId: 'pv-cal-month', gridId: 'pv-cal-grid' };
+    }
+    return { pair: ['event-start', 'event-end'], calId: 'pv-calendar-event', monthId: 'pv-cal-event-month', gridId: 'pv-cal-event-grid' };
+  }
+
+  function openCalendar(field, e) {
+    if (e) e.stopPropagation();
+    closeCalendar();
+    var ctx = getCalCtx(field);
+    var input = document.getElementById('f-' + field);
+    var ref;
+    if (input.value) ref = parseISO(input.value);
+    else {
+      var t = new Date();
+      ref = { y: t.getFullYear(), m: t.getMonth(), d: t.getDate() };
+    }
+    calState.field = field;
+    calState.pair = ctx.pair;
+    calState.calId = ctx.calId;
+    calState.monthId = ctx.monthId;
+    calState.gridId = ctx.gridId;
+    calState.viewYear = ref.y;
+    calState.viewMonth = ref.m;
+    document.querySelectorAll('.pv-date-pill').forEach(function(p) { p.classList.remove('is-active'); });
+    var pill = document.getElementById('pill-' + field + '-date');
+    pill.classList.add('is-active');
+    var cal = document.getElementById(ctx.calId);
+    cal.hidden = false;
+    placePicker(cal, pill);
+    renderCalendar();
+  }
+
+  function placePicker(picker, anchorPill) {
+    var card = picker.closest('.pv-date-card');
+    var cardRect = card.getBoundingClientRect();
+    var pillRect = anchorPill.getBoundingClientRect();
+    picker.style.top = (pillRect.bottom - cardRect.top + 8) + 'px';
+  }
+
+  function closeCalendar() {
+    document.querySelectorAll('.pv-calendar').forEach(function(c){ c.hidden = true; });
+    document.querySelectorAll('.pv-date-pill').forEach(function(p) { p.classList.remove('is-active'); });
+    calState.field = null;
+  }
+
+  function changeMonth(delta) {
+    var m = calState.viewMonth + delta;
+    var y = calState.viewYear;
+    if (m < 0) { m = 11; y--; }
+    else if (m > 11) { m = 0; y++; }
+    calState.viewYear = y;
+    calState.viewMonth = m;
+    renderCalendar();
+  }
+
+  function goToday() {
+    var t = new Date();
+    calState.viewYear = t.getFullYear();
+    calState.viewMonth = t.getMonth();
+    renderCalendar();
+  }
+
+  function renderCalendar() {
+    var y = calState.viewYear, m = calState.viewMonth;
+    var monthBtn = document.getElementById(calState.monthId);
+    monthBtn.innerHTML = y + '년 ' + (m + 1) + '월<i data-lucide="chevron-right"></i>';
+    if (window.lucide) lucide.createIcons();
+
+    var firstDow = new Date(y, m, 1).getDay();
+    var daysInMonth = new Date(y, m + 1, 0).getDate();
+    var prevMonthDays = new Date(y, m, 0).getDate();
+
+    var selected = null;
+    var input = document.getElementById('f-' + calState.field);
+    if (input && input.value) selected = parseISO(input.value);
+
+    var otherField = calState.pair[0] === calState.field ? calState.pair[1] : calState.pair[0];
+    var otherInput = document.getElementById('f-' + otherField);
+    var otherVal = otherInput ? otherInput.value : '';
+    var otherDate = otherVal ? parseISO(otherVal) : null;
+
+    var grid = document.getElementById(calState.gridId);
+    grid.innerHTML = '';
+
+    var cells = [];
+    for (var i = firstDow - 1; i >= 0; i--) {
+      cells.push({ day: prevMonthDays - i, outside: true, year: m === 0 ? y - 1 : y, month: m === 0 ? 11 : m - 1 });
+    }
+    for (var d = 1; d <= daysInMonth; d++) {
+      cells.push({ day: d, outside: false, year: y, month: m });
+    }
+    var nextMonth = m === 11 ? 0 : m + 1;
+    var nextYear = m === 11 ? y + 1 : y;
+    var remainder = cells.length % 7;
+    var trailing = remainder === 0 ? 0 : 7 - remainder;
+    for (var t = 1; t <= trailing; t++) {
+      cells.push({ day: t, outside: true, year: nextYear, month: nextMonth });
+    }
+
+    cells.forEach(function(c) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'pv-cal-day';
+      if (c.outside) btn.classList.add('is-outside');
+      if (selected && selected.y === c.year && selected.m === c.month && selected.d === c.day) {
+        btn.classList.add('is-selected');
+      }
+      var disabled = false;
+      if (otherDate) {
+        var cellTs = new Date(c.year, c.month, c.day).getTime();
+        var otherTs = new Date(otherDate.y, otherDate.m, otherDate.d).getTime();
+        var isStartField = calState.field === calState.pair[0];
+        if (isStartField && cellTs > otherTs) disabled = true;
+        if (!isStartField && cellTs < otherTs) disabled = true;
+      }
+      if (disabled) {
+        btn.classList.add('is-disabled');
+        btn.disabled = true;
+      }
+      btn.textContent = c.day;
+      btn.onclick = function(ev) {
+        ev.stopPropagation();
+        selectDate(c.year, c.month, c.day);
+      };
+      grid.appendChild(btn);
+    });
+  }
+
+  function selectDate(y, m, d) {
+    var input = document.getElementById('f-' + calState.field);
+    var iso = toISO(y, m, d);
+    input.value = iso;
+    var display = document.getElementById('disp-' + calState.field + '-date');
+    var pill = document.getElementById('pill-' + calState.field + '-date');
+    display.textContent = formatDate(iso);
+    pill.classList.remove('is-empty');
+    closeCalendar();
+    onInput();
+  }
+
+  document.addEventListener('click', function(e) {
+    if (e.target.closest('.pv-calendar')) return;
+    closeCalendar();
+  });
+
+  /* ── Validation + D-Day ── */
+  function onInput() {
+    var titleEl = document.getElementById('f-title');
+    var titleOK = titleEl.textContent.trim() !== '';
+    var start = document.getElementById('f-start').value;
+    var end = document.getElementById('f-end').value;
+
+    if (titleOK) titleEl.classList.remove('is-error');
+
+    /* D-Day */
+    var dday = document.getElementById('f-dday');
+    if (start && end) {
+      var d1 = new Date(start), d2 = new Date(end);
+      var diff = Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
+      if (diff < 0) {
+        dday.textContent = '종료일이 시작일보다 빨라요';
+        dday.style.color = 'var(--color-destructive)';
+      } else {
+        dday.textContent = '총 ' + (diff + 1) + '일 동안 진행돼요';
+        dday.style.color = 'var(--color-primary)';
+      }
+      dday.classList.add('on');
+    } else {
+      dday.classList.remove('on');
+    }
+  }
+
+  function publishEvent() {
+    var titleEl = document.getElementById('f-title');
+    if (titleEl.textContent.trim() === '') {
+      titleEl.classList.add('is-error');
+      titleEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setTimeout(function(){ titleEl.focus(); }, 250);
+      return;
+    }
+    function reqSelected(field) {
+      var seg = document.querySelector('.pv-req-seg[data-field="' + field + '"]');
+      if (!seg) return false;
+      var btns = seg.querySelectorAll('.pv-req-seg-btn');
+      return btns[0].classList.contains('is-selected');
+    }
+    var applyPeriod = {
+      start: document.getElementById('f-start').value,
+      end: document.getElementById('f-end').value,
+      startTime: document.getElementById('f-start-time').value,
+      endTime: document.getElementById('f-end-time').value
+    };
+    var sameAsApply = document.getElementById('event-same-toggle').checked;
+    var eventSchedule = sameAsApply ? Object.assign({}, applyPeriod, { sameAsApply: true }) : {
+      start: document.getElementById('f-event-start').value,
+      end: document.getElementById('f-event-end').value,
+      startTime: document.getElementById('f-event-start-time').value,
+      endTime: document.getElementById('f-event-end-time').value,
+      sameAsApply: false
+    };
+    var data = {
+      title: titleEl.textContent.trim(),
+      description: document.getElementById('f-desc').textContent.trim(),
+      images: images,
+      applyPeriod: applyPeriod,
+      eventSchedule: eventSchedule,
+      cta: (document.getElementById('disp-cta').textContent.trim() || '신청하기'),
+      fields: {
+        name:  { enabled: document.getElementById('field-name-enabled').checked,  required: reqSelected('name')  },
+        phone: { enabled: document.getElementById('field-phone-enabled').checked, required: reqSelected('phone') },
+        email: { enabled: document.getElementById('field-email-enabled').checked, required: reqSelected('email') }
+      },
+      questions: questions,
+      reviews:  document.getElementById('opt-reviews').checked,
+      reviewList: selectedReviews(),
+      comments: document.getElementById('opt-comments').checked
+    };
+    try { sessionStorage.setItem('connectia.event', JSON.stringify(data)); } catch(e) {}
+    window.location.href = 'event-landing.html?from=publish';
+  }
+
+  /* ── Preview ── */
+  function openPreview() {
+    var hero = document.getElementById('pv-prev-hero');
+    var slider = document.getElementById('pv-prev-slider');
+    var pagination = document.getElementById('pv-prev-pagination');
+    slider.innerHTML = '';
+    if (images.length === 0) {
+      hero.hidden = true;
+      pagination.hidden = true;
+    } else {
+      hero.hidden = false;
+      images.forEach(function(img) {
+        var slide = document.createElement('div');
+        slide.className = 'pv-prev-hero-slide';
+        if (img.src) slide.style.backgroundImage = 'url("' + encodeURI(img.src) + '")';
+        else if (img.bg) slide.style.background = img.bg + ' center/cover';
+        slider.appendChild(slide);
+      });
+      slider.scrollLeft = 0;
+      if (images.length > 1) {
+        pagination.hidden = false;
+        pagination.textContent = '1 / ' + images.length;
+        slider.onscroll = function() {
+          var idx = Math.round(slider.scrollLeft / slider.clientWidth) + 1;
+          pagination.textContent = idx + ' / ' + images.length;
+        };
+      } else {
+        pagination.hidden = true;
+      }
+    }
+
+    var title = document.getElementById('f-title').textContent.trim();
+    document.getElementById('pv-prev-title').textContent = title || '이벤트 이름';
+
+    var sameAsApply = document.getElementById('event-same-toggle').checked;
+    var evStart = sameAsApply ? document.getElementById('f-start').value : document.getElementById('f-event-start').value;
+    var evEnd = sameAsApply ? document.getElementById('f-end').value : document.getElementById('f-event-end').value;
+    var evStartTime = sameAsApply ? document.getElementById('f-start-time').value : document.getElementById('f-event-start-time').value;
+    var evEndTime = sameAsApply ? document.getElementById('f-end-time').value : document.getElementById('f-event-end-time').value;
+    var schedEl = document.getElementById('pv-prev-schedule');
+    var schedDateEl = document.getElementById('pv-prev-schedule-date');
+    var schedTimeEl = document.getElementById('pv-prev-schedule-time');
+    if (evStart || evEnd || evStartTime || evEndTime) {
+      var dateStr = '';
+      if (evStart && evEnd) {
+        var s = new Date(evStart + 'T00:00:00');
+        var e = new Date(evEnd + 'T00:00:00');
+        var sStr = s.getFullYear() + '.' + String(s.getMonth()+1).padStart(2,'0') + '.' + String(s.getDate()).padStart(2,'0');
+        var eStr;
+        if (s.getFullYear() === e.getFullYear()) {
+          eStr = String(e.getMonth()+1).padStart(2,'0') + '.' + String(e.getDate()).padStart(2,'0');
+        } else {
+          eStr = e.getFullYear() + '.' + String(e.getMonth()+1).padStart(2,'0') + '.' + String(e.getDate()).padStart(2,'0');
+        }
+        dateStr = sStr + ' ~ ' + eStr;
+      } else if (evStart) {
+        var s2 = new Date(evStart + 'T00:00:00');
+        dateStr = s2.getFullYear() + '.' + String(s2.getMonth()+1).padStart(2,'0') + '.' + String(s2.getDate()).padStart(2,'0');
+      }
+      var timeStr = '';
+      if (evStartTime && evEndTime) timeStr = evStartTime + ' ~ ' + evEndTime;
+      else if (evStartTime) timeStr = evStartTime;
+      schedDateEl.textContent = dateStr;
+      schedTimeEl.textContent = timeStr;
+      schedTimeEl.hidden = !timeStr;
+      schedEl.hidden = false;
+    } else {
+      schedEl.hidden = true;
+    }
+
+    var reviewsOn = document.getElementById('opt-reviews').checked;
+    renderPreviewReviews();
+    var picked = selectedReviews();
+    var showReviews = reviewsOn && picked.length > 0;
+    if (showReviews) {
+      var sum = picked.reduce(function(acc, r){ return acc + r.stars; }, 0);
+      var avg = sum / picked.length;
+      document.getElementById('pv-prev-star-score').textContent = avg.toFixed(1);
+      document.getElementById('pv-prev-star-count').textContent = '· 후기 ' + picked.length + '개';
+    }
+    document.getElementById('pv-prev-review-section').hidden = !showReviews;
+    document.getElementById('pv-prev-review-divider').hidden = !showReviews;
+    document.getElementById('pv-prev-trust-row').hidden = !showReviews;
+
+    var startDate = document.getElementById('f-start').value;
+    var endDate = document.getElementById('f-end').value;
+    var periodEl = document.getElementById('pv-prev-period');
+    var ddayEl = document.getElementById('pv-prev-dday');
+    var dateSection = document.getElementById('pv-prev-date-section');
+    var dateDivider = document.getElementById('pv-prev-date-divider');
+    if (startDate && endDate) {
+      periodEl.textContent = formatDate(startDate) + ' ~ ' + formatDate(endDate);
+      var today = new Date(); today.setHours(0,0,0,0);
+      var endD = new Date(endDate + 'T00:00:00');
+      var diff = Math.ceil((endD - today) / (1000 * 60 * 60 * 24));
+      if (diff > 0) { ddayEl.textContent = 'D-' + diff; ddayEl.hidden = false; }
+      else if (diff === 0) { ddayEl.textContent = 'D-DAY'; ddayEl.hidden = false; }
+      else { ddayEl.hidden = true; }
+      dateSection.hidden = false;
+      dateDivider.hidden = false;
+    } else {
+      dateSection.hidden = true;
+      dateDivider.hidden = true;
+    }
+
+    var descText = document.getElementById('f-desc').textContent.trim();
+    var descSection = document.getElementById('pv-prev-desc-section');
+    var descDivider = document.getElementById('pv-prev-desc-divider');
+    if (descText) {
+      document.getElementById('pv-prev-desc').textContent = descText;
+      descSection.hidden = false;
+      descDivider.hidden = false;
+    } else {
+      descSection.hidden = true;
+      descDivider.hidden = true;
+    }
+
+    var ctaText = document.getElementById('disp-cta').textContent.trim() || '신청하기';
+    document.getElementById('pv-prev-cta').textContent = ctaText;
+
+    document.getElementById('pv-preview').classList.add('is-open');
+    document.getElementById('pv-preview-body').scrollTop = 0;
+    lucide.createIcons();
+  }
+
+  function closePreview() {
+    document.getElementById('pv-preview').classList.remove('is-open');
+  }
+
+  // 초기 호출
+  renderImages();
+  onInput();
+</script>
+</body>
+</html>

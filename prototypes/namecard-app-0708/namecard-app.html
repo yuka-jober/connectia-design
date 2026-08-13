@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>명함 앱 프로토타입 — 네비/명함첩/소식</title>
+<link rel="stylesheet" href="../../tokens.css">
+<link rel="stylesheet" href="../../components.css">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-base);
+    background: #e0e0e0;
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .frame {
+    width: 390px;
+    height: 844px;
+    max-height: 100dvh;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 32px 80px -20px rgba(0,0,0,0.28);
+    background: var(--color-bg);
+    transform: translateZ(0); /* frame = containing block for position:fixed overlays */
+  }
+  @media (max-width: 439px) { .frame { width: 100vw; height: 100dvh; max-height: none; } }
+  @media (min-width: 440px) { .frame { border-radius: 44px; max-height: calc(100dvh - 40px); } }
+
+  i[data-lucide] { display: inline-flex; flex-shrink: 0; }
+
+  /* ── 화면 전환 ── */
+  .screen { position: absolute; inset: 0; display: none; flex-direction: column; background: var(--color-bg); }
+  .screen.on { display: flex; }
+  .screen-body { flex: 1; overflow-y: auto; padding-bottom: 104px; }
+  .screen-body::-webkit-scrollbar { display: none; }
+
+  /* ── Topbar ── */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 20px; flex-shrink: 0;
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .topbar-title { font-size: var(--fs-title); font-weight: var(--fw-bold); color: var(--color-text); letter-spacing: var(--ls-title); }
+  .topbar-count { font-size: var(--fs-body); font-weight: var(--fw-semibold); color: var(--color-primary); margin-left: 6px; }
+  .topbar-actions { display: flex; gap: 4px; }
+
+  /* ── 페이지 전환 칩 (내 페이지) ── */
+  .page-switch {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: none; border: none; cursor: pointer; padding: 0;
+    font-family: var(--font-base);
+    font-size: var(--fs-title); font-weight: var(--fw-bold); color: var(--color-text);
+    max-width: 240px;
+  }
+  .page-switch span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .page-switch i { width: 20px; height: 20px; color: var(--color-text-muted); }
+
+  /* ════════ 플로팅 독바 네비 ════════ */
+  .dock {
+    position: absolute;
+    left: 16px; right: 16px; bottom: 16px;
+    height: 66px;
+    display: flex; align-items: center; justify-content: space-around;
+    padding: 0 6px;
+    background: color-mix(in srgb, var(--color-surface) 86%, transparent);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-xl);
+    box-shadow: var(--shadow-3);
+    z-index: 100;
+    transition: transform var(--motion-standard) var(--ease-standard),
+                opacity var(--motion-standard) var(--ease-standard);
+  }
+  .dock-item {
+    flex: 1;
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    background: none; border: none; cursor: pointer; padding: 8px 0;
+    font-family: var(--font-base);
+    color: var(--color-text-muted);
+    transition: color var(--motion-fast) var(--ease-standard);
+  }
+  .dock-item i { width: 22px; height: 22px; stroke-width: 2; }
+  .dock-item span { font-size: var(--fs-nav); font-weight: var(--fw-medium); letter-spacing: var(--ls-nav); }
+  .dock-item.active { color: var(--color-primary); }
+  .dock-item.active span { font-weight: var(--fw-semibold); }
+  .dock-item.active i { stroke-width: 2.4; }
+
+  /* ── 명함첩: 검색 + 태그 필터 ── */
+  .list-tools {
+    background: var(--color-surface);
+    padding: 12px 20px 12px;
+    border-bottom: 1px solid var(--color-border);
+    flex-shrink: 0;
+    position: sticky; top: 0; z-index: 4;
+  }
+  .search-box { position: relative; }
+  .search-box i {
+    position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+    width: 18px; height: 18px; color: var(--color-text-muted); pointer-events: none;
+  }
+  .search-box .input { padding-left: 42px; height: 44px; }
+  .tag-row { display: flex; gap: 8px; overflow-x: auto; margin-top: 12px; scrollbar-width: none; }
+  .tag-row::-webkit-scrollbar { display: none; }
+  .tag-chip {
+    flex-shrink: 0;
+    padding: 6px 14px; border-radius: var(--r-full);
+    border: 1px solid var(--color-border); background: var(--color-surface);
+    font-size: var(--fs-label); font-weight: var(--fw-medium); color: var(--color-text-sub);
+    font-family: var(--font-base); cursor: pointer; white-space: nowrap;
+    transition: background var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast);
+  }
+  .tag-chip.active { background: var(--color-primary); border-color: var(--color-primary); color: var(--color-on-primary); }
+
+  /* ── 명함첩 항목 ── */
+  .contact-list { background: var(--color-surface); }
+  .contact-item {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .contact-body { flex: 1; min-width: 0; }
+  .contact-name-row { display: flex; align-items: baseline; gap: 8px; }
+  .contact-name { font-size: var(--fs-body); font-weight: var(--fw-semibold); color: var(--color-text); }
+  .contact-role { font-size: var(--fs-caption); color: var(--color-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .contact-company { font-size: var(--fs-caption); color: var(--color-text-sub); margin-top: 2px; }
+  .contact-memo {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: var(--fs-caption); color: var(--color-text-muted);
+    margin-top: 6px;
+  }
+  .contact-memo i { width: 12px; height: 12px; }
+  .contact-tags { display: flex; gap: 4px; margin-top: 8px; flex-wrap: wrap; }
+  .list-empty { padding: 56px 20px; text-align: center; color: var(--color-text-muted); font-size: var(--fs-body); display: none; }
+  .list-empty.on { display: block; }
+
+  /* ── 소식 피드 ── */
+  .feed { display: flex; flex-direction: column; gap: 10px; padding: 12px 12px; }
+  .feed-day { font-size: var(--fs-caption); font-weight: var(--fw-semibold); color: var(--color-text-muted); padding: 8px 8px 2px; letter-spacing: 0.3px; }
+  .feed-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-md);
+    overflow: hidden;
+  }
+  .feed-head { display: flex; align-items: center; gap: 10px; padding: 14px 16px 10px; }
+  .feed-head-body { flex: 1; min-width: 0; }
+  .feed-head-name { font-size: var(--fs-label); font-weight: var(--fw-semibold); color: var(--color-text); }
+  .feed-head-sub { font-size: var(--fs-caption); color: var(--color-text-muted); margin-top: 1px; }
+  .feed-type { margin-left: auto; align-self: flex-start; }
+  .feed-content { padding: 0 16px 14px; }
+  .feed-post-text { font-size: var(--fs-body); color: var(--color-text-sub); line-height: var(--lh-body); }
+  .feed-event {
+    display: flex; gap: 12px; align-items: stretch;
+    background: var(--color-surface-sub); border-radius: var(--r-sm); overflow: hidden;
+  }
+  .feed-event-thumb { width: 96px; flex-shrink: 0; background: var(--color-bg); }
+  .feed-event-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .feed-event-body { flex: 1; min-width: 0; padding: 12px; display: flex; flex-direction: column; justify-content: center; gap: 4px; }
+  .feed-event-title { font-size: var(--fs-body); font-weight: var(--fw-semibold); color: var(--color-text); }
+  .feed-event-date { display: inline-flex; align-items: center; gap: 4px; font-size: var(--fs-caption); color: var(--color-text-muted); }
+  .feed-event-date i { width: 12px; height: 12px; }
+  .feed-video { position: relative; border-radius: var(--r-sm); overflow: hidden; aspect-ratio: 16/9; background: var(--color-surface-sub); }
+  .feed-video img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .feed-video-play {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+    width: 48px; height: 48px; border-radius: var(--r-full);
+    background: var(--color-scrim); color: var(--color-on-primary);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .feed-video-title { font-size: var(--fs-label); font-weight: var(--fw-medium); color: var(--color-text); margin-top: 8px; }
+
+  /* ── 내 페이지: 기존 business-card 프로필 랜딩을 그대로 임베드 ── */
+  .mypage-frame { flex: 1; width: 100%; border: none; display: block; }
+
+  /* ── 준비 중 (홈/채팅) ── */
+  .placeholder {
+    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 14px; padding: 32px; text-align: center;
+  }
+  .placeholder-icon {
+    width: 64px; height: 64px; border-radius: var(--r-full);
+    background: var(--color-surface-sub); color: var(--color-text-muted);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .placeholder-icon i { width: 28px; height: 28px; }
+  .placeholder-title { font-size: var(--fs-body-lg); font-weight: var(--fw-semibold); color: var(--color-text-sub); }
+  .placeholder-desc { font-size: var(--fs-body); color: var(--color-text-muted); }
+
+  /* ── 토스트를 프레임 안으로 스코프 (.frame transform이 fixed 컨테이닝 블록) ── */
+  .toast-container { position: fixed; bottom: 100px; }
+</style>
+</head>
+<body>
+<div class="frame" id="frame">
+
+  <!-- ══════════════ 홈 (준비 중) ══════════════ -->
+  <div class="screen" id="s-home">
+    <div class="placeholder">
+      <div class="placeholder-icon"><i data-lucide="house"></i></div>
+      <div class="placeholder-title">홈</div>
+      <div class="placeholder-desc">이번 프로토타입에서는 준비 중이에요.</div>
+    </div>
+  </div>
+
+  <!-- ══════════════ 팔로우 = 명함첩 ══════════════ -->
+  <div class="screen on" id="s-follow">
+    <div class="topbar">
+      <div><span class="topbar-title">명함첩</span><span class="topbar-count" id="contact-count">8</span></div>
+      <div class="topbar-actions">
+        <button class="icon-btn icon-btn-clear" aria-label="정렬" onclick="toast('정렬 · 준비 중')"><i data-lucide="arrow-up-down" style="width:20px;height:20px"></i></button>
+      </div>
+    </div>
+    <div class="list-tools">
+      <div class="search-box">
+        <i data-lucide="search"></i>
+        <input class="input" id="contact-search" type="text" placeholder="이름·회사·직함 검색" oninput="filterContacts()">
+      </div>
+      <div class="tag-row" id="tag-row">
+        <button class="tag-chip active" data-tag="all" onclick="setTag(this,'all')">전체</button>
+        <button class="tag-chip" data-tag="부동산" onclick="setTag(this,'부동산')">부동산</button>
+        <button class="tag-chip" data-tag="협력" onclick="setTag(this,'협력')">협력사</button>
+        <button class="tag-chip" data-tag="자문" onclick="setTag(this,'자문')">자문</button>
+        <button class="tag-chip" data-tag="금융" onclick="setTag(this,'금융')">금융</button>
+        <button class="tag-chip" data-tag="지인" onclick="setTag(this,'지인')">지인</button>
+      </div>
+    </div>
+    <div class="screen-body">
+      <div class="contact-list" id="contact-list">
+        <div class="contact-item" data-tag="부동산" data-search="박선우 선우 공인중개사사무소 대표 공인중개사">
+          <span class="avatar avatar-lg"><img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&h=120&fit=crop&crop=faces&auto=format" alt=""></span>
+          <div class="contact-body">
+            <div class="contact-name-row"><span class="contact-name">박선우</span><span class="contact-role">대표 공인중개사</span></div>
+            <div class="contact-company">선우 공인중개사사무소</div>
+            <div class="contact-memo"><i data-lucide="sticky-note"></i>정자동 상가 매물 문의함</div>
+            <div class="contact-tags"><span class="badge badge-sm badge-weak-primary">부동산</span><span class="badge badge-sm badge-weak-neutral">거래처</span></div>
+          </div>
+        </div>
+        <div class="contact-item" data-tag="협력" data-search="김민지 무드인테리어 실장">
+          <span class="avatar avatar-lg"><img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&h=120&fit=crop&crop=faces&auto=format" alt=""></span>
+          <div class="contact-body">
+            <div class="contact-name-row"><span class="contact-name">김민지</span><span class="contact-role">실장</span></div>
+            <div class="contact-company">무드인테리어</div>
+            <div class="contact-memo"><i data-lucide="sticky-note"></i>34평 리모델링 견적 요청</div>
+            <div class="contact-tags"><span class="badge badge-sm badge-weak-neutral">협력사</span></div>
+          </div>
+        </div>
+        <div class="contact-item" data-tag="자문" data-search="이도현 도현세무회계 세무사">
+          <span class="avatar avatar-lg"><img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&h=120&fit=crop&crop=faces&auto=format" alt=""></span>
+          <div class="contact-body">
+            <div class="contact-name-row"><span class="contact-name">이도현</span><span class="contact-role">세무사</span></div>
+            <div class="contact-company">도현세무회계</div>
+            <div class="contact-memo"><i data-lucide="sticky-note"></i>양도세 상담 예약</div>
+            <div class="contact-tags"><span class="badge badge-sm badge-weak-neutral">자문</span></div>
+          </div>
+        </div>
+        <div class="contact-item" data-tag="금융" data-search="정하늘 KB국민은행 정자동지점 대출상담사">
+          <span class="avatar avatar-lg"><img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=120&h=120&fit=crop&crop=faces&auto=format" alt=""></span>
+          <div class="contact-body">
+            <div class="contact-name-row"><span class="contact-name">정하늘</span><span class="contact-role">대출상담사</span></div>
+            <div class="contact-company">KB국민은행 정자동지점</div>
+            <div class="contact-memo"><i data-lucide="sticky-note"></i>주담대 금리 확인 필요</div>
+            <div class="contact-tags"><span class="badge badge-sm badge-weak-neutral">금융</span></div>
+          </div>
+        </div>
+        <div class="contact-item" data-tag="협력" data-search="한지우 지우홈스타일링 홈스테이저">
+          <span class="avatar avatar-lg"><img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=120&h=120&fit=crop&crop=faces&auto=format" alt=""></span>
+          <div class="contact-body">
+            <div class="contact-name-row"><span class="contact-name">한지우</span><span class="contact-role">홈스테이저</span></div>
+            <div class="contact-company">지우홈스타일링</div>
+            <div class="contact-memo"><i data-lucide="sticky-note"></i>매물 스타일링 협업</div>
+            <div class="contact-tags"><span class="badge badge-sm badge-weak-neutral">협력사</span></div>
+          </div>
+        </div>
+        <div class="contact-item" data-tag="자문" data-search="오세훈 세훈감정평가법인 감정평가사">
+          <span class="avatar avatar-lg"><img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=120&h=120&fit=crop&crop=faces&auto=format" alt=""></span>
+          <div class="contact-body">
+            <div class="contact-name-row"><span class="contact-name">오세훈</span><span class="contact-role">감정평가사</span></div>
+            <div class="contact-company">세훈감정평가법인</div>
+            <div class="contact-tags"><span class="badge badge-sm badge-weak-neutral">자문</span></div>
+          </div>
+        </div>
+        <div class="contact-item" data-tag="지인" data-search="최유진 유진커피 대표">
+          <span class="avatar avatar-lg"><img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=120&h=120&fit=crop&crop=faces&auto=format" alt=""></span>
+          <div class="contact-body">
+            <div class="contact-name-row"><span class="contact-name">최유진</span><span class="contact-role">대표</span></div>
+            <div class="contact-company">유진커피</div>
+            <div class="contact-memo"><i data-lucide="sticky-note"></i>1층 카페 임대 관심</div>
+            <div class="contact-tags"><span class="badge badge-sm badge-weak-neutral">지인</span></div>
+          </div>
+        </div>
+        <div class="contact-item" data-tag="자문" data-search="윤서연 서연법무사사무소 법무사">
+          <span class="avatar avatar-lg"><img src="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=120&h=120&fit=crop&crop=faces&auto=format" alt=""></span>
+          <div class="contact-body">
+            <div class="contact-name-row"><span class="contact-name">윤서연</span><span class="contact-role">법무사</span></div>
+            <div class="contact-company">서연법무사사무소</div>
+            <div class="contact-memo"><i data-lucide="sticky-note"></i>소유권 이전 등기 대행</div>
+            <div class="contact-tags"><span class="badge badge-sm badge-weak-neutral">자문</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="list-empty" id="contact-empty">검색 결과가 없어요.</div>
+    </div>
+  </div>
+
+  <!-- ══════════════ 채팅 (준비 중) ══════════════ -->
+  <div class="screen" id="s-chat">
+    <div class="placeholder">
+      <div class="placeholder-icon"><i data-lucide="message-circle"></i></div>
+      <div class="placeholder-title">채팅</div>
+      <div class="placeholder-desc">이번 프로토타입에서는 준비 중이에요.</div>
+    </div>
+  </div>
+
+  <!-- ══════════════ 소식 = 피드 ══════════════ -->
+  <div class="screen" id="s-feed">
+    <div class="topbar">
+      <span class="topbar-title">소식</span>
+      <div class="topbar-actions">
+        <button class="icon-btn icon-btn-clear" aria-label="필터" onclick="toast('필터 · 준비 중')"><i data-lucide="sliders-horizontal" style="width:20px;height:20px"></i></button>
+      </div>
+    </div>
+    <div class="screen-body">
+      <div class="feed">
+        <div class="feed-day">오늘</div>
+
+        <div class="feed-card">
+          <div class="feed-head">
+            <span class="avatar avatar-md"><img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&h=120&fit=crop&crop=faces&auto=format" alt=""></span>
+            <div class="feed-head-body">
+              <div class="feed-head-name">선우 공인중개사사무소</div>
+              <div class="feed-head-sub">박선우 · 2시간 전</div>
+            </div>
+            <span class="badge badge-sm badge-weak-primary feed-type">이벤트</span>
+          </div>
+          <div class="feed-content">
+            <div class="feed-event">
+              <div class="feed-event-thumb"><img src="https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=300&auto=format&fit=crop" alt=""></div>
+              <div class="feed-event-body">
+                <div class="feed-event-title">정자동 파크뷰 오픈하우스</div>
+                <div class="feed-event-date"><i data-lucide="calendar-days"></i>07.05 (토) 14:00</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="feed-card">
+          <div class="feed-head">
+            <span class="avatar avatar-md"><img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&h=120&fit=crop&crop=faces&auto=format" alt=""></span>
+            <div class="feed-head-body">
+              <div class="feed-head-name">무드인테리어</div>
+              <div class="feed-head-sub">김민지 · 5시간 전</div>
+            </div>
+            <span class="badge badge-sm badge-weak-neutral feed-type">게시글</span>
+          </div>
+          <div class="feed-content">
+            <div class="feed-post-text">여름 리모델링 시공 사례 3곳을 새로 올렸어요. 34평 아파트 화이트톤 시공이 궁금하셨던 분들 참고해 주세요 :)</div>
+          </div>
+        </div>
+
+        <div class="feed-day">어제</div>
+
+        <div class="feed-card">
+          <div class="feed-head">
+            <span class="avatar avatar-md"><img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&h=120&fit=crop&crop=faces&auto=format" alt=""></span>
+            <div class="feed-head-body">
+              <div class="feed-head-name">도현세무회계</div>
+              <div class="feed-head-sub">이도현 · 어제 18:20</div>
+            </div>
+            <span class="badge badge-sm badge-weak-neutral feed-type">영상</span>
+          </div>
+          <div class="feed-content">
+            <div class="feed-video">
+              <img src="https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=480&auto=format&fit=crop" alt="">
+              <div class="feed-video-play"><i data-lucide="play" style="width:22px;height:22px"></i></div>
+            </div>
+            <div class="feed-video-title">2026 양도세 개정, 3분 핵심 정리</div>
+          </div>
+        </div>
+
+        <div class="feed-card">
+          <div class="feed-head">
+            <span class="avatar avatar-md"><img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=120&h=120&fit=crop&crop=faces&auto=format" alt=""></span>
+            <div class="feed-head-body">
+              <div class="feed-head-name">KB국민은행 정자동지점</div>
+              <div class="feed-head-sub">정하늘 · 어제 10:05</div>
+            </div>
+            <span class="badge badge-sm badge-weak-neutral feed-type">게시글</span>
+          </div>
+          <div class="feed-content">
+            <div class="feed-post-text">이번 주 기준 주택담보대출 금리 인하 소식 안내드립니다. 자세한 조건은 메시지로 문의 주세요.</div>
+          </div>
+        </div>
+
+        <div class="feed-day">이번 주</div>
+
+        <div class="feed-card">
+          <div class="feed-head">
+            <span class="avatar avatar-md"><img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&h=120&fit=crop&crop=faces&auto=format" alt=""></span>
+            <div class="feed-head-body">
+              <div class="feed-head-name">선우 공인중개사사무소</div>
+              <div class="feed-head-sub">박선우 · 3일 전</div>
+            </div>
+            <span class="badge badge-sm badge-weak-neutral feed-type">게시글</span>
+          </div>
+          <div class="feed-content">
+            <div class="feed-post-text">서현동 신축 오피스텔 급매 나왔습니다. 실투자금·수익률 자료 준비해 두었으니 관심 있으신 분 연락 주세요.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════ 내 페이지 (기존 business-card 프로필 랜딩 그대로 임베드) ══════════════ -->
+  <div class="screen" id="s-mypage">
+    <iframe class="mypage-frame" src="../business-card-0708/business-card.html" title="내 페이지" loading="lazy"></iframe>
+  </div>
+
+  <!-- ══════════════ 독바 네비 ══════════════ -->
+  <nav class="dock" id="dock">
+    <button class="dock-item" data-tab="home" onclick="setTab('home')"><i data-lucide="house"></i><span>홈</span></button>
+    <button class="dock-item active" data-tab="follow" onclick="setTab('follow')"><i data-lucide="contact-round"></i><span>팔로우</span></button>
+    <button class="dock-item" data-tab="chat" onclick="setTab('chat')"><i data-lucide="message-circle"></i><span>채팅</span></button>
+    <button class="dock-item" data-tab="feed" onclick="setTab('feed')"><i data-lucide="newspaper"></i><span>소식</span></button>
+    <button class="dock-item" data-tab="mypage" onclick="setTab('mypage')"><i data-lucide="circle-user-round"></i><span>내 페이지</span></button>
+  </nav>
+
+  <div class="toast-container" id="toast-container"></div>
+
+</div>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+  const SCREENS = { home:'s-home', follow:'s-follow', chat:'s-chat', feed:'s-feed', mypage:'s-mypage' };
+
+  function showScreen(id){
+    document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id));
+    document.querySelector('.screen.on')?.querySelector('.screen-body')?.scrollTo(0,0);
+  }
+  function setTab(tab){
+    showScreen(SCREENS[tab]);
+    document.querySelectorAll('.dock-item').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  }
+
+  /* 토스트 */
+  let toastTimer;
+  function toast(msg){
+    const c = document.getElementById('toast-container');
+    c.innerHTML = '<div class="toast">'+msg+'</div>';
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { c.innerHTML = ''; }, 2000);
+  }
+
+  /* 명함첩 검색 + 태그 필터 */
+  let curTag = 'all';
+  function setTag(el, tag){
+    curTag = tag;
+    document.querySelectorAll('#tag-row .tag-chip').forEach(c => c.classList.toggle('active', c === el));
+    filterContacts();
+  }
+  function filterContacts(){
+    const q = document.getElementById('contact-search').value.trim().toLowerCase();
+    let shown = 0;
+    document.querySelectorAll('#contact-list .contact-item').forEach(item => {
+      const matchTag = curTag === 'all' || item.dataset.tag === curTag;
+      const matchText = !q || item.dataset.search.toLowerCase().includes(q);
+      const ok = matchTag && matchText;
+      item.style.display = ok ? '' : 'none';
+      if(ok) shown++;
+    });
+    document.getElementById('contact-empty').classList.toggle('on', shown === 0);
+    document.getElementById('contact-count').textContent = shown;
+  }
+
+  lucide.createIcons();
+</script>
+</body>
+</html>

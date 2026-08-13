@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>명함 · 송지훈</title>
+<link rel="stylesheet" href="../../tokens.css">
+<link rel="stylesheet" href="../../components.css">
+<style>
+  html, body {
+    margin: 0;
+    background: var(--color-bg);
+    font-family: var(--font-base);
+    color: var(--color-text);
+  }
+  a { color: inherit; text-decoration: none; }
+
+  .page {
+    max-width: 390px;
+    margin: 0 auto;
+    padding: 20px 16px 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-md);
+    padding: 20px;
+  }
+  .card-flush { padding: 0; overflow: hidden; }
+
+  .section-label {
+    display: block;
+    margin-bottom: 12px;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .divider {
+    height: 1px;
+    background: var(--color-border);
+    border: none;
+    margin: 0;
+  }
+
+  .tnum { font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- 명함 이미지 카드 -->
+  <section class="card card-flush">
+    <img src="../../assets/namecard-thelibrary.png" alt="송지훈 명함" style="width:100%; display:block;">
+  </section>
+
+  <!-- 프로필 카드 -->
+  <section class="card">
+    <div style="display:flex; gap:16px; align-items:flex-start;">
+      <div class="avatar avatar-xl avatar-rounded" style="background:var(--color-brand-gradient);"></div>
+      <div style="flex:1; min-width:0;">
+        <div class="text-display">송지훈</div>
+        <div class="text-caption" style="margin-top:4px; color:var(--color-primary); font-weight:var(--fw-medium);">@thelibrary</div>
+      </div>
+    </div>
+    <div class="text-body-lg" style="margin-top:16px; padding-top:16px; border-top:1px solid var(--color-border); color:var(--color-text-sub);">
+      CEO, Founder<br>
+      The Library · 공간 디렉터
+    </div>
+    <div style="margin-top:16px; display:flex; align-items:center; gap:8px;">
+      <div style="width:22px; height:22px; border-radius:var(--r-xs); background:var(--color-brand-gradient);"></div>
+      <span class="text-caption" style="letter-spacing:1px;">THE LIBRARY</span>
+    </div>
+    <div style="margin-top:20px; display:flex; gap:8px;">
+      <a href="#" class="btn btn-md btn-fill-primary btn-pill" style="flex:1;">대화하기</a>
+      <a href="#" class="btn btn-md btn-line-dark btn-pill">저장</a>
+    </div>
+  </section>
+
+  <!-- SNS -->
+  <section class="card">
+    <span class="section-label text-badge">SNS</span>
+    <div style="display:flex; flex-wrap:wrap; gap:8px;">
+      <a href="#" class="badge badge-lg badge-weak-primary">Instagram</a>
+      <a href="#" class="badge badge-lg badge-weak-primary">LinkedIn</a>
+      <a href="#" class="badge badge-lg badge-weak-primary">Threads</a>
+      <a href="#" class="badge badge-lg badge-weak-primary">YouTube</a>
+    </div>
+  </section>
+
+  <!-- 소개 -->
+  <section class="card" style="background:var(--color-primary-light); border-color:transparent;">
+    <span class="section-label text-badge" style="color:var(--color-primary);">소개</span>
+    <p class="text-body-lg" style="margin:0; color:var(--color-text-sub);">
+      공간이 사람을 어떻게 바꾸는지 오래 관찰해왔습니다. 도서관·라운지·회의공간을 다시 설계하는 일을 8년째 하고 있어요. 새 프로젝트 제안은 언제든 환영합니다.
+    </p>
+  </section>
+
+  <!-- 연락처 -->
+  <section class="card">
+    <span class="section-label text-badge">연락처</span>
+    <div style="display:flex; flex-direction:column;">
+      <div style="display:flex; justify-content:space-between; gap:16px; align-items:baseline; padding:12px 0;">
+        <span class="text-caption">전화</span>
+        <a href="tel:+821094836051" class="text-body tnum" style="color:var(--color-text);">010-9483-6051</a>
+      </div>
+      <hr class="divider">
+      <div style="display:flex; justify-content:space-between; gap:16px; align-items:baseline; padding:12px 0;">
+        <span class="text-caption">이메일</span>
+        <a href="mailto:aryou@thelibrary.co.kr" class="text-body" style="color:var(--color-text);">aryou@thelibrary.co.kr</a>
+      </div>
+      <hr class="divider">
+      <div style="display:flex; justify-content:space-between; gap:16px; align-items:baseline; padding:12px 0;">
+        <span class="text-caption" style="flex:none;">주소</span>
+        <span class="text-body" style="color:var(--color-text); text-align:right;">13601 분당구 수내동<br>발이봉북로 3</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 갤러리 -->
+  <section class="card">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+      <span class="section-label text-badge" style="margin-bottom:0;">갤러리</span>
+      <span class="text-caption">인스타그램형</span>
+    </div>
+    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:4px;">
+      <div style="aspect-ratio:1; border-radius:var(--r-xs); background:var(--color-primary-light);"></div>
+      <div style="aspect-ratio:1; border-radius:var(--r-xs); background:var(--color-surface-sub);"></div>
+      <div style="aspect-ratio:1; border-radius:var(--r-xs); background:var(--color-primary-subtle);"></div>
+      <div style="aspect-ratio:1; border-radius:var(--r-xs); background:var(--color-surface-sub);"></div>
+      <div style="aspect-ratio:1; border-radius:var(--r-xs); background:var(--color-primary-light);"></div>
+      <div style="aspect-ratio:1; border-radius:var(--r-xs); background:var(--color-primary-subtle);"></div>
+    </div>
+  </section>
+
+  <!-- 이벤트 -->
+  <section class="card">
+    <span class="section-label text-badge">이벤트</span>
+    <div style="display:flex; flex-direction:column; gap:8px;">
+      <a href="#" style="display:block; border:1px solid var(--color-border); border-radius:var(--r-sm); padding:12px;">
+        <div style="display:flex; justify-content:space-between; gap:12px; align-items:center;">
+          <span class="badge badge-md badge-weak-primary">오프라인</span>
+          <span class="text-caption tnum">08.14</span>
+        </div>
+        <div class="text-body-lg" style="margin-top:8px; color:var(--color-text);">공간 브랜딩 나이트 — 도서관을 다시 짓다</div>
+        <div class="text-caption" style="margin-top:4px;">성수 커먼그라운드</div>
+      </a>
+      <a href="#" style="display:block; border:1px solid var(--color-border); border-radius:var(--r-sm); padding:12px;">
+        <div style="display:flex; justify-content:space-between; gap:12px; align-items:center;">
+          <span class="badge badge-md badge-fill-primary">모집중</span>
+          <span class="text-caption tnum">09.02</span>
+        </div>
+        <div class="text-body-lg" style="margin-top:8px; color:var(--color-text);">공간 기획 1:1 컨설팅 (4석)</div>
+        <div class="text-caption" style="margin-top:4px;">온라인 · 40분</div>
+      </a>
+      <a href="#" style="display:block; border:1px solid var(--color-border); border-radius:var(--r-sm); padding:12px;">
+        <div style="display:flex; justify-content:space-between; gap:12px; align-items:center;">
+          <span class="badge badge-md badge-weak-neutral">종료</span>
+          <span class="text-caption tnum">06.21</span>
+        </div>
+        <div class="text-body-lg" style="margin-top:8px; color:var(--color-text);">The Library 오픈 세미나 vol.2</div>
+        <div class="text-caption" style="margin-top:4px;">분당 라이브러리</div>
+      </a>
+    </div>
+  </section>
+
+  <!-- 링크 -->
+  <section class="card">
+    <span class="section-label text-badge">링크</span>
+    <div style="display:flex; flex-direction:column;">
+      <a href="#" style="display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid var(--color-border);">
+        <span class="text-body-lg" style="color:var(--color-text);">포트폴리오</span>
+        <span class="text-label" style="color:var(--color-primary);">thelibrary.co.kr</span>
+      </a>
+      <a href="#" style="display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid var(--color-border);">
+        <span class="text-body-lg" style="color:var(--color-text);">프로젝트 문의</span>
+        <span class="text-label" style="color:var(--color-primary);">cal.com</span>
+      </a>
+      <a href="#" style="display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid var(--color-border);">
+        <span class="text-body-lg" style="color:var(--color-text);">브랜드 가이드 PDF</span>
+        <span class="text-label" style="color:var(--color-primary);">thelibrary.co.kr</span>
+      </a>
+      <a href="#" style="display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 0;">
+        <span class="text-body-lg" style="color:var(--color-text);">뉴스레터 구독</span>
+        <span class="text-label" style="color:var(--color-primary);">letter.kr</span>
+      </a>
+    </div>
+  </section>
+
+  <!-- 게시판 -->
+  <section class="card">
+    <span class="section-label text-badge">게시판</span>
+    <div style="display:flex; flex-direction:column;">
+      <a href="#" style="display:flex; justify-content:space-between; gap:12px; align-items:baseline; padding:12px 0; border-bottom:1px solid var(--color-border);">
+        <span class="text-body-lg" style="color:var(--color-text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">조용한 공간이 대화를 만든다</span>
+        <span class="text-caption tnum" style="flex:none;">07.22</span>
+      </a>
+      <a href="#" style="display:flex; justify-content:space-between; gap:12px; align-items:baseline; padding:12px 0; border-bottom:1px solid var(--color-border);">
+        <span class="text-body-lg" style="color:var(--color-text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">책장을 없앤 도서관 이야기</span>
+        <span class="text-caption tnum" style="flex:none;">07.09</span>
+      </a>
+      <a href="#" style="display:flex; justify-content:space-between; gap:12px; align-items:baseline; padding:12px 0; border-bottom:1px solid var(--color-border);">
+        <span class="text-body-lg" style="color:var(--color-text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">라운지 동선을 3분에서 30초로 줄인 기록</span>
+        <span class="text-caption tnum" style="flex:none;">06.30</span>
+      </a>
+      <a href="#" style="display:flex; justify-content:space-between; gap:12px; align-items:baseline; padding:12px 0;">
+        <span class="text-body-lg" style="color:var(--color-text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">The Library v3 리뉴얼 노트</span>
+        <span class="text-caption tnum" style="flex:none;">06.11</span>
+      </a>
+    </div>
+  </section>
+
+  <!-- 리뷰 (라이트 톤) -->
+  <section class="card">
+    <span class="section-label text-badge">리뷰</span>
+    <div style="display:flex; align-items:baseline; gap:8px;">
+      <span class="text-metric tnum">4.9</span>
+      <span class="text-caption">리뷰 32개</span>
+    </div>
+    <div style="margin-top:16px; display:flex; flex-direction:column;">
+      <div style="padding:16px 0; border-top:1px solid var(--color-border);">
+        <div style="display:flex; justify-content:space-between; align-items:baseline; gap:12px;">
+          <span class="text-label" style="color:var(--color-text);">이하늘</span>
+          <span class="text-caption tnum">2026.07.18</span>
+        </div>
+        <div style="margin-top:4px; letter-spacing:2px; color:var(--color-star); font-size:var(--fs-caption);">★★★★★</div>
+        <p class="text-body" style="margin:8px 0 0; color:var(--color-text-sub);">요구사항을 정리해 주는 속도가 빨라서 미팅 두 번 만에 방향이 잡혔어요.</p>
+      </div>
+      <div style="padding:16px 0; border-top:1px solid var(--color-border);">
+        <div style="display:flex; justify-content:space-between; align-items:baseline; gap:12px;">
+          <span class="text-label" style="color:var(--color-text);">박준영</span>
+          <span class="text-caption tnum">2026.06.02</span>
+        </div>
+        <div style="margin-top:4px; letter-spacing:2px; color:var(--color-star); font-size:var(--fs-caption);">★★★★★</div>
+        <p class="text-body" style="margin:8px 0 0; color:var(--color-text-sub);">공간의 사용 흐름을 근거로 설명해줘서 결정이 쉬웠습니다.</p>
+      </div>
+      <div style="padding:16px 0; border-top:1px solid var(--color-border);">
+        <div style="display:flex; justify-content:space-between; align-items:baseline; gap:12px;">
+          <span class="text-label" style="color:var(--color-text);">최민서</span>
+          <span class="text-caption tnum">2026.05.20</span>
+        </div>
+        <div style="margin-top:4px; letter-spacing:2px; color:var(--color-star); font-size:var(--fs-caption);">★★★★<span style="color:var(--color-star-empty);">☆</span></div>
+        <p class="text-body" style="margin:8px 0 0; color:var(--color-text-sub);">일정이 타이트했는데 결과물 품질이 유지됐습니다.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="text-caption" style="text-align:center; padding:8px 0 0;">thelibrary.co.kr</div>
+</div>
+</body>
+</html>

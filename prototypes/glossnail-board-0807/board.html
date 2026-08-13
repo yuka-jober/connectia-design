@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>게시판 프로토타입</title>
+<title>글로스네일 — 게시판 프로토타입</title>
 <link rel="stylesheet" href="../../tokens.css">
 <link rel="stylesheet" href="../../components.css">
 <style>
@@ -121,13 +121,55 @@
 
   /* ── 랜딩 ── */
   .lp-header { width: 100%; height: 177px; overflow: hidden; position: relative; flex-shrink: 0; }
-  .lp-header img { width: 100%; height: 211px; object-fit: cover; position: absolute; top: 0; left: 0; }
-  .lp-avatar-wrap { position: absolute; top: 133px; left: 20px; z-index: 2; }
-  .lp-body { flex: 1; overflow-y: auto; background: var(--color-bg); }
-  .lp-inner { padding: 88px 20px 32px; display: flex; flex-direction: column; gap: 20px; }
+  .lp-header img { width: 100%; height: 211px; object-fit: cover; object-position: right center; position: absolute; top: 0; left: 0; }
+  .lp-avatar-wrap { position: absolute; top: 133px; left: 20px; z-index: 2; transition: all var(--motion-standard) var(--ease-standard); }
+  .lp-body { flex: 1; overflow-y: auto; overflow-x: hidden; background: var(--color-bg); }
+  .lp-inner { padding: 68px 20px 32px; display: flex; flex-direction: column; gap: 20px; transition: padding var(--motion-standard) var(--ease-standard); }
   .lp-title { font-weight: var(--fw-semibold); font-size: var(--fs-title); color: var(--color-text); letter-spacing: var(--ls-title); }
+  .lp-name-block { display: flex; flex-direction: column; gap: 4px; }
+  .lp-handle { font-size: var(--fs-label); color: var(--color-text-muted); }
+  .lp-actions-row { position: absolute; top: 190px; right: 20px; z-index: 3; display: flex; gap: 8px; align-items: center; }
+
+  /* ── Cover style variants ──
+     Default (cover-overlap-left): 왼쪽 하단 겹침 (현재)
+     cover-below-left: 왼쪽 아래 (겹치지 않음)
+     cover-hidden:     프로필 사진 숨김 */
+  .lp-body.cover-below-left .lp-avatar-wrap { top: 185px; }
+  .lp-body.cover-below-left .lp-inner { padding-top: 112px; }
+
+  .lp-body.cover-hidden .lp-avatar-wrap { display: none; }
+
   .lp-divider { height: 1px; width: 100%; background: var(--color-border); border: none; }
   .lp-section-title { font-weight: var(--fw-semibold); font-size: var(--fs-heading); color: var(--color-text-sub); letter-spacing: var(--ls-heading); }
+
+  /* Gallery 섹션 (소제목 + 격자를 묶음) */
+  .lp-gallery-section { display: flex; flex-direction: column; gap: 12px; width: 100%; }
+
+  /* Gallery grid (Instagram-style 3-column, 4:5) */
+  .lp-gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+  }
+  .lp-gallery-cell {
+    position: relative;
+    aspect-ratio: 4 / 5;
+    overflow: hidden;
+    background: var(--color-surface-sub);
+    border: none;
+    padding: 0;
+    cursor: pointer;
+  }
+  .lp-gallery-cell img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .lp-gallery-cell-icon {
+    position: absolute; top: 6px; right: 6px;
+    color: var(--color-on-primary);
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.4));
+  }
+  /* Gallery 가로 캐러셀 레이아웃 (프로필 편집의 갤러리 "가로" 옵션) */
+  .lp-gallery-carousel { display: flex; gap: 8px; overflow-x: auto; width: 100%; padding-bottom: 4px; scrollbar-width: none; }
+  .lp-gallery-carousel::-webkit-scrollbar { display: none; }
+  .lp-gallery-carousel .lp-gallery-cell { flex: 0 0 auto; width: 260px; aspect-ratio: 16 / 9; border-radius: var(--r-md); }
   .lp-notice-header { display: flex; align-items: center; justify-content: space-between; width: 100%; }
 
   .lp-post-list { background: var(--color-surface); border-radius: var(--r-md); border: 1px solid var(--color-border); overflow: hidden; width: 100%; }
@@ -164,35 +206,14 @@
   .lp-post-list-plain .lp-post-img { width: 72px; height: 72px; border-radius: var(--r-sm); background: var(--color-surface-sub); order: 2; flex-shrink: 0; align-self: center; overflow: hidden; }
   .lp-post-list-plain .lp-post-body { padding: 0 !important; gap: 6px; flex: 1; min-width: 0; order: 1; }
 
-  /* 게시판 행 우측 핀 버튼 (배너 표시 토글) */
-  .lp-post-pin {
-    order: 3;
-    width: 32px; height: 32px;
-    display: flex; align-items: center; justify-content: center;
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--r-full);
-    color: var(--color-text-muted);
-    cursor: pointer;
-    flex-shrink: 0;
-    align-self: center;
-    font-family: var(--font-base);
-    transition: background var(--motion-fast) var(--ease-standard), color var(--motion-fast) var(--ease-standard), border-color var(--motion-fast) var(--ease-standard);
-  }
-  .lp-post-pin:hover { color: var(--color-text); border-color: var(--color-text-muted); }
-  .lp-post-pin.is-pinned {
-    background: var(--color-primary);
-    color: var(--color-on-primary);
-    border-color: var(--color-primary);
-  }
-
   .lp-see-all { font-size: var(--fs-body); color: var(--color-primary); text-align: right; width: 100%; cursor: pointer; background: none; border: none; font-family: var(--font-base); padding: 0; }
   .lp-yt { width: 100%; height: 188px; border-radius: var(--r-sm); overflow: hidden; position: relative; background: var(--color-surface-sub); display: flex; align-items: center; justify-content: center; }
   .lp-yt-play { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 60px; height: 60px; }
   .lp-about { font-size: var(--fs-body); color: var(--color-text); letter-spacing: -0.22px; line-height: var(--lh-body); }
   .lp-about p { margin-bottom: 8px; } .lp-about p:last-child { margin-bottom: 0; }
   .lp-star-row { display: flex; align-items: center; gap: 4px; }
-  .lp-review-cards { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 4px; width: 100%; }
+  .lp-review-cards { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 4px; width: 100%; scrollbar-width: none; }
+  .lp-review-cards::-webkit-scrollbar { display: none; }
   .lp-review-card { background: var(--color-primary-light); border-radius: var(--r-sm); padding: 16px; width: 240px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; }
   .lp-review-text { font-size: var(--fs-label); color: var(--color-text); line-height: var(--lh-caption); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
   .lp-review-meta { font-size: var(--fs-badge); color: var(--color-text-muted); display: flex; gap: 4px; }
@@ -421,16 +442,71 @@
   .sheet-title { font-size: var(--fs-body-lg); font-weight: var(--fw-semibold); color: var(--color-text); margin: 16px 0; }
   .sheet-desc { font-size: var(--fs-caption); color: var(--color-text-sub); margin-bottom: 16px; }
 
+  /* ── 이벤트 추가 분기 선택 ── */
+  .event-add-choice {
+    display: flex; align-items: center; gap: 12px; width: 100%;
+    padding: 16px; background: var(--color-surface);
+    border: 1px solid var(--color-border); border-radius: var(--r-md);
+    font-family: inherit; text-align: left; cursor: pointer;
+    transition: background var(--motion-fast) var(--ease-standard);
+  }
+  .event-add-choice:active { background: var(--color-surface-sub); }
+  .event-add-choice-icon {
+    flex-shrink: 0; width: 44px; height: 44px; border-radius: var(--r-md);
+    background: var(--color-primary-subtle); color: var(--color-primary);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .event-add-choice-icon i { width: 22px; height: 22px; }
+  .event-add-choice-body { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; }
+  .event-add-choice-title { font-size: var(--fs-body); font-weight: var(--fw-semibold); color: var(--color-text); }
+  .event-add-choice-sub { font-size: var(--fs-caption); color: var(--color-text-sub); }
+  .event-add-choice-arrow { flex-shrink: 0; width: 20px; height: 20px; color: var(--color-text-muted); }
+
+  /* ── PDF 업로드 ── */
+  .pdf-dropzone {
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    width: 100%; padding: 32px 16px; background: var(--color-surface-sub);
+    border: 2px dashed var(--color-border); border-radius: var(--r-md);
+    font-family: inherit; cursor: pointer;
+    transition: border-color var(--motion-fast) var(--ease-standard);
+  }
+  .pdf-dropzone:active { border-color: var(--color-primary); }
+  .pdf-dropzone i { width: 32px; height: 32px; color: var(--color-text-muted); }
+  .pdf-dropzone-title { font-size: var(--fs-body); font-weight: var(--fw-medium); color: var(--color-text); }
+  .pdf-dropzone-sub { font-size: var(--fs-caption); color: var(--color-text-muted); }
+  .pdf-file-chip {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 16px; background: var(--color-surface);
+    border: 1px solid var(--color-border); border-radius: var(--r-md);
+  }
+  .pdf-file-chip-icon { flex-shrink: 0; width: 24px; height: 24px; color: var(--color-primary); }
+  .pdf-file-chip-name { flex: 1; min-width: 0; font-size: var(--fs-body); color: var(--color-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* ── 대표 썸네일 업로더 ── */
+  .pdf-field { display: flex; flex-direction: column; gap: 8px; }
+  .pdf-thumb-add {
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+    width: 160px; aspect-ratio: 4 / 3; background: var(--color-surface-sub);
+    border: 2px dashed var(--color-border); border-radius: var(--r-md);
+    font-family: inherit; cursor: pointer;
+    transition: border-color var(--motion-fast) var(--ease-standard);
+  }
+  .pdf-thumb-add:active { border-color: var(--color-primary); }
+  .pdf-thumb-add i { width: 28px; height: 28px; color: var(--color-text-muted); }
+  .pdf-thumb-add-label { font-size: var(--fs-caption); color: var(--color-text-muted); }
+  .pdf-thumb-preview {
+    position: relative; width: 160px; aspect-ratio: 4 / 3;
+    border-radius: var(--r-md); overflow: hidden; background: var(--color-surface-sub);
+  }
+  .pdf-thumb-preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .pdf-thumb-preview .icon-btn { position: absolute; top: 8px; right: 8px; background: var(--color-scrim); color: var(--color-on-primary); }
+
   /* ── 글작성 시트 필드 ── */
   .field-label { font-size: var(--fs-label); font-weight: var(--fw-medium); color: var(--color-text-sub); margin-bottom: 8px; }
   .field-label-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
   .field-hint { font-size: var(--fs-badge); color: var(--color-text-muted); }
 
   /* ── 공지 고정 행 ── */
-  .pin-row { display: flex; align-items: center; gap: 12px; border: 1px solid var(--color-border); border-radius: var(--r-sm); padding: 12px; margin-top: 16px; }
-  .pin-row-text { flex: 1; }
-  .pin-row-title { font-size: var(--fs-label); font-weight: var(--fw-semibold); color: var(--color-text); }
-  .pin-row-desc { font-size: var(--fs-badge); color: var(--color-text-sub); margin-top: 2px; }
 
   /* ── 이벤트 카드 (시트) ── */
   .event-card-row { display: flex; align-items: center; gap: 12px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--r-md); padding: 12px 16px; }
@@ -894,82 +970,9 @@
     display: block;
   }
 
-  /* ══════════════════════════════ */
-  /* 프로토타입 시점 전환 바          */
-  /* ══════════════════════════════ */
-  .viewer-bar {
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 32px;
-    background: var(--color-surface-sub);
-    border-bottom: 1px solid var(--color-border);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 0 12px;
-    z-index: 1000;
-    font-family: var(--font-base);
-  }
-  .viewer-bar-label {
-    font-size: 10px;
-    font-weight: var(--fw-semibold);
-    color: var(--color-text-muted);
-    letter-spacing: 0.4px;
-    text-transform: uppercase;
-  }
-  .viewer-bar-tabs {
-    display: flex;
-    gap: 4px;
-    margin-left: auto;
-  }
-  .viewer-bar-tab {
-    background: none;
-    border: none;
-    border-radius: var(--r-full);
-    padding: 4px 12px;
-    font-size: 11px;
-    font-weight: var(--fw-medium);
-    color: var(--color-text-muted);
-    font-family: var(--font-base);
-    cursor: pointer;
-    transition: background var(--motion-fast), color var(--motion-fast);
-  }
-  .viewer-bar-tab:hover { color: var(--color-text-sub); }
-  .viewer-bar-tab.active {
-    background: var(--color-primary);
-    color: var(--color-on-primary);
-  }
-
-  /* 화면·시트 영역을 viewer-bar 아래로 밀기 */
-  .screen, .sheet-wrap { top: 32px !important; }
-
   /* [hidden] 속성이 모든 element에 우선 적용되도록 */
   [hidden] { display: none !important; }
 
-  /* ══════════════════════════════ */
-  /* 랜딩 상단바                     */
-  /* ══════════════════════════════ */
-  .lp-topbar { padding: 10px 16px; }
-  .lp-topbar-title {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    background: none;
-    border: none;
-    padding: 0;
-    cursor: pointer;
-    color: var(--color-text);
-    font-size: var(--fs-body-lg);
-    font-weight: var(--fw-semibold);
-    min-width: 0;
-  }
-  .lp-topbar-title span {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .lp-topbar-title svg { color: var(--color-text-muted); flex-shrink: 0; }
-  .lp-topbar-actions { display: flex; gap: 8px; flex-shrink: 0; }
 
   /* ══════════════════════════════ */
   /* 페이지 설정 화면                 */
@@ -1263,6 +1266,118 @@
   }
   .lp-tab-content { display: flex; flex-direction: column; gap: 20px; width: 100%; }
   .lp-tab-content[hidden] { display: none; }
+
+  /* ── 이벤트 탭 ── */
+  .event-tab-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  }
+  .event-segments {
+    display: inline-flex;
+    background: var(--color-surface-sub);
+    padding: 4px;
+    border-radius: var(--r-full);
+    gap: 4px;
+  }
+  .event-segment {
+    border: none;
+    background: transparent;
+    padding: 6px 12px;
+    border-radius: var(--r-full);
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-medium);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    line-height: 1.3;
+    transition: background var(--motion-fast) var(--ease-standard),
+                color var(--motion-fast) var(--ease-standard);
+  }
+  .event-segment.active {
+    background: var(--color-surface);
+    color: var(--color-text);
+    font-weight: var(--fw-semibold);
+    box-shadow: var(--shadow-1);
+  }
+  .event-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: 100%;
+  }
+  .event-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    text-align: left;
+    font-family: var(--font-base);
+    width: 100%;
+  }
+  .event-item-img {
+    width: 112px;
+    aspect-ratio: 4 / 3;
+    border-radius: var(--r-sm);
+    background: var(--color-surface-sub);
+    overflow: hidden;
+    flex-shrink: 0;
+    position: relative;
+  }
+  .event-item-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .event-item-body {
+    flex: 1; min-width: 0;
+    display: flex; flex-direction: column;
+    gap: 4px;
+    padding-top: 2px;
+  }
+  .event-item-title {
+    font-size: var(--fs-heading);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text);
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .event-item-title + .event-item-date,
+  .event-item-title + .event-item-desc { margin-top: 4px; }
+  .event-item-date {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+    line-height: 1.4;
+  }
+  .event-item-date i[data-lucide],
+  .event-item-date svg { width: 12px; height: 12px; flex-shrink: 0; }
+  .event-item-desc {
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+    line-height: 1.45;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .event-item-desc-2 { -webkit-line-clamp: 2; }
+  .event-item-ended .event-item-img img { filter: grayscale(0.6) brightness(0.85); }
+  .event-item-ended .event-item-title { color: var(--color-text-muted); }
+  .event-list-empty {
+    padding: 80px 16px;
+    text-align: center;
+    color: var(--color-text-muted);
+    font-size: var(--fs-body);
+  }
+  .event-pane-notice {
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+    line-height: 1.4;
+    padding: 4px 0;
+  }
 
   /* ── 리뷰 탭 (풀버전) ── */
   .review-summary { display: flex; align-items: center; justify-content: space-between; padding: 4px 0 12px; gap: 12px; }
@@ -2130,7 +2245,7 @@
     width: 44px; height: 44px;
     border-radius: var(--r-sm);
     background-color: var(--color-primary-light);
-    background-image: url('https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=300&auto=format&fit=crop');
+    background-image: url('../../assets/studiogloss-avatar.png');
     background-size: cover; background-position: center;
     flex-shrink: 0;
   }
@@ -2173,45 +2288,47 @@
 <div class="frame">
 
 <!-- ══════════════════════════════ -->
-<!-- 프로토타입 전용: 시점 전환 바    -->
-<!-- ══════════════════════════════ -->
-<div class="viewer-bar">
-  <span class="viewer-bar-label">시점</span>
-  <div class="viewer-bar-tabs">
-    <button class="viewer-bar-tab active" data-view="owner" onclick="setViewer('owner')">운영자</button>
-    <button class="viewer-bar-tab" data-view="owner-empty" onclick="setViewer('owner-empty')">운영자 (빈 배너)</button>
-    <button class="viewer-bar-tab" data-view="visitor" onclick="setViewer('visitor')">방문자</button>
-  </div>
-</div>
-
-<!-- ══════════════════════════════ -->
 <!-- 화면 0: 랜딩                   -->
 <!-- ══════════════════════════════ -->
 <div class="screen on" id="s-landing" style="background:var(--color-bg);">
-  <div class="topbar lp-topbar owner-only">
-    <button class="lp-topbar-title" type="button">
-      <span>엘린피부과의원</span>
-      <i data-lucide="chevron-down" style="width:18px;height:18px;"></i>
-    </button>
-    <div class="lp-topbar-actions">
-      <button class="btn btn-sm btn-weak-dark" type="button">미리보기</button>
-      <button class="btn btn-sm btn-fill-dark" type="button" onclick="location.href='../profile-edit-0610/profile-edit-v2.html'">편집</button>
-      <button class="btn btn-sm btn-fill-dark" type="button" onclick="goTo('s-settings')">설정</button>
-    </div>
-  </div>
-  <div class="lp-body">
+  <div class="lp-body cover-overlap-left" id="lp-body-root">
+    <script>
+      (function() {
+        var cover = new URLSearchParams(location.search).get('cover');
+        var valid = ['cover-overlap-left','cover-below-left','cover-hidden'];
+        if (cover && valid.indexOf(cover) !== -1) {
+          var root = document.getElementById('lp-body-root');
+          valid.forEach(function(c) { root.classList.remove(c); });
+          root.classList.add(cover);
+          history.replaceState(null, '', location.pathname);
+        }
+      })();
+    </script>
     <div style="position:relative;flex-shrink:0;">
       <div class="lp-header">
-        <img src="banner.png" alt="">
+        <img src="../../assets/studiogloss-cover.png" alt="">
       </div>
       <div class="lp-avatar-wrap">
         <div class="avatar" style="width:87px;height:87px;">
-          <img src="profile.png" alt="프로필">
+          <img src="../../assets/studiogloss-avatar.png" alt="프로필">
         </div>
+      </div>
+      <div class="lp-actions-row">
+        <button class="btn btn-md btn-weak-dark btn-pill" type="button">
+          <i data-lucide="download" style="width:16px;height:16px"></i>
+          연락처 저장
+        </button>
+        <button class="btn btn-md btn-weak-dark btn-pill" type="button">
+          <i data-lucide="link" style="width:16px;height:16px"></i>
+          공유
+        </button>
       </div>
     </div>
     <div class="lp-inner">
-      <div class="lp-title">엘린피부과의원</div>
+      <div class="lp-name-block">
+        <div class="lp-title">글로스네일</div>
+        <div class="lp-handle">@glossnail</div>
+      </div>
 
       <button class="btn btn-lg btn-fill-gradient btn-block">
         <i data-lucide="message-circle" style="width:18px;height:18px"></i>
@@ -2221,164 +2338,312 @@
       <!-- 랜딩 탭 -->
       <div class="lp-tabs" id="lp-tabs">
         <button class="lp-tab active" data-ltab="home" onclick="setLandingTab('home')">홈</button>
+        <button class="lp-tab" data-ltab="gallery" onclick="setLandingTab('gallery')">갤러리</button>
+        <button class="lp-tab" data-ltab="event" onclick="setLandingTab('event')">이벤트·행사</button>
         <button class="lp-tab" data-ltab="board" onclick="setLandingTab('board')">게시판</button>
         <button class="lp-tab" data-ltab="review" onclick="setLandingTab('review')">리뷰</button>
+      </div>
+
+      <!-- 갤러리 탭 콘텐츠 (모든 갤러리 섹션을 세로 통합) -->
+      <!-- 섹션 이름(.lp-section-title)이 비어 있으면 소제목을 생략하고 격자만 노출한다. -->
+      <div class="lp-tab-content" id="lp-tab-gallery" data-ltab="gallery" hidden>
+
+        <!-- 갤러리 섹션: 아트 갤러리 -->
+        <div class="lp-gallery-section">
+          <div class="lp-notice-header">
+            <span class="lp-section-title">아트 갤러리</span>
+          </div>
+          <div class="lp-gallery-grid">
+            <button type="button" class="lp-gallery-cell">
+              <img src="../../assets/studiogloss-gallery1.png" alt="">
+            </button>
+            <button type="button" class="lp-gallery-cell">
+              <img src="../../assets/studiogloss-gallery2.png" alt="">
+              <i data-lucide="play" class="lp-gallery-cell-icon" style="width:16px;height:16px;fill:currentColor"></i>
+            </button>
+            <button type="button" class="lp-gallery-cell">
+              <img src="../../assets/studiogloss-gallery3.png" alt="">
+            </button>
+            <button type="button" class="lp-gallery-cell">
+              <img src="../../assets/studiogloss-gallery4.png" alt="">
+            </button>
+            <button type="button" class="lp-gallery-cell">
+              <img src="../../assets/studiogloss-gallery5.png" alt="">
+            </button>
+            <button type="button" class="lp-gallery-cell">
+              <img src="../../assets/studiogloss-gallery6.png" alt="">
+              <i data-lucide="play" class="lp-gallery-cell-icon" style="width:16px;height:16px;fill:currentColor"></i>
+            </button>
+          </div>
+        </div>
+
+
+
+
       </div>
 
       <!-- 게시판 탭 콘텐츠 (풀 리스트) -->
       <div class="lp-tab-content" id="lp-tab-board" data-ltab="board" hidden>
         <div style="display:flex;flex-direction:column;gap:12px;width:100%;">
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
-            <div class="owner-only" style="display:inline-flex;align-items:center;gap:6px;font-size:var(--fs-caption);color:var(--color-text-muted);">
-              <i data-lucide="pin" style="width:13px;height:13px"></i>
-              핀 버튼을 켜두면 배너로 표시돼요
-            </div>
-            <button class="btn btn-sm btn-weak-primary btn-pill write-btn-target" onclick="openWrite()" style="display:inline-flex;align-items:center;gap:4px;flex-shrink:0;margin-left:auto;">
-              <i data-lucide="plus" style="width:14px;height:14px"></i>
-              게시글 추가
-            </button>
+          <div style="display:flex;align-items:center;justify-content:flex-end;gap:12px;">
           </div>
           <div class="lp-post-list lp-post-list-plain">
-            <div class="lp-post" data-event-card="spring-dessert" onclick="goTo('s-event-detail', true)">
-              <div class="lp-post-img">
-                <img src="thumbnail_1.png" alt="">
-              </div>
-              <div class="lp-post-body">
-                <div class="lp-post-tags">
-                  <span class="badge badge-sm badge-weak-primary event-badge-active">이벤트</span>
-                  <span class="badge badge-sm badge-weak-neutral event-badge-ended">종료</span>
-                  <span class="lp-post-title">수면 리쥬베룩 이벤트</span>
-                </div>
-                <div class="lp-post-preview">맑고 탄력 있는 피부를 위한 특별 케어 프로그램, 한정 인원 선착순으로 진행해요.</div>
-                <div class="lp-post-meta">엘린피부과 · 6/20</div>
-              </div>
-              <button type="button" class="lp-post-pin is-pinned owner-only" aria-label="배너에 표시" aria-pressed="true" onclick="togglePin(event, this)"><i data-lucide="pin" style="width:14px;height:14px"></i></button>
-            </div>
-            <div class="lp-post" onclick="goTo('s-notice-detail', true)">
-              <div class="lp-post-img">
-                <img src="thumbnail_2.png" alt="">
-              </div>
-              <div class="lp-post-body">
-                <div class="lp-post-tags">
-                  <span class="badge badge-sm badge-fill-neutral">공지</span>
-                  <span class="lp-post-title">물광 스킨부스터 이벤트</span>
-                </div>
-                <div class="lp-post-preview">촉촉하고 맑은 피부를 위한 집중 케어. 한 달 한정으로 진행됩니다.</div>
-                <div class="lp-post-meta">엘린피부과 · 6/18</div>
-              </div>
-              <button type="button" class="lp-post-pin is-pinned owner-only" aria-label="배너에 표시" aria-pressed="true" onclick="togglePin(event, this)"><i data-lucide="pin" style="width:14px;height:14px"></i></button>
-            </div>
-            <div class="lp-post" onclick="goTo('s-post-detail', true)">
-              <div class="lp-post-img">
-                <img src="thumbnail_3.png" alt="">
-              </div>
-              <div class="lp-post-body">
-                <div class="lp-post-title">모공·잡티 케어 이벤트</div>
-                <div class="lp-post-preview">매끈하고 깨끗한 피부를 위한 집중 케어. 자세한 상담은 메시지로 문의 주세요.</div>
-                <div class="lp-post-meta">엘린피부과 · 6/15</div>
-              </div>
-              <button type="button" class="lp-post-pin is-pinned owner-only" aria-label="배너에 표시" aria-pressed="true" onclick="togglePin(event, this)"><i data-lucide="pin" style="width:14px;height:14px"></i></button>
-            </div>
             <div class="lp-post" onclick="goTo('s-notice-detail')">
               <div class="lp-post-body" style="padding-left:16px;">
                 <div class="lp-post-tags">
                   <span class="badge badge-sm badge-fill-neutral">공지</span>
-                  <span class="lp-post-title">6월 시술 가격 안내</span>
+                  <span class="lp-post-title">8월 시술 가격 안내</span>
                 </div>
-                <div class="lp-post-preview">6월 한 달간 적용되는 시술별 가격표를 안내드립니다. 자세한 상담은 메시지로 문의 주세요.</div>
-                <div class="lp-post-meta">엘린피부과 · 6/12</div>
+                <div class="lp-post-preview">8월 한 달간 적용되는 아트·연장 가격표를 안내드립니다. 자세한 상담은 메시지로 문의 주세요.</div>
+                <div class="lp-post-meta">글로스네일 · 8/12</div>
               </div>
-              <button type="button" class="lp-post-pin owner-only" aria-label="배너에 표시" aria-pressed="false" onclick="togglePin(event, this)"><i data-lucide="pin" style="width:14px;height:14px"></i></button>
             </div>
             <div class="lp-post" onclick="goTo('s-post-detail')">
               <div class="lp-post-body" style="padding-left:16px;">
-                <div class="lp-post-title">시술 후 홈케어 가이드</div>
-                <div class="lp-post-preview">레이저·리프팅 시술 후 회복을 돕는 홈케어 루틴을 정리했어요. 시술받으신 분들 꼭 확인해 주세요.</div>
-                <div class="lp-post-meta">엘린피부과 · 6/5</div>
+                <div class="lp-post-title">젤네일 유지 관리 가이드</div>
+                <div class="lp-post-preview">젤·연장 시술 후 오래 예쁘게 유지하는 관리 루틴을 정리했어요. 시술받으신 분들 꼭 확인해 주세요.</div>
+                <div class="lp-post-meta">글로스네일 · 8/5</div>
               </div>
-              <button type="button" class="lp-post-pin owner-only" aria-label="배너에 표시" aria-pressed="false" onclick="togglePin(event, this)"><i data-lucide="pin" style="width:14px;height:14px"></i></button>
             </div>
             <div class="lp-post" onclick="goTo('s-post-detail')">
               <div class="lp-post-body" style="padding-left:16px;">
-                <div class="lp-post-title">닥터스 칼럼 — 자외선 차단의 중요성</div>
-                <div class="lp-post-preview">여름철 자외선이 피부 노화에 미치는 영향과 올바른 선크림 사용법을 원장님이 직접 설명드려요.</div>
-                <div class="lp-post-meta">엘린피부과 · 5/28</div>
+                <div class="lp-post-title">아티스트 칼럼 — 손톱 휴식기의 중요성</div>
+                <div class="lp-post-preview">연장과 젤을 반복할 때 손톱에 필요한 휴식기와 올바른 관리법을 원장님이 직접 설명드려요.</div>
+                <div class="lp-post-meta">글로스네일 · 7/28</div>
               </div>
-              <button type="button" class="lp-post-pin owner-only" aria-label="배너에 표시" aria-pressed="false" onclick="togglePin(event, this)"><i data-lucide="pin" style="width:14px;height:14px"></i></button>
             </div>
             <div class="lp-post" onclick="goTo('s-post-detail')">
               <div class="lp-post-body" style="padding-left:16px;">
-                <div class="lp-post-title">진료시간 변경 안내</div>
-                <div class="lp-post-preview">6월 1일부터 평일 진료시간이 10:00~19:00로 변경됩니다. 점심시간은 13:00~14:00입니다.</div>
-                <div class="lp-post-meta">엘린피부과 · 5/22</div>
+                <div class="lp-post-title">영업시간 변경 안내</div>
+                <div class="lp-post-preview">8월 1일부터 평일 영업시간이 11:00~20:00로 변경됩니다. 휴게시간은 15:00~16:00입니다.</div>
+                <div class="lp-post-meta">글로스네일 · 7/22</div>
               </div>
-              <button type="button" class="lp-post-pin owner-only" aria-label="배너에 표시" aria-pressed="false" onclick="togglePin(event, this)"><i data-lucide="pin" style="width:14px;height:14px"></i></button>
             </div>
             <div class="lp-post" onclick="goTo('s-post-detail')">
               <div class="lp-post-body" style="padding-left:16px;">
-                <div class="lp-post-title">현충일 휴진 안내</div>
-                <div class="lp-post-preview">6월 6일 현충일은 휴진합니다. 7일(토)부터 정상 진료하니 참고 부탁드려요.</div>
-                <div class="lp-post-meta">엘린피부과 · 5/30</div>
+                <div class="lp-post-title">광복절 휴무 안내</div>
+                <div class="lp-post-preview">8월 15일 광복절은 휴무입니다. 16일(토)부터 정상 영업하니 참고 부탁드려요.</div>
+                <div class="lp-post-meta">글로스네일 · 7/30</div>
               </div>
-              <button type="button" class="lp-post-pin owner-only" aria-label="배너에 표시" aria-pressed="false" onclick="togglePin(event, this)"><i data-lucide="pin" style="width:14px;height:14px"></i></button>
             </div>
             <div class="lp-post" onclick="goTo('s-post-detail')">
               <div class="lp-post-body" style="padding-left:16px;">
-                <div class="lp-post-title">카카오톡 상담 신규 오픈</div>
-                <div class="lp-post-preview">이제 카카오톡으로도 간편하게 상담받으실 수 있어요. 채널 추가 후 메시지로 문의 주세요.</div>
-                <div class="lp-post-meta">엘린피부과 · 4/12</div>
+                <div class="lp-post-title">카카오톡 예약 신규 오픈</div>
+                <div class="lp-post-preview">이제 카카오톡으로도 간편하게 예약하실 수 있어요. 채널 추가 후 메시지로 문의 주세요.</div>
+                <div class="lp-post-meta">글로스네일 · 6/12</div>
               </div>
-              <button type="button" class="lp-post-pin owner-only" aria-label="배너에 표시" aria-pressed="false" onclick="togglePin(event, this)"><i data-lucide="pin" style="width:14px;height:14px"></i></button>
             </div>
           </div>
         </div>
       </div>
 
+      <!-- 이벤트 탭 콘텐츠 -->
+      <div class="lp-tab-content" id="lp-tab-event" data-ltab="event" hidden>
+        <div class="event-tab-head">
+          <div class="event-segments" role="tablist">
+            <button type="button" class="event-segment active" data-eseg="ongoing" onclick="setEventSegment('ongoing')">진행중</button>
+            <button type="button" class="event-segment" data-eseg="upcoming" onclick="setEventSegment('upcoming')">예정</button>
+            <button type="button" class="event-segment" data-eseg="ended" onclick="setEventSegment('ended')">종료</button>
+          </div>
+        </div>
+
+        <!-- 진행중 -->
+        <div class="event-list" data-eseg-pane="ongoing">
+          <button type="button" class="event-item" onclick="goTo('s-event-detail')">
+            <div class="event-item-img"><img src="../../assets/studiogloss-event1.png" alt=""></div>
+            <div class="event-item-body">
+              <div class="event-item-title">크롬 네일 팝업</div>
+              <div class="event-item-date"><i data-lucide="calendar-days"></i>8월 14일 (목) 오후 2:00</div>
+              <div class="event-item-desc">여름 한정 크롬 마감 아트를 소개드립니다.</div>
+            </div>
+          </button>
+          <button type="button" class="event-item" onclick="goTo('s-event-detail')">
+            <div class="event-item-img"><img src="../../assets/studiogloss-event2.png" alt=""></div>
+            <div class="event-item-body">
+              <div class="event-item-title">젤 필 해피아워</div>
+              <div class="event-item-date"><i data-lucide="calendar-days"></i>9월 2일 (수) ~ 9월 20일 (토)</div>
+              <div class="event-item-desc">저녁 7시 이후 젤 필 20% 할인입니다.</div>
+            </div>
+          </button>
+          <button type="button" class="event-item" onclick="goTo('s-event-detail')">
+            <div class="event-item-img"><img src="../../assets/studiogloss-gallery1.png" alt=""></div>
+            <div class="event-item-body">
+              <div class="event-item-title">브라이덜 네일 프리뷰</div>
+              <div class="event-item-desc event-item-desc-2">예비 신부를 위한 브라이덜 네일을 미리 만나보세요. 예약은 아래 버튼으로 신청해 주세요.</div>
+            </div>
+          </button>
+          <button type="button" class="event-item" onclick="goTo('s-event-detail')">
+            <div class="event-item-img"><img src="../../assets/studiogloss-event1.png" alt=""></div>
+            <div class="event-item-body">
+              <div class="event-item-title">가을 시즌 컬러 안내</div>
+              <div class="event-item-desc event-item-desc-2">가을 신상 컬러와 아트를 준비했어요. 자세한 내용은 본문에서 확인해 주세요.</div>
+            </div>
+          </button>
+        </div>
+
+        <!-- 예정 -->
+        <div class="event-list" data-eseg-pane="upcoming" hidden>
+          <div class="event-pane-notice">*예정 이벤트는 방문자에게 표시되지 않습니다.</div>
+          <button type="button" class="event-item" onclick="goTo('s-event-detail')">
+            <div class="event-item-img"><img src="../../assets/studiogloss-event2.png" alt=""></div>
+            <div class="event-item-body">
+              <div class="event-item-title">가을맞이 아트 특별전</div>
+              <div class="event-item-date"><i data-lucide="calendar-days"></i>8월 15일 (토) ~ 8월 31일 (월)</div>
+              <div class="event-item-desc">환절기 손 관리와 함께하는 아트 프로그램이 열립니다.</div>
+            </div>
+          </button>
+          <button type="button" class="event-item" onclick="goTo('s-event-detail')">
+            <div class="event-item-img"><img src="../../assets/studiogloss-gallery1.png" alt=""></div>
+            <div class="event-item-body">
+              <div class="event-item-title">추석 연휴 셀프케어 키트</div>
+              <div class="event-item-date"><i data-lucide="calendar-days"></i>9월 20일 (일) 오전 10:00</div>
+              <div class="event-item-desc">연휴 동안 집에서 관리할 수 있는 셀프케어 키트를 준비했어요.</div>
+            </div>
+          </button>
+        </div>
+
+        <!-- 종료 -->
+        <div class="event-list" data-eseg-pane="ended" hidden>
+          <div class="event-pane-notice">*종료된 이벤트는 방문자에게 표시되지 않습니다.</div>
+          <button type="button" class="event-item event-item-ended" onclick="goTo('s-event-detail')">
+            <div class="event-item-img"><img src="../../assets/studiogloss-event1.png" alt=""></div>
+            <div class="event-item-body">
+              <div class="event-item-title">6월 초여름 페디 케어</div>
+              <div class="event-item-date"><i data-lucide="calendar-days"></i>6월 1일 ~ 6월 15일</div>
+              <div class="event-item-desc">여름 샌들 시즌을 위한 페디큐어 집중 케어였습니다.</div>
+            </div>
+          </button>
+          <button type="button" class="event-item event-item-ended" onclick="goTo('s-event-detail')">
+            <div class="event-item-img"><img src="../../assets/studiogloss-event2.png" alt=""></div>
+            <div class="event-item-body">
+              <div class="event-item-title">봄맞이 파스텔 아트 이벤트</div>
+              <div class="event-item-date"><i data-lucide="calendar-days"></i>5월 1일 ~ 5월 31일</div>
+              <div class="event-item-desc">봄 시즌 파스텔 컬러 아트 프로그램이었습니다.</div>
+            </div>
+          </button>
+          <button type="button" class="event-item event-item-ended" onclick="goTo('s-event-detail')">
+            <div class="event-item-img"><img src="../../assets/studiogloss-gallery1.png" alt=""></div>
+            <div class="event-item-body">
+              <div class="event-item-title">신년 리셋 케어</div>
+              <div class="event-item-date"><i data-lucide="calendar-days"></i>1월 5일 ~ 1월 31일</div>
+              <div class="event-item-desc">새해 첫 달 손톱 컨디션 회복 프로그램이었습니다.</div>
+            </div>
+          </button>
+          <button type="button" class="event-item event-item-ended" onclick="goTo('s-event-detail')">
+            <div class="event-item-img"><img src="../../assets/studiogloss-event1.png" alt=""></div>
+            <div class="event-item-body">
+              <div class="event-item-title">연말 감사 이벤트</div>
+              <div class="event-item-date"><i data-lucide="calendar-days"></i>12월 20일 ~ 12월 31일</div>
+              <div class="event-item-desc">한 해 감사드리는 마음으로 준비한 이벤트였습니다.</div>
+            </div>
+          </button>
+        </div>
+      </div>
+
       <!-- 홈 탭 콘텐츠 -->
       <div class="lp-tab-content" id="lp-tab-home" data-ltab="home">
+      <!-- 게시판 미리보기 -->
+      <div style="display:flex;flex-direction:column;gap:16px;width:100%;">
+        <div class="lp-notice-header">
+          <span class="lp-section-title">notice</span>
+        </div>
+        <div class="lp-post-list">
+          <div class="lp-post" onclick="goTo('s-notice-detail')">
+            <div class="lp-post-body">
+              <div class="lp-post-tags">
+                <span class="badge badge-sm badge-fill-neutral">공지</span>
+                <span class="lp-post-title">8월 시술 가격 안내</span>
+              </div>
+              <div class="lp-post-preview">8월 한 달간 적용되는 아트·연장 가격표를 안내드립니다. 자세한 상담은 메시지로 문의 주세요.</div>
+            </div>
+          </div>
+          <div class="lp-post" onclick="goTo('s-post-detail')">
+            <div class="lp-post-body">
+              <div class="lp-post-title">젤네일 유지 관리 가이드</div>
+              <div class="lp-post-preview">젤·연장 시술 후 오래 예쁘게 유지하는 관리 루틴을 정리했어요. 시술받으신 분들 꼭 확인해 주세요.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+        <hr class="lp-divider">
+
+      <!-- Gallery (갤러리 탭과 동일한 섹션 전체를 홈에도 노출) -->
+      <div style="display:flex;flex-direction:column;gap:20px;width:100%;">
+
+        <!-- 갤러리 섹션: 아트 갤러리 (격자) -->
+        <div class="lp-gallery-section">
+          <div class="lp-notice-header">
+            <span class="lp-section-title">아트 갤러리</span>
+          </div>
+          <div class="lp-gallery-grid">
+            <button type="button" class="lp-gallery-cell">
+              <img src="../../assets/studiogloss-gallery1.png" alt="">
+            </button>
+            <button type="button" class="lp-gallery-cell">
+              <img src="../../assets/studiogloss-gallery2.png" alt="">
+              <i data-lucide="play" class="lp-gallery-cell-icon" style="width:16px;height:16px;fill:currentColor"></i>
+            </button>
+            <button type="button" class="lp-gallery-cell">
+              <img src="../../assets/studiogloss-gallery3.png" alt="">
+            </button>
+            <button type="button" class="lp-gallery-cell">
+              <img src="../../assets/studiogloss-gallery4.png" alt="">
+            </button>
+            <button type="button" class="lp-gallery-cell">
+              <img src="../../assets/studiogloss-gallery5.png" alt="">
+            </button>
+            <button type="button" class="lp-gallery-cell">
+              <img src="../../assets/studiogloss-gallery6.png" alt="">
+              <i data-lucide="play" class="lp-gallery-cell-icon" style="width:16px;height:16px;fill:currentColor"></i>
+            </button>
+          </div>
+        </div>
+
+
+
+
+      </div>
+        <hr class="lp-divider">
+
       <!-- 프로필 배너 (고정 게시글) -->
       <div class="lp-banner-section" id="lp-banner">
         <div class="lp-banner-header">
-          <span class="lp-section-title">Banner</span>
-          <button type="button" class="btn btn-sm btn-weak-primary btn-pill owner-only banner-filled-only" onclick="setLandingTab('board')" style="display:inline-flex;align-items:center;gap:4px;">
-            관리
-            <i data-lucide="chevron-right" style="width:13px;height:13px"></i>
-          </button>
+          <span class="lp-section-title">Event</span>
         </div>
-        <div class="lp-banner-scroll banner-filled-only">
+        <div class="lp-banner-scroll">
           <!-- Case A: 일정 O + 설명 1줄 + 신청자수 O -->
           <button type="button" class="lp-banner-card" onclick="goTo('s-event-detail')">
             <div class="lp-banner-img">
               <div class="lp-banner-applicants">
                 <div class="lp-banner-avatars">
-                  <span class="avatar"><img src="profile.svg" alt=""></span>
-                  <span class="avatar"><img src="profile.svg" alt=""></span>
-                  <span class="avatar"><img src="profile.svg" alt=""></span>
-                  <span class="avatar"><img src="profile.svg" alt=""></span>
+                  <span class="avatar"><img src="../../assets/profile.svg" alt=""></span>
+                  <span class="avatar"><img src="../../assets/profile.svg" alt=""></span>
+                  <span class="avatar"><img src="../../assets/profile.svg" alt=""></span>
+                  <span class="avatar"><img src="../../assets/profile.svg" alt=""></span>
                 </div>
                 <span class="lp-banner-count"><b>314</b>명 신청 중</span>
               </div>
-              <img src="thumbnail_1.png" alt="">
+              <img src="../../assets/studiogloss-event1.png" alt="">
             </div>
             <div class="lp-banner-text">
-              <div class="lp-banner-title">수면 리쥬베룩 이벤트</div>
+              <div class="lp-banner-title">크롬 네일 팝업</div>
               <div class="lp-banner-date">
-                <i data-lucide="calendar-days"></i>07.05 · 14:00 ~ 18:00
+                <i data-lucide="calendar-days"></i>08.14 · 14:00 ~ 18:00
               </div>
-              <div class="lp-banner-desc lp-banner-desc-1">안녕하세요, 이번 여름 한정으로 진행하는 프리미엄 케어 프로그램을 소개드립니다.</div>
+              <div class="lp-banner-desc lp-banner-desc-1">안녕하세요, 이번 여름 한정으로 진행하는 크롬 마감 아트를 소개드립니다.</div>
             </div>
           </button>
           <!-- Case B: 일정 O + 설명 1줄 + 신청자수 X -->
           <button type="button" class="lp-banner-card" onclick="goTo('s-notice-detail')">
             <div class="lp-banner-img">
-              <img src="thumbnail_2.png" alt="">
+              <img src="../../assets/studiogloss-event2.png" alt="">
             </div>
             <div class="lp-banner-text">
-              <div class="lp-banner-title">물광 스킨부스터 이벤트</div>
+              <div class="lp-banner-title">젤 필 해피아워</div>
               <div class="lp-banner-date">
-                <i data-lucide="calendar-days"></i>07.10 ~ 07.20 · 14:00 ~ 18:00
+                <i data-lucide="calendar-days"></i>09.02 ~ 09.20 · 19:00 ~ 21:00
               </div>
-              <div class="lp-banner-desc lp-banner-desc-1">많은 분들이 문의 주신 물광 관리 프로그램, 새롭게 리뉴얼해서 오픈합니다.</div>
+              <div class="lp-banner-desc lp-banner-desc-1">많은 분들이 문의 주신 젤 필 프로그램, 새롭게 리뉴얼해서 오픈합니다.</div>
             </div>
           </button>
           <!-- Case C: 일정 X + 설명 2줄 + 신청자수 O -->
@@ -2386,113 +2651,53 @@
             <div class="lp-banner-img">
               <div class="lp-banner-applicants">
                 <div class="lp-banner-avatars">
-                  <span class="avatar"><img src="profile.svg" alt=""></span>
-                  <span class="avatar"><img src="profile.svg" alt=""></span>
-                  <span class="avatar"><img src="profile.svg" alt=""></span>
-                  <span class="avatar"><img src="profile.svg" alt=""></span>
+                  <span class="avatar"><img src="../../assets/profile.svg" alt=""></span>
+                  <span class="avatar"><img src="../../assets/profile.svg" alt=""></span>
+                  <span class="avatar"><img src="../../assets/profile.svg" alt=""></span>
+                  <span class="avatar"><img src="../../assets/profile.svg" alt=""></span>
                 </div>
                 <span class="lp-banner-count"><b>42</b>명 신청 중</span>
               </div>
-              <img src="thumbnail_3.png" alt="">
+              <img src="../../assets/studiogloss-gallery1.png" alt="">
             </div>
             <div class="lp-banner-text">
-              <div class="lp-banner-title">모공·잡티 케어 이벤트</div>
-              <div class="lp-banner-desc">안녕하세요, 이번 여름 한정으로 진행하는 모공·잡티 집중 케어 프로그램을 소개드립니다. 예약은 아래 버튼을 통해 신청해 주세요.</div>
+              <div class="lp-banner-title">브라이덜 네일 프리뷰</div>
+              <div class="lp-banner-desc">안녕하세요, 예비 신부를 위한 브라이덜 네일 프리뷰를 소개드립니다. 예약은 아래 버튼을 통해 신청해 주세요.</div>
             </div>
           </button>
           <!-- Case D: 일정 X + 설명 2줄 + 신청자수 X -->
           <button type="button" class="lp-banner-card" onclick="goTo('s-post-detail')">
             <div class="lp-banner-img">
-              <img src="thumbnail_1.png" alt="">
+              <img src="../../assets/studiogloss-event1.png" alt="">
             </div>
             <div class="lp-banner-text">
-              <div class="lp-banner-title">브라이트닝 · 톤업 케어 안내</div>
-              <div class="lp-banner-desc">피부 톤이 고민이신 분들을 위한 케어 프로그램을 준비했어요. 자세한 내용은 본문에서 확인해 주세요.</div>
+              <div class="lp-banner-title">가을 시즌 컬러 안내</div>
+              <div class="lp-banner-desc">가을 신상 컬러와 아트를 준비했어요. 자세한 내용은 본문에서 확인해 주세요.</div>
             </div>
           </button>
         </div>
-        <div class="lp-banner-empty banner-empty-only">
-          <div class="lp-banner-empty-cards">
-            <div class="lp-banner-card lp-banner-card-ghost" aria-hidden="true">
-              <div class="lp-banner-img"></div>
-              <div class="lp-banner-text">
-                <div class="lp-banner-title">이벤트 홍보</div>
-              </div>
-            </div>
-            <div class="lp-banner-card lp-banner-card-ghost" aria-hidden="true">
-              <div class="lp-banner-img"></div>
-              <div class="lp-banner-text">
-                <div class="lp-banner-title">이벤트 홍보</div>
-              </div>
-            </div>
-          </div>
-          <div class="lp-banner-empty-info">
-            <div class="lp-banner-empty-text">이벤트를 더 눈에 띄게 홍보하세요</div>
-            <button type="button" class="btn btn-sm btn-weak-primary btn-pill" onclick="setLandingTab('board')" style="display:inline-flex;align-items:center;gap:4px;">
-              게시글 연결하기
-              <i data-lucide="chevron-right" style="width:14px;height:14px"></i>
-            </button>
-          </div>
-        </div>
       </div>
+        <hr class="lp-divider">
 
-      <hr class="lp-divider">
-
-      <!-- 게시판 미리보기 -->
-      <div style="display:flex;flex-direction:column;gap:16px;width:100%;">
-        <div class="lp-notice-header">
-          <span class="lp-section-title">notice</span>
-          <button class="btn btn-sm btn-weak-primary btn-pill write-btn-target" onclick="openWrite()" style="display:inline-flex;align-items:center;gap:4px;">
-            <i data-lucide="plus" style="width:14px;height:14px"></i>
-            게시글 추가
-          </button>
-        </div>
-        <div class="lp-post-list">
-          <div class="lp-post" data-event-card="spring-dessert" onclick="goTo('s-event-detail', true)">
-            <div class="lp-post-img">
-              <img src="thumbnail_1.png" alt="">
-            </div>
-            <div class="lp-post-body">
-              <div class="lp-post-tags">
-                <span class="badge badge-sm badge-weak-primary event-badge-active">이벤트</span>
-                <span class="badge badge-sm badge-weak-neutral event-badge-ended">종료</span>
-                <span class="lp-post-title">수면 리쥬베룩 이벤트</span>
-              </div>
-              <div class="lp-post-preview">맑고 탄력 있는 피부를 위한 특별 케어 프로그램, 한정 인원 선착순으로 진행해요.</div>
-            </div>
-          </div>
-          <div class="lp-post" onclick="goTo('s-notice-detail')">
-            <div class="lp-post-body">
-              <div class="lp-post-tags">
-                <span class="badge badge-sm badge-fill-neutral">공지</span>
-                <span class="lp-post-title">6월 시술 가격 안내</span>
-              </div>
-              <div class="lp-post-preview">6월 한 달간 적용되는 시술별 가격표를 안내드립니다. 자세한 상담은 메시지로 문의 주세요.</div>
-            </div>
-          </div>
-          <div class="lp-post" onclick="goTo('s-post-detail')">
-            <div class="lp-post-body">
-              <div class="lp-post-title">시술 후 홈케어 가이드</div>
-              <div class="lp-post-preview">레이저·리프팅 시술 후 회복을 돕는 홈케어 루틴을 정리했어요. 시술받으신 분들 꼭 확인해 주세요.</div>
-            </div>
-          </div>
-        </div>
-        <button class="lp-see-all" onclick="setLandingTab('board')">전체보기</button>
-      </div>
-
-      <hr class="lp-divider">
-
-      <!-- About -->
+      <!-- Information -->
       <div style="display:flex;flex-direction:column;gap:12px;width:100%;">
-        <div class="lp-section-title">About</div>
-        <div class="lp-about">
-          <p>엘린피부과는 피부 본연의 건강과 자연스러운 아름다움을 추구합니다. 모공, 잡티, 탄력 등 일상 속 작은 고민까지 정성껏 살피며, 시술 전 충분한 상담으로 가장 알맞은 방향을 함께 찾아드려요.</p>
-          <p>원장님이 직접 진료부터 마무리까지 책임지며, 시술 후에는 회복 단계별 케어까지 꼼꼼하게 안내드립니다.</p>
-          <p>피부에 대한 어떤 궁금증이든 편하게 메시지 남겨주세요. 빠르게 답변드릴게요 :)</p>
+        <div class="lp-section-title">Information</div>
+        <div class="lp-info-link">
+          <div class="lp-info-left">
+            <div class="lp-info-icon"><i data-lucide="globe" style="width:20px;height:20px"></i></div>
+            <span class="lp-info-label">Youtube</span>
+          </div>
+          <i data-lucide="chevron-right" style="width:16px;height:16px;color:var(--color-text-muted)"></i>
+        </div>
+        <div class="lp-info-link">
+          <div class="lp-info-left">
+            <div class="lp-info-icon"><i data-lucide="globe" style="width:20px;height:20px"></i></div>
+            <span class="lp-info-label">Instagram</span>
+          </div>
+          <i data-lucide="chevron-right" style="width:16px;height:16px;color:var(--color-text-muted)"></i>
         </div>
       </div>
-
-      <hr class="lp-divider">
+        <hr class="lp-divider">
 
       <!-- 리뷰 미리보기 (가로 스크롤) -->
       <div style="display:flex;flex-direction:column;gap:12px;width:100%;">
@@ -2504,39 +2709,28 @@
         </div>
         <div class="lp-review-cards">
           <div class="lp-review-card">
-            <div class="lp-review-text">상담부터 시술까지 원장님이 직접 봐주셔서 너무 안심됐어요. 모공도 확실히 작아지고 결도 매끈해져서 만족스럽습니다 :)</div>
+            <div class="lp-review-text">상담부터 시술까지 원장님이 직접 봐주셔서 너무 안심됐어요. 모양도 원하던 그대로 나오고 마감도 깔끔해서 만족스럽습니다 :)</div>
             <div class="lp-review-meta"><span>익명의 사슴</span><span>·</span><span>2026년 5월 26일</span></div>
           </div>
           <div class="lp-review-card">
-            <div class="lp-review-text">여드름 흉터 때문에 고민이 많았는데 시술 후 회복까지 꼼꼼히 챙겨주셔서 다음 시술도 여기서 받으려구요!</div>
+            <div class="lp-review-text">손톱이 얇아서 고민이 많았는데 시술 후 관리까지 꼼꼼히 챙겨주셔서 다음 시술도 여기서 받으려구요!</div>
             <div class="lp-review-meta"><span>익명의 거북이</span><span>·</span><span>2026년 6월 1일</span></div>
           </div>
           <div class="lp-review-card">
-            <div class="lp-review-text">강요 없이 제 피부 상태에 맞는 시술만 추천해 주셔서 신뢰가 갔어요. 다운타임 안내도 자세해서 좋았습니다.</div>
+            <div class="lp-review-text">강요 없이 제 손톱 상태에 맞는 시술만 추천해 주셔서 신뢰가 갔어요. 유지 기간 안내도 자세해서 좋았습니다.</div>
             <div class="lp-review-meta"><span>익명의 다람쥐</span><span>·</span><span>2026년 5월 26일</span></div>
           </div>
         </div>
-        <button class="lp-see-all" onclick="setLandingTab('review')">전체보기</button>
       </div>
+        <hr class="lp-divider">
 
-      <hr class="lp-divider">
-
-      <!-- Information -->
+      <!-- About -->
       <div style="display:flex;flex-direction:column;gap:12px;width:100%;">
-        <div class="lp-section-title">Information</div>
-        <div class="lp-info-link">
-          <div class="lp-info-left">
-            <div class="lp-info-icon"><i data-lucide="youtube" style="width:20px;height:20px"></i></div>
-            <span class="lp-info-label">Youtube</span>
-          </div>
-          <i data-lucide="chevron-right" style="width:16px;height:16px;color:var(--color-text-muted)"></i>
-        </div>
-        <div class="lp-info-link">
-          <div class="lp-info-left">
-            <div class="lp-info-icon"><i data-lucide="instagram" style="width:20px;height:20px"></i></div>
-            <span class="lp-info-label">Instagram</span>
-          </div>
-          <i data-lucide="chevron-right" style="width:16px;height:16px;color:var(--color-text-muted)"></i>
+        <div class="lp-section-title">About</div>
+        <div class="lp-about">
+          <p>글로스네일은 손톱 본연의 건강과 자연스러운 아름다움을 추구합니다. 길이, 컬러, 아트 등 취향의 작은 부분까지 정성껏 살피며, 시술 전 충분한 상담으로 가장 잘 어울리는 방향을 함께 찾아드려요.</p>
+          <p>원장님이 직접 상담부터 마무리까지 책임지며, 시술 후에는 유지 관리 방법까지 꼼꼼하게 안내드립니다.</p>
+          <p>네일에 대한 어떤 궁금증이든 편하게 메시지 남겨주세요. 빠르게 답변드릴게요 :)</p>
         </div>
       </div>
       </div><!-- /lp-tab-home -->
@@ -2569,7 +2763,7 @@
             <div class="review-full-stars">
               <i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i>
             </div>
-            <div class="review-full-text">상담부터 시술까지 원장님이 직접 봐주셔서 너무 안심됐어요. 모공도 확실히 작아지고 결도 매끈해져서 만족스럽습니다 :)</div>
+            <div class="review-full-text">상담부터 시술까지 원장님이 직접 봐주셔서 너무 안심됐어요. 모양도 원하던 그대로 나오고 마감도 깔끔해서 만족스럽습니다 :)</div>
             <div class="review-full-footer">
               <span class="review-full-author">익명의 사슴 · 2026년 5월 26일</span>
               <div class="review-full-reactions">
@@ -2586,7 +2780,7 @@
             <div class="review-full-stars">
               <i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i>
             </div>
-            <div class="review-full-text">여드름 흉터 때문에 고민이 많았는데 시술 후 회복까지 꼼꼼히 챙겨주셔서 다음 시술도 여기서 받으려구요!</div>
+            <div class="review-full-text">손톱이 얇아서 고민이 많았는데 시술 후 관리까지 꼼꼼히 챙겨주셔서 다음 시술도 여기서 받으려구요!</div>
             <div class="review-full-footer">
               <span class="review-full-author">익명의 거북이 · 2026년 6월 1일</span>
               <div class="review-full-reactions">
@@ -2603,7 +2797,7 @@
             <div class="review-full-stars">
               <i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i>
             </div>
-            <div class="review-full-text">강요 없이 제 피부 상태에 맞는 시술만 추천해 주셔서 신뢰가 갔어요. 다운타임 안내도 자세해서 좋았습니다.</div>
+            <div class="review-full-text">강요 없이 제 손톱 상태에 맞는 시술만 추천해 주셔서 신뢰가 갔어요. 유지 기간 안내도 자세해서 좋았습니다.</div>
             <div class="review-full-footer">
               <span class="review-full-author">익명의 다람쥐 · 2026년 5월 26일</span>
               <div class="review-full-reactions">
@@ -2615,7 +2809,6 @@
         </div>
       </div>
 
-      <div class="lp-footer">Made by Connectia.</div>
     </div>
   </div>
 </div>
@@ -2625,7 +2818,7 @@
 <!-- ══════════════════════════════ -->
 <div class="screen" id="s-event-detail" style="background:var(--color-bg);">
   <div class="event-banner-wrap">
-    <img src="thumbnail_1.png" class="event-banner-img" alt="">
+    <img src="../../assets/studiogloss-event1.png" class="event-banner-img" alt="">
     <div class="event-floating-topbar">
       <button class="event-float-btn" onclick="goTo('s-landing')" aria-label="뒤로">
         <i data-lucide="chevron-left"></i>
@@ -2634,7 +2827,7 @@
         <button class="event-float-btn" aria-label="공유">
           <i data-lucide="share-2"></i>
         </button>
-        <button class="event-float-btn owner-only" aria-label="더보기" onclick="openSheet('sheet-detail-menu')">
+        <button class="event-float-btn" aria-label="더보기" onclick="openSheet('sheet-detail-menu')">
           <i data-lucide="ellipsis"></i>
         </button>
       </div>
@@ -2654,7 +2847,7 @@
       <i data-lucide="chevron-left"></i>
       <span>뒤로</span>
     </button>
-    <button class="icon-btn icon-btn-clear owner-only" aria-label="더보기" onclick="openSheet('sheet-detail-menu')">
+    <button class="icon-btn icon-btn-clear" aria-label="더보기" onclick="openSheet('sheet-detail-menu')">
       <i data-lucide="ellipsis" style="width:20px;height:20px;color:var(--color-text);"></i>
     </button>
   </div>
@@ -2672,7 +2865,7 @@
       <i data-lucide="chevron-left"></i>
       <span>뒤로</span>
     </button>
-    <button class="icon-btn icon-btn-clear owner-only" aria-label="더보기" onclick="openSheet('sheet-detail-menu')">
+    <button class="icon-btn icon-btn-clear" aria-label="더보기" onclick="openSheet('sheet-detail-menu')">
       <i data-lucide="ellipsis" style="width:20px;height:20px;color:var(--color-text);"></i>
     </button>
   </div>
@@ -2694,11 +2887,108 @@
     </div>
   </div>
 </div>
+
+<!-- ══════════════════════════════ -->
+<!-- 시트: 이벤트 추가 분기          -->
+<!-- ══════════════════════════════ -->
+<div class="sheet-wrap" id="sheet-event-add">
+  <div class="bottom-sheet-overlay" onclick="closeSheet('sheet-event-add')"></div>
+  <div class="bottom-sheet">
+    <div class="bottom-sheet-handle"></div>
+    <div class="sheet-title" style="margin-bottom:16px;">이벤트 추가</div>
+    <div style="display:flex;flex-direction:column;gap:12px;padding-bottom:8px;">
+      <button type="button" class="event-add-choice" onclick="closeSheet('sheet-event-add');goTo('s-event-add');">
+        <span class="event-add-choice-icon"><i data-lucide="square-pen"></i></span>
+        <span class="event-add-choice-body">
+          <span class="event-add-choice-title">직접 입력</span>
+          <span class="event-add-choice-sub">빈 양식에 직접 작성해요</span>
+        </span>
+        <i data-lucide="chevron-right" class="event-add-choice-arrow"></i>
+      </button>
+      <button type="button" class="event-add-choice" onclick="switchSheet('sheet-event-add','sheet-event-pdf')">
+        <span class="event-add-choice-icon"><i data-lucide="file-text"></i></span>
+        <span class="event-add-choice-body">
+          <span class="event-add-choice-title">PDF 등록</span>
+          <span class="event-add-choice-sub">PDF를 그대로 보여주는 이벤트</span>
+        </span>
+        <i data-lucide="chevron-right" class="event-add-choice-arrow"></i>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════ -->
+<!-- 시트: PDF로 이벤트 만들기       -->
+<!-- ══════════════════════════════ -->
+<div class="sheet-wrap" id="sheet-event-pdf">
+  <div class="bottom-sheet-overlay" onclick="closeSheet('sheet-event-pdf')"></div>
+  <div class="bottom-sheet">
+    <div class="bottom-sheet-handle"></div>
+    <div class="sheet-title">PDF로 이벤트 등록</div>
+    <div class="sheet-desc">올린 PDF를 그대로 보여줘요</div>
+
+    <!-- ① PDF 파일 (필수) -->
+    <div class="pdf-field">
+      <label class="label label-required">PDF 파일</label>
+
+      <!-- 미선택: 업로드 영역 -->
+      <button type="button" class="pdf-dropzone" id="pdf-dropzone" onclick="selectPdfFile()">
+        <i data-lucide="upload-cloud"></i>
+        <span class="pdf-dropzone-title">PDF 파일 선택</span>
+        <span class="pdf-dropzone-sub">탭하여 PDF를 올려주세요</span>
+      </button>
+
+      <!-- 선택됨: 파일 칩 -->
+      <div class="pdf-file-chip" id="pdf-file-chip" hidden>
+        <i data-lucide="file-text" class="pdf-file-chip-icon"></i>
+        <span class="pdf-file-chip-name">여름_아트_이벤트_안내.pdf</span>
+        <button type="button" class="icon-btn icon-btn-sm icon-btn-clear" onclick="clearPdfFile()" aria-label="파일 제거">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- ② 대표 썸네일 (필수) -->
+    <div class="pdf-field" style="margin-top:16px;">
+      <label class="label label-required">대표 썸네일</label>
+
+      <!-- 미선택: 이미지 추가 영역 -->
+      <button type="button" class="pdf-thumb-add" id="pdf-thumb-add" onclick="selectPdfThumb()">
+        <i data-lucide="image"></i>
+        <span class="pdf-thumb-add-label">대표 이미지 추가</span>
+      </button>
+
+      <!-- 선택됨: 미리보기 -->
+      <div class="pdf-thumb-preview" id="pdf-thumb-preview" hidden>
+        <img src="../../assets/studiogloss-event1.png" alt="대표 썸네일 미리보기">
+        <button type="button" class="icon-btn icon-btn-sm icon-btn-clear" onclick="clearPdfThumb()" aria-label="이미지 제거">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+    </div>
+
+    <button type="button" class="btn btn-lg btn-block btn-fill-primary" id="pdf-cta" style="margin-top:20px;margin-bottom:8px;" disabled onclick="createEventFromPdf()">이벤트 만들기</button>
+  </div>
+</div>
 </div><!-- /frame -->
 
 <script src="https://unpkg.com/lucide@latest"></script>
 <script>
   lucide.createIcons();
+
+  // ── Cover style (URL param 지원: ?cover=cover-overlap-left|cover-overlap-center|cover-below-left|cover-below-center)
+  (function initCoverStyle() {
+    var cover = new URLSearchParams(location.search).get('cover');
+    var valid = ['cover-overlap-left','cover-below-left','cover-hidden'];
+    if (cover && valid.indexOf(cover) !== -1) applyCoverStyle(cover);
+  })();
+  function applyCoverStyle(name) {
+    var root = document.getElementById('lp-body-root');
+    ['cover-overlap-left','cover-below-left','cover-hidden'].forEach(function(c) {
+      root.classList.remove(c);
+    });
+    root.classList.add(name);
+  }
 
   var _prevScreen = 's-landing';
 
@@ -2871,11 +3161,6 @@
     }
     history.replaceState(null, '', location.pathname + location.search);
   })();
-  function togglePin(event, btn) {
-    event.stopPropagation();
-    var on = btn.classList.toggle('is-pinned');
-    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
-  }
   function openSheet(id) {
     var w = document.getElementById(id);
     if (w) w.classList.add('on');
@@ -2887,6 +3172,42 @@
   function switchSheet(from, to) {
     closeSheet(from);
     setTimeout(() => openSheet(to), 120);
+  }
+
+  /* ── PDF 업로드 시트 ── */
+  // PDF·썸네일 둘 다 선택돼야 CTA 활성
+  function updatePdfCta() {
+    var hasFile = document.getElementById('pdf-file-chip').hidden === false;
+    var hasThumb = document.getElementById('pdf-thumb-preview').hidden === false;
+    document.getElementById('pdf-cta').disabled = !(hasFile && hasThumb);
+  }
+  function selectPdfFile() {
+    document.getElementById('pdf-dropzone').hidden = true;
+    document.getElementById('pdf-file-chip').hidden = false;
+    updatePdfCta();
+    if (window.lucide) lucide.createIcons();
+  }
+  function clearPdfFile() {
+    document.getElementById('pdf-file-chip').hidden = true;
+    document.getElementById('pdf-dropzone').hidden = false;
+    updatePdfCta();
+    if (window.lucide) lucide.createIcons();
+  }
+  function selectPdfThumb() {
+    document.getElementById('pdf-thumb-add').hidden = true;
+    document.getElementById('pdf-thumb-preview').hidden = false;
+    updatePdfCta();
+    if (window.lucide) lucide.createIcons();
+  }
+  function clearPdfThumb() {
+    document.getElementById('pdf-thumb-preview').hidden = true;
+    document.getElementById('pdf-thumb-add').hidden = false;
+    updatePdfCta();
+    if (window.lucide) lucide.createIcons();
+  }
+  function createEventFromPdf() {
+    goTo('s-event-add');
+    closeSheet('sheet-event-pdf');
   }
 
   // 이벤트 설정 진입 컨텍스트: 'write' | 'edit'
@@ -2997,11 +3318,11 @@
 
   // ── 사진 첨부 (프로토타입: 데모 이미지 순환) ──
   var _attachSampleImages = [
-    'banner.png',
-    'profile.png',
-    'banner.png',
-    'profile.png',
-    'banner.png'
+    '../assets/banner-board.png',
+    '../assets/profile.png',
+    '../assets/banner-board.png',
+    '../assets/profile.png',
+    '../assets/banner-board.png'
   ];
   var _attachCount = 0;
 
@@ -3271,23 +3592,13 @@
   }
 
   // ══════════════════════════════
-  // 프로토타입: 시점 / 권한 상태
+  // 프로토타입: 권한 상태
   // ══════════════════════════════
-  var viewerState = 'owner';      // owner | member | visitor
   var communityMode = true;        // 커뮤니티 모드 on/off
   var postPerm = 'owner';          // owner | member | anyone
   var commentPerm = 'anyone';      // member | anyone
   var joinStatus = 'none';         // none | pending | approved
   var approvalRequired = true;     // 가입 시 운영자 승인 필요 여부
-
-  function setViewer(view) {
-    viewerState = view;
-    document.body.dataset.viewer = view;
-    document.querySelectorAll('.viewer-bar-tab').forEach(function(t) {
-      t.classList.toggle('active', t.dataset.view === view);
-    });
-    applyVisibilityRules();
-  }
 
   function onCommunityToggle(chk) {
     communityMode = chk.checked;
@@ -3321,6 +3632,14 @@
   function goToBoardTab() {
     goTo('s-landing');
     setLandingTab('board');
+  }
+  function setEventSegment(seg) {
+    document.querySelectorAll('.event-segment').forEach(function(b) {
+      b.classList.toggle('active', b.dataset.eseg === seg);
+    });
+    document.querySelectorAll('[data-eseg-pane]').forEach(function(p) {
+      p.hidden = p.dataset.esegPane !== seg;
+    });
   }
   function clearEaError(field) {
     var input = document.getElementById(field);
@@ -3615,31 +3934,14 @@
   }
 
   function canPostWrite() {
-    if (viewerState === 'owner' || viewerState === 'owner-empty') return true;
-    if (!communityMode) return false;
-    if (postPerm === 'anyone') return true;
-    if (postPerm === 'member') return viewerState === 'member';
-    return false;
+    return true;
   }
 
   function canCommentWrite() {
-    if (viewerState === 'owner' || viewerState === 'owner-empty') return true;
-    if (commentPerm === 'anyone') return true;
-    if (commentPerm === 'member') return viewerState === 'member';
-    return false;
+    return true;
   }
 
   function applyVisibilityRules() {
-    var effectiveViewer = (viewerState === 'owner-empty') ? 'owner' : viewerState;
-    document.querySelectorAll('.owner-only, .member-only, .visitor-only, .banner-filled-only, .banner-empty-only').forEach(function(el) {
-      var hide = false;
-      if (el.classList.contains('owner-only') && effectiveViewer !== 'owner') hide = true;
-      if (el.classList.contains('member-only') && effectiveViewer !== 'member') hide = true;
-      if (el.classList.contains('visitor-only') && effectiveViewer !== 'visitor') hide = true;
-      if (el.classList.contains('banner-filled-only') && viewerState === 'owner-empty') hide = true;
-      if (el.classList.contains('banner-empty-only') && viewerState !== 'owner-empty') hide = true;
-      el.hidden = hide;
-    });
     document.querySelectorAll('.write-btn-target').forEach(function(el) {
       el.hidden = !canPostWrite();
     });
@@ -3650,20 +3952,12 @@
     document.querySelectorAll('.community-required').forEach(function(el) {
       el.hidden = !communityMode;
     });
-    // 방문자 + 커뮤니티 모드일 때 가입 CTA 노출 (joinStatus 기반)
-    document.querySelectorAll('.join-cta-button').forEach(function(el) {
-      el.hidden = !(viewerState === 'visitor' && communityMode && joinStatus === 'none');
-    });
-    document.querySelectorAll('.join-cta-pending').forEach(function(el) {
-      el.hidden = !(viewerState === 'visitor' && communityMode && joinStatus === 'pending');
-    });
   }
 
   // 초기화
   document.body.dataset.community = 'on';
   var _initToggle = document.getElementById('toggle-community');
   if (_initToggle) _initToggle.checked = true;
-  setViewer('owner');
   setSettingsTab('community');
   setLandingTab('home');
   applyVisibilityRules();

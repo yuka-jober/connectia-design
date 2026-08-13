@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>카카오톡 링크 공유 썸네일 — 명함 B</title>
+<link rel="stylesheet" href="../../tokens.css">
+<link rel="stylesheet" href="../../components.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+  body {
+    margin: 0;
+    background: var(--color-surface-sub);
+    font-family: var(--font-base);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 40px;
+    padding: 48px 24px 80px;
+  }
+
+  .stage-label {
+    color: var(--color-text-muted);
+  }
+
+  /* ============================================
+     명함 썸네일 B — A안 레이아웃 + 라벤더/배지 톤
+     기준 400×200, scale 2 → 800×400 (2:1)
+     ============================================ */
+  .card-thumb {
+    position: relative;
+    width: 400px;
+    height: 200px;
+    background: var(--color-primary-light);
+    overflow: hidden;
+    box-sizing: border-box;
+    padding: 24px 28px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 16px;
+  }
+
+  .ct-identity {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .ct-identity .avatar {
+    border: 3px solid var(--color-on-primary);
+    flex-shrink: 0;
+  }
+  .ct-name {
+    color: var(--color-primary-dark);
+  }
+
+  .ct-contacts {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .ct-contact {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--color-text-sub);
+  }
+  .ct-ico {
+    width: 20px;
+    height: 20px;
+    border-radius: var(--r-xs);
+    background: var(--color-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .ct-ico svg {
+    width: 11px;
+    height: 11px;
+    color: var(--color-on-primary);
+  }
+
+  /* ---- 실제 내보내기 크기 800×400 ---- */
+  .export {
+    width: 800px;
+    height: 400px;
+    box-shadow: var(--shadow-3);
+    border-radius: var(--r-md);
+    overflow: hidden;
+  }
+  .export .card-thumb {
+    transform: scale(2);
+    transform-origin: top left;
+  }
+
+  /* ============================================
+     카카오톡 채팅 내 링크 카드 미리보기
+     ============================================ */
+  .kakao-chat {
+    width: 340px;
+    background: #b2c7d9;
+    border-radius: var(--r-md);
+    padding: 20px 16px;
+  }
+  .kakao-row {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+  }
+  .kakao-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--r-md);
+    background: var(--color-primary-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .kakao-avatar svg { width: 22px; height: 22px; color: var(--color-primary); }
+
+  .kakao-bubble {
+    background: var(--color-surface);
+    border-radius: var(--r-sm);
+    overflow: hidden;
+    width: 240px;
+    box-shadow: var(--shadow-1);
+  }
+  .kakao-thumb-wrap {
+    width: 240px;
+    height: 120px;
+    overflow: hidden;
+  }
+  .kakao-thumb-wrap .card-thumb {
+    transform: scale(0.6);
+    transform-origin: top left;
+  }
+  .kakao-meta {
+    padding: 12px 14px 14px;
+  }
+  .kakao-title { color: var(--color-text); }
+  .kakao-desc { margin-top: 4px; color: var(--color-text-muted); }
+  .kakao-domain { margin-top: 8px; color: var(--color-text-muted); }
+</style>
+</head>
+<body>
+
+  <!-- 실제 썸네일 800×400 -->
+  <div class="stage-label text-caption">링크 공유 썸네일 B · 800 × 400 (2:1)</div>
+  <div class="export">
+    <div class="card-thumb">
+      <div class="ct-identity">
+        <div class="avatar avatar-lg">
+          <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=200&h=200&fit=crop&crop=faces" alt="이지훈">
+        </div>
+        <span class="text-display ct-name">이지훈</span>
+      </div>
+      <div class="ct-contacts">
+        <div class="ct-contact text-label">
+          <span class="ct-ico"><i data-lucide="phone"></i></span>
+          <span>010-2345-6789</span>
+        </div>
+        <div class="ct-contact text-label">
+          <span class="ct-ico"><i data-lucide="mail"></i></span>
+          <span>jihoon@jeongja.re.kr</span>
+        </div>
+        <div class="ct-contact text-label">
+          <span class="ct-ico"><i data-lucide="map-pin"></i></span>
+          <span>경기 성남시 분당구 정자일로 123</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 카카오톡 채팅 미리보기 -->
+  <div class="stage-label text-caption">카카오톡 채팅에서 보이는 모습</div>
+  <div class="kakao-chat">
+    <div class="kakao-row">
+      <div class="kakao-avatar"><i data-lucide="user-round"></i></div>
+      <div class="kakao-bubble">
+        <div class="kakao-thumb-wrap">
+          <div class="card-thumb">
+            <div class="ct-identity">
+              <div class="avatar avatar-lg">
+                <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=200&h=200&fit=crop&crop=faces" alt="이지훈">
+              </div>
+              <span class="text-display ct-name">이지훈</span>
+            </div>
+            <div class="ct-contacts">
+              <div class="ct-contact text-label">
+                <span class="ct-ico"><i data-lucide="phone"></i></span>
+                <span>010-2345-6789</span>
+              </div>
+              <div class="ct-contact text-label">
+                <span class="ct-ico"><i data-lucide="mail"></i></span>
+                <span>jihoon@jeongja.re.kr</span>
+              </div>
+              <div class="ct-contact text-label">
+                <span class="ct-ico"><i data-lucide="map-pin"></i></span>
+                <span>경기 성남시 분당구 정자일로 123</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="kakao-meta">
+          <div class="kakao-title text-body">이지훈 공인중개사 · 명함</div>
+          <div class="kakao-desc text-caption">정자동·서현동 아파트·오피스텔 전문. 명함을 확인하고 팔로우하세요.</div>
+          <div class="kakao-domain text-badge">connectia.im</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>lucide.createIcons();</script>
+</body>
+</html>
