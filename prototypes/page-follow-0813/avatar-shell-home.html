@@ -1,0 +1,1276 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>아바타 관리 셸 — 홈</title>
+<link rel="stylesheet" href="../../tokens.css">
+<link rel="stylesheet" href="../../components.css">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-base);
+    background: #e0e0e0;
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ── Frame (390 × 844) ── */
+  .frame {
+    width: 390px;
+    height: 844px;
+    max-height: 100dvh;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 32px 80px -20px rgba(0,0,0,0.28);
+    background: var(--color-surface);
+    transform: translateZ(0);
+  }
+  @media (max-width: 439px) { .frame { width: 100vw; height: 100dvh; max-height: none; } }
+  @media (min-width: 440px) { .frame { border-radius: 44px; max-height: calc(100dvh - 40px); } }
+
+  /* ── Screen ── */
+  .screen {
+    position: absolute; inset: 0;
+    display: none;
+    flex-direction: column;
+    background: var(--color-bg);
+  }
+  .screen.on { display: flex; }
+
+  [data-lucide] { display: inline-flex; flex-shrink: 0; }
+
+  /* =============================================
+     아바타 셸 상단바 (B안: 로고 · 액션 / 스위처 2단)
+     ============================================= */
+  .a-topbar {
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    border-bottom: 1px solid var(--color-border);
+    flex-shrink: 0;
+    background: var(--color-surface);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .a-topbar-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-height: 56px;
+    padding: 12px 12px 12px 16px;
+  }
+  .a-topbar-end {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .a-switcher {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: none;
+    border: none;
+    padding: 8px 8px 8px 0;
+    font-family: var(--font-base);
+    color: var(--color-text);
+    cursor: pointer;
+    min-width: 0;
+    border-radius: var(--r-sm);
+    -webkit-tap-highlight-color: transparent;
+    transition: background var(--motion-fast) var(--ease-standard);
+  }
+  .a-switcher:active { background: var(--color-surface-sub); }
+  .a-switcher-name {
+    font-size: var(--fs-title-sm);
+    font-weight: var(--fw-bold);
+    color: var(--color-text);
+    letter-spacing: var(--ls-title-sm);
+    max-width: 200px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .a-switcher [data-lucide] { width: 18px; height: 18px; color: var(--color-text-sub); }
+  .a-topbar-account [data-lucide] { width: 20px; height: 20px; }
+  /* 계정 진입점: 설정 탭에서만 노출 */
+  .a-topbar-account { display: none; }
+  body[data-active-tab="settings"] .a-topbar-account { display: inline-flex; }
+
+  /* ── Body ── */
+  .a-body {
+    flex: 1;
+    overflow-y: auto;
+    background: var(--color-bg);
+    padding-bottom: calc(60px + env(safe-area-inset-bottom));
+    min-height: 0;
+  }
+  /* 콘텐츠 뷰(home, follow, settings)는 내용에 따라 늘어나 .a-body가 스크롤되도록 min-height:100%.
+     iframe 뷰는 percentage height 해상을 위해 명시적 height:100% 지정. */
+  .a-view { min-height: 100%; }
+  #view-edit, #view-preview, #view-stats, #view-chat { height: 100%; min-height: 0; }
+
+  /* =============================================
+     하단 탭바 (커뮤니티 셸 스펙 재사용)
+     ============================================= */
+  .a-tabbar {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    display: flex;
+    align-items: stretch;
+    background: var(--color-surface);
+    box-shadow: var(--shadow-4);
+    padding-bottom: env(safe-area-inset-bottom);
+    z-index: 10;
+  }
+  .a-tab {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 10px 4px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--color-text-muted);
+    font-family: var(--font-base);
+    -webkit-tap-highlight-color: transparent;
+    transition: color var(--motion-fast) var(--ease-standard);
+  }
+  .a-tab svg { width: 22px; height: 22px; }
+  .a-tab-icon { position: relative; display: inline-flex; }
+  .a-tab-dot {
+    position: absolute;
+    top: -2px; right: -2px;
+    width: 8px; height: 8px;
+    border-radius: var(--r-full);
+    background: var(--color-destructive);
+    border: 2px solid var(--color-surface);
+    box-sizing: content-box;
+  }
+  .a-tab-label {
+    font-size: var(--fs-nav);
+    font-weight: var(--fw-medium);
+    letter-spacing: var(--ls-nav);
+    line-height: var(--lh-nav);
+  }
+  .a-tab.is-active { color: var(--color-text); }
+
+  /* =============================================
+     홈 뷰 — board.html의 lp-* 스펙을 최소 재현
+     ============================================= */
+  .lp-header { width: 100%; height: 177px; overflow: hidden; position: relative; flex-shrink: 0; }
+  .lp-header img { width: 100%; height: 211px; object-fit: cover; position: absolute; top: 0; left: 0; }
+  .lp-avatar-wrap { position: absolute; top: 133px; left: 20px; z-index: 2; }
+  .lp-actions-row { position: absolute; top: 190px; right: 20px; z-index: 3; display: flex; gap: 8px; align-items: center; }
+  .lp-inner { padding: 68px 20px 32px; display: flex; flex-direction: column; gap: 20px; }
+  .lp-title { font-weight: var(--fw-semibold); font-size: var(--fs-title); color: var(--color-text); letter-spacing: var(--ls-title); }
+  .lp-name-block { display: flex; flex-direction: column; gap: 4px; }
+  .lp-handle { font-size: var(--fs-label); color: var(--color-text-muted); }
+  .lp-divider { height: 1px; width: 100%; background: var(--color-border); border: none; }
+  .lp-section-title { font-weight: var(--fw-semibold); font-size: var(--fs-heading); color: var(--color-text-sub); letter-spacing: var(--ls-heading); }
+
+  .lp-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-bg);
+    margin: 0 -20px 20px;
+    padding: 0 20px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .lp-tabs::-webkit-scrollbar { display: none; }
+  .lp-tab {
+    flex: none;
+    padding: 14px 16px;
+    border: none;
+    background: transparent;
+    font-size: var(--fs-body);
+    color: var(--color-text-muted);
+    font-weight: var(--fw-medium);
+    cursor: pointer;
+    position: relative;
+    font-family: var(--font-base);
+  }
+  .lp-tab.active { color: var(--color-text); font-weight: var(--fw-semibold); }
+  .lp-tab.active::after {
+    content: '';
+    position: absolute;
+    left: 16px; right: 16px; bottom: -1px;
+    height: 2px;
+    background: var(--color-text);
+  }
+
+  /* 홈 탭 서브섹션 */
+  .lp-section { display: flex; flex-direction: column; gap: 12px; width: 100%; }
+  .lp-info-link {
+    background: var(--color-primary-light);
+    border-radius: var(--r-sm);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px;
+    width: 100%;
+    cursor: pointer;
+  }
+  .lp-info-left { display: flex; align-items: center; gap: 12px; }
+  .lp-info-icon {
+    width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; color: var(--color-text-muted);
+  }
+  .lp-info-label { font-size: var(--fs-body); font-weight: var(--fw-semibold); color: var(--color-text); }
+
+  .lp-about {
+    font-size: var(--fs-body);
+    color: var(--color-text);
+    line-height: var(--lh-body);
+  }
+  .lp-about p { margin-bottom: 8px; }
+  .lp-about p:last-child { margin-bottom: 0; }
+
+  /* 갤러리 */
+  .lp-gallery-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; }
+  .lp-gallery-cell {
+    position: relative;
+    aspect-ratio: 4 / 5;
+    overflow: hidden;
+    background: var(--color-surface-sub);
+    border: none; padding: 0; cursor: pointer;
+  }
+  .lp-gallery-cell img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  /* 게시판 */
+  .lp-post-list { background: var(--color-surface); border-radius: var(--r-md); border: 1px solid var(--color-border); overflow: hidden; width: 100%; }
+  .lp-post { display: flex; align-items: stretch; width: 100%; min-height: 72px; border-bottom: 1px solid var(--color-border); cursor: pointer; }
+  .lp-post:last-child { border-bottom: none; }
+  .lp-post-img { width: 90px; align-self: stretch; overflow: hidden; flex-shrink: 0; background: var(--color-bg); order: 2; }
+  .lp-post-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .lp-post-body { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 4px; padding: 12px; min-width: 0; }
+  .lp-post-tags { display: flex; gap: 8px; align-items: center; }
+  .lp-post-title { font-size: var(--fs-body); font-weight: var(--fw-semibold); color: var(--color-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lp-post-preview { font-size: var(--fs-caption); color: var(--color-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .lp-notice-header { display: flex; align-items: center; justify-content: space-between; width: 100%; }
+
+  /* 이벤트 배너 카드 */
+  .lp-banner-section { width: 100%; display: flex; flex-direction: column; gap: 12px; }
+  .lp-banner-scroll {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    margin-right: -20px;
+    scrollbar-width: none;
+  }
+  .lp-banner-scroll::-webkit-scrollbar { display: none; }
+  .lp-banner-card {
+    flex: 0 0 240px;
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+    background: var(--color-surface);
+    border-radius: var(--r-md);
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+    padding: 0;
+    text-align: left;
+    font-family: var(--font-base);
+  }
+  .lp-banner-img { width: 100%; aspect-ratio: 16 / 9; background: var(--color-surface-sub); overflow: hidden; }
+  .lp-banner-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .lp-banner-text { padding: 12px; display: flex; flex-direction: column; gap: 4px; }
+  .lp-banner-title { font-size: var(--fs-body); font-weight: var(--fw-semibold); color: var(--color-text); }
+  .lp-banner-date {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: var(--fs-caption); color: var(--color-text-muted);
+  }
+  .lp-banner-date [data-lucide] { width: 12px; height: 12px; }
+  .lp-banner-desc {
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* =============================================
+     Placeholder 뷰 (AI 설정·대화목록: 제목만)
+     ============================================= */
+  .a-placeholder {
+    padding: 40px 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 320px;
+  }
+  .a-placeholder-title {
+    font-size: var(--fs-title);
+    font-weight: var(--fw-bold);
+    color: var(--color-text);
+    letter-spacing: var(--ls-title);
+  }
+
+  /* 임베드 뷰 (편집·통계) — iframe으로 실제 화면을 셸 내부에 로드
+     높이는 런타임에 sizeEmbeds()에서 실제 topbar/tabbar 높이에 맞춰 설정 */
+  .a-embed {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    background: var(--color-bg);
+  }
+
+  /* 프레임 내부 스코프 토스트 (하단 탭바 위) */
+  .a-toast-container {
+    position: absolute;
+    left: 50%;
+    bottom: 88px;
+    transform: translateX(-50%);
+    z-index: 300;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+    pointer-events: none;
+  }
+  .a-toast {
+    background: var(--color-text);
+    color: var(--color-on-primary);
+    border-radius: var(--r-sm);
+    padding: 12px 16px;
+    font-family: var(--font-base);
+    font-size: var(--fs-body);
+    font-weight: var(--fw-medium);
+    line-height: var(--lh-body);
+    box-shadow: var(--shadow-3);
+    white-space: nowrap;
+    pointer-events: auto;
+    animation: _a-toast-in var(--motion-standard) var(--ease-enter);
+  }
+  @keyframes _a-toast-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* 서브 탭 (AI 설정 뷰 상단) */
+  .a-subtabs {
+    display: flex;
+    align-items: stretch;
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    padding: 0 16px 0 8px;
+  }
+  .a-subtabs-group {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    gap: 4px;
+  }
+  .a-subtab {
+    position: relative;
+    padding: 16px 12px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: var(--font-base);
+    font-size: var(--fs-body);
+    font-weight: var(--fw-medium);
+    color: var(--color-text-muted);
+  }
+  .a-subtab.is-active {
+    color: var(--color-text);
+    font-weight: var(--fw-semibold);
+  }
+  .a-subtab.is-active::after {
+    content: '';
+    position: absolute;
+    left: 12px; right: 12px; bottom: -1px;
+    height: 2px;
+    background: var(--color-text);
+    border-radius: 2px;
+  }
+  .a-subtabs .a-subtab-advanced { flex-shrink: 0; align-self: center; margin-left: auto; }
+
+  /* 설정 뷰 상단 안내 배너 (서브탭 위) */
+  .set-banners { display: flex; flex-direction: column; gap: 12px; padding: 16px; }
+  .set-banner {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 16px 100px 16px 16px;
+    border: none;
+    border-radius: var(--r-md);
+    text-align: left;
+    cursor: pointer;
+    overflow: hidden;
+    font-family: var(--font-base);
+    transition: transform var(--motion-fast) var(--ease-standard);
+  }
+  .set-banner:active { transform: scale(0.99); }
+  .set-banner-dark { background: var(--color-text); color: var(--color-on-primary); }
+  .set-banner-primary { background: var(--color-primary); color: var(--color-on-primary); }
+
+  .set-banner-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+  .set-banner-title { font-size: var(--fs-body); line-height: var(--lh-body); font-weight: var(--fw-semibold); }
+  .set-banner-title i, .set-banner-title svg { width: 14px; height: 14px; vertical-align: -2px; margin-left: 2px; }
+  .set-banner-desc { font-size: var(--fs-caption); line-height: var(--lh-body); color: var(--color-on-primary-sub); }
+  .set-banner-contact { display: flex; flex-direction: row; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
+  .set-banner-contact-row { display: flex; align-items: center; gap: 6px; font-size: var(--fs-caption); color: var(--color-on-primary-sub); }
+  .set-banner-contact-row i, .set-banner-contact-row svg { flex: none; width: 14px; height: 14px; }
+
+  /* 이미지 자리 — 사용자가 직접 이미지를 넣는 슬롯 */
+  .set-banner-media {
+    position: absolute;
+    top: 12px;
+    bottom: 12px;
+    right: 8px;
+    width: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--r-sm);
+    border: 1px dashed var(--color-on-primary-faint);
+  }
+  .set-banner-media img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+  .set-banner-media-ph { font-size: var(--fs-caption); color: var(--color-on-primary-faint); }
+  .set-banner-media-icon { border: none; }
+  .set-banner-media-icon i, .set-banner-media-icon svg { width: 32px; height: 32px; color: var(--color-on-primary); stroke-width: 1.5; }
+
+  /* 고객센터 오버레이 (배너 ① 클릭 시) */
+  .cc-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 400;
+    background: var(--color-bg);
+    display: flex;
+    flex-direction: column;
+    animation: cc-in var(--motion-standard) var(--ease-enter);
+  }
+  .cc-overlay[hidden] { display: none; }
+  @keyframes cc-in { from { transform: translateX(16px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+  .cc-topbar { flex-shrink: 0; display: flex; align-items: center; height: 56px; padding: 0 8px; }
+  .cc-body { flex: 1; overflow-y: auto; padding: 8px 20px 24px; }
+  .cc-body h1 { margin: 0; }
+  .cc-sub { margin: 12px 0 24px; color: var(--color-text-muted); }
+  .cc-cards { display: flex; flex-direction: column; gap: 12px; }
+  .cc-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+    padding: 20px;
+    border: none;
+    text-align: left;
+    cursor: pointer;
+    background: var(--color-surface-sub);
+    border-radius: var(--r-lg);
+    font-family: var(--font-base);
+    transition: background var(--motion-fast) var(--ease-standard);
+  }
+  .cc-card:active { background: var(--color-card); }
+  .cc-card-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+  .cc-card-title { font-size: var(--fs-body-lg); font-weight: var(--fw-bold); color: var(--color-text); }
+  .cc-card-desc { font-size: var(--fs-caption); color: var(--color-text-muted); }
+  .cc-card-icon { flex: none; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; color: var(--color-primary); }
+  .cc-card-icon i, .cc-card-icon svg { width: 28px; height: 28px; }
+  .pricing-embed { flex: 1; width: 100%; border: 0; background: var(--color-bg); }
+
+  /* 문의 버튼: 홈=상단바(계정 왼쪽), 그 외 탭=우측하단 플로팅 */
+  .a-topbar-inquiry { display: none; }
+  body[data-active-tab="home"] .a-topbar-inquiry { display: inline-flex; }
+  .a-inquiry-fab {
+    position: absolute;
+    right: 16px;
+    bottom: 76px;
+    z-index: 200;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    border-radius: var(--r-full);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-3);
+    color: var(--color-text);
+    cursor: pointer;
+  }
+  .a-inquiry-fab i, .a-inquiry-fab svg { width: 24px; height: 24px; }
+  body[data-active-tab="follow"] .a-inquiry-fab,
+  body[data-active-tab="chat"] .a-inquiry-fab,
+  body[data-active-tab="stats"] .a-inquiry-fab,
+  body[data-active-tab="settings"] .a-inquiry-fab { display: flex; }
+
+  /* 팔로워 리스트 뷰 (인스타 스타일 — 팔로우 버튼 없음) */
+  .a-list { padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+  .a-list-search { position: relative; }
+  .a-list-search .input { padding-left: 40px; }
+  .a-list-search-icon {
+    position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+    color: var(--color-text-muted); pointer-events: none;
+    display: inline-flex;
+  }
+  .a-list-search-icon [data-lucide] { width: 18px; height: 18px; }
+  .a-list-items { list-style: none; display: flex; flex-direction: column; gap: 4px; padding: 0; margin: 0; }
+  .a-list-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 8px 4px;
+  }
+  .a-list-text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .a-list-name {
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text);
+    letter-spacing: var(--ls-body-lg);
+  }
+  .a-list-sub {
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+  }
+
+  /* 팔로우 뷰 — 팔로워/팔로잉 탭 (lp-tabs 재사용, a-list 16px 패딩에 맞춰 풀블리드) */
+  #view-follow .lp-tabs { margin: 0 -16px; padding: 0 16px; }
+  #view-follow .lp-tab { flex: 1; text-align: center; }
+  #view-follow .a-list-items[hidden] { display: none; }
+
+  /* 팔로우 뷰 — 페이지 카드 우측 상태 버튼 */
+  #view-follow .a-list-item .a-list-text { flex: 1; min-width: 0; }
+  .a-follow-btn { margin-left: auto; flex-shrink: 0; }
+
+  /* 홈 탭에서만 편집·미리보기 버튼 노출 */
+  body:not([data-active-tab="home"]) .a-topbar-edit,
+  body:not([data-active-tab="home"]) .a-topbar-preview { display: none; }
+  /* 편집·미리보기 뷰에서는 셸 상단바·탭바 숨김 (본문 하단 패딩도 제거) */
+  body[data-active-tab="edit"] .a-topbar,
+  body[data-active-tab="edit"] .a-tabbar,
+  body[data-active-tab="preview"] .a-topbar,
+  body[data-active-tab="preview"] .a-tabbar { display: none; }
+  body[data-active-tab="edit"] .a-body,
+  body[data-active-tab="preview"] .a-body { padding-bottom: 0 !important; }
+  /* 미리보기 뷰 닫기 버튼 */
+  .a-preview-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 10;
+    width: 40px;
+    height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-full);
+    box-shadow: var(--shadow-2);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .a-preview-close [data-lucide] { width: 20px; height: 20px; color: var(--color-text); }
+  #view-preview { position: relative; }
+</style>
+</head>
+<body>
+
+<div class="frame">
+
+  <!-- ============================================
+       메인 셸 화면
+       ============================================ -->
+  <section class="screen on" id="s-shell">
+
+    <!-- 상단바 (아바타 스위처 + 편집·계정) -->
+    <header class="a-topbar">
+      <div class="a-topbar-row">
+        <button class="a-switcher" type="button" onclick="void 0">
+          <span class="a-switcher-name">엘린피부과의원</span>
+          <i data-lucide="chevron-down"></i>
+        </button>
+        <div class="a-topbar-end">
+          <button class="btn btn-sm btn-line-dark btn-pill a-topbar-preview" type="button" onclick="goPreview()" style="font-weight: var(--fw-medium);">미리보기</button>
+          <button class="btn btn-sm btn-fill-dark btn-pill a-topbar-edit" type="button" onclick="goEdit()" style="font-weight: var(--fw-medium);">편집</button>
+          <button class="icon-btn icon-btn-sm icon-btn-clear a-topbar-inquiry" type="button" aria-label="문의" onclick="document.getElementById('cc-overlay').hidden=false">
+            <i data-lucide="message-circle-question"></i>
+          </button>
+          <button class="icon-btn icon-btn-sm icon-btn-clear a-topbar-account" type="button" onclick="goAccount()" aria-label="계정">
+            <i data-lucide="user-round"></i>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- 본문 (뷰 전환) -->
+    <div class="a-body" id="a-body">
+
+      <!-- ── HOME 뷰 ── -->
+      <div class="a-view" id="view-home">
+        <div style="position:relative;flex-shrink:0;">
+          <div class="lp-header">
+            <img src="../../assets/banner-board.png" alt="">
+          </div>
+          <div class="lp-avatar-wrap">
+            <div class="avatar" style="width:87px;height:87px;">
+              <img src="../../assets/profile.png" alt="프로필">
+            </div>
+          </div>
+          <div class="lp-actions-row">
+            <button class="btn btn-md btn-weak-dark btn-pill" type="button" onclick="toggleHomeFollow(this)">
+              <i data-lucide="user-plus" style="width:16px;height:16px"></i>
+              팔로우
+            </button>
+            <button class="btn btn-md btn-weak-dark btn-pill" type="button">
+              <i data-lucide="link" style="width:16px;height:16px"></i>
+              공유
+            </button>
+          </div>
+        </div>
+
+        <div class="lp-inner">
+          <div class="lp-name-block">
+            <div class="lp-title">엘린피부과의원</div>
+            <div class="lp-handle">@elin_clinic</div>
+          </div>
+
+          <button class="btn btn-lg btn-fill-gradient btn-block" type="button">
+            <i data-lucide="message-circle" style="width:18px;height:18px"></i>
+            대화하기
+          </button>
+
+          <!-- 홈 탭 (연락처·SNS·About·갤러리·게시판) -->
+          <div class="lp-tabs">
+            <button class="lp-tab active" type="button">홈</button>
+            <button class="lp-tab" type="button">갤러리</button>
+            <button class="lp-tab" type="button">이벤트·행사</button>
+            <button class="lp-tab" type="button">게시판</button>
+            <button class="lp-tab" type="button">리뷰</button>
+          </div>
+
+          <!-- SNS -->
+          <div class="lp-section">
+            <div class="lp-section-title">SNS</div>
+            <div class="lp-info-link">
+              <div class="lp-info-left">
+                <div class="lp-info-icon"><i data-lucide="youtube" style="width:20px;height:20px"></i></div>
+                <span class="lp-info-label">Youtube</span>
+              </div>
+              <i data-lucide="chevron-right" style="width:16px;height:16px;color:var(--color-text-muted)"></i>
+            </div>
+            <div class="lp-info-link">
+              <div class="lp-info-left">
+                <div class="lp-info-icon"><i data-lucide="instagram" style="width:20px;height:20px"></i></div>
+                <span class="lp-info-label">Instagram</span>
+              </div>
+              <i data-lucide="chevron-right" style="width:16px;height:16px;color:var(--color-text-muted)"></i>
+            </div>
+          </div>
+
+          <hr class="lp-divider">
+
+          <!-- About -->
+          <div class="lp-section">
+            <div class="lp-section-title">About</div>
+            <div class="lp-about">
+              <p>엘린피부과는 피부 본연의 건강과 자연스러운 아름다움을 추구합니다. 모공, 잡티, 탄력 등 일상 속 작은 고민까지 정성껏 살피며, 시술 전 충분한 상담으로 가장 알맞은 방향을 함께 찾아드려요.</p>
+              <p>원장님이 직접 진료부터 마무리까지 책임지며, 시술 후에는 회복 단계별 케어까지 꼼꼼하게 안내드립니다.</p>
+            </div>
+          </div>
+
+          <hr class="lp-divider">
+
+          <!-- 갤러리 -->
+          <div class="lp-section">
+            <div class="lp-notice-header">
+              <span class="lp-section-title">갤러리</span>
+              <button type="button" class="btn btn-sm btn-weak-primary btn-pill" style="display:inline-flex;align-items:center;gap:4px;">
+                <i data-lucide="plus" style="width:13px;height:13px"></i>
+                추가
+              </button>
+            </div>
+            <div class="lp-gallery-grid">
+              <button type="button" class="lp-gallery-cell">
+                <img src="https://picsum.photos/seed/shell-1/400/500" alt="">
+              </button>
+              <button type="button" class="lp-gallery-cell">
+                <img src="https://picsum.photos/seed/shell-2/400/500" alt="">
+              </button>
+              <button type="button" class="lp-gallery-cell">
+                <img src="https://picsum.photos/seed/shell-3/400/500" alt="">
+              </button>
+              <button type="button" class="lp-gallery-cell">
+                <img src="https://picsum.photos/seed/shell-4/400/500" alt="">
+              </button>
+              <button type="button" class="lp-gallery-cell">
+                <img src="https://picsum.photos/seed/shell-5/400/500" alt="">
+              </button>
+              <button type="button" class="lp-gallery-cell">
+                <img src="https://picsum.photos/seed/shell-6/400/500" alt="">
+              </button>
+            </div>
+          </div>
+
+          <hr class="lp-divider">
+
+          <!-- 이벤트 배너 -->
+          <div class="lp-banner-section">
+            <div class="lp-notice-header">
+              <span class="lp-section-title">Event</span>
+              <button type="button" class="btn btn-sm btn-weak-primary btn-pill" style="display:inline-flex;align-items:center;gap:4px;">
+                <i data-lucide="plus" style="width:13px;height:13px"></i>
+                이벤트 추가
+              </button>
+            </div>
+            <div class="lp-banner-scroll">
+              <button type="button" class="lp-banner-card">
+                <div class="lp-banner-img">
+                  <img src="../../assets/thumbnail_1.png" alt="">
+                </div>
+                <div class="lp-banner-text">
+                  <div class="lp-banner-title">수면 리쥬베룩 이벤트</div>
+                  <div class="lp-banner-date">
+                    <i data-lucide="calendar-days"></i>07.05 · 14:00 ~ 18:00
+                  </div>
+                  <div class="lp-banner-desc">이번 여름 한정 프리미엄 케어 프로그램을 소개드립니다.</div>
+                </div>
+              </button>
+              <button type="button" class="lp-banner-card">
+                <div class="lp-banner-img">
+                  <img src="../../assets/thumbnail_2.png" alt="">
+                </div>
+                <div class="lp-banner-text">
+                  <div class="lp-banner-title">물광 스킨부스터 이벤트</div>
+                  <div class="lp-banner-date">
+                    <i data-lucide="calendar-days"></i>07.10 ~ 07.20
+                  </div>
+                  <div class="lp-banner-desc">물광 관리 프로그램, 새롭게 리뉴얼해서 오픈합니다.</div>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <hr class="lp-divider">
+
+          <!-- 게시판 -->
+          <div class="lp-section">
+            <div class="lp-notice-header">
+              <span class="lp-section-title">게시판</span>
+              <button type="button" class="btn btn-sm btn-weak-primary btn-pill" style="display:inline-flex;align-items:center;gap:4px;">
+                <i data-lucide="plus" style="width:14px;height:14px"></i>
+                게시글 추가
+              </button>
+            </div>
+            <div class="lp-post-list">
+              <div class="lp-post">
+                <div class="lp-post-img">
+                  <img src="../../assets/thumbnail_1.png" alt="">
+                </div>
+                <div class="lp-post-body">
+                  <div class="lp-post-tags">
+                    <span class="badge badge-sm badge-weak-primary">이벤트</span>
+                    <span class="lp-post-title">수면 리쥬베룩 이벤트</span>
+                  </div>
+                  <div class="lp-post-preview">맑고 탄력 있는 피부를 위한 특별 케어 프로그램, 한정 인원 선착순 진행.</div>
+                </div>
+              </div>
+              <div class="lp-post">
+                <div class="lp-post-body">
+                  <div class="lp-post-tags">
+                    <span class="badge badge-sm badge-fill-neutral">공지</span>
+                    <span class="lp-post-title">6월 시술 가격 안내</span>
+                  </div>
+                  <div class="lp-post-preview">6월 한 달간 적용되는 시술별 가격표를 안내드립니다.</div>
+                </div>
+              </div>
+              <div class="lp-post">
+                <div class="lp-post-body">
+                  <div class="lp-post-title">시술 후 홈케어 가이드</div>
+                  <div class="lp-post-preview">레이저·리프팅 시술 후 회복을 돕는 홈케어 루틴을 정리했어요.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── EDIT 뷰: 프로필 편집 화면 임베드 (상단 편집 버튼으로 진입) ── -->
+      <div class="a-view" id="view-edit" hidden>
+        <iframe class="a-embed" src="embed-profile-edit.html" onload="sizeEmbeds()"></iframe>
+      </div>
+
+      <!-- ── PREVIEW 뷰: 프로필 미리보기 임베드 (상단 미리보기 버튼으로 진입) ── -->
+      <div class="a-view" id="view-preview" hidden>
+        <button class="a-preview-close" type="button" onclick="goTab('home')" aria-label="미리보기 닫기">
+          <i data-lucide="x"></i>
+        </button>
+        <iframe class="a-embed" src="embed-profile-preview.html" onload="sizeEmbeds()"></iframe>
+      </div>
+
+      <!-- ── FOLLOW 뷰: 페이지↔페이지 팔로우 (팔로워 | 팔로잉) ── -->
+      <div class="a-view" id="view-follow" hidden>
+        <div class="a-list">
+          <!-- 팔로워/팔로잉 탭 -->
+          <div class="lp-tabs" role="tablist" aria-label="팔로우 목록">
+            <button type="button" class="lp-tab active" data-seg="followers" role="tab" aria-selected="true" onclick="switchFollowSeg('followers')">팔로워 7</button>
+            <button type="button" class="lp-tab" data-seg="following" role="tab" aria-selected="false" onclick="switchFollowSeg('following')">팔로잉 7</button>
+          </div>
+
+          <!-- 검색창 -->
+          <div class="a-list-search">
+            <span class="a-list-search-icon"><i data-lucide="search"></i></span>
+            <input type="text" class="input" placeholder="페이지 검색">
+          </div>
+
+          <!-- 팔로워: 내 페이지를 팔로우하는 페이지 -->
+          <ul class="a-list-items" data-seg-panel="followers">
+            <li class="a-list-item">
+              <div class="avatar avatar-lg"><img src="https://picsum.photos/seed/follower-page-1/120/120" alt=""></div>
+              <div class="a-list-text">
+                <div class="a-list-name">도담 베이커리</div>
+                <div class="a-list-sub">@dodam-bakery</div>
+              </div>
+              <button class="btn btn-sm btn-fill-primary a-follow-btn" type="button" onclick="toggleFollow(this)">팔로우</button>
+            </li>
+            <li class="a-list-item">
+              <div class="avatar avatar-lg"><img src="https://picsum.photos/seed/follower-page-2/120/120" alt=""></div>
+              <div class="a-list-text">
+                <div class="a-list-name">한결 한의원</div>
+                <div class="a-list-sub">@hangyeol-omc</div>
+              </div>
+              <button class="btn btn-sm btn-line-dark a-follow-btn" type="button" onclick="toggleFollow(this)">팔로잉</button>
+            </li>
+            <li class="a-list-item">
+              <div class="avatar avatar-lg"><img src="https://picsum.photos/seed/follower-page-3/120/120" alt=""></div>
+              <div class="a-list-text">
+                <div class="a-list-name">코너스톤 부동산</div>
+                <div class="a-list-sub">@cornerstone-re</div>
+              </div>
+              <button class="btn btn-sm btn-fill-primary a-follow-btn" type="button" onclick="toggleFollow(this)">팔로우</button>
+            </li>
+            <li class="a-list-item">
+              <div class="avatar avatar-lg"><img src="https://picsum.photos/seed/follower-page-4/120/120" alt=""></div>
+              <div class="a-list-text">
+                <div class="a-list-name">오션뷰 펜션</div>
+                <div class="a-list-sub">@oceanview-stay</div>
+              </div>
+              <button class="btn btn-sm btn-line-dark a-follow-btn" type="button" onclick="toggleFollow(this)">팔로잉</button>
+            </li>
+            <li class="a-list-item">
+              <div class="avatar avatar-lg"><img src="https://picsum.photos/seed/follower-page-5/120/120" alt=""></div>
+              <div class="a-list-text">
+                <div class="a-list-name">그린리프 요가</div>
+                <div class="a-list-sub">@greenleaf-yoga</div>
+              </div>
+              <button class="btn btn-sm btn-fill-primary a-follow-btn" type="button" onclick="toggleFollow(this)">팔로우</button>
+            </li>
+            <li class="a-list-item">
+              <div class="avatar avatar-lg"><img src="https://picsum.photos/seed/follower-page-6/120/120" alt=""></div>
+              <div class="a-list-text">
+                <div class="a-list-name">미도리 초밥</div>
+                <div class="a-list-sub">@midori-sushi</div>
+              </div>
+              <button class="btn btn-sm btn-fill-primary a-follow-btn" type="button" onclick="toggleFollow(this)">팔로우</button>
+            </li>
+            <li class="a-list-item">
+              <div class="avatar avatar-lg"><img src="https://picsum.photos/seed/follower-page-7/120/120" alt=""></div>
+              <div class="a-list-text">
+                <div class="a-list-name">라온 미용실</div>
+                <div class="a-list-sub">@raon-hair</div>
+              </div>
+              <button class="btn btn-sm btn-line-dark a-follow-btn" type="button" onclick="toggleFollow(this)">팔로잉</button>
+            </li>
+          </ul>
+
+          <!-- 팔로잉: 내가 팔로우한 페이지 -->
+          <ul class="a-list-items" data-seg-panel="following" hidden>
+            <li class="a-list-item">
+              <div class="avatar avatar-lg"><img src="https://picsum.photos/seed/page-1/120/120" alt=""></div>
+              <div class="a-list-text">
+                <div class="a-list-name">엘린피부과의원</div>
+                <div class="a-list-sub">@ellin-derma</div>
+              </div>
+              <button class="btn btn-sm btn-line-dark a-follow-btn" type="button" onclick="toggleFollow(this)">팔로잉</button>
+            </li>
+            <li class="a-list-item">
+              <div class="avatar avatar-lg"><img src="https://picsum.photos/seed/page-2/120/120" alt=""></div>
+              <div class="a-list-text">
+                <div class="a-list-name">블루밍 플라워 카페</div>
+                <div class="a-list-sub">@blooming-cafe</div>
+              </div>
+              <button class="btn btn-sm btn-line-dark a-follow-btn" type="button" onclick="toggleFollow(this)">팔로잉</button>
+            </li>
+            <li class="a-list-item">
+              <div class="avatar avatar-lg"><img src="https://picsum.photos/seed/page-3/120/120" alt=""></div>
+              <div class="a-list-text">
+                <div class="a-list-name">제로플렉스 헬스클럽</div>
+                <div class="a-list-sub">@zeroplex-gym</div>
+              </div>
+              <button class="btn btn-sm btn-line-dark a-follow-btn" type="button" onclick="toggleFollow(this)">팔로잉</button>
+            </li>
+            <li class="a-list-item">
+              <div class="avatar avatar-lg"><img src="https://picsum.photos/seed/page-4/120/120" alt=""></div>
+              <div class="a-list-text">
+                <div class="a-list-name">브이스타 성형외과</div>
+                <div class="a-list-sub">@vstar-ps</div>
+              </div>
+              <button class="btn btn-sm btn-line-dark a-follow-btn" type="button" onclick="toggleFollow(this)">팔로잉</button>
+            </li>
+            <li class="a-list-item">
+              <div class="avatar avatar-lg"><img src="https://picsum.photos/seed/page-5/120/120" alt=""></div>
+              <div class="a-list-text">
+                <div class="a-list-name">모먼트 스튜디오</div>
+                <div class="a-list-sub">@moment-studio</div>
+              </div>
+              <button class="btn btn-sm btn-line-dark a-follow-btn" type="button" onclick="toggleFollow(this)">팔로잉</button>
+            </li>
+            <li class="a-list-item">
+              <div class="avatar avatar-lg"><img src="https://picsum.photos/seed/page-6/120/120" alt=""></div>
+              <div class="a-list-text">
+                <div class="a-list-name">노아 반려동물 병원</div>
+                <div class="a-list-sub">@noah-vet</div>
+              </div>
+              <button class="btn btn-sm btn-line-dark a-follow-btn" type="button" onclick="toggleFollow(this)">팔로잉</button>
+            </li>
+            <li class="a-list-item">
+              <div class="avatar avatar-lg"><img src="https://picsum.photos/seed/page-7/120/120" alt=""></div>
+              <div class="a-list-text">
+                <div class="a-list-name">뷰티랩 네일</div>
+                <div class="a-list-sub">@beautylab-nail</div>
+              </div>
+              <button class="btn btn-sm btn-line-dark a-follow-btn" type="button" onclick="toggleFollow(this)">팔로잉</button>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- ── SETTINGS 뷰: 상단 안내 배너 + 서브탭 + 제목 ── -->
+      <div class="a-view" id="view-settings" hidden>
+
+        <!-- 상단 안내 배너 2개 (이미지는 .set-banner-media 안 <img>에 넣으면 됩니다) -->
+        <div class="set-banners">
+          <!-- ① 문의 창구 (검정) -->
+          <button type="button" class="set-banner set-banner-dark" onclick="document.getElementById('cc-overlay').hidden=false">
+            <div class="set-banner-text">
+              <span class="set-banner-title">커넥티아에 궁금한 점을 물어보세요<i data-lucide="chevron-right"></i></span>
+              <div class="set-banner-contact">
+                <span class="set-banner-contact-row"><i data-lucide="mail"></i>contact@jober.io</span>
+                <span class="set-banner-contact-row"><i data-lucide="phone"></i>02-6402-0508</span>
+              </div>
+            </div>
+            <div class="set-banner-media set-banner-media-icon">
+              <img src="../../assets/banner-inquiry.svg" alt="">
+            </div>
+          </button>
+
+          <!-- ② 요금제 (프라이머리) -->
+          <button type="button" class="set-banner set-banner-primary" onclick="document.getElementById('pricing-overlay').hidden=false">
+            <div class="set-banner-text">
+              <span class="set-banner-title">더 많은 기능이 필요하신가요?<i data-lucide="chevron-right"></i></span>
+              <span class="set-banner-desc">요금제를 확인하고 프로로 업그레이드하세요</span>
+            </div>
+            <div class="set-banner-media set-banner-media-icon">
+              <img src="../../assets/banner-pricing.svg" alt="">
+            </div>
+          </button>
+        </div>
+
+        <nav class="a-subtabs">
+          <div class="a-subtabs-group">
+            <button class="a-subtab is-active">자료</button>
+            <button class="a-subtab">정체성</button>
+            <button class="a-subtab">대화</button>
+            <button class="a-subtab">커뮤니티</button>
+          </div>
+          <button class="btn btn-sm btn-weak-dark btn-pill a-subtab-advanced" type="button">고급 설정</button>
+        </nav>
+        <div class="a-placeholder">
+          <div class="a-placeholder-title">설정</div>
+        </div>
+      </div>
+
+      <!-- ── STATS 뷰: 통계 화면 임베드 (로컬 사본) ── -->
+      <div class="a-view" id="view-stats" hidden>
+        <iframe class="a-embed" src="embed-statistics.html" onload="sizeEmbeds()"></iframe>
+      </div>
+
+      <!-- ── CHAT 뷰: 제목만 ── -->
+      <div class="a-view" id="view-chat" hidden>
+        <div class="a-placeholder">
+          <div class="a-placeholder-title">대화목록</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 하단 탭바 -->
+    <nav class="a-tabbar" id="a-tabbar"></nav>
+
+    <!-- 프레임 스코프 토스트 -->
+    <div class="a-toast-container" id="a-toast-container"></div>
+  </section>
+
+  <!-- 문의 플로팅 버튼 (홈 외 탭에서만 표시) -->
+  <button class="a-inquiry-fab" type="button" aria-label="문의" onclick="document.getElementById('cc-overlay').hidden=false">
+    <i data-lucide="message-circle-question"></i>
+  </button>
+
+  <!-- ── 고객센터 오버레이 (배너 ① 클릭 시) ── -->
+  <div class="cc-overlay" id="cc-overlay" hidden>
+    <header class="cc-topbar">
+      <button class="icon-btn icon-btn-clear" type="button" aria-label="뒤로" onclick="document.getElementById('cc-overlay').hidden=true">
+        <i data-lucide="chevron-left"></i>
+      </button>
+    </header>
+    <div class="cc-body">
+      <h1 class="text-display">고객센터</h1>
+      <p class="cc-sub text-body">커넥티아 서비스에 궁금한 점을 친절하게 알려드립니다.</p>
+      <div class="cc-cards">
+        <button class="cc-card" type="button" onclick="showToast('AI 채팅 상담을 시작해요')">
+          <div class="cc-card-text">
+            <div class="cc-card-title">AI 채팅 상담</div>
+            <div class="cc-card-desc">24시간 언제든 바로 답변드려요</div>
+          </div>
+          <div class="cc-card-icon"><i data-lucide="message-circle"></i></div>
+        </button>
+        <button class="cc-card" type="button" onclick="showToast('상담원을 연결하고 있어요')">
+          <div class="cc-card-text">
+            <div class="cc-card-title">상담원 채팅 연결</div>
+            <div class="cc-card-desc">평일 10:00 – 18:00</div>
+          </div>
+          <div class="cc-card-icon"><i data-lucide="headset"></i></div>
+        </button>
+        <button class="cc-card" type="button" onclick="location.href='tel:02-6402-0508'">
+          <div class="cc-card-text">
+            <div class="cc-card-title">전화 연결</div>
+            <div class="cc-card-desc">02-6402-0508 · 평일 10:00 – 18:00</div>
+          </div>
+          <div class="cc-card-icon"><i data-lucide="phone"></i></div>
+        </button>
+        <button class="cc-card" type="button" onclick="location.href='mailto:contact@jober.io'">
+          <div class="cc-card-text">
+            <div class="cc-card-title">이메일 연락</div>
+            <div class="cc-card-desc">contact@jober.io</div>
+          </div>
+          <div class="cc-card-icon"><i data-lucide="mail"></i></div>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 요금제 오버레이 (배너 ② 클릭 시) ── -->
+  <div class="cc-overlay" id="pricing-overlay" hidden>
+    <header class="cc-topbar">
+      <button class="icon-btn icon-btn-clear" type="button" aria-label="뒤로" onclick="pricingBack()">
+        <i data-lucide="chevron-left"></i>
+      </button>
+    </header>
+    <iframe class="pricing-embed" src="../connectia-pricing-0807/index.html" title="요금제"></iframe>
+  </div>
+
+</div>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+  // ─────────── 탭바 렌더 (아이콘: Reicon Outline) ───────────
+  const NAV_ICONS_OUTLINE = {
+    home:     '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M9 17.25C8.58579 17.25 8.25 17.5858 8.25 18C8.25 18.4142 8.58579 18.75 9 18.75H15C15.4142 18.75 15.75 18.4142 15.75 18C15.75 17.5858 15.4142 17.25 15 17.25H9Z" fill="currentColor"/><path fill-rule="evenodd" clip-rule="evenodd" d="M12 1.25C11.2919 1.25 10.6485 1.45282 9.95055 1.79224C9.27585 2.12035 8.49642 2.60409 7.52286 3.20832L5.45628 4.4909C4.53509 5.06261 3.79744 5.5204 3.2289 5.95581C2.64015 6.40669 2.18795 6.86589 1.86131 7.46263C1.53535 8.05812 1.38857 8.69174 1.31819 9.4407C1.24999 10.1665 1.24999 11.0541 1.25 12.1672V13.7799C1.24999 15.6837 1.24998 17.1866 1.4027 18.3616C1.55937 19.567 1.88856 20.5401 2.63236 21.3094C3.37958 22.0824 4.33046 22.4277 5.50761 22.5914C6.64849 22.75 8.10556 22.75 9.94185 22.75H14.0581C15.8944 22.75 17.3515 22.75 18.4924 22.5914C19.6695 22.4277 20.6204 22.0824 21.3676 21.3094C22.1114 20.5401 22.4406 19.567 22.5973 18.3616C22.75 17.1866 22.75 15.6838 22.75 13.7799V12.1672C22.75 11.0541 22.75 10.1665 22.6818 9.4407C22.6114 8.69174 22.4646 8.05812 22.1387 7.46263C21.8121 6.86589 21.3599 6.40669 20.7711 5.95581C20.2026 5.5204 19.4649 5.06262 18.5437 4.49091L16.4771 3.20831C15.5036 2.60409 14.7241 2.12034 14.0494 1.79224C13.3515 1.45282 12.7081 1.25 12 1.25ZM8.27953 4.50412C9.29529 3.87371 10.0095 3.43153 10.6065 3.1412C11.1882 2.85833 11.6002 2.75 12 2.75C12.3998 2.75 12.8118 2.85833 13.3935 3.14119C13.9905 3.43153 14.7047 3.87371 15.7205 4.50412L17.7205 5.74537C18.6813 6.34169 19.3559 6.76135 19.8591 7.1467C20.3487 7.52164 20.6303 7.83106 20.8229 8.18285C21.0162 8.53589 21.129 8.94865 21.1884 9.58104C21.2492 10.2286 21.25 11.0458 21.25 12.2039V13.725C21.25 15.6959 21.2485 17.1012 21.1098 18.1683C20.9736 19.2163 20.717 19.8244 20.2892 20.2669C19.8649 20.7058 19.2871 20.9664 18.2858 21.1057C17.2602 21.2483 15.9075 21.25 14 21.25H10C8.09247 21.25 6.73983 21.2483 5.71422 21.1057C4.71286 20.9664 4.13514 20.7058 3.71079 20.2669C3.28301 19.8244 3.02642 19.2163 2.89019 18.1683C2.75149 17.1012 2.75 15.6959 2.75 13.725V12.2039C2.75 11.0458 2.75076 10.2286 2.81161 9.58104C2.87103 8.94865 2.98385 8.53589 3.17709 8.18285C3.36965 7.83106 3.65133 7.52164 4.14092 7.1467C4.6441 6.76135 5.31869 6.34169 6.27953 5.74537L8.27953 4.50412Z" fill="currentColor"/></svg>',
+    follow:   '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M9 1.25C6.37665 1.25 4.25 3.37665 4.25 6C4.25 8.62335 6.37665 10.75 9 10.75C11.6234 10.75 13.75 8.62335 13.75 6C13.75 3.37665 11.6234 1.25 9 1.25ZM5.75 6C5.75 4.20507 7.20507 2.75 9 2.75C10.7949 2.75 12.25 4.20507 12.25 6C12.25 7.79493 10.7949 9.25 9 9.25C7.20507 9.25 5.75 7.79493 5.75 6Z" fill="currentColor"/><path d="M15 2.25C14.5858 2.25 14.25 2.58579 14.25 3C14.25 3.41421 14.5858 3.75 15 3.75C16.2426 3.75 17.25 4.75736 17.25 6C17.25 7.24264 16.2426 8.25 15 8.25C14.5858 8.25 14.25 8.58579 14.25 9C14.25 9.41421 14.5858 9.75 15 9.75C17.0711 9.75 18.75 8.07107 18.75 6C18.75 3.92893 17.0711 2.25 15 2.25Z" fill="currentColor"/><path fill-rule="evenodd" clip-rule="evenodd" d="M3.67815 13.5204C5.07752 12.7208 6.96067 12.25 9 12.25C11.0393 12.25 12.9225 12.7208 14.3219 13.5204C15.7 14.3079 16.75 15.5101 16.75 17C16.75 18.4899 15.7 19.6921 14.3219 20.4796C12.9225 21.2792 11.0393 21.75 9 21.75C6.96067 21.75 5.07752 21.2792 3.67815 20.4796C2.3 19.6921 1.25 18.4899 1.25 17C1.25 15.5101 2.3 14.3079 3.67815 13.5204ZM4.42236 14.8228C3.26701 15.483 2.75 16.2807 2.75 17C2.75 17.7193 3.26701 18.517 4.42236 19.1772C5.55649 19.8253 7.17334 20.25 9 20.25C10.8267 20.25 12.4435 19.8253 13.5776 19.1772C14.733 18.517 15.25 17.7193 15.25 17C15.25 16.2807 14.733 15.483 13.5776 14.8228C12.4435 14.1747 10.8267 13.75 9 13.75C7.17334 13.75 5.55649 14.1747 4.42236 14.8228Z" fill="currentColor"/><path d="M18.1607 13.2674C17.7561 13.1787 17.3561 13.4347 17.2674 13.8393C17.1787 14.2439 17.4347 14.6439 17.8393 14.7326C18.6317 14.9064 19.2649 15.2048 19.6829 15.5468C20.1014 15.8892 20.25 16.2237 20.25 16.5C20.25 16.7507 20.1294 17.045 19.7969 17.3539C19.462 17.665 18.9475 17.9524 18.2838 18.1523C17.8871 18.2717 17.6624 18.69 17.7818 19.0867C17.9013 19.4833 18.3196 19.708 18.7162 19.5886C19.5388 19.3409 20.2743 18.9578 20.8178 18.4529C21.3637 17.9457 21.75 17.2786 21.75 16.5C21.75 15.6352 21.2758 14.912 20.6328 14.3859C19.9893 13.8593 19.1225 13.4783 18.1607 13.2674Z" fill="currentColor"/></svg>',
+    settings: '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 8.25C9.92893 8.25 8.25 9.92893 8.25 12C8.25 14.0711 9.92893 15.75 12 15.75C14.0711 15.75 15.75 14.0711 15.75 12C15.75 9.92893 14.0711 8.25 12 8.25ZM9.75 12C9.75 10.7574 10.7574 9.75 12 9.75C13.2426 9.75 14.25 10.7574 14.25 12C14.25 13.2426 13.2426 14.25 12 14.25C10.7574 14.25 9.75 13.2426 9.75 12Z" fill="currentColor"/><path fill-rule="evenodd" clip-rule="evenodd" d="M12 1.25C11.2954 1.25 10.6519 1.44359 9.94858 1.77037C9.26808 2.08656 8.48039 2.55304 7.49457 3.13685L6.74148 3.58283C5.75533 4.16682 4.96771 4.63324 4.36076 5.07944C3.73315 5.54083 3.25177 6.01311 2.90334 6.63212C2.55548 7.25014 2.39841 7.91095 2.32306 8.69506C2.24999 9.45539 2.24999 10.3865 2.25 11.556V12.444C2.24999 13.6135 2.24999 14.5446 2.32306 15.3049C2.39841 16.0891 2.55548 16.7499 2.90334 17.3679C3.25177 17.9869 3.73315 18.4592 4.36076 18.9206C4.96771 19.3668 5.75533 19.8332 6.74148 20.4172L7.4946 20.8632C8.48038 21.447 9.2681 21.9135 9.94858 22.2296C10.6519 22.5564 11.2954 22.75 12 22.75C12.7046 22.75 13.3481 22.5564 14.0514 22.2296C14.7319 21.9134 15.5196 21.447 16.5054 20.8632L17.2585 20.4172C18.2446 19.8332 19.0323 19.3668 19.6392 18.9206C20.2669 18.4592 20.7482 17.9869 21.0967 17.3679C21.4445 16.7499 21.6016 16.0891 21.6769 15.3049C21.75 14.5446 21.75 13.6135 21.75 12.4441V11.556C21.75 10.3866 21.75 9.45538 21.6769 8.69506C21.6016 7.91095 21.4445 7.25014 21.0967 6.63212C20.7482 6.01311 20.2669 5.54083 19.6392 5.07944C19.0323 4.63324 18.2447 4.16683 17.2585 3.58285L16.5054 3.13685C15.5196 2.55303 14.7319 2.08656 14.0514 1.77037C13.3481 1.44359 12.7046 1.25 12 1.25ZM8.22524 4.44744C9.25238 3.83917 9.97606 3.41161 10.5807 3.13069C11.1702 2.85676 11.5907 2.75 12 2.75C12.4093 2.75 12.8298 2.85676 13.4193 3.13069C14.0239 3.41161 14.7476 3.83917 15.7748 4.44744L16.4609 4.85379C17.4879 5.46197 18.2109 5.89115 18.7508 6.288C19.2767 6.67467 19.581 6.99746 19.7895 7.36788C19.9986 7.73929 20.1199 8.1739 20.1838 8.83855C20.2492 9.51884 20.25 10.378 20.25 11.5937V12.4063C20.25 13.622 20.2492 14.4812 20.1838 15.1614C20.1199 15.8261 19.9986 16.2607 19.7895 16.6321C19.581 17.0025 19.2767 17.3253 18.7508 17.712C18.2109 18.1089 17.4879 18.538 16.4609 19.1462L15.7748 19.5526C14.7476 20.1608 14.0239 20.5884 13.4193 20.8693C12.8298 21.1432 12.4093 21.25 12 21.25C11.5907 21.25 11.1702 21.1432 10.5807 20.8693C9.97606 20.5884 9.25238 20.1608 8.22524 19.5526L7.53909 19.1462C6.5121 18.538 5.78906 18.1089 5.24923 17.712C4.72326 17.3253 4.419 17.0025 4.2105 16.6321C4.00145 16.2607 3.88005 15.8261 3.81618 15.1614C3.7508 14.4812 3.75 13.622 3.75 12.4063V11.5937C3.75 10.378 3.7508 9.51884 3.81618 8.83855C3.88005 8.1739 4.00145 7.73929 4.2105 7.36788C4.419 6.99746 4.72326 6.67467 5.24923 6.288C5.78906 5.89115 6.5121 5.46197 7.53909 4.85379L8.22524 4.44744Z" fill="currentColor"/></svg>',
+    stats:    '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M12.0494 1.25H11.9506C11.2858 1.24997 10.7129 1.24994 10.2542 1.31161C9.76252 1.37771 9.29126 1.52677 8.90901 1.90901C8.52676 2.29126 8.3777 2.76252 8.31161 3.25416C8.24993 3.7129 8.24996 4.28577 8.25 4.95063L8.25 7.37804C8.01542 7.29512 7.76298 7.25001 7.5 7.25001H4.5C3.25736 7.25001 2.25 8.25737 2.25 9.50001V21.25H2C1.58579 21.25 1.25 21.5858 1.25 22C1.25 22.4142 1.58579 22.75 2 22.75H22C22.4142 22.75 22.75 22.4142 22.75 22C22.75 21.5858 22.4142 21.25 22 21.25H21.75V14.5C21.75 13.2574 20.7426 12.25 19.5 12.25H16.5C16.237 12.25 15.9846 12.2951 15.75 12.378L15.75 4.95064C15.75 4.28577 15.7501 3.71291 15.6884 3.25416C15.6223 2.76252 15.4732 2.29126 15.091 1.90902C14.7087 1.52677 14.2375 1.37771 13.7458 1.31161C13.2871 1.24994 12.7142 1.24997 12.0494 1.25ZM20.25 21.25V14.5C20.25 14.0858 19.9142 13.75 19.5 13.75H16.5C16.0858 13.75 15.75 14.0858 15.75 14.5V21.25H20.25ZM14.25 21.25V5.00001C14.25 4.2717 14.2484 3.80091 14.2018 3.45403C14.158 3.12873 14.0874 3.02677 14.0303 2.96967C13.9732 2.91258 13.8713 2.84197 13.546 2.79823C13.1991 2.7516 12.7283 2.75001 12 2.75001C11.2717 2.75001 10.8009 2.7516 10.454 2.79823C10.1287 2.84197 10.0268 2.91258 9.96967 2.96968C9.91258 3.02677 9.84197 3.12873 9.79823 3.45403C9.75159 3.80091 9.75 4.2717 9.75 5.00001V21.25H14.25ZM8.25 21.25V9.50001C8.25 9.08579 7.91421 8.75001 7.5 8.75001H4.5C4.08579 8.75001 3.75 9.08579 3.75 9.50001V21.25H8.25Z" fill="currentColor"/></svg>',
+    chat:     '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M8.367 1.25H15.633C16.7251 1.24999 17.5906 1.24999 18.2883 1.30699C19.0017 1.36527 19.6053 1.48688 20.1565 1.76772C21.0502 2.22312 21.7769 2.94978 22.2323 3.84355C22.5131 4.39472 22.6347 4.99834 22.693 5.71173C22.75 6.40935 22.75 7.27484 22.75 8.36698V12.7964C22.75 13.8124 22.75 14.6176 22.7005 15.2681C22.6499 15.9329 22.5444 16.4972 22.3002 17.0176C21.8292 18.0216 21.0216 18.8292 20.0176 19.3002C19.4972 19.5444 18.9329 19.6499 18.2681 19.7005C17.6176 19.75 16.8124 19.75 15.7964 19.75H15.7658C15.28 19.75 15.1838 19.7568 15.1069 19.7786C15.0012 19.8087 14.9033 19.8617 14.8203 19.9338C14.76 19.9862 14.7017 20.0631 14.4362 20.4699L13.9501 21.2146C13.7419 21.5335 13.5586 21.8145 13.3901 22.0275C13.2162 22.2473 12.9935 22.4815 12.6766 22.6144C12.2438 22.7959 11.7562 22.7959 11.3234 22.6144C11.0065 22.4815 10.7838 22.2473 10.6099 22.0275C10.4414 21.8145 10.2581 21.5335 10.05 21.2146L9.56384 20.4699C9.29832 20.0631 9.24004 19.9862 9.17973 19.9338C9.09671 19.8617 8.99885 19.8087 8.89307 19.7786C8.81623 19.7568 8.71998 19.75 8.23421 19.75H8.20358C7.18757 19.75 6.38237 19.75 5.73192 19.7005C5.06708 19.6499 4.50277 19.5444 3.98244 19.3002C2.9784 18.8292 2.17084 18.0216 1.69977 17.0176C1.45565 16.4972 1.35012 15.9329 1.29951 15.2681C1.24999 14.6176 1.25 13.8125 1.25 12.7965V8.367C1.24999 7.27486 1.24999 6.40936 1.30699 5.71173C1.36527 4.99834 1.48688 4.39472 1.76772 3.84355C2.22312 2.94978 2.94978 2.22312 3.84355 1.76772C4.39472 1.48688 4.99834 1.36527 5.71173 1.30699C6.40936 1.24999 7.27486 1.24999 8.367 1.25ZM5.83388 2.80201C5.21325 2.85271 4.829 2.94909 4.52453 3.10423C3.913 3.41582 3.41582 3.913 3.10423 4.52453C2.94909 4.829 2.85271 5.21325 2.80201 5.83388C2.75058 6.46326 2.75 7.26752 2.75 8.4V12.7658C2.75 13.8193 2.75051 14.5674 2.79518 15.1542C2.83926 15.7332 2.92311 16.0935 3.05774 16.3804C3.38005 17.0674 3.93259 17.6199 4.61956 17.9423C4.90651 18.0769 5.26684 18.1607 5.84579 18.2048C6.43261 18.2495 7.18074 18.25 8.23421 18.25C8.25977 18.25 8.28512 18.25 8.31026 18.2499C8.67656 18.2495 8.99882 18.2492 9.30354 18.3359C9.62087 18.4262 9.91446 18.5851 10.1635 18.8015C10.4027 19.0093 10.5785 19.2793 10.7784 19.5863C10.7921 19.6074 10.806 19.6286 10.8199 19.65L11.2882 20.3674C11.5195 20.7218 11.6656 20.9442 11.7864 21.097C11.861 21.1912 11.901 21.2256 11.9127 21.2348C11.969 21.2558 12.031 21.2558 12.0873 21.2348C12.099 21.2256 12.139 21.1912 12.2136 21.097C12.3344 20.9442 12.4805 20.7218 12.7118 20.3674L13.1801 19.65C13.194 19.6286 13.2079 19.6074 13.2216 19.5863C13.4215 19.2793 13.5973 19.0093 13.8365 18.8015C14.0855 18.5851 14.3791 18.4262 14.6965 18.3359C15.0012 18.2492 15.3234 18.2495 15.6897 18.2499C15.7149 18.25 15.7402 18.25 15.7658 18.25C16.8193 18.25 17.5674 18.2495 18.1542 18.2048C18.7332 18.1607 19.0935 18.0769 19.3804 17.9423C20.0674 17.6199 20.6199 17.0674 20.9423 16.3804C21.0769 16.0935 21.1607 15.7332 21.2048 15.1542C21.2495 14.5674 21.25 13.8193 21.25 12.7658V8.4C21.25 7.26752 21.2494 6.46327 21.198 5.83388C21.1473 5.21325 21.0509 4.829 20.8958 4.52453C20.5842 3.913 20.087 3.41582 19.4755 3.10423C19.171 2.94909 18.7867 2.85271 18.1661 2.80201C17.5367 2.75058 16.7325 2.75 15.6 2.75H8.4C7.26752 2.75 6.46327 2.75058 5.83388 2.80201Z" fill="currentColor"/></svg>',
+  };
+
+  const NAV_ICONS_FILLED = {
+    home:     '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M2.5192 7.82274C2 8.77128 2 9.91549 2 12.2039V13.725C2 17.6258 2 19.5763 3.17157 20.7881C4.34315 22 6.22876 22 10 22H14C17.7712 22 19.6569 22 20.8284 20.7881C22 19.5763 22 17.6258 22 13.725V12.2039C22 9.91549 22 8.77128 21.4808 7.82274C20.9616 6.87421 20.0131 6.28551 18.116 5.10812L16.116 3.86687C14.1106 2.62229 13.1079 2 12 2C10.8921 2 9.88939 2.62229 7.88403 3.86687L5.88403 5.10813C3.98695 6.28551 3.0384 6.87421 2.5192 7.82274ZM9 17.25C8.58579 17.25 8.25 17.5858 8.25 18C8.25 18.4142 8.58579 18.75 9 18.75H15C15.4142 18.75 15.75 18.4142 15.75 18C15.75 17.5858 15.4142 17.25 15 17.25H9Z" fill="currentColor"/></svg>',
+    follow:   '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="9.00098" cy="6" r="4" fill="currentColor"/><ellipse cx="9.00098" cy="17.001" rx="7" ry="4" fill="currentColor"/><path d="M20.9996 17.0005C20.9996 18.6573 18.9641 20.0004 16.4788 20.0004C17.211 19.2001 17.7145 18.1955 17.7145 17.0018C17.7145 15.8068 17.2098 14.8013 16.4762 14.0005C18.9615 14.0005 20.9996 15.3436 20.9996 17.0005Z" fill="currentColor"/><path d="M17.9996 6.00073C17.9996 7.65759 16.6565 9.00073 14.9996 9.00073C14.6383 9.00073 14.292 8.93687 13.9712 8.81981C14.4443 7.98772 14.7145 7.02522 14.7145 5.99962C14.7145 4.97477 14.4447 4.01294 13.9722 3.18127C14.2927 3.06446 14.6387 3.00073 14.9996 3.00073C16.6565 3.00073 17.9996 4.34388 17.9996 6.00073Z" fill="currentColor"/></svg>',
+    settings: '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M12.4277 2C11.3139 2 10.2995 2.6007 8.27081 3.80211L7.58466 4.20846C5.55594 5.40987 4.54158 6.01057 3.98466 7C3.42773 7.98943 3.42773 9.19084 3.42773 11.5937V12.4063C3.42773 14.8092 3.42773 16.0106 3.98466 17C4.54158 17.9894 5.55594 18.5901 7.58466 19.7915L8.27081 20.1979C10.2995 21.3993 11.3139 22 12.4277 22C13.5416 22 14.5559 21.3993 16.5847 20.1979L17.2708 19.7915C19.2995 18.5901 20.3139 17.9894 20.8708 17C21.4277 16.0106 21.4277 14.8092 21.4277 12.4063V11.5937C21.4277 9.19084 21.4277 7.98943 20.8708 7C20.3139 6.01057 19.2995 5.40987 17.2708 4.20846L16.5847 3.80211C14.5559 2.6007 13.5416 2 12.4277 2ZM8.67773 12C8.67773 9.92893 10.3567 8.25 12.4277 8.25C14.4988 8.25 16.1777 9.92893 16.1777 12C16.1777 14.0711 14.4988 15.75 12.4277 15.75C10.3567 15.75 8.67773 14.0711 8.67773 12Z" fill="currentColor"/></svg>',
+    stats:    '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M20 13.75C20 13.3358 19.6642 13 19.25 13H16.25C15.8358 13 15.5 13.3358 15.5 13.75V20.5H14V4.25C14 3.52169 13.9984 3.05091 13.9518 2.70403C13.908 2.37872 13.8374 2.27676 13.7803 2.21967C13.7232 2.16258 13.6213 2.09197 13.296 2.04823C12.9491 2.00159 12.4783 2 11.75 2C11.0217 2 10.5509 2.00159 10.204 2.04823C9.87872 2.09197 9.77676 2.16258 9.71967 2.21967C9.66258 2.27676 9.59196 2.37872 9.54823 2.70403C9.50159 3.05091 9.5 3.52169 9.5 4.25V20.5H8V8.75C8 8.33579 7.66421 8 7.25 8H4.25C3.83579 8 3.5 8.33579 3.5 8.75V20.5H2H1.75C1.33579 20.5 1 20.8358 1 21.25C1 21.6642 1.33579 22 1.75 22H21.75C22.1642 22 22.5 21.6642 22.5 21.25C22.5 20.8358 22.1642 20.5 21.75 20.5H21.5H20V13.75Z" fill="currentColor"/></svg>',
+    chat:     '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M16.4326 1.25H7.56739C6.61495 1.24999 5.85439 1.24999 5.24013 1.30018C4.61012 1.35165 4.06824 1.45963 3.57054 1.71322C2.77085 2.12068 2.12068 2.77085 1.71322 3.57054C1.45963 4.06824 1.35165 4.61012 1.30018 5.24013C1.24999 5.85439 1.24999 6.61494 1.25 7.56738V13.4326C1.24999 14.3851 1.24999 15.1456 1.30018 15.7599C1.35165 16.3899 1.45963 16.9318 1.71322 17.4295C2.12068 18.2291 2.77085 18.8793 3.57054 19.2868C4.06824 19.5404 4.61012 19.6483 5.24013 19.6998C5.85438 19.75 6.6149 19.75 7.5673 19.75H8.20054C8.72267 19.75 8.82573 19.7578 8.90786 19.783C9.00306 19.8122 9.09149 19.8601 9.16798 19.9238C9.23398 19.9788 9.29685 20.0609 9.58224 20.4981L10.0499 21.2146C10.258 21.5335 10.4414 21.8145 10.6099 22.0275C10.7838 22.2473 11.0065 22.4815 11.3234 22.6144C11.7562 22.7959 12.2438 22.7959 12.6766 22.6144C12.9935 22.4815 13.2162 22.2473 13.3901 22.0275C13.5585 21.8145 13.7419 21.5336 13.95 21.2147L14.4178 20.4981C14.7032 20.0609 14.766 19.9788 14.832 19.9238C14.9085 19.8601 14.9969 19.8122 15.0921 19.783C15.1743 19.7578 15.2773 19.75 15.7995 19.75H16.4326C17.385 19.75 18.1456 19.75 18.7599 19.6998C19.3899 19.6483 19.9318 19.5404 20.4295 19.2868C21.2291 18.8793 21.8793 18.2291 22.2868 17.4295C22.5404 16.9318 22.6483 16.3899 22.6998 15.7599C22.75 15.1456 22.75 14.3851 22.75 13.4327V7.56737C22.75 6.61496 22.75 5.85438 22.6998 5.24013C22.6483 4.61012 22.5404 4.06824 22.2868 3.57054C21.8793 2.77085 21.2291 2.12068 20.4295 1.71322C19.9318 1.45963 19.3899 1.35165 18.7599 1.30018C18.1456 1.24999 17.3851 1.24999 16.4326 1.25Z" fill="currentColor"/></svg>',
+  };
+
+  const TABS = [
+    { key: 'home',     view: 'view-home',     label: '홈' },
+    { key: 'follow',   view: 'view-follow',   label: '팔로우' },
+    { key: 'chat',     view: 'view-chat',     label: '대화목록', hasBadge: true },
+    { key: 'stats',    view: 'view-stats',    label: '통계' },
+    { key: 'settings', view: 'view-settings', label: '설정' },
+  ];
+  const NON_TAB_VIEWS = ['view-edit', 'view-preview'];
+  const ALL_VIEWS = TABS.map(t => t.view).concat(NON_TAB_VIEWS);
+
+  function renderTabbar(activeKey) {
+    const el = document.getElementById('a-tabbar');
+    el.innerHTML = TABS.map(t => `
+      <button class="a-tab ${t.key === activeKey ? 'is-active' : ''}"
+              type="button"
+              data-key="${t.key}"
+              onclick="goTab('${t.key}')">
+        <span class="a-tab-icon">
+          ${(t.key === activeKey ? NAV_ICONS_FILLED : NAV_ICONS_OUTLINE)[t.key]}
+          ${t.hasBadge ? '<span class="a-tab-dot" aria-label="새 알림"></span>' : ''}
+        </span>
+        <span class="a-tab-label">${t.label}</span>
+      </button>
+    `).join('');
+    window.lucide && lucide.createIcons();
+  }
+
+  function showView(activeViewId) {
+    ALL_VIEWS.forEach(id => {
+      const v = document.getElementById(id);
+      if (v) v.hidden = (id !== activeViewId);
+    });
+    const body = document.getElementById('a-body');
+    if (body) body.scrollTop = 0;
+  }
+
+  function goTab(key) {
+    const t = TABS.find(x => x.key === key);
+    if (!t) return;
+    showView(t.view);
+    document.body.dataset.activeTab = key;
+    renderTabbar(key);
+  }
+
+  function goEdit() {
+    showView('view-edit');
+    document.body.dataset.activeTab = 'edit';
+    renderTabbar(null);
+  }
+
+  function goPreview() {
+    showView('view-preview');
+    document.body.dataset.activeTab = 'preview';
+    renderTabbar(null);
+  }
+
+  function goAccount() {
+    location.href = 'avatar-shell-account.html';
+  }
+
+  // 팔로우 뷰 — 팔로워/팔로잉 탭 전환
+  function switchFollowSeg(seg) {
+    document.querySelectorAll('#view-follow .lp-tab').forEach(b => {
+      const active = b.dataset.seg === seg;
+      b.classList.toggle('active', active);
+      b.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+    document.querySelectorAll('[data-seg-panel]').forEach(p => {
+      p.hidden = (p.dataset.segPanel !== seg);
+    });
+  }
+
+  // 팔로우 상태 버튼 토글 (프로토타입 시각 처리)
+  function toggleFollow(btn) {
+    const following = btn.classList.contains('btn-line-dark');
+    if (following) {
+      btn.classList.remove('btn-line-dark');
+      btn.classList.add('btn-fill-primary');
+      btn.textContent = '팔로우';
+    } else {
+      btn.classList.remove('btn-fill-primary');
+      btn.classList.add('btn-line-dark');
+      btn.textContent = '팔로잉';
+    }
+  }
+
+  // 홈 프로필 팔로우 버튼 토글 (아이콘 유지)
+  function toggleHomeFollow(btn) {
+    const following = btn.textContent.includes('팔로잉');
+    btn.innerHTML = following
+      ? '<i data-lucide="user-plus" style="width:16px;height:16px"></i>팔로우'
+      : '<i data-lucide="check" style="width:16px;height:16px"></i>팔로잉';
+    window.lucide && lucide.createIcons();
+  }
+
+  function showToast(msg, ms = 2000) {
+    const c = document.getElementById('a-toast-container');
+    if (!c) return;
+    const t = document.createElement('div');
+    t.className = 'a-toast';
+    t.textContent = msg;
+    c.appendChild(t);
+    setTimeout(() => t.remove(), ms);
+  }
+
+  // 탭바 실제 높이에 맞춰 body 하단 여백을 정합
+  // (편집·미리보기 뷰는 CSS !important로 0으로 override 됨)
+  function sizeEmbeds() {
+    const tabbar = document.getElementById('a-tabbar');
+    const body = document.getElementById('a-body');
+    if (!tabbar || !body) return;
+    body.style.paddingBottom = tabbar.offsetHeight + 'px';
+  }
+  window.addEventListener('resize', sizeEmbeds);
+
+  // 임베드된 screens/*.html 문서에서 자체 목업 프레임 스타일을 벗겨
+  // 셸 안에서 자연스럽게 채워지도록 오버라이드
+  function initEmbed(iframe) {
+    try {
+      const doc = iframe.contentDocument;
+      if (!doc) return;
+      const style = doc.createElement('style');
+      style.textContent = `
+        body {
+          background: var(--color-bg) !important;
+          display: block !important;
+          min-height: 0 !important;
+          max-width: none !important;
+          margin: 0 !important;
+          height: 100% !important;
+        }
+        .frame {
+          width: 100% !important;
+          height: 100% !important;
+          max-height: none !important;
+          box-shadow: none !important;
+          border-radius: 0 !important;
+        }
+      `;
+      doc.head.appendChild(style);
+
+      // 프로필 편집: 셸 안에서는 취소·제목이 어색하므로 제거하고 미리보기 버튼으로 대체
+      if (iframe.src.includes('profile-edit')) {
+        const navbar = doc.querySelector('.navbar');
+        if (navbar) {
+          const actions = navbar.querySelectorAll('.navbar-action');
+          const title = navbar.querySelector('.navbar-title');
+          if (actions[0]) actions[0].remove();
+          if (title) title.remove();
+          const preview = doc.createElement('button');
+          preview.className = 'navbar-action';
+          preview.type = 'button';
+          preview.textContent = '미리보기';
+          navbar.insertBefore(preview, navbar.firstChild);
+        }
+      }
+    } catch (e) {}
+  }
+
+  document.body.dataset.activeTab = 'home';
+  renderTabbar('home');
+  lucide.createIcons();
+  requestAnimationFrame(sizeEmbeds);
+
+  // 요금제 오버레이 뒤로가기: 폼이 열려있으면 폼만 닫고, 아니면 오버레이를 닫는다
+  function pricingBack() {
+    var f = document.querySelector('#pricing-overlay iframe');
+    try {
+      var w = f.contentWindow;
+      var lead = w.document.getElementById('lead-overlay');
+      if (lead && !lead.hidden) { if (w.closeLead) w.closeLead(); else lead.hidden = true; return; }
+    } catch (e) {}
+    document.getElementById('pricing-overlay').hidden = true;
+  }
+</script>
+
+</body>
+</html>

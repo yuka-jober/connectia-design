@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI 채팅</title>
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+  :root{
+    --purple:#6C6CE6;
+    --purple-strong:#5E5EE0;
+    --bg:#EFEFF4;
+    --surface:#FFFFFF;
+    --text:#20202A;
+    --sub:#5E5E6B;
+    --muted:#9A9AA6;
+    --line:#EAEAF0;
+    --chip-border:#D6D6F3;
+    --input-bg:#F0F0F5;
+    --circle:#EDEDF2;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Malgun Gothic",sans-serif;
+    background:#c9ccd4;display:flex;justify-content:center;min-height:100dvh;
+    -webkit-font-smoothing:antialiased;
+  }
+  .frame{
+    width:390px;height:844px;max-height:100dvh;position:relative;overflow:hidden;
+    background:var(--bg);display:flex;flex-direction:column;
+  }
+  @media(max-width:439px){.frame{width:100vw;height:100dvh;max-height:none;}}
+  i[data-lucide]{display:inline-flex;flex-shrink:0;}
+
+  /* Floating controls (bar 없음) */
+  .floating{
+    position:absolute;top:0;left:0;right:0;z-index:10;
+    display:flex;align-items:flex-start;justify-content:space-between;gap:8px;
+    padding:12px 14px;pointer-events:none;
+  }
+  .floating>*{pointer-events:auto;}
+  .float-right{display:flex;align-items:center;gap:8px;}
+  .circle-btn{
+    width:40px;height:40px;border-radius:50%;border:none;background:var(--surface);
+    display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text);
+    box-shadow:0 4px 14px rgba(30,30,60,.14);
+  }
+  .circle-btn i{width:22px;height:22px;}
+  .ai-pill{
+    display:inline-flex;align-items:center;gap:10px;height:40px;padding:0 8px 0 16px;
+    background:var(--surface);border:none;border-radius:999px;
+    font-size:14.5px;font-weight:600;color:#3D3D48;cursor:pointer;box-shadow:0 4px 14px rgba(30,30,60,.14);
+  }
+
+  /* toggle */
+  .sw{position:relative;width:38px;height:22px;border-radius:999px;background:#D2D2DC;flex:none;transition:background .18s;}
+  .sw::after{content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:left .18s;}
+  .sw.on{background:var(--purple);}
+  .sw.on::after{left:18px;}
+  .sw.sm{width:36px;height:20px;}
+  .sw.sm::after{width:16px;height:16px;}
+  .sw.sm.on::after{left:18px;}
+
+  /* Dropdown menu */
+  .dropdown{
+    position:absolute;top:60px;right:14px;z-index:20;width:240px;
+    background:var(--surface);border-radius:16px;box-shadow:0 12px 32px rgba(28,28,60,.18);
+    padding:6px 4px;
+  }
+  .dropdown[hidden]{display:none;}
+  .dd-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 14px;}
+  .dd-label{font-size:15px;color:var(--text);font-weight:500;}
+  .dd-val{font-size:15px;color:var(--text);font-weight:700;}
+  .dd-val.neg{color:var(--text);}
+  .dd-divider{height:1px;background:var(--line);margin:4px 12px;}
+  .dd-lang{display:inline-flex;align-items:center;gap:4px;font-size:15px;color:var(--muted);font-weight:500;}
+  .dd-lang i{width:16px;height:16px;}
+
+  /* Chat */
+  .chat{flex:1;overflow-y:auto;padding:72px 14px 8px;display:flex;flex-direction:column;gap:16px;}
+  .row{display:flex;gap:8px;max-width:100%;}
+  .row.bot{align-self:stretch;}
+  .avatar{width:30px;height:30px;border-radius:50%;overflow:hidden;flex:none;background:var(--circle);margin-top:2px;}
+  .avatar img{width:100%;height:100%;object-fit:cover;display:block;}
+  .col{display:flex;flex-direction:column;gap:6px;min-width:0;max-width:80%;}
+  .name{font-size:13px;color:var(--sub);font-weight:600;padding-left:2px;}
+
+  .bubble{
+    border-radius:18px;padding:13px 16px;font-size:15.5px;line-height:1.62;word-break:break-word;
+  }
+  .bot .bubble{background:var(--surface);color:var(--text);box-shadow:0 1px 2px rgba(28,28,60,.05);border-bottom-left-radius:18px;}
+  .row.user{justify-content:flex-end;}
+  .user .bubble{background:var(--purple);color:#fff;max-width:78%;border-bottom-right-radius:6px;}
+  .bubble a{color:var(--purple);text-decoration:underline;text-underline-offset:2px;word-break:break-all;}
+
+  .feedback{display:flex;gap:14px;padding-left:6px;margin-top:2px;}
+  .fb-btn{background:none;border:none;cursor:pointer;color:var(--muted);padding:2px;display:inline-flex;}
+  .fb-btn i{width:22px;height:22px;}
+
+  /* Suggestion chips */
+  .chips{display:flex;gap:8px;overflow-x:auto;padding:8px 14px 10px;flex-shrink:0;scrollbar-width:none;}
+  .chips::-webkit-scrollbar{display:none;}
+  .chip{
+    flex:none;white-space:nowrap;padding:9px 15px;border-radius:999px;
+    background:var(--surface);border:1px solid var(--chip-border);color:var(--purple);
+    font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;
+  }
+
+  /* Composer */
+  .composer{flex-shrink:0;display:flex;align-items:center;gap:10px;padding:10px 14px calc(12px + env(safe-area-inset-bottom));background:var(--surface);border-top:1px solid var(--line);}
+  .msg-input{
+    flex:1;height:48px;padding:0 18px;border:none;border-radius:999px;background:var(--input-bg);
+    font-size:15px;color:var(--text);font-family:inherit;outline:none;
+  }
+  .msg-input::placeholder{color:var(--muted);}
+  .send-btn{
+    width:48px;height:48px;border-radius:50%;border:none;background:var(--input-bg);flex:none;
+    display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:#7B7B86;
+  }
+  .send-btn i{width:22px;height:22px;}
+
+  /* Language modal */
+  .dd-click{cursor:pointer;}
+  .modal-overlay{position:absolute;inset:0;z-index:50;background:rgba(20,20,40,.44);display:flex;align-items:center;justify-content:center;padding:24px;}
+  .modal-overlay[hidden]{display:none;}
+  .modal{width:100%;max-width:330px;max-height:76%;background:var(--surface);border-radius:20px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(20,20,50,.3);}
+  .modal-head{display:flex;align-items:center;justify-content:space-between;padding:18px 16px 10px;}
+  .modal-title{font-size:17px;font-weight:700;color:var(--text);}
+  .modal-x{background:none;border:none;cursor:pointer;color:var(--muted);padding:4px;display:inline-flex;}
+  .modal-x i{width:22px;height:22px;}
+  .lang-list{list-style:none;margin:0;padding:4px 8px 12px;overflow-y:auto;flex:1;}
+  .lang-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 12px;border-radius:10px;cursor:pointer;font-size:15.5px;color:var(--text);}
+  .lang-item:hover{background:var(--bg);}
+  .lang-item.sel{color:var(--purple);font-weight:600;}
+  .lang-item.sel i{width:20px;height:20px;color:var(--purple);}
+</style>
+</head>
+<body>
+<div class="frame" id="frame">
+
+  <!-- Topbar -->
+  <div class="floating">
+    <button class="circle-btn" type="button" aria-label="뒤로"><i data-lucide="chevron-left"></i></button>
+    <div class="float-right">
+      <button class="ai-pill" type="button" onclick="toggleAI(this)">AI 답변 받기 <span class="sw on" id="aiSw"></span></button>
+      <button class="circle-btn" type="button" aria-label="메뉴" onclick="toggleMenu(event)"><i data-lucide="more-vertical"></i></button>
+    </div>
+
+    <!-- Dropdown -->
+    <div class="dropdown" id="dropdown" hidden>
+      <div class="dd-row"><span class="dd-label">크레딧 잔액</span><span class="dd-val">800</span></div>
+      <div class="dd-row"><span class="dd-label">채팅 1건당</span><span class="dd-val neg">-50 크레딧</span></div>
+      <div class="dd-divider"></div>
+      <div class="dd-row"><span class="dd-label">큰글씨 모드</span><span class="sw sm on" onclick="this.classList.toggle('on')"></span></div>
+      <div class="dd-row dd-click" onclick="openLang()"><span class="dd-label">언어</span><span class="dd-lang"><span id="ddLangVal">한국어</span> <i data-lucide="chevron-right"></i></span></div>
+    </div>
+  </div>
+
+  <!-- Chat -->
+  <div class="chat" id="chat">
+    <div class="row bot">
+      <div class="avatar"><img src="https://i.pravatar.cc/80?img=47" alt=""></div>
+      <div class="col">
+        <div class="bubble">되게 간단해요 ㅎㅎ 😊<br><br>가입하고 원하는 주소 정하고 (connectia.bio/원하는이름), 종이 명함 촬영하거나 직접 정보 입력하고, 사진이랑 소개 추가한 다음에 링크나 QR 코드 공유하면 끝이에요! 총 4단계인데 진짜 금방 돼요~<br><br>그리고 무료로 시작할 수 있고 카드 등록도 필요 없어요 👍</div>
+      </div>
+    </div>
+
+    <div class="row user">
+      <div class="bubble">연락은 어떻게 하나요?</div>
+    </div>
+
+    <div class="row bot">
+      <div class="avatar"><img src="https://i.pravatar.cc/80?img=47" alt=""></div>
+      <div class="col">
+        <div class="name">양은주</div>
+        <div class="bubble">연락은 이렇게 하시면 돼요 😊<br><br>이메일은 <a href="#">yuka@jober.io</a> 이고, 전화는 <a href="#">010-6288-7867</a> 로 연락 주시면 돼요~! 편한 방법으로 연락 주세요 ㅎㅎ</div>
+        <div class="feedback">
+          <button class="fb-btn" type="button" aria-label="도움돼요"><i data-lucide="thumbs-up"></i></button>
+          <button class="fb-btn" type="button" aria-label="아쉬워요"><i data-lucide="thumbs-down"></i></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Suggestion chips -->
+  <div class="chips">
+    <button class="chip" type="button">요금제는 어떻게 되나요?</button>
+    <button class="chip" type="button">무료 기간이 있나요?</button>
+    <button class="chip" type="button">QR 코드는 어떻게 만드나요?</button>
+    <button class="chip" type="button">주소는 바꿀 수 있나요?</button>
+  </div>
+
+  <!-- Composer -->
+  <div class="composer">
+    <input class="msg-input" type="text" placeholder="메시지를 입력하세요...">
+    <button class="send-btn" type="button" aria-label="보내기"><i data-lucide="send"></i></button>
+  </div>
+
+  <!-- Language modal -->
+  <div class="modal-overlay" id="langModal" hidden onclick="if(event.target===this)closeLang()">
+    <div class="modal">
+      <div class="modal-head">
+        <span class="modal-title">언어 선택</span>
+        <button class="modal-x" type="button" onclick="closeLang()"><i data-lucide="x"></i></button>
+      </div>
+      <ul class="lang-list" id="langList"></ul>
+    </div>
+  </div>
+</div>
+
+<script>
+  lucide.createIcons();
+  function toggleAI(btn){ document.getElementById('aiSw').classList.toggle('on'); }
+  function toggleMenu(e){
+    e.stopPropagation();
+    document.getElementById('dropdown').hidden = !document.getElementById('dropdown').hidden;
+  }
+  document.addEventListener('click', function(e){
+    var dd = document.getElementById('dropdown');
+    if(!dd.hidden && !dd.contains(e.target) && !e.target.closest('[aria-label="메뉴"]')) dd.hidden = true;
+  });
+
+  // Language modal
+  var LANGS = ['한국어','English','日本語','中文(简体)','中文(繁體)','Монгол','Tiếng Việt','ภาษาไทย','Español','Français','Deutsch','Português','Bahasa Indonesia','Русский','العربية'];
+  var currentLang = '한국어';
+  var langListEl = document.getElementById('langList');
+  function renderLangs(filter){
+    var f = (filter||'').trim().toLowerCase();
+    langListEl.innerHTML = LANGS.filter(function(l){ return !f || l.toLowerCase().indexOf(f)!==-1; }).map(function(l){
+      var sel = l===currentLang;
+      return '<li class="lang-item'+(sel?' sel':'')+'" data-lang="'+l+'"><span>'+l+'</span>'+(sel?'<i data-lucide="check"></i>':'')+'</li>';
+    }).join('');
+    lucide.createIcons();
+  }
+  langListEl.addEventListener('click', function(e){
+    var li = e.target.closest('.lang-item');
+    if(li) selectLang(li.dataset.lang);
+  });
+  function openLang(){ document.getElementById('dropdown').hidden = true; renderLangs(); document.getElementById('langModal').hidden = false; }
+  function closeLang(){ document.getElementById('langModal').hidden = true; }
+  function filterLang(v){ renderLangs(v); }
+  function selectLang(l){ currentLang = l; document.getElementById('ddLangVal').textContent = l; closeLang(); }
+</script>
+</body>
+</html>
