@@ -1,0 +1,2430 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>프로필 편집 — 블록형</title>
+  <link rel="stylesheet" href="../tokens.css">
+  <link rel="stylesheet" href="../components.css">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font-base);
+      background: var(--color-bg);
+      color: var(--color-text);
+      max-width: 430px;
+      margin: 0 auto;
+      height: 100dvh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+
+      /* 전역 테마 (디자인 시트에서 런타임 교체) */
+      --page-bg:       var(--color-page-mist);
+      --cta-fill:      var(--color-brand-gradient);
+      --cta-solid:     var(--color-primary);
+      --btn-radius:    var(--r-md);
+      --card-radius:   var(--r-md);
+      --block-shadow:  var(--shadow-1);
+    }
+
+    i[data-lucide] { display: inline-flex; flex-shrink: 0; }
+
+    /* 토스트는 시트보다 위, 상단에 띄운다 (하단은 시트가 덮음) */
+    .toast-container { top: 104px; bottom: auto; z-index: 600; }
+
+    /* ── 상단 바 ── */
+    .navbar {
+      position: sticky; top: 0; z-index: 100;
+      background: var(--color-surface);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 16px; height: 52px;
+    }
+    .navbar-action {
+      font-size: var(--fs-body); font-weight: var(--fw-medium);
+      color: var(--color-text-muted); background: none; border: none;
+      cursor: pointer; padding: 8px 0; min-width: 44px; font-family: var(--font-base);
+      text-align: left;
+    }
+    .navbar-action.primary { color: var(--color-primary); font-weight: var(--fw-semibold); text-align: right; }
+    .navbar-action.primary:disabled { color: var(--color-text-muted); opacity: 0.5; cursor: default; }
+    .navbar-title { font-size: var(--fs-body-lg); font-weight: var(--fw-bold); color: var(--color-text); }
+
+    /* ── 툴 칩 행 ── */
+    .toolbar {
+      display: flex; gap: 8px;
+      padding: 0 16px 12px;
+      background: var(--color-surface);
+      border-bottom: 1px solid var(--color-border);
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .toolbar::-webkit-scrollbar { display: none; }
+    .tool-chip {
+      display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0;
+      height: 32px; padding: 0 12px; white-space: nowrap;
+      border: 1px solid var(--color-border); background: var(--color-surface);
+      border-radius: var(--r-full);
+      font-family: var(--font-base); font-size: var(--fs-label); font-weight: var(--fw-medium);
+      color: var(--color-text-sub); cursor: pointer;
+    }
+    .tool-chip svg { width: 14px; height: 14px; }
+    .tool-chip.is-active {
+      background: var(--color-text); border-color: var(--color-text); color: var(--color-on-primary);
+    }
+    .tool-chip:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ── 캔버스 무대 (스크롤 영역 + 대화하기 버튼) ── */
+    .stage {
+      flex: 1; min-height: 0;
+      display: flex; flex-direction: column;
+      transition: transform var(--motion-standard) var(--ease-standard);
+    }
+    .scroll-area {
+      flex: 1; min-height: 0; overflow-y: auto; padding-bottom: 120px; scroll-behavior: smooth;
+      background: var(--page-bg);
+    }
+    body.sheet-open .scroll-area { padding-bottom: 60vh; }
+
+    /* 디자인 시트가 열리면 상단바를 감추고 캔버스를 축소해 페이지를 목업처럼 보여준다.
+       transform을 .stage에 주면 안쪽의 .page-cta(position:fixed)도 함께 축소·클리핑된다. */
+    body.design-open .navbar,
+    body.design-open .toolbar { display: none; }
+    body.design-open .stage {
+      flex: none; height: 76vh; margin-top: 16px;
+      transform: scale(0.6); transform-origin: top center;
+      pointer-events: none; overflow: hidden;
+      box-shadow: var(--shadow-3);
+      border-radius: var(--r-lg);
+    }
+    body.design-open .scroll-area { overflow: hidden; padding-bottom: 0; }
+
+    /* ── 커버 + 프로필 헤드 ── */
+    .head { background: var(--page-bg); position: relative; }
+    /* 커버 이미지가 등록돼 있으면 이미지, 없으면 페이지 배경색이 그대로 보인다 */
+    .cover {
+      position: relative;
+      aspect-ratio: 9 / 5;
+      background-image: var(--cover-img, none);
+      background-size: cover; background-position: center;
+      background-color: var(--page-bg);
+    }
+    /* 그라데이션 배치 — mask 대신 배경색으로 흐려지는 오버레이를 얹는다.
+       mask 는 stacking context 를 만들어 커버가 프로필 사진을 덮어버리고,
+       지원하지 않는 환경에서는 효과가 아예 사라진다. */
+    /* 페이드는 커버 배경에 합치지 않고 별도 오버레이로 얹는다.
+       같은 요소에 이미지와 그라데이션을 겹치면 두 레이어가 각각 안티에일리어싱된 뒤
+       합성되면서 하단 경계에 잔선이 남고, 화면 배율에 따라 보였다 안 보였다 한다.
+       오버레이를 커버보다 2px 아래까지 내려 그 경계 자체를 덮는다. */
+    .cover-fade {
+      position: absolute; left: 0; right: 0; bottom: -2px; height: 64%;
+      background: linear-gradient(to bottom, transparent 0%, var(--page-bg) 76%, var(--page-bg) 100%);
+      pointer-events: none;
+    }
+
+
+    /* .cover 가 position:relative 라 위치 지정 레이어에 그려진다.
+       헤드 본문도 같은 레이어로 올려야 아바타·이름이 커버 위에 온다. */
+    .head-body { position: relative; z-index: 1; padding: 0 20px 20px; }
+    .head-avatar { display: block; box-shadow: 0 0 0 4px var(--color-surface); }
+    .head-avatar.is-empty {
+      background: var(--color-surface-sub); color: var(--color-text-muted);
+      display: flex; align-items: center; justify-content: center; cursor: pointer;
+    }
+    .head-avatar.is-empty svg { width: 28px; height: 28px; }
+    .head.lay-overlap .head-avatar { margin-top: -36px; }
+    .head.lay-stacked .head-avatar { margin-top: 16px; }
+    .head.lay-fade   .head-avatar { margin-top: -48px; }
+    .head.lay-none   .head-avatar { display: none; }
+    .head.al-center .head-body { text-align: center; }
+    .head.al-center .head-avatar { margin-left: auto; margin-right: auto; }
+    .head.al-center .head-handle-row { justify-content: center; }
+    .head.lay-none .head-body { margin-top: -24px; }
+
+    .head-name {
+      font-size: var(--fs-title); font-weight: var(--fw-bold); letter-spacing: var(--ls-title);
+      margin-top: 12px; background: none; border: none; padding: 0; cursor: pointer;
+      font-family: var(--font-base); color: var(--color-text); display: block; width: 100%; text-align: inherit;
+    }
+    .head-name.is-empty { color: var(--color-text-muted); font-weight: var(--fw-medium); }
+    .head-handle-row { display: flex; align-items: center; gap: 4px; margin-top: 4px; }
+    .head-handle { font-size: var(--fs-caption); color: var(--color-text-muted); }
+
+    /* 랜딩 탭 — board.html .lp-tabs. 실제 페이지의 요소이므로 편집 chrome이 떠 있는
+       기본 화면에서는 감추고, 미리보기와 디자인 목업(둘 다 body.preview)에서만 보여준다. */
+    .lp-tabs {
+      display: none;
+      border-bottom: 1px solid var(--color-border);
+      background: var(--page-bg);
+      padding: 0 20px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .lp-tabs::-webkit-scrollbar { display: none; }
+    body.preview .lp-tabs { display: flex; margin-bottom: 12px; }
+    .lp-tab {
+      flex: none;
+      padding: 12px 16px;
+      border: none;
+      background: transparent;
+      font-family: var(--font-base);
+      font-size: var(--fs-body);
+      font-weight: var(--fw-medium);
+      color: var(--color-text-muted);
+      cursor: pointer;
+      position: relative;
+      white-space: nowrap;
+    }
+    .lp-tab.active { color: var(--color-text); font-weight: var(--fw-semibold); }
+    .lp-tab.active::after {
+      content: '';
+      position: absolute;
+      left: 16px; right: 16px; bottom: -1px;
+      height: 2px;
+      background: var(--color-text);
+    }
+
+    /* 대화하기 버튼 (하단 고정 / 코너) — 프레임 안에 고정 */
+    /* 하단 고정·코너 CTA는 실제 페이지의 요소다. 편집 chrome이 떠 있는 기본 화면에서는 감추고,
+       미리보기와 디자인 목업(둘 다 body.preview)에서만 보여준다. 인라인은 블록이라 항상 보인다. */
+    .page-cta {
+      display: none;
+      position: fixed; left: 50%; transform: translateX(-50%); bottom: 0;
+      width: 100%; max-width: 430px; z-index: 80; pointer-events: none;
+    }
+    body.preview .page-cta { display: block; }
+    .cta-bar {
+      padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+      background: linear-gradient(to top, var(--page-bg) 64%, transparent);
+      pointer-events: auto;
+    }
+    .cta-fab {
+      position: absolute; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom));
+      height: 56px; padding: 0 20px; border-radius: var(--r-full); border: none;
+      background: var(--cta-fill); color: var(--cta-text, var(--color-on-primary));
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      font-family: var(--font-base); font-size: var(--fs-body-lg); font-weight: var(--fw-semibold);
+      white-space: nowrap;
+      box-shadow: var(--shadow-3); cursor: pointer; pointer-events: auto;
+    }
+    .cta-fab svg { width: 20px; height: 20px; }
+    /* 하단바 · 프로필 안 블록에 공통으로 쓰는 대화하기 버튼 색 */
+    .cta-btn { background: var(--cta-fill); color: var(--cta-text, var(--color-on-primary)); border: none; }
+
+    /* ── 블록 캔버스 ── */
+    .canvas { padding: 8px 0 0; position: relative; }
+
+    .ins {
+      display: flex; align-items: center; gap: 8px;
+      width: 100%; height: 32px; padding: 0 44px;
+      background: none; border: none; cursor: pointer;
+    }
+    .ins-line { flex: 1; height: 0; border-top: 1px dashed var(--color-border); }
+    .ins-plus {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 24px; height: 24px; border-radius: var(--r-full);
+      background: var(--color-surface);
+      color: var(--color-text-muted); flex-shrink: 0;
+    }
+    .ins-plus svg { width: 14px; height: 14px; }
+    .ins:hover .ins-plus { color: var(--color-primary); }
+
+    /* 세로 여백을 모든 블록에 동일하게 32px. 짧은 블록만 커지던 min-height 대신
+       .block-body 최소 높이로 레일(112px) 자리를 확보한다 → 삽입선까지 거리가 항상 같다 */
+    .block { display: flex; align-items: center; padding: 32px 44px; position: relative; }
+    .block.is-hidden .block-body { opacity: 0.4; }
+    .block.is-dragging .block-body { opacity: 0.4; }
+
+    .drop-line {
+      position: absolute; left: 44px; right: 44px; height: 2px;
+      background: var(--color-primary); border-radius: var(--r-full);
+      pointer-events: none; z-index: 4;
+    }
+    body.dragging { -webkit-user-select: none; user-select: none; }
+
+    /* 좌측 레일 — 아이콘은 작게, 탭 영역은 44px */
+    .rail {
+      position: absolute; right: 0; top: 0; bottom: 0; width: 44px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+    }
+    .rail-btn {
+      display: flex; align-items: center; justify-content: center;
+      width: 44px; height: 44px; padding: 0;
+      background: none; border: none; cursor: pointer;
+      color: var(--color-text-muted);
+    }
+    .rail-btn svg { width: 20px; height: 20px; }
+    .rail-btn:disabled { opacity: 0.25; cursor: not-allowed; }
+    .rail-grip {
+      display: flex; align-items: center; justify-content: center;
+      width: 44px; height: 24px; color: var(--color-border); cursor: grab;
+      touch-action: none;
+    }
+    .rail-grip svg { width: 16px; height: 16px; }
+
+    .block-body {
+      flex: 1; min-width: 0; position: relative; min-height: 48px;
+      display: flex; flex-direction: column; justify-content: center;
+    }
+    .block.is-active .block-body {
+      outline: 2px solid var(--color-primary);
+      outline-offset: 8px;
+      border-radius: var(--r-xs);
+    }
+    .block-flag { position: absolute; top: -20px; right: 0; z-index: 2; }
+    .block-tag  { position: absolute; top: -20px; left: 0; z-index: 2; }
+
+    /* ── 빈 캔버스 안내 ── */
+    .canvas-empty {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 8px; padding: 48px 24px;
+    }
+    .canvas-empty-t { font-size: var(--fs-title); font-weight: var(--fw-bold); color: var(--color-text); letter-spacing: var(--ls-title); }
+    .canvas-empty-s { font-size: var(--fs-body); color: var(--color-text-muted); margin-bottom: 12px; }
+    .canvas-empty .btn svg { width: 18px; height: 18px; }
+    body.preview .canvas-empty { display: none; }
+
+    /* ── 블록 렌더링 결과 ── */
+    .lb {
+      display: flex; align-items: center; justify-content: center;
+      /* 썸네일형(.lc = 8 + 56 + 8)과 높이를 맞춘다 */
+      width: 100%; height: 72px; padding: 0 16px;
+      border-radius: var(--btn-radius);
+      font-size: var(--fs-body-lg); font-weight: var(--fw-semibold);
+      cursor: pointer; border: 1px solid transparent; font-family: var(--font-base);
+      text-align: center;
+    }
+    .lb-plain   { background: var(--color-surface); color: var(--color-text); box-shadow: var(--block-shadow); }
+
+    .lc {
+      position: relative;
+      display: flex; align-items: center; gap: 12px;
+      width: 100%; padding: 8px 16px 8px 8px;
+      background: var(--color-surface); border-radius: var(--card-radius);
+      box-shadow: var(--block-shadow); cursor: pointer; text-align: left; border: none;
+      font-family: var(--font-base);
+    }
+    .lc-thumb {
+      width: 56px; height: 56px; border-radius: var(--r-xs); overflow: hidden;
+      background: var(--color-surface-sub); flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; color: var(--color-text-muted);
+    }
+    .lc-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .lc-thumb svg { width: 20px; height: 20px; }
+    /* 제목은 썸네일 옆이 아니라 카드 정중앙에 — 일반 버튼형과 축이 맞도록
+       좌우 인셋을 썸네일 폭(8+56+12)만큼 대칭으로 준다 */
+    .lc-title {
+      position: absolute; left: 76px; right: 76px; top: 0; bottom: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: var(--fs-body-lg); font-weight: var(--fw-semibold); color: var(--color-text);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+
+    /* 카드형 — 이벤트 배너처럼 위에 썸네일이 크게 */
+    .lcard {
+      width: 100%; background: var(--color-surface); border-radius: var(--card-radius);
+      overflow: hidden; box-shadow: var(--block-shadow); border: none; padding: 0;
+      text-align: left; font-family: var(--font-base); cursor: pointer;
+    }
+    .lcard-img {
+      width: 100%; aspect-ratio: 16 / 9; background: var(--color-surface-sub);
+      display: flex; align-items: center; justify-content: center; color: var(--color-text-muted);
+    }
+    .lcard-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .lcard-img svg { width: 24px; height: 24px; }
+    .lcard-title { padding: 12px 16px; font-size: var(--fs-body-lg); font-weight: var(--fw-semibold); color: var(--color-text); }
+
+    .text-block { width: 100%; padding: 4px 0; text-align: left; background: none; border: none; cursor: pointer; font-family: var(--font-base); }
+    .text-block .text-p { font-size: var(--fs-body-lg); line-height: var(--lh-body-lg); color: var(--color-text); white-space: pre-wrap; }
+    .text-block .lp-section-title + .text-p { margin-top: 12px; }
+
+
+    /* 구분선은 편집 항목이 없다 — 시트 대신 우측 휴지통으로 삭제만 한다.
+       선은 다른 블록 본문과 같은 폭(블록 열 전체), 휴지통은 좌측 레일과 대칭으로
+       비어 있던 우측 거터(44px)에 절대배치한다 → 선이 짧아지거나 밀리지 않는다 */
+    .div-block { width: 100%; padding: 16px 0; }
+    .div-block span { display: block; width: 100%; height: 1px; background: var(--color-border); }
+
+    /* 아이콘이 많아지면 거터를 넘지 않고 블록 열 안에서 가로로 잘린다 (이벤트 캐러셀과 동일) */
+    .sns-block {
+      display: flex; gap: 12px; width: 100%; background: none; border: none;
+      padding: 4px 0; cursor: pointer;
+      overflow-x: auto; scrollbar-width: none;
+    }
+    .sns-block::-webkit-scrollbar { display: none; }
+    body.balign-center .sns-block { justify-content: center; }
+    body.balign-center .text-block .text-p,
+    body.balign-center .text-block .lp-section-title { text-align: center; }
+    /* SNS 타일 — 브랜드 마크는 인라인 SVG(fill=currentColor)로 그린다 */
+    .sns-tile {
+      width: 52px; height: 52px; border-radius: var(--r-sm);
+      background: var(--color-surface-veil);
+      display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .sns-tile-ico {
+      width: 28px; height: 28px; display: block;
+      color: var(--color-text);
+    }
+    .sns-tile-ico svg { width: 100%; height: 100%; display: block; }
+    .sns-add {
+      width: 52px; height: 52px; border-radius: var(--r-sm);
+      border: 1.5px dashed var(--color-border); color: var(--color-text-muted);
+      background: transparent; display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0; cursor: pointer;
+    }
+    .sns-add svg { width: 16px; height: 16px; }
+
+    /* ── 연락처 블록 ── */
+    .ct-list { width: 100%; display: flex; flex-direction: column; gap: 12px; }
+    .ct-row { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .ct-icon { display: inline-flex; color: var(--color-text-muted); flex-shrink: 0; }
+    .ct-icon svg { width: 18px; height: 18px; }
+    .ct-val { font-size: var(--fs-body-lg); color: var(--color-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* ── 링크 모음 블록 ── */
+    .ib-list { width: 100%; display: flex; flex-direction: column; gap: 12px; }
+    .ib-card {
+      display: flex; align-items: center; gap: 20px;
+      padding: 16px 20px; background: var(--color-surface-veil); border-radius: var(--card-radius);
+    }
+    .ib-ico { display: inline-flex; color: var(--color-text); flex-shrink: 0; }
+    .ib-ico svg { width: 20px; height: 20px; }
+    .ib-title { flex: 1; min-width: 0; font-size: var(--fs-body-lg); font-weight: var(--fw-semibold); color: var(--color-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ib-title.is-ph { color: var(--color-text-muted); font-weight: var(--fw-regular); }
+    .ib-chev { display: inline-flex; color: var(--color-text-muted); flex-shrink: 0; }
+    .ib-chev svg { width: 20px; height: 20px; }
+
+    /* ══════════════════════════════════════════════════════════
+       컬렉션 블록 — screens/board.html 원본 마크업·스타일 그대로.
+       방문자 화면과 UI가 갈리면 안 되므로 전역 모서리(--card-radius)
+       설정의 영향을 받지 않고 board.html의 radius를 고정으로 쓴다.
+       ══════════════════════════════════════════════════════════ */
+    .lp-section-title { font-weight: var(--fw-semibold); font-size: var(--fs-heading); color: var(--color-text-sub); letter-spacing: var(--ls-heading); }
+
+    /* ── 이벤트: 가로 배너 캐러셀 ── */
+    .lp-banner-section { width: 100%; display: flex; flex-direction: column; gap: 12px; }
+    .lp-banner-scroll {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      padding-bottom: 4px;
+      scrollbar-width: none;
+    }
+    .lp-banner-scroll::-webkit-scrollbar { display: none; }
+    .lp-banner-card {
+      flex: 0 0 240px;
+      scroll-snap-align: start;
+      display: flex;
+      flex-direction: column;
+      cursor: pointer;
+      background: var(--color-surface);
+      border: none;
+      border-radius: var(--r-md);
+      overflow: hidden;
+      padding: 0;
+      text-align: left;
+      font-family: var(--font-base);
+    }
+    .lp-banner-img {
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      background: var(--color-surface-sub);
+      position: relative;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .lp-banner-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .lp-banner-text { padding: 12px; display: flex; flex-direction: column; gap: 4px; }
+    .lp-banner-title + .lp-banner-date,
+    .lp-banner-title + .lp-banner-desc { margin-top: 4px; }
+    .lp-banner-title {
+      font-size: var(--fs-body-lg);
+      font-weight: var(--fw-semibold);
+      color: var(--color-text);
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .lp-banner-desc {
+      font-size: var(--fs-caption);
+      color: var(--color-text-muted);
+      line-height: 1.45;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .lp-banner-desc.lp-banner-desc-1 { -webkit-line-clamp: 1; }
+    .lp-banner-applicants {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      line-height: 1.3;
+      overflow: hidden;
+    }
+    .lp-banner-img .lp-banner-applicants {
+      position: absolute;
+      bottom: 8px;
+      left: 8px;
+      z-index: 1;
+      padding: 4px 8px;
+      border-radius: var(--r-full);
+      background: var(--color-surface-glass);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      box-shadow: var(--shadow-1);
+    }
+    .lp-banner-img .lp-banner-count { color: var(--color-text); }
+    .lp-banner-avatars { display: inline-flex; align-items: center; }
+    .lp-banner-avatars .avatar {
+      width: 18px;
+      height: 18px;
+      border: 1.5px solid var(--color-surface);
+      margin-left: -8px;
+      background: var(--color-surface-sub);
+      overflow: hidden;
+    }
+    .lp-banner-avatars .avatar:first-child { margin-left: 0; }
+    .lp-banner-avatars .avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .lp-banner-count {
+      font-size: var(--fs-caption);
+      color: var(--color-text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .lp-banner-count b { font-weight: var(--fw-semibold); }
+    .lp-banner-date {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: var(--fs-caption);
+      color: var(--color-text-muted);
+      line-height: 1.3;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .lp-banner-date i[data-lucide],
+    .lp-banner-date svg { width: 12px; height: 12px; }
+
+    /* ── 게시판: 카드로 묶인 리스트 ── */
+    .lp-post-section { width: 100%; display: flex; flex-direction: column; gap: 16px; }
+    .lp-post-list { background: var(--color-surface); border-radius: var(--r-md); border: 1px solid var(--color-border); overflow: hidden; width: 100%; }
+    .lp-post { display: flex; align-items: stretch; width: 100%; min-height: 72px; border-bottom: 1px solid var(--color-border); cursor: pointer; }
+    .lp-post:last-child { border-bottom: none; }
+    .lp-post-img { width: 48px; height: 48px; align-self: center; margin: 8px 12px 8px 0; border-radius: var(--r-sm); overflow: hidden; flex-shrink: 0; background: var(--color-bg); display: flex; align-items: center; justify-content: center; order: 2; }
+    .lp-post-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .lp-post-body { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 4px; padding: 12px; min-width: 0; }
+    .lp-post-tags { display: flex; gap: 8px; align-items: center; }
+    .lp-post-title { font-size: var(--fs-body); font-weight: var(--fw-semibold); color: var(--color-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .lp-post-preview { font-size: var(--fs-caption); color: var(--color-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* ── 리뷰: 별점 요약 + 가로 텍스트 카드 ── */
+    .lp-review-section { width: 100%; display: flex; flex-direction: column; gap: 12px; }
+    .lp-star-row { display: flex; align-items: center; gap: 4px; }
+    .lp-star-row i[data-lucide],
+    .lp-star-row svg { width: 14px; height: 14px; color: var(--color-primary); fill: var(--color-primary); }
+    .lp-star-rate { font-size: var(--fs-body-lg); font-weight: var(--fw-semibold); color: var(--color-text); }
+    .lp-star-count { font-size: var(--fs-caption); color: var(--color-text-muted); }
+    .lp-review-cards {
+      display: flex; gap: 12px; overflow-x: auto;
+      padding-bottom: 4px;
+      scrollbar-width: none;
+    }
+    .lp-review-cards::-webkit-scrollbar { display: none; }
+    .lp-review-card { background: var(--color-surface); border-radius: var(--r-sm); padding: 16px; width: 240px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; }
+    .lp-review-stars { display: flex; gap: 4px; }
+    .lp-review-stars svg { width: 16px; height: 16px; color: var(--color-primary); fill: currentColor; }
+    .lp-review-stars svg.is-off { color: var(--color-star-empty); }
+    .lp-review-text { font-size: var(--fs-label); color: var(--color-text); line-height: var(--lh-caption); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    .lp-review-meta { font-size: var(--fs-badge); color: var(--color-text-muted); display: flex; gap: 4px; }
+
+    /* ── 갤러리: board.html 원본 (격자 gap 2px는 board.html 값 그대로) ── */
+    .lp-gallery-section { display: flex; flex-direction: column; gap: 12px; width: 100%; }
+    .lp-gallery-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; }
+    .lp-gallery-cell {
+      position: relative; aspect-ratio: 4 / 5; overflow: hidden;
+      background: var(--color-surface-sub); border: none; padding: 0; cursor: pointer;
+    }
+    .lp-gallery-cell img,
+    .lp-gallery-cell video { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .lp-gallery-cell-icon {
+      position: absolute; top: 8px; right: 8px;
+      width: 16px; height: 16px;
+      color: var(--color-on-primary); fill: currentColor;
+      filter: drop-shadow(0 1px 2px var(--color-scrim));
+    }
+    .lp-gallery-carousel { display: flex; gap: 8px; overflow-x: auto; width: 100%; padding-bottom: 4px; scrollbar-width: none; }
+    .lp-gallery-carousel::-webkit-scrollbar { display: none; }
+    .lp-gallery-carousel .lp-gallery-cell { flex: 0 0 auto; width: 260px; aspect-ratio: 16 / 9; border-radius: var(--r-md); }
+    /* 세로 — 전체 폭 이미지를 위아래로 쌓는다 */
+    .lp-gallery-stack { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+    .lp-gallery-stack .lp-gallery-cell { width: 100%; aspect-ratio: 4 / 3; border-radius: var(--r-md); }
+
+    .gal-empty {
+      width: 100%; border: 1.5px dashed var(--color-border); border-radius: var(--r-md);
+      padding: 24px; display: flex; align-items: center; justify-content: center;
+      color: var(--color-text-muted);
+    }
+    .gal-empty svg { width: 24px; height: 24px; }
+
+
+    .coll-empty {
+      border: 1.5px dashed var(--color-border); border-radius: var(--r-md);
+      padding: 24px 16px; text-align: center;
+      font-size: var(--fs-body); color: var(--color-text-muted);
+    }
+
+    /* ── 미리보기 모드 ── */
+    body.preview .rail,
+    body.preview .ins,
+    body.preview .block-flag,
+    body.preview .block-tag,
+    body.preview .block.is-hidden { display: none; }
+    body.preview .block.is-empty-coll { display: none; }
+    body.preview .block { padding: 0 20px; }
+    body.preview .block-body { min-height: 0; }
+    /* 미리보기·실제 페이지에서만 카드가 화면 오른쪽 끝까지 흐른다 (board.html과 동일).
+       편집 캔버스에서는 레일 거터를 침범하지 않도록 블록 열 안에서 잘린다. */
+    body.preview .lp-banner-scroll,
+    body.preview .lp-gallery-carousel,
+    body.preview .lp-review-cards { margin-right: -20px; }
+    body.preview .block.is-active .block-body { outline: none; }
+    body.preview .canvas { display: flex; flex-direction: column; gap: 28px; }
+    body.preview .head-name { cursor: default; }
+
+    /* ── 레이어 (시트 / 전체화면 / 다이얼로그) ── */
+    .layer {
+      position: fixed; top: 0; bottom: 0; left: 50%; transform: translateX(-50%);
+      width: 100%; max-width: 430px; z-index: 500; pointer-events: none;
+    }
+    .layer.on { pointer-events: auto; }
+    .layer-slide { overflow: hidden; }
+    .layer.layer-nodim, .layer.layer-nodim.on { pointer-events: none; }
+    .layer-nodim .bottom-sheet { pointer-events: auto; }
+
+    .layer .bottom-sheet-overlay { opacity: 0; pointer-events: none; transition: opacity var(--motion-standard) var(--ease-enter); }
+    .layer.on .bottom-sheet-overlay { opacity: 1; pointer-events: auto; }
+    .layer .bottom-sheet { transform: translateY(100%); transition: transform var(--motion-standard) var(--ease-enter); }
+    .layer.on .bottom-sheet { transform: translateY(0); }
+
+    .layer .dialog-overlay { opacity: 0; pointer-events: none; transition: opacity var(--motion-standard) var(--ease-enter); }
+    .layer.on .dialog-overlay { opacity: 1; pointer-events: auto; }
+
+    #layer-snspick { z-index: 520; }
+    #layer-autofill { z-index: 520; }
+    .autofill-actions { display: flex; flex-direction: column; gap: 8px; }
+    #layer-name    { z-index: 540; }
+    #layer-confirm { z-index: 560; }
+
+    .sheet-panel {
+      display: flex; flex-direction: column;
+      padding: 8px 0 0;
+      max-height: 88%;
+    }
+    .sheet-half { height: 52%; }
+    .sheet-tall { height: 64%; }
+
+    .sheet-head {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 8px; padding: 4px 20px 12px; border-bottom: 1px solid var(--color-border);
+    }
+    .sheet-head-title { font-size: var(--fs-body-lg); font-weight: var(--fw-bold); color: var(--color-text); }
+    .sheet-action {
+      background: none; border: none; cursor: pointer; font-family: var(--font-base);
+      font-size: var(--fs-body); font-weight: var(--fw-medium); color: var(--color-text-muted);
+      padding: 8px 0; min-width: 44px; text-align: left;
+    }
+    .sheet-action.primary { color: var(--color-primary); font-weight: var(--fw-semibold); text-align: right; }
+    .sheet-body { flex: 1; overflow-y: auto; padding: 16px 20px calc(16px + env(safe-area-inset-bottom)); }
+
+    /* 시트 내부 폼 */
+    .field-label { margin: 12px 0 8px; }
+    .field-label:first-child { margin-top: 0; }
+    .opt-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .opt {
+      flex: 1 1 0; min-width: 80px; height: 40px; padding: 0 12px;
+      border: 1px solid var(--color-border); background: var(--color-surface);
+      border-radius: var(--r-sm); cursor: pointer; font-family: var(--font-base);
+      font-size: var(--fs-label); font-weight: var(--fw-medium); color: var(--color-text-sub);
+    }
+    .opt.is-active { border-color: var(--color-primary); background: var(--color-primary-light); color: var(--color-primary); font-weight: var(--fw-semibold); }
+    .opt-row-2 .opt { flex: 0 0 calc(50% - 4px); }
+
+    .switch-row {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; padding: 12px 0;
+    }
+    .switch-label { font-size: var(--fs-body-lg); font-weight: var(--fw-medium); color: var(--color-text); }
+
+    /* [라벨] ......... [AI 학습 (토글)] — 항목별·블록 단위 AI 학습 공통 행 */
+    .label-row {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; margin: 12px 0 8px;
+    }
+    .label-row:first-child { margin-top: 0; }
+    .label-row .field-label { margin: 0; }
+    .ai-toggle { display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0; }
+    .ai-toggle-label { font-size: var(--fs-caption); color: var(--color-text-sub); }
+    /* 여러 항목이 있는 블록은 항목 안에서만 간격을 갖는다 (리스트 간격은 부모가 담당) */
+    /* padding-right 는 아래 줄 끝의 삭제 버튼(32px + gap 8px)만큼 당겨
+       AI 학습 토글이 인풋 오른쪽 끝에 맞도록 하는 값 */
+    .sns-edit-item .label-row,
+    .kv-item .label-row { margin: 0 0 8px; padding-right: 40px; }
+
+    .sheet-divider { height: 1px; background: var(--color-border); margin: 12px 0; border: none; }
+
+    /* 리치 텍스트 — 툴바와 입력 영역을 한 판으로 묶고 글자수는 안쪽 우하단에 */
+    .rt { margin-top: 12px; border: 1px solid var(--color-border); border-radius: var(--r-sm); overflow: hidden; }
+    .rt-bar { display: flex; gap: 4px; padding: 8px 12px; background: var(--color-surface-sub); border-bottom: 1px solid var(--color-border); }
+    .rt-body { position: relative; background: var(--color-surface); }
+    .rt-area {
+      min-height: 96px; max-height: 240px; overflow-y: auto;
+      padding: 12px 16px 32px;
+      font-family: var(--font-base); font-size: var(--fs-body-lg);
+      line-height: var(--lh-body-lg); color: var(--color-text); outline: none;
+    }
+    .rt-area:empty::before { content: attr(data-ph); color: var(--color-text-muted); }
+    .rt-count { position: absolute; right: 16px; bottom: 8px; font-size: var(--fs-caption); color: var(--color-text-muted); pointer-events: none; }
+
+    .goto-full {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      width: 100%; height: 48px; padding: 0 16px; margin: 12px 0 4px;
+      background: var(--color-primary-light); border: none; border-radius: var(--r-sm);
+      color: var(--color-primary); font-family: var(--font-base);
+      font-size: var(--fs-body-lg); font-weight: var(--fw-semibold); cursor: pointer;
+    }
+    .goto-full svg { width: 16px; height: 16px; }
+
+    /* SNS 편집 행 */
+    .sns-edit-list { display: flex; flex-direction: column; gap: 20px; margin-bottom: 16px; }
+    .sns-edit-row { display: flex; align-items: center; gap: 8px; }
+    .sns-edit-row .id-field { flex: 1; min-width: 0; }
+    .id-field {
+      display: flex; align-items: center;
+      border: 1px solid var(--color-input); border-radius: var(--r-sm);
+      background: var(--color-surface); padding-left: 12px;
+    }
+    .id-field .id-prefix { font-size: var(--fs-body-lg); color: var(--color-text-muted); flex-shrink: 0; }
+    .id-field .input { border: none; background: none; padding-left: 4px; flex: 1; min-width: 0; }
+    /* 편집 행은 인풋 높이(40px)에 맞춘다 — 타일 모양·색은 캔버스와 동일 */
+    .sns-edit-row .sns-tile { width: 40px; height: 40px; }
+    .sns-edit-row .sns-tile-ico { width: 22px; height: 22px; }
+    .sns-edit-list + .sns-add { width: 40px; height: 40px; }
+
+    /* 리스트형 편집 행 (링크 모음) */
+    .kv-item { margin-bottom: 12px; }
+    .kv-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .kv-row .kv-v { flex: 1; min-width: 0; }
+
+    /* 이미지 업로드 행 / 썸네일 관리 */
+    .pick-wrap { display: flex; align-items: center; gap: 8px; }
+    /* 이미지 등록 행이 연달아 놓일 때 서로 붙지 않게 */
+    .pick-row + .pick-row,
+    .pick-row + .pick-wrap,
+    .pick-wrap + .pick-row,
+    .pick-wrap + .pick-wrap { margin-top: 8px; }
+    .pick-wrap .pick-row { flex: 1; min-width: 0; }
+    .pick-row {
+      display: flex; align-items: center; gap: 12px; width: 100%;
+      padding: 12px; background: var(--color-surface);
+      border: 1px solid var(--color-border); border-radius: var(--r-sm);
+      cursor: pointer; font-family: var(--font-base);
+    }
+    .pick-label { flex: 1; text-align: left; font-size: var(--fs-body-lg); font-weight: var(--fw-medium); color: var(--color-text); }
+    .pick-more { font-size: var(--fs-body); font-weight: var(--fw-medium); color: var(--color-text-muted); flex-shrink: 0; }
+    .pick-row > svg { width: 16px; height: 16px; color: var(--color-text-muted); }
+    .pick-thumb {
+      width: 40px; height: 40px; border-radius: var(--r-xs); object-fit: cover;
+      background: var(--color-surface-sub); flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; color: var(--color-text-muted);
+    }
+    .pick-thumb svg { width: 18px; height: 18px; }
+
+    .pick-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .pick-cell {
+      aspect-ratio: 1; border-radius: var(--r-sm); overflow: hidden;
+      border: 2px solid transparent; background: var(--color-surface-sub);
+      padding: 0; cursor: pointer;
+    }
+    .pick-cell:disabled { opacity: 0.3; cursor: not-allowed; }
+    .pick-cell.pick-sns { background: var(--color-primary-light); display: flex; align-items: center; justify-content: center; }
+    .pick-cell.pick-sns .sns-tile-ico { width: 32px; height: 32px; }
+
+    .thumb-manage { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .thumb-item { position: relative; aspect-ratio: 1; border-radius: var(--r-sm); overflow: hidden; background: var(--color-surface-sub); }
+    .thumb-item img,
+    .thumb-item video { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .thumb-item .lp-gallery-cell-icon { top: auto; right: auto; bottom: 8px; left: 8px; }
+    .thumb-del {
+      position: absolute; top: 4px; right: 4px;
+      width: 24px; height: 24px; border-radius: var(--r-full); border: none;
+      background: var(--color-scrim); color: var(--color-on-primary);
+      display: flex; align-items: center; justify-content: center; cursor: pointer;
+    }
+    .thumb-del svg { width: 14px; height: 14px; }
+    .thumb-add {
+      aspect-ratio: 1; border-radius: var(--r-sm); cursor: pointer;
+      border: 1.5px dashed var(--color-border); background: var(--color-surface);
+      color: var(--color-text-muted); display: flex; align-items: center; justify-content: center;
+    }
+    .thumb-add svg { width: 20px; height: 20px; }
+
+    /* 디자인 시트 탭 */
+    .tabs { display: flex; gap: 4px; padding: 0 20px; border-bottom: 1px solid var(--color-border); }
+    .tab {
+      flex: 1; height: 44px; background: none; border: none; cursor: pointer;
+      font-family: var(--font-base); font-size: var(--fs-body); font-weight: var(--fw-medium);
+      color: var(--color-text-muted); border-bottom: 2px solid transparent;
+    }
+    .tab.is-active { color: var(--color-primary); font-weight: var(--fw-semibold); border-bottom-color: var(--color-primary); }
+
+    /* 색상 스와치 — 프리셋 + 컬러피커(마지막 칸) */
+    .swatch-row { display: flex; gap: 8px; }
+    /* 크기 고정 — 행의 항목 수가 달라도 원 크기가 같아야 한다 (남는 공간은 오른쪽 여백) */
+    .swatch {
+      position: relative; flex: 0 0 40px; width: 40px; aspect-ratio: 1;
+      border-radius: var(--r-full); border: 1px solid var(--color-border);
+      cursor: pointer; padding: 0; overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--color-text-muted);
+    }
+    .swatch.is-active { border-color: var(--color-primary); box-shadow: inset 0 0 0 2px var(--color-surface); border-width: 2px; }
+    .swatch svg { width: 16px; height: 16px; }
+    .swatch-pick { border-style: dashed; }
+    .swatch-pick input[type="color"] {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      opacity: 0; border: none; padding: 0; cursor: pointer;
+    }
+
+    /* ── 목업 옵션 카드 ── */
+    .mock-row { display: grid; gap: 8px; }
+    .mock-row-2 { grid-template-columns: repeat(2, 1fr); }
+    .mock-row-3 { grid-template-columns: repeat(3, 1fr); }
+    .mock-row-4 { grid-template-columns: repeat(4, 1fr); }
+    /* 라벨 없이 그림만 — 한 줄에 4개 들어가도록 여백을 줄인다 */
+    .mock-compact { padding: 8px; gap: 0; }
+    .mock {
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      padding: 12px; cursor: pointer; font-family: var(--font-base);
+      background: var(--color-surface); border: 1px solid var(--color-border);
+      border-radius: var(--r-md);
+    }
+    .mock.is-active { border-color: var(--color-primary); background: var(--color-primary-light); }
+    .mock-art { width: 100%; display: flex; align-items: center; justify-content: center; }
+    .mock-name { font-size: var(--fs-label); font-weight: var(--fw-medium); color: var(--color-text-sub); }
+    .mock.is-active .mock-name { color: var(--color-primary); font-weight: var(--fw-semibold); }
+    .mk { width: 100%; height: auto; display: block; }
+    .mk-ico { width: 24px; height: 24px; color: var(--color-text-sub); }
+    .mock.is-active .mk-ico { color: var(--color-primary); }
+    .mk-shadow {
+      display: block; width: 100%; height: 24px; border-radius: var(--r-sm);
+      background: var(--color-surface); border: 1px solid var(--color-border);
+    }
+
+    /* 카탈로그 그리드 */
+    .cat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .cat-cell {
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+      height: 88px; padding: 0 12px;
+      background: var(--color-surface); border: 1px solid var(--color-border);
+      border-radius: var(--r-md); cursor: pointer;
+      font-family: var(--font-base); font-size: var(--fs-body-lg); font-weight: var(--fw-semibold);
+      color: var(--color-text);
+    }
+    .cat-cell svg { width: 22px; height: 22px; color: var(--color-text-sub); }
+    .cat-cell:hover { border-color: var(--color-primary); color: var(--color-primary); }
+    .cat-cell:hover svg { color: var(--color-primary); }
+    .cat-cell:disabled { opacity: 0.35; cursor: not-allowed; pointer-events: none; }
+
+    /* ── 이름·주소 다이얼로그 ── */
+    .url-prev { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .url-prev-k { font-size: var(--fs-caption); color: var(--color-text-muted); flex-shrink: 0; }
+    .url-prev-v { font-size: var(--fs-caption); color: var(--color-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .url-field {
+      display: flex; align-items: center;
+      border: 1px solid var(--color-input); border-radius: var(--r-sm);
+      background: var(--color-surface-sub); padding-left: 12px;
+    }
+    .url-prefix { font-size: var(--fs-body); color: var(--color-text-muted); flex-shrink: 0; }
+    .url-field .input { border: none; background: none; padding-left: 4px; flex: 1; min-width: 0; }
+    .url-status { display: block; margin-top: 8px; font-size: var(--fs-caption); font-weight: var(--fw-medium); }
+    .url-status.ok { color: var(--color-success); }
+    .url-status.no { color: var(--color-destructive); }
+    .dlg-warn { margin-top: 8px; font-size: var(--fs-caption); line-height: var(--lh-caption); color: var(--color-destructive); }
+
+    /* ── 컬렉션 전체 화면 ── */
+    .fullscreen {
+      position: absolute; inset: 0; background: var(--color-bg);
+      display: flex; flex-direction: column;
+      transform: translateX(100%);
+      transition: transform var(--motion-standard) var(--ease-enter);
+    }
+    .layer.on .fullscreen { transform: translateX(0); }
+    .full-body { flex: 1; overflow-y: auto; padding: 16px 16px calc(24px + env(safe-area-inset-bottom)); }
+
+    .full-item {
+      display: flex; align-items: center; gap: 12px;
+      background: var(--color-surface); border-radius: var(--r-md);
+      padding: 12px 16px; margin-bottom: 8px; box-shadow: var(--shadow-1);
+    }
+    .full-item.is-dim { opacity: 0.4; }
+    .full-item-grip { color: var(--color-border); display: inline-flex; cursor: grab; }
+    .full-item-grip svg { width: 16px; height: 16px; }
+    .full-item-info { flex: 1; min-width: 0; }
+    .full-item-title { display: block; font-size: var(--fs-body); font-weight: var(--fw-medium); color: var(--color-text); }
+    .full-item-sub { display: block; font-size: var(--fs-caption); color: var(--color-text-muted); margin-top: 4px; }
+    .full-item-arrows { display: flex; gap: 4px; flex-shrink: 0; }
+
+    .full-empty {
+      border: 1.5px dashed var(--color-border); border-radius: var(--r-md);
+      padding: 24px 16px; text-align: center;
+      font-size: var(--fs-body); color: var(--color-text-muted);
+    }
+
+    /* 페이지 텍스트 색 — 스타일 탭에서 지정.
+       페이지 배경 위에 직접 놓인 글자만 따라간다. 버튼·카드 안 텍스트는 흰 면 위에
+       있으므로 제외해야 밝은 색을 골랐을 때도 읽힌다.
+       ⚠️ 뒤에 정의된 같은 선택자에 덮이지 않도록 스타일 맨 끝에 둔다. */
+    .head-name,
+    .text-block .text-p,
+    .lp-section-title,
+    .lp-star-rate,
+    .ct-val { color: var(--page-text, var(--color-text)); }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <button class="navbar-action" id="btn-cancel">취소</button>
+    <span class="navbar-title">프로필 편집</span>
+    <button class="navbar-action primary" id="btn-apply" disabled>적용</button>
+  </nav>
+
+  <div class="toolbar">
+    <button class="tool-chip" id="chip-preview">
+      <i data-lucide="eye"></i>미리보기
+    </button>
+    <button class="tool-chip" id="chip-design">
+      <i data-lucide="palette"></i>디자인
+    </button>
+    <button class="tool-chip" id="chip-name">
+      <i data-lucide="at-sign"></i>이름·주소
+    </button>
+    <button class="tool-chip" id="chip-autofill">
+      <i data-lucide="sparkles"></i>자동 채우기
+    </button>
+  </div>
+
+  <div class="stage" id="stage">
+    <div class="scroll-area" id="scroll">
+      <div class="head" id="head"></div>
+      <div class="canvas" id="canvas"></div>
+    </div>
+
+    <!-- 대화하기 버튼 (하단 고정 / 코너) — 디자인 시트에서도 캔버스와 함께 축소된다 -->
+    <div class="page-cta" id="page-cta"></div>
+  </div>
+
+  <!-- 이미지·영상 업로드 -->
+  <input type="file" accept="image/*" id="file-input" hidden>
+
+  <!-- 블록 편집 반쪽 시트 (스크림 없음 — 편집 중 블록이 계속 보임) -->
+  <div class="layer layer-nodim" id="layer-editor">
+    <div class="bottom-sheet sheet-panel sheet-half">
+      <div class="sheet-head">
+        <button class="sheet-action" id="editor-cancel">취소</button>
+        <span class="sheet-head-title" id="editor-title">블록</span>
+        <button class="sheet-action primary" id="editor-done">완료</button>
+      </div>
+      <div class="sheet-body" id="editor-body"></div>
+    </div>
+  </div>
+
+  <!-- 전역 디자인 시트 -->
+  <div class="layer layer-nodim" id="layer-design">
+    <div class="bottom-sheet sheet-panel sheet-half">
+      <div class="sheet-head">
+        <button class="sheet-action" id="design-cancel">취소</button>
+        <span class="sheet-head-title">디자인</span>
+        <button class="sheet-action primary" id="design-done">완료</button>
+      </div>
+      <div class="tabs" id="design-tabs"></div>
+      <div class="sheet-body" id="design-body"></div>
+    </div>
+  </div>
+
+  <!-- 블록 추가 카탈로그 시트 -->
+  <div class="layer" id="layer-catalog">
+    <div class="bottom-sheet-overlay" id="catalog-overlay"></div>
+    <div class="bottom-sheet sheet-panel">
+      <div class="sheet-head">
+        <button class="sheet-action" id="catalog-cancel">취소</button>
+        <span class="sheet-head-title">블록 추가</span>
+        <span class="sheet-action" style="visibility:hidden">취소</span>
+      </div>
+      <div class="sheet-body" id="catalog-body"></div>
+    </div>
+  </div>
+
+  <!-- SNS 플랫폼 선택 시트 -->
+  <div class="layer" id="layer-autofill">
+    <div class="bottom-sheet-overlay" id="autofill-overlay"></div>
+    <div class="bottom-sheet sheet-panel">
+      <div class="sheet-head">
+        <button class="sheet-action" id="autofill-cancel">취소</button>
+        <span class="sheet-head-title">자동 채우기</span>
+        <span class="sheet-action" style="visibility:hidden">취소</span>
+      </div>
+      <div class="sheet-body">
+        <div class="autofill-actions">
+          <button class="btn btn-lg btn-block btn-weak-dark" data-af="shoot">
+            <i data-lucide="camera" style="width:18px;height:18px"></i>촬영하기
+          </button>
+          <button class="btn btn-lg btn-block btn-weak-dark" data-af="upload">
+            <i data-lucide="upload" style="width:18px;height:18px"></i>파일 업로드
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="layer" id="layer-snspick">
+    <div class="bottom-sheet-overlay" id="snspick-overlay"></div>
+    <div class="bottom-sheet sheet-panel">
+      <div class="sheet-head">
+        <button class="sheet-action" id="snspick-cancel">취소</button>
+        <span class="sheet-head-title">SNS 선택</span>
+        <span class="sheet-action" style="visibility:hidden">취소</span>
+      </div>
+      <div class="sheet-body" id="snspick-body"></div>
+    </div>
+  </div>
+
+  <!-- 컬렉션 전체 화면 -->
+  <div class="layer layer-slide" id="layer-full">
+    <div class="fullscreen">
+      <nav class="navbar">
+        <button class="icon-btn icon-btn-clear" id="full-back" style="margin-left:-8px" aria-label="뒤로">
+          <i data-lucide="arrow-left" style="width:20px;height:20px"></i>
+        </button>
+        <span class="navbar-title" id="full-title">관리</span>
+        <span style="min-width:44px"></span>
+      </nav>
+      <div class="full-body" id="full-body"></div>
+    </div>
+  </div>
+
+  <!-- 이름·주소 변경 다이얼로그 -->
+  <div class="layer" id="layer-name">
+    <div class="dialog-overlay">
+      <div class="dialog">
+        <p class="dialog-title">이름·주소 변경</p>
+
+        <p class="label field-label">이름</p>
+        <input class="input" id="nd-name" placeholder="이름">
+
+        <p class="label field-label">프로필 주소</p>
+        <div class="url-prev">
+          <span class="url-prev-k">이전</span>
+          <span class="url-prev-v" id="nd-old"></span>
+        </div>
+        <div class="url-field">
+          <span class="url-prefix">connectia.bio/</span>
+          <input class="input" id="nd-handle" placeholder="새 주소">
+        </div>
+        <span class="url-status" id="nd-status"></span>
+        <p class="dlg-warn">변경 후 기존 주소는 더 이상 열리지 않아요</p>
+
+        <div class="dialog-actions" style="margin-top:20px">
+          <button class="btn btn-md btn-weak-dark" id="nd-cancel">취소</button>
+          <button class="btn btn-md btn-fill-primary" id="nd-save" disabled>변경하기</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 확인 다이얼로그 -->
+  <div class="layer" id="layer-confirm">
+    <div class="dialog-overlay">
+      <div class="dialog">
+        <p class="dialog-title" id="cf-title"></p>
+        <div class="dialog-actions" style="margin-top:20px">
+          <button class="btn btn-md btn-weak-dark" id="cf-no">취소</button>
+          <button class="btn btn-md btn-fill-danger" id="cf-yes">삭제</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toasts"></div>
+
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+  /* ============================================================
+     상태
+     ============================================================ */
+
+  /* 프로필 정체성 — 헤드는 전부 이 객체에서 렌더된다 */
+  const P = {
+    name:   '하루요가',
+    handle: 'haruyoga',
+    avatar: '../assets/yoga-avatar.png',
+    cover:  '../assets/yoga-cover.png'
+  };
+
+  /* 전역 디자인 */
+  const T = {
+    layout: 'overlap', align: 'left',
+    chat: 'bottom', cta: 'gradient', ctaCustom: '', ctaText: 'auto', ctaTextCustom: '', ctaLabel: '대화하기',
+    pageText: 'ink', pageTextCustom: '',
+    pageBg: 'mist', pageBgCustom: '',
+    shape: 'round', shadow: 'soft', balign: 'left'
+  };
+
+  let blocks = [
+    { id: 3, kind: 'contact', visible: true,
+      company: '하루요가', role: '원장 · 요가 지도자',
+      tel: '02-334-1020', mobile: '010-2847-1020',
+      email: 'hello@haruyoga.kr', addr: '서울 마포구 연남로 12, 3층',
+      aiCompany: true, aiRole: true, aiTel: true, aiMobile: false, aiEmail: true, aiAddr: true },
+    { id: 11, kind: 'div', visible: true },
+    { id: 1, kind: 'sns', visible: true, icons: [
+      { p: 'Instagram', id: 'haruyoga', ai: true },
+      { p: 'YouTube',   id: 'haruyoga', ai: true },
+      { p: 'X (Twitter)', id: '', ai: true },
+      { p: 'TikTok',    id: '', ai: true }
+    ]},
+    { id: 2, kind: 'text', title: 'About', html: '처음 오시는 분도 편하게 따라올 수 있도록 <b>호흡부터</b> 천천히 알려드려요. 궁금한 점은 편하게 물어보세요.', ai: true, visible: true },
+    { id: 4, kind: 'link', title: '수업 시간표', url: 'haruyoga.kr/class', style: 'button', thumb: '', ai: true, visible: true },
+    { id: 5, kind: 'link', title: '수업 예약하기', url: 'calendly.com/haruyoga', style: 'card', thumb: '../assets/yoga-gallery1.png', ai: true, visible: true },
+    { id: 6, kind: 'gallery', name: '수련실 풍경', layout: 'grid', visible: true, items: [
+      { type: 'image',   src: '../assets/yoga-gallery1.png' },
+      { type: 'image',   src: '../assets/yoga-gallery2.png' },
+      { type: 'image',   src: '../assets/yoga-event1.png' },
+      { type: 'video',   src: '', thumb: '../assets/yoga-event2.png' },
+      { type: 'youtube', src: 'youtube.com/@haruyoga', thumb: '../assets/yoga-cover.png' }
+    ]},
+    /* 컬렉션 데모 데이터 — 요가 스튜디오. 필드는 board.html 카드가 요구하는 형태.
+       t 제목 / d 일정·날짜 / p 설명·미리보기 / n 신청자 수 또는 작성자 / img 썸네일 / tag 배지 */
+    { id: 7, kind: 'event', name: '진행 중인 이벤트', limit: '3', order: 'manual', visible: true, ai: true, items: [
+      { id: 'e1', t: '여름 상담 20% 할인', d: '08.01 ~ 08.31 · 10:00 ~ 18:00', p: '무더운 여름, 몸과 마음을 함께 돌보는 1:1 자세 상담을 특별가로 준비했어요.', n: 128, img: '../assets/yoga-event1.png' },
+      { id: 'e2', t: '신규 회원 웰컴킷',   d: '',                              p: '처음 오시는 분께 요가 매트와 수련 가이드북을 드려요. 등록 후 첫 수업 날 받아 가세요.', img: '../assets/yoga-event2.png' },
+      { id: 'e3', t: '호흡 명상 세미나',   d: '09.12 · 14:00 ~ 16:00',         p: '호흡과 명상을 주제로 한 오프라인 세미나에 함께해 주세요.', n: 42, img: '../assets/yoga-gallery1.png' },
+      { id: 'e4', t: '첫 방문 체형 진단',   d: '',                              p: '체형과 자세를 확인하고 나에게 맞는 수련 방향을 함께 찾아드려요. 예약 후 방문해 주세요.', img: '../assets/yoga-gallery2.png' }
+    ]},
+    { id: 8, kind: 'board', name: '공지사항', limit: '3', order: 'recent', visible: true, ai: true, items: [
+      { id: 'b1', t: '9월 운영 시간 안내',   d: '9/1',  tag: '공지',   tagCls: 'badge-fill-neutral',  p: '9월부터 평일 저녁 수업이 한 타임 늘어납니다. 새 시간표를 확인해 주세요.', img: '../assets/yoga-gallery2.png' },
+      { id: 'b2', t: '수업 예약 방식 변경',  d: '8/22',                                             p: '수업 예약을 앱에서 바로 변경할 수 있게 됐어요. 자세한 사용법을 안내드립니다.' },
+      { id: 'b3', t: '추석 휴무 공지',       d: '8/14',                                              p: '추석 연휴 기간에는 오전 수업만 운영합니다. 방문 전 일정 확인 부탁드려요.' },
+      { id: 'b4', t: '수련 매트 대여 안내',  d: '8/2',                                               p: '매트를 두고 오셔도 괜찮아요. 데스크에서 무료로 대여해 드립니다.', img: '../assets/yoga-gallery1.png' },
+      { id: 'b5', t: '여름 정비 휴무',       d: '7/28',                                              p: '8월 셋째 주는 스튜디오 정비를 위해 휴무입니다. 참고해 주세요.' }
+    ]},
+    { id: 9, kind: 'review', name: '수련 후기', limit: '3', order: 'recent', visible: true, ai: true, items: [
+      { id: 'r1', rate: 5, t: '수업 전에 몸 상태를 꼭 물어봐 주셔서 무리 없이 따라갈 수 있었어요. 굳어 있던 어깨가 확실히 편해졌습니다 :)', n: '익명의 사슴',   d: '2026년 8월 4일' },
+      { id: 'r2', rate: 5, t: '요가가 처음이라 걱정했는데 동작마다 자세를 잡아 주셔서 안심됐어요. 다음 달도 이어서 등록했습니다!',        n: '익명의 거북이', d: '2026년 7월 29일' },
+      { id: 'r3', rate: 4, t: '수련실이 조용하고 정돈되어 있어서 집중이 잘 돼요. 호흡 안내가 자세해서 좋았습니다.',                     n: '익명의 다람쥐', d: '2026년 7월 18일' }
+    ]},
+    { id: 10, kind: 'info', visible: true, links: [
+      { title: '하루요가 홈페이지',    url: 'haruyoga.kr', ai: true },
+      { title: '수업 예약 안내',       url: 'haruyoga.kr/booking', ai: true },
+      { title: '네이버 예약 바로가기', url: 'naver.me/haruyoga', ai: false }
+    ]}
+  ];
+
+  let seq = 100;
+  let activeId = null;
+  let insertAt = null;
+  let previewMode = false;
+  let designTab = 'profile';
+  let fullId = null;
+  let dirty = false;
+
+  const KIND = { event: '이벤트', board: '게시판', review: '리뷰' };
+  /* 컬렉션에 담기는 개별 항목의 이름 (블록 이름과 다름) */
+  const ITEM = { event: { n: '이벤트', j: '가' }, board: { n: '게시글', j: '이' }, review: { n: '리뷰', j: '가' } };
+  const KIND_ALL = {
+    link: '링크', text: '텍스트', gallery: '갤러리', div: '구분선', sns: 'SNS',
+    contact: '연락처', info: '링크 모음', event: '이벤트', board: '게시판', review: '리뷰'
+  };
+  const SINGLETON = ['sns', 'contact', 'info', 'event', 'board', 'review'];
+  const isColl = k => !!KIND[k];
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  const find = id => blocks.find(b => b.id === id);
+
+  /* 페이지 배경 프리셋 · 대화하기 버튼 색 프리셋 — 값은 전부 tokens.css 토큰 */
+  const PAGE_BG = ['mist', 'cream', 'blush', 'lilac', 'sky', 'mint'];
+  /* 배경 프리셋(PAGE_BG)과 순서·개수를 1:1로 맞춘다. mist(회색) 자리는 그라데이션 */
+  const CTA_PRESET = ['gradient', 'apricot', 'blossom', 'plum', 'ocean', 'forest'];
+  const CTA_FILL = {
+    gradient: 'var(--color-brand-gradient)',
+    apricot:  'var(--color-chat-apricot)',
+    blossom:  'var(--color-chat-blossom)',
+    plum:     'var(--color-chat-plum)',
+    ocean:    'var(--color-chat-ocean)',
+    forest:   'var(--color-chat-forest)'
+  };
+  /* 밝은 버튼색에는 어두운 글자를 기본으로 — 사용자가 텍스트 색상을 고르면 그 값이 우선 */
+  const CTA_ON = { gradient: 'white', apricot: 'ink', blossom: 'ink', plum: 'white', ocean: 'white', forest: 'white' };
+  /* 텍스트 색 프리셋 — 페이지 본문용과 대화버튼 라벨용 */
+  const TEXT_PRESET = ['ink', 'soft', 'white'];
+  const TEXT_FILL = { ink: 'var(--color-text)', soft: 'var(--color-text-sub)', white: 'var(--color-surface)' };
+  /* 목업 SVG는 그라데이션을 fill로 못 받으므로 항상 단색 값을 따로 둔다 */
+  const CTA_SOLID = Object.assign({}, CTA_FILL, { gradient: 'var(--color-primary)' });
+  /* 컬러피커 초기값 — 토큰에서 계산된 hex를 읽어 온다 (하드코딩 회피) */
+  function tokenHex(name) {
+    const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    return /^#[0-9a-f]{3,8}$/i.test(v) ? v : '';
+  }
+  const pageBgValue = () => T.pageBg === 'custom' ? T.pageBgCustom : 'var(--color-page-' + T.pageBg + ')';
+  const ctaFillValue = () => T.cta === 'custom' ? T.ctaCustom : CTA_FILL[T.cta];
+  const ctaTextValue = () => {
+    if (T.ctaText === 'custom') return T.ctaTextCustom;
+    if (T.ctaText === 'auto') return TEXT_FILL[CTA_ON[T.cta] || 'white'];
+    return TEXT_FILL[T.ctaText];
+  };
+  const pageTextValue = () => T.pageText === 'custom' ? T.pageTextCustom : TEXT_FILL[T.pageText];
+  const ctaSolidValue = () => T.cta === 'custom' ? T.ctaCustom : CTA_SOLID[T.cta];
+
+  const SHAPE = { sharp: 'var(--r-xs)', round: 'var(--r-md)', pill: 'var(--r-full)' };
+  /* 썸네일 카드·컬렉션 카드는 알약을 따라가지 않고 둥근 사각에서 멈춘다 */
+  const CARD_SHAPE = { sharp: 'var(--r-xs)', round: 'var(--r-md)', pill: 'var(--r-md)' };
+  const SHADOW = { none: 'none', soft: 'var(--shadow-1)', mid: 'var(--shadow-2)', strong: 'var(--shadow-4)' };
+  /* 브랜드 마크는 인라인 SVG로 심는다. CSS mask는 일부 환경에서 적용되지 않아
+     아이콘이 통째로 사라진다. fill=currentColor 라 색은 CSS color로 제어된다. */
+  const SNS_SVG = {
+    "Facebook": '<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"> <g clip-path="url(#clip0_17_61)"> <path d="M24 0C10.7453 0 0 10.7453 0 24C0 35.255 7.74912 44.6995 18.2026 47.2934V31.3344H13.2538V24H18.2026V20.8397C18.2026 12.671 21.8995 8.8848 29.9194 8.8848C31.44 8.8848 34.0637 9.18336 35.137 9.48096V16.129C34.5706 16.0694 33.5866 16.0397 32.3645 16.0397C28.4294 16.0397 26.9088 17.5306 26.9088 21.4061V24H34.7482L33.4013 31.3344H26.9088V47.8243C38.7926 46.3891 48.001 36.2707 48.001 24C48 10.7453 37.2547 0 24 0Z" fill="currentColor"/> </g> <defs> <clipPath id="clip0_17_61"> <rect width="48" height="48" fill="currentColor"/> </clipPath> </defs> </svg>',
+    "Instagram": '<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"> <g clip-path="url(#clip0_17_63)"> <path d="M24 4.32187C30.4125 4.32187 31.1719 4.35 33.6938 4.4625C36.0375 4.56562 37.3031 4.95938 38.1469 5.2875C39.2625 5.71875 40.0688 6.24375 40.9031 7.07812C41.7469 7.92188 42.2625 8.71875 42.6938 9.83438C43.0219 10.6781 43.4156 11.9531 43.5188 14.2875C43.6313 16.8187 43.6594 17.5781 43.6594 23.9813C43.6594 30.3938 43.6313 31.1531 43.5188 33.675C43.4156 36.0188 43.0219 37.2844 42.6938 38.1281C42.2625 39.2438 41.7375 40.05 40.9031 40.8844C40.0594 41.7281 39.2625 42.2438 38.1469 42.675C37.3031 43.0031 36.0281 43.3969 33.6938 43.5C31.1625 43.6125 30.4031 43.6406 24 43.6406C17.5875 43.6406 16.8281 43.6125 14.3063 43.5C11.9625 43.3969 10.6969 43.0031 9.85313 42.675C8.7375 42.2438 7.93125 41.7188 7.09688 40.8844C6.25313 40.0406 5.7375 39.2438 5.30625 38.1281C4.97813 37.2844 4.58438 36.0094 4.48125 33.675C4.36875 31.1438 4.34063 30.3844 4.34063 23.9813C4.34063 17.5688 4.36875 16.8094 4.48125 14.2875C4.58438 11.9437 4.97813 10.6781 5.30625 9.83438C5.7375 8.71875 6.2625 7.9125 7.09688 7.07812C7.94063 6.23438 8.7375 5.71875 9.85313 5.2875C10.6969 4.95938 11.9719 4.56562 14.3063 4.4625C16.8281 4.35 17.5875 4.32187 24 4.32187ZM24 0C17.4844 0 16.6688 0.028125 14.1094 0.140625C11.5594 0.253125 9.80625 0.665625 8.2875 1.25625C6.70312 1.875 5.3625 2.69062 4.03125 4.03125C2.69063 5.3625 1.875 6.70313 1.25625 8.27813C0.665625 9.80625 0.253125 11.55 0.140625 14.1C0.028125 16.6687 0 17.4844 0 24C0 30.5156 0.028125 31.3312 0.140625 33.8906C0.253125 36.4406 0.665625 38.1938 1.25625 39.7125C1.875 41.2969 2.69063 42.6375 4.03125 43.9688C5.3625 45.3 6.70313 46.125 8.27813 46.7344C9.80625 47.325 11.55 47.7375 14.1 47.85C16.6594 47.9625 17.475 47.9906 23.9906 47.9906C30.5063 47.9906 31.3219 47.9625 33.8813 47.85C36.4313 47.7375 38.1844 47.325 39.7031 46.7344C41.2781 46.125 42.6188 45.3 43.95 43.9688C45.2812 42.6375 46.1063 41.2969 46.7156 39.7219C47.3063 38.1938 47.7188 36.45 47.8313 33.9C47.9438 31.3406 47.9719 30.525 47.9719 24.0094C47.9719 17.4938 47.9438 16.6781 47.8313 14.1188C47.7188 11.5688 47.3063 9.81563 46.7156 8.29688C46.125 6.70312 45.3094 5.3625 43.9688 4.03125C42.6375 2.7 41.2969 1.875 39.7219 1.26562C38.1938 0.675 36.45 0.2625 33.9 0.15C31.3313 0.028125 30.5156 0 24 0Z" fill="currentColor"/> <path d="M24 11.6719C17.1938 11.6719 11.6719 17.1938 11.6719 24C11.6719 30.8062 17.1938 36.3281 24 36.3281C30.8062 36.3281 36.3281 30.8062 36.3281 24C36.3281 17.1938 30.8062 11.6719 24 11.6719ZM24 31.9969C19.5844 31.9969 16.0031 28.4156 16.0031 24C16.0031 19.5844 19.5844 16.0031 24 16.0031C28.4156 16.0031 31.9969 19.5844 31.9969 24C31.9969 28.4156 28.4156 31.9969 24 31.9969Z" fill="currentColor"/> <path d="M39.6937 11.1843C39.6937 12.778 38.4 14.0624 36.8156 14.0624C35.2219 14.0624 33.9375 12.7687 33.9375 11.1843C33.9375 9.59053 35.2313 8.30615 36.8156 8.30615C38.4 8.30615 39.6937 9.5999 39.6937 11.1843Z" fill="currentColor"/> </g> <defs> <clipPath id="clip0_17_63"> <rect width="48" height="48" fill="currentColor"/> </clipPath> </defs> </svg>',
+    "LinkedIn": '<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"> <g clip-path="url(#clip0_17_68)"> <path d="M44.4469 0H3.54375C1.58437 0 0 1.54688 0 3.45938V44.5312C0 46.4437 1.58437 48 3.54375 48H44.4469C46.4062 48 48 46.4438 48 44.5406V3.45938C48 1.54688 46.4062 0 44.4469 0ZM14.2406 40.9031H7.11563V17.9906H14.2406V40.9031ZM10.6781 14.8688C8.39062 14.8688 6.54375 13.0219 6.54375 10.7437C6.54375 8.46562 8.39062 6.61875 10.6781 6.61875C12.9563 6.61875 14.8031 8.46562 14.8031 10.7437C14.8031 13.0125 12.9563 14.8688 10.6781 14.8688ZM40.9031 40.9031H33.7875V29.7656C33.7875 27.1125 33.7406 23.6906 30.0844 23.6906C26.3812 23.6906 25.8187 26.5875 25.8187 29.5781V40.9031H18.7125V17.9906H25.5375V21.1219H25.6312C26.5781 19.3219 28.9031 17.4188 32.3625 17.4188C39.5719 17.4188 40.9031 22.1625 40.9031 28.3313V40.9031Z" fill="currentColor"/> </g> <defs> <clipPath id="clip0_17_68"> <rect width="48" height="48" fill="currentColor"/> </clipPath> </defs> </svg>',
+    "TikTok": '<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M34.1451 0H26.0556V32.6956C26.0556 36.5913 22.9444 39.7913 19.0725 39.7913C15.2007 39.7913 12.0894 36.5913 12.0894 32.6956C12.0894 28.8696 15.1315 25.7391 18.8651 25.6V17.3913C10.6374 17.5304 4 24.2783 4 32.6956C4 41.1827 10.7757 48 19.1417 48C27.5075 48 34.2833 41.1131 34.2833 32.6956V15.9304C37.3255 18.1565 41.059 19.4783 45 19.5479V11.3391C38.9157 11.1304 34.1451 6.12173 34.1451 0Z" fill="currentColor"/> </svg>',
+    "X (Twitter)": '<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M36.6526 3.8078H43.3995L28.6594 20.6548L46 43.5797H32.4225L21.7881 29.6759L9.61989 43.5797H2.86886L18.6349 25.56L2 3.8078H15.9222L25.5348 16.5165L36.6526 3.8078ZM34.2846 39.5414H38.0232L13.8908 7.63406H9.87892L34.2846 39.5414Z" fill="currentColor"/> </svg>',
+    "YouTube": '<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M47.5219 14.4001C47.5219 14.4001 47.0531 11.0907 45.6094 9.6376C43.7812 7.7251 41.7375 7.71572 40.8 7.60322C34.0875 7.11572 24.0094 7.11572 24.0094 7.11572H23.9906C23.9906 7.11572 13.9125 7.11572 7.2 7.60322C6.2625 7.71572 4.21875 7.7251 2.39062 9.6376C0.946875 11.0907 0.4875 14.4001 0.4875 14.4001C0.4875 14.4001 0 18.2907 0 22.172V25.8095C0 29.6907 0.478125 33.5813 0.478125 33.5813C0.478125 33.5813 0.946875 36.8907 2.38125 38.3438C4.20937 40.2563 6.60938 40.1907 7.67813 40.397C11.5219 40.7626 24 40.8751 24 40.8751C24 40.8751 34.0875 40.8563 40.8 40.3782C41.7375 40.2657 43.7812 40.2563 45.6094 38.3438C47.0531 36.8907 47.5219 33.5813 47.5219 33.5813C47.5219 33.5813 48 29.7001 48 25.8095V22.172C48 18.2907 47.5219 14.4001 47.5219 14.4001ZM19.0406 30.2251V16.7345L32.0062 23.5032L19.0406 30.2251Z" fill="currentColor"/> </svg>',
+  };
+  const snsTile = p => '<span class="sns-tile"><span class="sns-tile-ico" role="img" aria-label="' + esc(p)
+    + '">' + (SNS_SVG[p] || '') + '</span></span>';
+
+  /* 연락처 항목 — [키, 라벨, 캔버스 아이콘, AI 학습 키] */
+  const CONTACT_FIELDS = [
+    ['company', '회사명',       'building-2', 'aiCompany'],
+    ['role',    '직함',         'briefcase',  'aiRole'],
+    ['tel',     '회사 전화번호', 'phone',      'aiTel'],
+    ['mobile',  '휴대폰번호',    'smartphone', 'aiMobile'],
+    ['email',   '이메일',        'mail',       'aiEmail'],
+    ['addr',    '주소',          'map-pin',    'aiAddr']
+  ];
+
+  const PLATFORMS = ['Instagram', 'YouTube', 'X (Twitter)', 'TikTok', 'Facebook', 'LinkedIn'];
+  const TAKEN = ['yoga', 'hello', 'studio', 'haruyoga'];
+
+  function icons() { if (window.lucide) lucide.createIcons(); }
+  function touch() { dirty = true; $('btn-apply').disabled = false; }
+
+  /* ============================================================
+     토스트
+     ============================================================ */
+  let toastTimer = null;
+  function toast(msg, actLabel, cb) {
+    const c = $('toasts');
+    c.innerHTML = '<div class="toast' + (actLabel ? ' toast-with-action' : '') + '"><span>' + esc(msg) + '</span>'
+      + (actLabel ? '<button class="toast-action" id="toast-act">' + esc(actLabel) + '</button>' : '') + '</div>';
+    if (actLabel) $('toast-act').onclick = () => { c.innerHTML = ''; cb(); };
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { c.innerHTML = ''; }, actLabel ? 4000 : 2000);
+  }
+
+  /* ============================================================
+     렌더링
+     ============================================================ */
+  /* 대화하기 버튼을 '프로필 안'으로 두면 blocks에 가상 블록으로 들어가 순서를 옮길 수 있다.
+     다른 위치로 바꾸면 직전 위치를 기억해 두고 빠진다. */
+  const CHAT_ID = -1;
+  let chatAt = 0;
+  function syncChatBlock() {
+    const i = blocks.findIndex(b => b.kind === 'chat');
+    if (T.chat === 'inline') {
+      if (i < 0) blocks.splice(Math.min(chatAt, blocks.length), 0, { id: CHAT_ID, kind: 'chat', visible: true });
+    } else if (i >= 0) {
+      chatAt = i;
+      blocks.splice(i, 1);
+    }
+  }
+
+  /* 링크 모음 카드는 페이지 배경색에서 파생시켜 어떤 테마에서도 어울리게 한다.
+     밝은 배경이면 살짝 어둡게, 어두운 배경이면 살짝 밝게 — 색상(hue)은 그대로 유지된다. */
+  function render() {
+    document.body.style.setProperty('--page-bg', pageBgValue());
+    document.body.style.setProperty('--cta-fill', ctaFillValue());
+    document.body.style.setProperty('--cta-text', ctaTextValue());
+    document.body.style.setProperty('--page-text', pageTextValue());
+    document.body.style.setProperty('--cta-solid', ctaSolidValue());
+    document.body.style.setProperty('--btn-radius', SHAPE[T.shape]);
+    document.body.style.setProperty('--card-radius', CARD_SHAPE[T.shape]);
+    document.body.style.setProperty('--block-shadow', SHADOW[T.shadow]);
+    document.body.classList.toggle('balign-center', T.balign === 'center');
+
+    syncChatBlock();
+    renderHead();
+    snapCoverHeight();
+    renderCta();
+
+    const canvas = $('canvas');
+    canvas.innerHTML = '';
+    if (blocks.length === 0) {
+      canvas.appendChild(emptyCanvas());
+    } else {
+      blocks.forEach((b, i) => {
+        canvas.appendChild(insertRow(i));
+        canvas.appendChild(blockRow(b, i));
+      });
+      canvas.appendChild(insertRow(blocks.length));
+      /* 대화하기 블록만 있는 상태는 여전히 '빈 페이지'다 */
+      if (!blocks.some(b => b.kind !== 'chat')) canvas.appendChild(emptyCanvas());
+    }
+    icons();
+  }
+
+  /* aspect-ratio 는 9:5 를 소수점 높이(예: 230.55px)로 만들고, 그 반픽셀 경계에서
+     배경 이미지 하단이 안티에일리어싱되어 가로줄처럼 보인다. 높이를 정수로 스냅한다. */
+  function snapCoverHeight() {
+    const cv = document.querySelector('.cover');
+    if (!cv || !cv.parentElement) return;
+    /* offsetWidth 는 레이아웃 폭이라 디자인 목업의 scale() 에 영향받지 않는다.
+       높이를 명시하면 aspect-ratio 가 남아 있을 때 너비를 비율에서 역산하므로 함께 끈다. */
+    const w = cv.parentElement.offsetWidth;
+    if (!w) return;
+    cv.style.aspectRatio = 'auto';
+    cv.style.height = Math.round(w * 5 / 9) + 'px';
+  }
+  /* 창 크기뿐 아니라 시트 열림·스크롤바 유무로도 폭이 바뀌므로 레이아웃 변화를 직접 관찰한다.
+     폭만 읽고 높이만 바꾸므로 관찰 루프는 생기지 않는다. */
+  if (window.ResizeObserver) new ResizeObserver(snapCoverHeight).observe($('head'));
+  else window.addEventListener('resize', snapCoverHeight);
+
+  function renderHead() {
+    const h = $('head');
+    h.className = 'head lay-' + T.layout + ' al-' + T.align;
+
+    const coverStyle = P.cover ? ' style="--cover-img:url(\'' + P.cover + '\')"' : '';
+    const av = P.avatar
+      ? '<span class="avatar avatar-xl head-avatar"><img src="' + P.avatar + '" alt=""></span>'
+      : '<span class="avatar avatar-xl head-avatar is-empty"><i data-lucide="user-round"></i></span>';
+
+    h.innerHTML =
+      '<div class="cover"' + coverStyle + '>'
+      + (T.layout === 'fade' || T.layout === 'none' ? '<span class="cover-fade"></span>' : '')
+      + '</div>'
+      + '<div class="head-body">' + av
+      + '<button class="head-name' + (P.name ? '' : ' is-empty') + '">' + esc(P.name || '이름을 설정해주세요') + '</button>'
+      + '<div class="head-handle-row">'
+      + '<span class="head-handle">@' + esc(P.handle) + '</span>'
+      + '</div>'
+      + '</div>'
+      + tabsHtml();
+  }
+
+  /* 랜딩 탭 — board.html과 같은 고정 요소. 해당 컬렉션 블록이 있을 때만 노출된다.
+     편집 캔버스에서는 홈 고정이라 전환 동작이 없다. */
+  const LTABS = [['gallery', '갤러리'], ['event', '이벤트·행사'], ['board', '게시판'], ['review', '리뷰']];
+  function tabsHtml() {
+    const on = k => blocks.some(b => b.kind === k && b.visible);
+    const rest = LTABS.filter(t => on(t[0]));
+    if (!rest.length) return '';
+    return '<div class="lp-tabs"><button class="lp-tab active" type="button">홈</button>'
+      + rest.map(t => '<button class="lp-tab" type="button">' + t[1] + '</button>').join('')
+      + '</div>';
+  }
+
+  /* 세 위치가 같은 대화하기 버튼을 쓴다 (색은 --cta-fill) */
+  function chatBtn() {
+    return '<button class="btn btn-lg btn-block cta-btn">'
+      + '<i data-lucide="message-circle" style="width:18px;height:18px"></i>' + esc(T.ctaLabel) + '</button>';
+  }
+
+  function renderCta() {
+    const c = $('page-cta');
+    if (T.chat === 'bottom') {
+      c.innerHTML = '<div class="cta-bar">' + chatBtn() + '</div>';
+    } else if (T.chat === 'corner') {
+      c.innerHTML = '<button class="cta-fab"><i data-lucide="message-circle"></i>' + esc(T.ctaLabel) + '</button>';
+    } else {
+      c.innerHTML = '';
+    }
+  }
+
+  function emptyCanvas() {
+    const el = document.createElement('div');
+    el.className = 'canvas-empty';
+    el.innerHTML = '<p class="canvas-empty-t">아직 블록이 없어요</p>'
+      + '<p class="canvas-empty-s">링크를 추가해서 페이지를 채워보세요</p>'
+      + '<button class="btn btn-lg btn-fill-primary"><i data-lucide="plus"></i>블록 추가</button>';
+    el.querySelector('.btn').onclick = () => openCatalog(0);
+    return el;
+  }
+
+  function insertRow(i) {
+    const el = document.createElement('button');
+    el.className = 'ins';
+    el.innerHTML = '<span class="ins-line"></span><span class="ins-plus"><i data-lucide="plus"></i></span><span class="ins-line"></span>';
+    el.onclick = () => openCatalog(i);
+    return el;
+  }
+
+  /* 미리보기에서 숨길 "내용이 비어 있는" 블록 */
+  function isEmptyBlock(b) {
+    if (isColl(b.kind)) return b.items.length === 0;
+    if (b.kind === 'gallery') return b.items.length === 0;
+    if (b.kind === 'contact') return !contactRows(b).length;
+    if (b.kind === 'info') return !b.links.some(l => l.title || l.url);
+    return false;
+  }
+
+  function blockRow(b, i) {
+    const el = document.createElement('div');
+    el.className = 'block'
+      + (b.id === activeId ? ' is-active' : '')
+      + (b.visible ? '' : ' is-hidden')
+      + (isEmptyBlock(b) ? ' is-empty-coll' : '');
+    el.dataset.blockId = b.id;
+
+    el.innerHTML =
+      '<div class="rail">'
+      + '<button class="rail-btn" data-mv="-1"' + (i === 0 ? ' disabled' : '') + ' aria-label="위로"><i data-lucide="chevron-up"></i></button>'
+      + '<span class="rail-grip" aria-label="순서 이동"><i data-lucide="grip-vertical"></i></span>'
+      + '<button class="rail-btn" data-mv="1"' + (i === blocks.length - 1 ? ' disabled' : '') + ' aria-label="아래로"><i data-lucide="chevron-down"></i></button>'
+      + '</div>'
+      + '<div class="block-body">'
+      + (b.id === activeId ? '<span class="badge badge-sm badge-fill-primary block-flag">편집 중</span>' : '')
+      + (b.visible ? '' : '<span class="badge badge-sm badge-weak-neutral block-tag">숨김</span>')
+      + blockInner(b)
+      + '</div>';
+
+    el.querySelector('.block-body').addEventListener('click', () => openEditor(b.id));
+    el.querySelectorAll('.rail-btn').forEach(btn => {
+      btn.addEventListener('click', e => { e.stopPropagation(); moveBlock(b.id, Number(btn.dataset.mv)); });
+    });
+    el.querySelector('.rail-grip').addEventListener('pointerdown', e => gripDown(e, b.id));
+    return el;
+  }
+
+  /* 캔버스에는 값이 채워진 항목만 나온다 */
+  function contactRows(b) {
+    return CONTACT_FIELDS.filter(f => b[f[0]]);
+  }
+
+  function blockInner(b) {
+    if (b.kind === 'chat') return chatBtn();
+    if (b.kind === 'sns') {
+      return '<div class="sns-block">' + b.icons.map(o => snsTile(o.p)).join('') + '</div>';
+    }
+    if (b.kind === 'text') return '<div class="text-block">'
+      + (b.title ? '<div class="lp-section-title">' + esc(b.title) + '</div>' : '')
+      + '<div class="text-p">' + (b.html || '') + '</div></div>';
+    if (b.kind === 'div')  return '<div class="div-block"><span></span></div>';
+    if (b.kind === 'link') {
+      const th = b.thumb ? '<img src="' + b.thumb + '" alt="">' : '<i data-lucide="image"></i>';
+      if (b.style === 'card') {
+        return '<div class="lcard"><div class="lcard-img">' + th + '</div>'
+             + '<div class="lcard-title">' + esc(b.title) + '</div></div>';
+      }
+      if (b.style === 'thumb') {
+        return '<div class="lc"><span class="lc-thumb">' + th + '</span>'
+             + '<span class="lc-title">' + esc(b.title) + '</span></div>';
+      }
+      return '<div class="lb lb-plain">' + esc(b.title) + '</div>';
+    }
+    if (b.kind === 'contact') {
+      const rows = contactRows(b);
+      if (!rows.length) return '<div class="gal-empty"><i data-lucide="contact"></i></div>';
+      return '<div class="ct-list">' + rows.map(f =>
+        '<div class="ct-row"><span class="ct-icon"><i data-lucide="' + f[2] + '"></i></span>'
+        + '<span class="ct-val">' + esc(b[f[0]]) + '</span></div>').join('')
+        + '</div>';
+    }
+    if (b.kind === 'info') {
+      return '<div class="ib-list">' + b.links.map(l =>
+        '<div class="ib-card">'
+        + '<span class="ib-ico"><i data-lucide="link"></i></span>'
+        + '<span class="ib-title' + (l.title ? '' : ' is-ph') + '">' + esc(l.title || '제목') + '</span>'
+        + '<span class="ib-chev"><i data-lucide="chevron-right"></i></span>'
+        + '</div>').join('') + '</div>';
+    }
+    if (b.kind === 'gallery') {
+      const title = '<div class="lp-section-title">' + esc(b.name) + '</div>';
+      if (!b.items.length) return '<div class="lp-gallery-section">' + title + '<div class="gal-empty"><i data-lucide="image"></i></div></div>';
+      const cls = b.layout === 'carousel' ? 'lp-gallery-carousel'
+        : b.layout === 'stack' ? 'lp-gallery-stack' : 'lp-gallery-grid';
+      return '<div class="lp-gallery-section">' + title + '<div class="' + cls + '">'
+        + b.items.map(galCell).join('')
+        + '</div></div>';
+    }
+    if (isColl(b.kind)) return collInner(b);
+    return '';
+  }
+
+  /* 갤러리 항목 — 이미지 · 영상 · 유튜브. 셀 마크업은 board.html 그대로이고,
+     영상·유튜브는 board.html과 같이 play 아이콘을 얹는다. */
+  function galMedia(it) {
+    if (it.thumb) return '<img src="' + it.thumb + '" alt="">';
+    if (it.type === 'video' && it.src) return '<video src="' + it.src + '" muted playsinline preload="metadata"></video>';
+    if (it.type === 'image' && it.src) return '<img src="' + it.src + '" alt="">';
+    return '';
+  }
+  function galIcon(it) {
+    return it.type === 'image' ? '' : '<i data-lucide="play" class="lp-gallery-cell-icon"></i>';
+  }
+  function galCell(it) {
+    return '<span class="lp-gallery-cell">' + galMedia(it) + galIcon(it) + '</span>';
+  }
+
+  /* 컬렉션 본문은 screens/board.html(방문자 화면)의 마크업을 그대로 쓴다.
+     블록 종류마다 형태가 고정이며 편집 화면에서 형태를 고를 수 없다. */
+  function collInner(b) {
+    const total = b.items.length;
+    const title = '<div class="lp-section-title">' + esc(b.name) + '</div>';
+
+    if (total === 0) {
+      return '<div class="lp-post-section">' + title
+        + '<div class="coll-empty">아직 등록된 ' + ITEM[b.kind].n + ITEM[b.kind].j + ' 없어요</div></div>';
+    }
+
+    const n = Math.min(Number(b.limit), total);
+    const rows = b.items.slice(0, n);
+    if (b.kind === 'event') {
+      return '<div class="lp-banner-section">' + title
+        + '<div class="lp-banner-scroll">' + rows.map(eventCard).join('') + '</div></div>';
+    }
+    if (b.kind === 'board') {
+      return '<div class="lp-post-section">' + title
+        + '<div class="lp-post-list">' + rows.map(postRow).join('') + '</div></div>';
+    }
+    return '<div class="lp-review-section">' + title + starRow(b)
+      + '<div class="lp-review-cards">' + rows.map(reviewCard).join('') + '</div></div>';
+  }
+
+  function eventCard(it) {
+    const avatars = '<span class="avatar"><img src="../assets/profile.svg" alt=""></span>'.repeat(4);
+    return '<div class="lp-banner-card">'
+      + '<div class="lp-banner-img">'
+      + (it.n
+          ? '<div class="lp-banner-applicants"><div class="lp-banner-avatars">' + avatars + '</div>'
+            + '<span class="lp-banner-count"><b>' + it.n + '</b>명 신청 중</span></div>'
+          : '')
+      + '<img src="' + it.img + '" alt="">'
+      + '</div>'
+      + '<div class="lp-banner-text">'
+      + '<div class="lp-banner-title">' + esc(it.t) + '</div>'
+      + (it.d ? '<div class="lp-banner-date"><i data-lucide="calendar-days"></i>' + esc(it.d) + '</div>' : '')
+      + '<div class="lp-banner-desc' + (it.d ? ' lp-banner-desc-1' : '') + '">' + esc(it.p) + '</div>'
+      + '</div></div>';
+  }
+
+  function postRow(it) {
+    return '<div class="lp-post">'
+      + (it.img ? '<div class="lp-post-img"><img src="' + it.img + '" alt=""></div>' : '')
+      + '<div class="lp-post-body">'
+      + (it.tag
+          ? '<div class="lp-post-tags"><span class="badge badge-sm ' + it.tagCls + '">' + esc(it.tag) + '</span>'
+            + '<span class="lp-post-title">' + esc(it.t) + '</span></div>'
+          : '<div class="lp-post-title">' + esc(it.t) + '</div>')
+      + '<div class="lp-post-preview">' + esc(it.p) + '</div>'
+      + '</div></div>';
+  }
+
+  function reviewCard(it) {
+    const rate = it.rate || 5;
+    let stars = '';
+    for (let i = 1; i <= 5; i++) stars += '<i data-lucide="star"' + (i > rate ? ' class="is-off"' : '') + '></i>';
+    return '<div class="lp-review-card">'
+      + '<div class="lp-review-stars">' + stars + '</div>'
+      + '<div class="lp-review-text">' + esc(it.t) + '</div>'
+      + '<div class="lp-review-meta"><span>' + esc(it.n) + '</span><span>·</span><span>' + esc(it.d) + '</span></div>'
+      + '</div>';
+  }
+
+  function starRow(b) {
+    const avg = b.items.reduce((s, it) => s + (it.rate || 5), 0) / b.items.length;
+    return '<div class="lp-star-row"><i data-lucide="star"></i>'
+      + '<span class="lp-star-rate">' + avg.toFixed(1) + '</span>'
+      + '<span class="lp-star-count">(' + b.items.length + ')</span></div>';
+  }
+
+  /* ============================================================
+     시트 공통
+     ============================================================ */
+  function openLayer(id) { $(id).classList.add('on'); document.body.classList.add('sheet-open'); }
+  function closeLayer(id) { $(id).classList.remove('on'); }
+  function closeAllSheets() {
+    ['layer-editor', 'layer-design', 'layer-catalog', 'layer-snspick', 'layer-autofill'].forEach(closeLayer);
+    document.body.classList.remove('sheet-open', 'design-open');
+    if (!previewMode) document.body.classList.remove('preview');
+    activeId = null;
+    render();
+  }
+
+  function fieldLabel(t) { return '<p class="label field-label">' + t + '</p>'; }
+  function optRow(act, key, cur, opts, twoCol) {
+    return '<div class="opt-row' + (twoCol ? ' opt-row-2' : '') + '">' + opts.map(o =>
+      '<button class="opt' + (String(cur) === String(o[0]) ? ' is-active' : '') + '" data-act="' + act + '" data-k="' + key + '" data-v="' + o[0] + '">' + o[1] + '</button>'
+    ).join('') + '</div>';
+  }
+  function switchRow(label, on, key) {
+    return '<div class="switch-row"><span class="switch-label">' + label + '</span>'
+      + '<input type="checkbox" class="toggle toggle-sm"' + (on ? ' checked' : '') + ' data-act="togglef" data-k="' + key + '"></div>';
+  }
+  /* AI 학습 행 — [라벨] ......... [AI 학습 (토글)]
+     label 이 있으면 항목별(라벨 우측 상단), 없으면 블록 단위(라벨 자리가 'AI 학습') */
+  function aiRow(label, on, attrs) {
+    return '<div class="label-row">'
+      + fieldLabel(label || 'AI 학습')
+      + '<span class="ai-toggle">' + (label ? '<span class="ai-toggle-label">AI 학습</span>' : '')
+      + '<input type="checkbox" class="toggle toggle-sm"' + (on ? ' checked' : '') + ' ' + attrs + '></span>'
+      + '</div>';
+  }
+  /* 블록 단위 — 상태 키는 블록 객체에 */
+  const aiKeyRow  = (label, on, key) => aiRow(label, on, 'data-act="togglef" data-k="' + key + '"');
+  /* 항목별 — 상태 키는 항목 객체 안의 ai */
+  const aiItemRow = (label, on, arr, i) =>
+    aiRow(label, on, 'data-act="togglei" data-arr="' + arr + '" data-i="' + i + '"');
+
+  /* 업로드 행 — 현재 썸네일 + 라벨 + 변경/등록 + 셰브론, 등록돼 있으면 제거 버튼을 옆에 둔다 */
+  function pickRow(act, thumbHtml, label, src, clearAct) {
+    const row = '<button class="pick-row" data-act="' + act + '">' + thumbHtml
+      + '<span class="pick-label">' + label + '</span>'
+      + '<span class="pick-more">' + (src ? '변경' : '등록') + '</span>'
+      + '<i data-lucide="chevron-right"></i></button>';
+    if (!clearAct || !src) return row;
+    return '<div class="pick-wrap">' + row
+      + '<button class="icon-btn icon-btn-clear" data-act="' + clearAct + '" aria-label="이미지 제거">'
+      + '<i data-lucide="trash-2" style="width:18px;height:18px"></i></button></div>';
+  }
+
+  /* ============================================================
+     이미지 업로드 — 프로필·커버·블록 이미지 모두 기기에서 고른다
+     ============================================================ */
+  let fileCb = null;
+  function pickFile(cb, multiple, accept) {
+    fileCb = cb;
+    const f = $('file-input');
+    f.multiple = !!multiple;
+    f.accept = accept || 'image/*';
+    f.value = '';
+    f.click();
+  }
+  $('file-input').addEventListener('change', e => {
+    const list = Array.prototype.slice.call(e.target.files || []);
+    if (!list.length || !fileCb) return;
+    const cb = fileCb; fileCb = null;
+    cb(list.map(f => ({ src: URL.createObjectURL(f), type: /^video/.test(f.type) ? 'video' : 'image' })));
+  });
+
+  /* ============================================================
+     SNS 플랫폼 선택 시트
+     ============================================================ */
+  function openSnsPick() {
+    const b = find(activeId);
+    if (!b) return;
+    const has = p => b.icons.some(o => o.p === p);
+    $('snspick-body').innerHTML = '<div class="pick-grid">' + PLATFORMS.map(p =>
+      '<button class="pick-cell pick-sns" data-p="' + esc(p) + '"' + (has(p) ? ' disabled' : '') + '>'
+      + '<span class="sns-tile-ico" role="img" aria-label="' + esc(p) + '">' + (SNS_SVG[p] || '') + '</span></button>'
+    ).join('') + '</div>';
+    $('layer-snspick').classList.add('on');
+  }
+  $('snspick-body').addEventListener('click', e => {
+    const el = e.target.closest('[data-p]');
+    if (!el) return;
+    const b = find(activeId);
+    if (!b) return;
+    b.icons.push({ p: el.dataset.p, id: '', ai: true });
+    closeLayer('layer-snspick');
+    touch(); render(); drawEditor();
+  });
+  $('snspick-cancel').onclick = () => closeLayer('layer-snspick');
+  $('snspick-overlay').onclick = () => closeLayer('layer-snspick');
+
+  /* ============================================================
+     블록 편집 시트
+     ============================================================ */
+  /* 블록 삭제 — 편집 시트의 삭제 버튼과 구분선의 휴지통이 함께 쓴다 */
+  function askDeleteBlock(id) {
+    confirmDlg('블록을 삭제할까요?', '삭제', true, () => {
+      const idx = blocks.findIndex(x => x.id === id);
+      if (idx < 0) return;
+      const removed = blocks[idx];
+      blocks.splice(idx, 1);
+      touch(); closeAllSheets();
+      toast('블록을 삭제했어요', '실행 취소', () => {
+        blocks.splice(idx, 0, removed);
+        render();
+      });
+    });
+  }
+
+  function openEditor(id) {
+    const b = find(id);
+    if (!b || previewMode || document.body.classList.contains('design-open')) return;
+    /* 대화하기 블록은 자체 편집 항목이 없다 — 디자인 시트의 대화버튼 탭으로 보낸다 */
+    if (b.kind === 'chat') { designTab = 'chat'; openDesign(); return; }
+    closeLayer('layer-design');
+    closeLayer('layer-catalog');
+    activeId = id;
+    render();
+    openLayer('layer-editor');
+    drawEditor();
+    scrollToActive();
+  }
+
+  /* 편집 시트가 덮고 남은 위쪽 영역 안에 편집 중인 블록이 들어오도록 스크롤한다.
+     시트는 열릴 때 아래에서 올라오므로 위치 대신 높이로 잔여 영역을 계산한다. */
+  function scrollToActive() {
+    requestAnimationFrame(() => {
+      const el = document.querySelector('.block.is-active');
+      const sc = $('scroll');
+      if (!el || !sc) return;
+
+      const sheet = document.querySelector('#layer-editor .bottom-sheet');
+      const sheetH = sheet ? sheet.getBoundingClientRect().height : 0;
+      const scRect = sc.getBoundingClientRect();
+
+      const viewTop = Math.max(scRect.top, 0);
+      const viewBottom = Math.min(scRect.bottom, window.innerHeight - sheetH);
+      const room = viewBottom - viewTop;
+      if (room <= 0) return;
+
+      const elRect = el.getBoundingClientRect();
+      /* 블록이 잔여 영역보다 작으면 가운데, 크면 위쪽에 여유 16px 두고 정렬 */
+      const offset = elRect.height < room ? (room - elRect.height) / 2 : 16;
+      const target = sc.scrollTop + (elRect.top - viewTop) - offset;
+      sc.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
+    });
+  }
+
+  function thumbBox(src, icon) {
+    return '<span class="pick-thumb">' + (src ? '<img src="' + src + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:var(--r-xs)">' : '<i data-lucide="' + icon + '"></i>') + '</span>';
+  }
+
+  function drawEditor() {
+    const b = find(activeId);
+    if (!b) return;
+    $('editor-title').textContent = KIND_ALL[b.kind];
+    let h = '';
+
+    if (b.kind === 'link') {
+      h += fieldLabel('버튼 이름') + '<input class="input" data-in="title" value="' + esc(b.title) + '">'
+        + fieldLabel('주소') + '<input class="input" data-in="url" value="' + esc(b.url) + '">'
+        + fieldLabel('표시 방식') + '<div class="mock-row mock-row-3">'
+        + mock('style', 'button', b.style, mkLinkStyle('button'), '버튼형', 'setf')
+        + mock('style', 'thumb',  b.style, mkLinkStyle('thumb'),  '썸네일',  'setf')
+        + mock('style', 'card',   b.style, mkLinkStyle('card'),   '카드형',  'setf')
+        + '</div>';
+      if (b.style !== 'button') {
+        h += fieldLabel('썸네일') + pickRow('pick-thumb', thumbBox(b.thumb, 'image'), '썸네일 이미지', b.thumb, 'clear-thumb');
+      }
+      h += aiKeyRow('', b.ai, 'ai');
+
+    } else if (b.kind === 'text') {
+      const fmtBtn = (cmd, icon, label) =>
+        '<button class="icon-btn icon-btn-sm icon-btn-clear" data-act="fmt" data-v="' + cmd + '" aria-label="' + label + '">'
+        + '<i data-lucide="' + icon + '" style="width:16px;height:16px"></i></button>';
+      h += fieldLabel('제목') + '<input class="input" data-in="title" value="' + esc(b.title || '') + '" placeholder="제목">'
+        + '<div class="rt">'
+        + '<div class="rt-bar">'
+        + fmtBtn('bold', 'bold', '굵게') + fmtBtn('italic', 'italic', '기울임')
+        + fmtBtn('underline', 'underline', '밑줄') + fmtBtn('strikeThrough', 'strikethrough', '취소선')
+        + '</div>'
+        + '<div class="rt-body">'
+        + '<div class="rt-area" id="rt-area" contenteditable="true" data-ph="내용을 입력하세요">' + (b.html || '') + '</div>'
+        + '<span class="rt-count" id="char-count">' + rtLen(b.html) + '/2000</span>'
+        + '</div></div>'
+        + aiKeyRow('', b.ai, 'ai');
+
+    } else if (b.kind === 'sns') {
+      h += '<div class="sns-edit-list">'
+        + b.icons.map((o, i) =>
+          '<div class="sns-edit-item">'
+          + aiItemRow(esc(o.p), o.ai, 'icons', i)
+          + '<div class="sns-edit-row">' + snsTile(o.p)
+          + '<span class="id-field"><span class="id-prefix">@</span>'
+          + '<input class="input" data-sns="' + i + '" value="' + esc(o.id) + '" placeholder="아이디"></span>'
+          + '<button class="icon-btn icon-btn-sm icon-btn-clear" data-act="sns-del" data-v="' + i + '" aria-label="삭제">'
+          + '<i data-lucide="trash-2" style="width:16px;height:16px"></i></button></div></div>').join('')
+        + '</div>'
+        + '<button class="sns-add" data-act="sns-add" aria-label="SNS 추가"><i data-lucide="plus"></i></button>';
+
+    } else if (b.kind === 'contact') {
+      h += CONTACT_FIELDS.map(f =>
+        aiKeyRow(f[1], b[f[3]], f[3])
+        + '<input class="input" data-in="' + f[0] + '" value="' + esc(b[f[0]]) + '" placeholder="' + esc(f[1]) + '">').join('');
+
+    } else if (b.kind === 'info') {
+      h += fieldLabel('항목')
+        + b.links.map((l, i) =>
+          '<div class="kv-item">'
+          + aiItemRow('링크 ' + (i + 1), l.ai, 'links', i)
+          + '<div class="kv-row">'
+          + '<input class="input kv-v" data-kv="' + i + '" data-f="title" value="' + esc(l.title) + '" placeholder="제목">'
+          + '<button class="icon-btn icon-btn-sm icon-btn-clear" data-act="kv-del" data-v="' + i + '" aria-label="삭제">'
+          + '<i data-lucide="trash-2" style="width:16px;height:16px"></i></button></div>'
+          + '<input class="input" data-kv="' + i + '" data-f="url" value="' + esc(l.url) + '" placeholder="주소">'
+          + '</div>').join('')
+        + '<button class="btn btn-md btn-block btn-weak-primary" data-act="kv-add">항목 추가</button>';
+
+    } else if (b.kind === 'gallery') {
+      h += fieldLabel('블록 제목') + '<input class="input" data-in="name" value="' + esc(b.name) + '">'
+        + fieldLabel('레이아웃') + optRow('setf', 'layout', b.layout, [['grid', '격자'], ['carousel', '가로'], ['stack', '세로']])
+        + fieldLabel('사진·영상') + '<div class="thumb-manage">'
+        + b.items.map((it, i) => '<div class="thumb-item">' + galMedia(it) + galIcon(it)
+            + '<button class="thumb-del" data-act="gal-del" data-v="' + i + '" aria-label="삭제"><i data-lucide="x"></i></button></div>').join('')
+        + '<button class="thumb-add" data-act="gal-add" aria-label="사진·영상 추가"><i data-lucide="plus"></i></button>'
+        + '</div>'
+        + fieldLabel('유튜브 영상 추가')
+        + '<div class="kv-row"><input class="input kv-v" id="gal-yt" placeholder="유튜브 주소">'
+        + '<button class="btn btn-md btn-weak-primary" data-act="yt-add">추가</button></div>';
+
+    } else if (isColl(b.kind)) {
+      h += fieldLabel('블록 제목') + '<input class="input" data-in="name" value="' + esc(b.name) + '">'
+        + fieldLabel('노출 개수') + optRow('setf', 'limit', b.limit, [['3', '3개'], ['5', '5개'], ['10', '10개']]);
+      /* 리뷰는 방문자가 남기는 순서대로 쌓이므로 정렬을 두지 않는다 */
+      if (b.kind !== 'review') {
+        h += fieldLabel('정렬') + optRow('setf', 'order', b.order, [['recent', '최신순'], ['manual', '직접 지정']]);
+      }
+      /* 콘텐츠 등록은 프로필 화면에서 한다. 여기서는 정렬을 '직접 지정'으로 바꿨을 때
+         바로 아래에 순서 변경 진입을 붙여 흐름이 이어지게 한다. */
+      if (b.order === 'manual' && b.items.length > 0) {
+        h += '<button class="goto-full" data-act="full"><span>노출 순서 변경 (' + b.items.length + ')</span>'
+          + '<i data-lucide="arrow-right"></i></button>';
+      }
+      h += aiKeyRow('', b.ai, 'ai');
+      h += '<hr class="sheet-divider">' + switchRow('프로필에 표시', b.visible, 'visible');
+    }
+
+    /* 컬렉션은 항목이 0개일 때만 삭제 허용 (데이터 유실 위험 없음) */
+    const canDelete = !isColl(b.kind) || b.items.length === 0;
+    if (canDelete) {
+      h += '<div style="margin-top:24px"></div>'
+        + '<button class="btn btn-md btn-block btn-weak-danger" data-act="del">블록 삭제</button>';
+    }
+
+    $('editor-body').innerHTML = h;
+    icons();
+  }
+
+  $('editor-body').addEventListener('click', e => {
+    const el = e.target.closest('[data-act]');
+    if (!el) return;
+    const b = find(activeId);
+    if (!b) return;
+    const act = el.dataset.act;
+
+    if (act === 'setf') {
+      b[el.dataset.k] = el.dataset.v;
+      touch(); render(); drawEditor();
+
+    } else if (act === 'togglef') {
+      const k = el.dataset.k;
+      b[k] = !b[k];
+      touch(); render(); drawEditor();
+
+    } else if (act === 'togglei') {
+      const it = b[el.dataset.arr][Number(el.dataset.i)];
+      it.ai = !it.ai;
+      touch(); render(); drawEditor();
+
+    } else if (act === 'del') {
+      askDeleteBlock(b.id);
+
+    } else if (act === 'full') {
+      openFull(b.id);
+
+    } else if (act === 'fmt') {
+      fmt(el.dataset.v);
+
+    } else if (act === 'pick-thumb') {
+      pickFile(v => { b.thumb = v[0].src; touch(); render(); drawEditor(); });
+
+    } else if (act === 'clear-thumb') {
+      b.thumb = ''; touch(); render(); drawEditor();
+
+    } else if (act === 'sns-add') {
+      openSnsPick();
+
+    } else if (act === 'sns-del') {
+      b.icons.splice(Number(el.dataset.v), 1);
+      touch(); render(); drawEditor();
+
+    } else if (act === 'kv-add') {
+      b.links.push({ title: '', url: '', ai: true });
+      touch(); render(); drawEditor();
+
+    } else if (act === 'kv-del') {
+      b.links.splice(Number(el.dataset.v), 1);
+      touch(); render(); drawEditor();
+
+    } else if (act === 'gal-add') {
+      pickFile(v => {
+        v.forEach(f => b.items.push({ type: f.type, src: f.src, thumb: '' }));
+        touch(); render(); drawEditor();
+      }, true, 'image/*,video/*');
+
+    } else if (act === 'yt-add') {
+      const inp = $('gal-yt');
+      const url = inp ? inp.value.trim() : '';
+      if (!url) return;
+      b.items.push({ type: 'youtube', src: url, thumb: '' });
+      touch(); render(); drawEditor();
+
+    } else if (act === 'gal-del') {
+      b.items.splice(Number(el.dataset.v), 1);
+      touch(); render(); drawEditor();
+    }
+  });
+
+  $('editor-body').addEventListener('input', e => {
+    const b = find(activeId);
+    if (!b) return;
+    const sns = e.target.closest('[data-sns]');
+    if (sns) { b.icons[Number(sns.dataset.sns)].id = sns.value; touch(); return; }
+    const kv = e.target.closest('[data-kv]');
+    if (kv) { b.links[Number(kv.dataset.kv)][kv.dataset.f] = kv.value; touch(); render(); return; }
+    const rt = e.target.closest('.rt-area');
+    if (rt) {
+      b.html = rt.innerHTML;
+      if ($('char-count')) $('char-count').textContent = rtLen(b.html) + '/2000';
+      touch(); render(); return;
+    }
+    const el = e.target.closest('[data-in]');
+    if (!el) return;
+    b[el.dataset.in] = el.value;
+    touch(); render();
+  });
+
+  /* 텍스트 서식 — contenteditable 에 실제 서식을 적용한다 (마크다운 미지원) */
+  const rtLen = html => {
+    const d = document.createElement('div');
+    d.innerHTML = html || '';
+    return d.textContent.length;
+  };
+  function fmt(cmd) {
+    const area = $('rt-area');
+    const b = find(activeId);
+    if (!area || !b) return;
+    area.focus();
+    document.execCommand(cmd, false, null);
+    b.html = area.innerHTML;
+    if ($('char-count')) $('char-count').textContent = rtLen(b.html) + '/2000';
+    touch(); render();
+  }
+
+  $('editor-cancel').onclick = closeAllSheets;
+  $('editor-done').onclick = closeAllSheets;
+
+  /* ============================================================
+     전역 디자인 시트 — 캔버스를 축소해 시트 위에 남긴다
+     ============================================================ */
+  function openDesign() {
+    closeLayer('layer-editor');
+    closeLayer('layer-catalog');
+    activeId = null;
+    render();
+    $('scroll').scrollTo({ top: 0 });
+    openLayer('layer-design');
+    /* 축소 중에는 레일·삽입점·배지를 숨겨 실제 페이지처럼 보이게 한다 */
+    document.body.classList.add('design-open', 'preview');
+    drawDesign();
+  }
+
+  /* ── 목업 조각 ── */
+  function mock(key, val, cur, art, name, act) {
+    return '<button class="mock' + (name ? '' : ' mock-compact')
+      + (String(cur) === String(val) ? ' is-active' : '') + '"'
+      + ' data-act="' + (act || 'sett') + '" data-k="' + key + '" data-v="' + val + '">'
+      + '<span class="mock-art">' + art + '</span>'
+      + (name ? '<span class="mock-name">' + name + '</span>' : '') + '</button>';
+  }
+  const F = c => ' style="fill:var(' + c + ')"';
+
+  /* 링크 표시 방식 목업 — 버튼형 / 썸네일(좌측 작게) / 카드형(상단 크게) */
+  function mkLinkStyle(v) {
+    const box = '<rect x="4" y="4" width="64" height="36" rx="4" style="fill:var(--color-surface);stroke:var(--color-border);stroke-width:1"/>';
+    if (v === 'button') return '<svg class="mk" viewBox="0 0 72 44">'
+      + '<rect x="4" y="14" width="64" height="16" rx="4" style="fill:var(--color-surface);stroke:var(--color-border);stroke-width:1"/>'
+      + '<rect x="26" y="20" width="20" height="4" rx="2"' + F('--color-border') + '/></svg>';
+    if (v === 'thumb') return '<svg class="mk" viewBox="0 0 72 44">'
+      + '<rect x="4" y="10" width="64" height="24" rx="4" style="fill:var(--color-surface);stroke:var(--color-border);stroke-width:1"/>'
+      + '<rect x="9" y="15" width="14" height="14" rx="3"' + F('--color-surface-sub') + '/>'
+      + '<rect x="28" y="20" width="28" height="4" rx="2"' + F('--color-border') + '/></svg>';
+    return '<svg class="mk" viewBox="0 0 72 44">' + box
+      + '<rect x="4" y="4" width="64" height="22" rx="4"' + F('--color-surface-sub') + '/>'
+      + '<rect x="4" y="20" width="64" height="6"' + F('--color-surface-sub') + '/>'
+      + '<rect x="10" y="31" width="26" height="4" rx="2"' + F('--color-border') + '/></svg>';
+  }
+
+  function mkLayout(v) {
+    const bar = '<rect x="8" y="40" width="30" height="4" rx="2"' + F('--color-border') + '/>'
+              + '<rect x="8" y="48" width="46" height="3" rx="1.5"' + F('--color-border') + '/>';
+    const ring = ';stroke:var(--color-surface);stroke-width:2';
+    if (v === 'overlap') return '<svg class="mk" viewBox="0 0 72 56">'
+      + '<rect x="0" y="0" width="72" height="24" rx="4"' + F('--color-surface-sub') + '/>'
+      + '<circle cx="17" cy="26" r="8" style="fill:var(--color-primary)' + ring + '"/>' + bar + '</svg>';
+    if (v === 'stacked') return '<svg class="mk" viewBox="0 0 72 56">'
+      + '<rect x="0" y="0" width="72" height="18" rx="4"' + F('--color-surface-sub') + '/>'
+      + '<circle cx="17" cy="30" r="8" style="fill:var(--color-primary)' + ring + '"/>' + bar + '</svg>';
+    if (v === 'fade') return '<svg class="mk" viewBox="0 0 72 56">'
+      + '<defs><linearGradient id="mkfade" x1="0" y1="0" x2="0" y2="1">'
+      + '<stop offset="0.35" style="stop-color:var(--color-surface-sub)"/>'
+      + '<stop offset="1" style="stop-color:var(--color-surface-sub);stop-opacity:0"/></linearGradient></defs>'
+      + '<rect x="0" y="0" width="72" height="30" rx="4" style="fill:url(#mkfade)"/>'
+      + '<circle cx="17" cy="26" r="8" style="fill:var(--color-primary)' + ring + '"/>' + bar + '</svg>';
+    /* 사진 없이 = 그라데이션에서 프로필 사진만 뺀 형태 */
+    return '<svg class="mk" viewBox="0 0 72 56">'
+      + '<defs><linearGradient id="mknone" x1="0" y1="0" x2="0" y2="1">'
+      + '<stop offset="0.35" style="stop-color:var(--color-surface-sub)"/>'
+      + '<stop offset="1" style="stop-color:var(--color-surface-sub);stop-opacity:0"/></linearGradient></defs>'
+      + '<rect x="0" y="0" width="72" height="30" rx="4" style="fill:url(#mknone)"/>'
+      + '<rect x="8" y="30" width="30" height="4" rx="2"' + F('--color-border') + '/>'
+      + '<rect x="8" y="38" width="46" height="3" rx="1.5"' + F('--color-border') + '/></svg>';
+  }
+
+  function mkChat(v) {
+    const frame = '<rect x="1" y="1" width="42" height="58" rx="6" style="fill:var(--color-surface);stroke:var(--color-border);stroke-width:1"/>'
+      + '<circle cx="11" cy="12" r="5"' + F('--color-surface-sub') + '/>'
+      + '<rect x="6" y="20" width="18" height="3" rx="1.5"' + F('--color-border') + '/>';
+    const blocksArt = (y) => '<rect x="6" y="' + y + '" width="32" height="6" rx="3"' + F('--color-surface-sub') + '/>'
+      + '<rect x="6" y="' + (y + 9) + '" width="32" height="6" rx="3"' + F('--color-surface-sub') + '/>';
+    let extra = '';
+    if (v === 'bottom') extra = blocksArt(29) + '<rect x="6" y="49" width="32" height="7" rx="3.5"' + F('--cta-solid') + '/>';
+    else if (v === 'corner') extra = blocksArt(29) + '<circle cx="34" cy="50" r="6"' + F('--cta-solid') + '/>';
+    else extra = '<rect x="6" y="27" width="32" height="7" rx="3.5"' + F('--cta-solid') + '/>' + blocksArt(39);
+    return '<svg class="mk" viewBox="0 0 44 60" style="max-width:44px;margin:0 auto">' + frame + extra + '</svg>';
+  }
+
+  function mkShape(v) {
+    const rx = v === 'sharp' ? 2 : (v === 'pill' ? 10 : 6);
+    return '<svg class="mk" viewBox="0 0 72 28">'
+      + '<rect x="2" y="4" width="68" height="20" rx="' + rx + '" style="fill:var(--color-surface);stroke:var(--color-border);stroke-width:1.5"/></svg>';
+  }
+
+  function mkShadow(v) {
+    return '<span class="mk-shadow" style="box-shadow:' + SHADOW[v] + '"></span>';
+  }
+
+  function mkIcon(name) { return '<i data-lucide="' + name + '" class="mk-ico"></i>'; }
+
+  /* 색상 스와치 줄 — 프리셋 + 마지막 칸의 컬러피커(자유 선택) */
+  function swatchRow(key, cur, presets, fillOf, custom, fallbackToken) {
+    const cells = presets.map(v =>
+      '<button class="swatch' + (cur === v ? ' is-active' : '') + '" data-act="sett" data-k="' + key + '" data-v="' + v + '"'
+      + ' style="background:' + fillOf(v) + '" aria-label="' + v + '"></button>').join('');
+    const val = custom || tokenHex(fallbackToken);
+    return '<div class="swatch-row">' + cells
+      + '<label class="swatch swatch-pick' + (cur === 'custom' ? ' is-active' : '') + '"'
+      + (custom ? ' style="background:' + custom + '"' : '') + '>'
+      + '<i data-lucide="pipette"></i>'
+      + '<input type="color" data-pick="' + key + '"' + (val ? ' value="' + val + '"' : '') + '>'
+      + '</label></div>';
+  }
+
+  function drawDesign() {
+    $('design-tabs').innerHTML = [['profile', '프로필'], ['style', '스타일'], ['block', '블록'], ['chat', '대화버튼']].map(t =>
+      '<button class="tab' + (designTab === t[0] ? ' is-active' : '') + '" data-act="dtab" data-v="' + t[0] + '">' + t[1] + '</button>'
+    ).join('');
+
+    let h = '';
+    if (designTab === 'profile') {
+      h += fieldLabel('레이아웃') + '<div class="mock-row mock-row-4">'
+        + mock('layout', 'overlap', T.layout, mkLayout('overlap'), '')
+        + mock('layout', 'stacked', T.layout, mkLayout('stacked'), '')
+        + mock('layout', 'fade',    T.layout, mkLayout('fade'),    '')
+        + mock('layout', 'none',    T.layout, mkLayout('none'),    '')
+        + '</div>'
+        + fieldLabel('정렬') + '<div class="mock-row mock-row-2">'
+        + mock('align', 'left',   T.align, mkIcon('align-left'),   '왼쪽')
+        + mock('align', 'center', T.align, mkIcon('align-center'), '가운데')
+        + '</div>'
+        + '<div style="margin-top:20px"></div>'
+        + pickRow('pick-avatar', thumbBox(P.avatar, 'user-round'), '프로필 이미지', P.avatar, 'clear-avatar')
+        + pickRow('pick-cover', thumbBox(P.cover, 'image'), '배경 이미지', P.cover, 'clear-cover');
+
+    } else if (designTab === 'style') {
+      h += fieldLabel('배경색')
+        + swatchRow('pageBg', T.pageBg, PAGE_BG, v => 'var(--color-page-' + v + ')', T.pageBgCustom, '--color-page-lilac')
+        + fieldLabel('텍스트 색상')
+        + swatchRow('pageText', T.pageText, TEXT_PRESET, v => TEXT_FILL[v], T.pageTextCustom, '--color-text');
+
+    } else if (designTab === 'block') {
+      h += fieldLabel('모양') + '<div class="mock-row mock-row-3">'
+        + mock('shape', 'sharp', T.shape, mkShape('sharp'), '')
+        + mock('shape', 'round', T.shape, mkShape('round'), '')
+        + mock('shape', 'pill',  T.shape, mkShape('pill'),  '')
+        + '</div>'
+        + fieldLabel('그림자') + '<div class="mock-row mock-row-4">'
+        + mock('shadow', 'none',   T.shadow, mkShadow('none'),   '')
+        + mock('shadow', 'soft',   T.shadow, mkShadow('soft'),   '')
+        + mock('shadow', 'mid',    T.shadow, mkShadow('mid'),    '')
+        + mock('shadow', 'strong', T.shadow, mkShadow('strong'), '')
+        + '</div>'
+        + fieldLabel('정렬') + '<div class="mock-row mock-row-2">'
+        + mock('balign', 'left',   T.balign, mkIcon('align-left'),   '왼쪽')
+        + mock('balign', 'center', T.balign, mkIcon('align-center'), '가운데')
+        + '</div>';
+
+    } else {
+      h += fieldLabel('위치') + '<div class="mock-row mock-row-3">'
+        + mock('chat', 'bottom', T.chat, mkChat('bottom'), '하단 고정')
+        + mock('chat', 'corner', T.chat, mkChat('corner'), '코너')
+        + mock('chat', 'inline', T.chat, mkChat('inline'), '프로필 안')
+        + '</div>'
+        + fieldLabel('버튼 문구')
+        + '<input class="input" data-tin="ctaLabel" value="' + esc(T.ctaLabel) + '" placeholder="대화하기">'
+        + fieldLabel('색상')
+        + swatchRow('cta', T.cta, CTA_PRESET, v => CTA_FILL[v], T.ctaCustom, '--color-chat-plum')
+        + fieldLabel('텍스트 색상')
+        + swatchRow('ctaText', T.ctaText, TEXT_PRESET, v => TEXT_FILL[v], T.ctaTextCustom, '--color-text');
+    }
+    $('design-body').innerHTML = h;
+    icons();
+  }
+
+  $('design-tabs').addEventListener('click', e => {
+    const el = e.target.closest('[data-act="dtab"]');
+    if (!el) return;
+    designTab = el.dataset.v;
+    drawDesign();
+  });
+
+  $('design-body').addEventListener('click', e => {
+    const el = e.target.closest('[data-act]');
+    if (!el) return;
+    const act = el.dataset.act;
+    if (act === 'sett') {
+      T[el.dataset.k] = el.dataset.v;
+      touch(); render(); drawDesign();
+    } else if (act === 'pick-avatar') {
+      pickFile(v => { P.avatar = v[0].src; touch(); render(); drawDesign(); });
+    } else if (act === 'clear-avatar') {
+      P.avatar = ''; touch(); render(); drawDesign();
+    } else if (act === 'pick-cover') {
+      pickFile(v => { P.cover = v[0].src; touch(); render(); drawDesign(); });
+    } else if (act === 'clear-cover') {
+      P.cover = ''; touch(); render(); drawDesign();
+    }
+  });
+
+  /* 컬러피커 — 프리셋 밖의 색을 런타임에 직접 고른다 */
+  $('design-body').addEventListener('input', e => {
+    const tin = e.target.closest('[data-tin]');
+    if (tin) { T[tin.dataset.tin] = tin.value; touch(); render(); return; }
+    const el = e.target.closest('[data-pick]');
+    if (!el) return;
+    const k = el.dataset.pick;
+    T[k] = 'custom';
+    T[k + 'Custom'] = el.value;
+    touch(); render();
+    el.closest('.swatch').style.background = el.value;
+    document.querySelectorAll('#design-body .swatch').forEach(s => s.classList.remove('is-active'));
+    el.closest('.swatch').classList.add('is-active');
+  });
+
+  $('design-cancel').onclick = closeAllSheets;
+  $('design-done').onclick = closeAllSheets;
+  $('chip-design').onclick = () => { if (!previewMode) openDesign(); };
+  $('chip-name').onclick = () => { if (!previewMode) openNameDialog(); };
+  $('chip-autofill').onclick = () => {
+    if (previewMode) return;
+    closeAllSheets();
+    openLayer('layer-autofill');
+  };
+  $('autofill-cancel').onclick = closeAllSheets;
+  $('autofill-overlay').onclick = closeAllSheets;
+  document.querySelector('.autofill-actions').addEventListener('click', e => {
+    if (!e.target.closest('[data-af]')) return;
+    closeAllSheets();
+    toast('빈 항목을 채웠어요');
+  });
+
+  /* ============================================================
+     블록 추가 카탈로그
+     ============================================================ */
+  function openCatalog(i) {
+    insertAt = i;
+    closeLayer('layer-editor');
+    closeLayer('layer-design');
+    document.body.classList.remove('design-open');
+    if (!previewMode) document.body.classList.remove('preview');
+    activeId = null;
+    render();
+    openLayer('layer-catalog');
+    drawCatalog();
+  }
+
+  const KIND_ICON = {
+    link: 'link', text: 'type', gallery: 'images', div: 'minus', sns: 'at-sign',
+    contact: 'contact', info: 'list', event: 'calendar-days', board: 'newspaper', review: 'star'
+  };
+
+  function drawCatalog() {
+    const has = k => blocks.some(b => b.kind === k);
+    const cells = ['link', 'text', 'gallery', 'div', 'sns', 'contact', 'info', 'event', 'board', 'review'];
+    $('catalog-body').innerHTML = '<div class="cat-grid">' + cells.map(k => {
+      const off = SINGLETON.indexOf(k) >= 0 && has(k);
+      return '<button class="cat-cell" data-act="add" data-v="' + k + '"' + (off ? ' disabled' : '') + '>'
+        + '<i data-lucide="' + KIND_ICON[k] + '"></i>' + KIND_ALL[k] + '</button>';
+    }).join('') + '</div>';
+    icons();
+  }
+
+  $('catalog-body').addEventListener('click', e => {
+    const el = e.target.closest('[data-act="add"]');
+    if (el) addBlock(el.dataset.v);
+  });
+  $('catalog-cancel').onclick = closeAllSheets;
+  $('catalog-overlay').onclick = closeAllSheets;
+
+  function addBlock(kind) {
+    const id = ++seq;
+    let nb;
+    if (kind === 'link') nb = { id, kind: 'link', title: '새 링크', url: '', style: 'button', thumb: '', ai: true, visible: true };
+    else if (kind === 'text') nb = { id, kind: 'text', title: '', html: '', ai: true, visible: true };
+    else if (kind === 'div') nb = { id, kind: 'div', visible: true };
+    else if (kind === 'sns') nb = { id, kind: 'sns', visible: true, icons: [{ p: 'Instagram', id: '', ai: true }] };
+    else if (kind === 'gallery') nb = { id, kind: 'gallery', name: '갤러리', layout: 'grid', items: [], visible: true };
+    else if (kind === 'contact') {
+      nb = { id, kind: 'contact', visible: true };
+      CONTACT_FIELDS.forEach(f => { nb[f[0]] = ''; nb[f[3]] = true; });
+    }
+    else if (kind === 'info') nb = { id, kind: 'info', visible: true, links: [{ title: '', url: '', ai: true }] };
+    else nb = { id, kind, name: KIND[kind], limit: '3', order: 'recent', visible: true, ai: true, items: [] };
+
+    blocks.splice(insertAt, 0, nb);
+    touch();
+    closeLayer('layer-catalog');
+    openEditor(id);
+  }
+
+  /* ============================================================
+     컬렉션 전체 화면
+     ============================================================ */
+  function openFull(id) {
+    fullId = id;
+    drawFull();
+    openLayer('layer-full');
+  }
+
+  /* 전체 화면은 노출 순서 변경 전용. 콘텐츠 등록·수정은 프로필 화면에서만 한다. */
+  function drawFull() {
+    const b = find(fullId);
+    if (!b) return;
+    const shown = Math.min(Number(b.limit), b.items.length);
+    $('full-title').textContent = KIND[b.kind] + ' 순서 변경';
+
+    $('full-body').innerHTML = b.items.length === 0
+      ? '<div class="full-empty">아직 등록된 ' + ITEM[b.kind].n + ITEM[b.kind].j + ' 없어요</div>'
+      : b.items.map((it, i) =>
+        '<div class="full-item' + (i < shown ? '' : ' is-dim') + '">'
+        + '<span class="full-item-grip"><i data-lucide="grip-vertical"></i></span>'
+        + '<span class="full-item-info"><span class="full-item-title">' + esc(it.t) + '</span>'
+        + (it.d ? '<span class="full-item-sub">' + esc(it.d) + '</span>' : '') + '</span>'
+        + '<span class="full-item-arrows">'
+        + '<button class="icon-btn icon-btn-sm icon-btn-border" data-fmv="-1" data-id="' + it.id + '"' + (i === 0 ? ' disabled' : '') + ' aria-label="위로"><i data-lucide="chevron-up" style="width:14px;height:14px"></i></button>'
+        + '<button class="icon-btn icon-btn-sm icon-btn-border" data-fmv="1" data-id="' + it.id + '"' + (i === b.items.length - 1 ? ' disabled' : '') + ' aria-label="아래로"><i data-lucide="chevron-down" style="width:14px;height:14px"></i></button>'
+        + '</span></div>').join('');
+    icons();
+  }
+
+  $('full-body').addEventListener('click', e => {
+    const el = e.target.closest('[data-fmv]');
+    if (!el) return;
+    const b = find(fullId);
+    const i = b.items.findIndex(x => x.id === el.dataset.id);
+    const j = i + Number(el.dataset.fmv);
+    if (j < 0 || j >= b.items.length) return;
+    const tmp = b.items[i]; b.items[i] = b.items[j]; b.items[j] = tmp;
+    touch(); render(); drawFull();
+  });
+
+  $('full-back').onclick = () => {
+    closeLayer('layer-full');
+    if (fullId) openEditor(fullId);
+  };
+
+  /* ============================================================
+     블록 이동 (화살표 / 드래그)
+     ============================================================ */
+  function moveBlock(id, d) {
+    const i = blocks.findIndex(b => b.id === id);
+    const j = i + d;
+    if (j < 0 || j >= blocks.length) return;
+    const tmp = blocks[i]; blocks[i] = blocks[j]; blocks[j] = tmp;
+    touch(); render();
+    if (activeId === id) scrollToActive();
+  }
+
+  let drag = null;
+  function gripDown(e, id) {
+    if (previewMode) return;
+    e.preventDefault(); e.stopPropagation();
+    const grip = e.currentTarget;
+    grip.setPointerCapture(e.pointerId);
+    const row = document.querySelector('.block[data-block-id="' + id + '"]');
+    const line = document.createElement('div');
+    line.className = 'drop-line';
+    $('canvas').appendChild(line);
+    drag = { id, idx: null, line, grip };
+    row.classList.add('is-dragging');
+    document.body.classList.add('dragging');
+    grip.addEventListener('pointermove', gripMove);
+    grip.addEventListener('pointerup', gripUp);
+    grip.addEventListener('pointercancel', gripUp);
+  }
+
+  function gripMove(e) {
+    if (!drag) return;
+    const rows = Array.prototype.slice.call(document.querySelectorAll('.block'));
+    const top = $('canvas').getBoundingClientRect().top;
+    let idx = rows.length;
+    for (let i = 0; i < rows.length; i++) {
+      const r = rows[i].getBoundingClientRect();
+      if (e.clientY < r.top + r.height / 2) { idx = i; break; }
+    }
+    drag.idx = idx;
+    const y = idx < rows.length
+      ? rows[idx].getBoundingClientRect().top - top
+      : rows[rows.length - 1].getBoundingClientRect().bottom - top;
+    drag.line.style.top = y + 'px';
+  }
+
+  function gripUp() {
+    if (!drag) return;
+    const d = drag; drag = null;
+    d.grip.removeEventListener('pointermove', gripMove);
+    d.grip.removeEventListener('pointerup', gripUp);
+    d.grip.removeEventListener('pointercancel', gripUp);
+    if (d.line.parentNode) d.line.parentNode.removeChild(d.line);
+    document.body.classList.remove('dragging');
+
+    if (d.idx !== null) {
+      const from = blocks.findIndex(b => b.id === d.id);
+      let to = d.idx;
+      if (to > from) to--;
+      if (to !== from && to >= 0 && to < blocks.length) {
+        const moved = blocks.splice(from, 1)[0];
+        blocks.splice(to, 0, moved);
+        touch();
+      }
+    }
+    render();
+  }
+
+  /* ============================================================
+     이름·주소 다이얼로그
+     ============================================================ */
+  function openNameDialog() {
+    $('nd-name').value = P.name;
+    $('nd-handle').value = '';
+    $('nd-old').textContent = 'connectia.bio/' + P.handle;
+    $('nd-status').textContent = '';
+    $('nd-status').className = 'url-status';
+    $('nd-save').disabled = true;
+    $('layer-name').classList.add('on');
+  }
+
+  function ndCheck() {
+    const h = $('nd-handle').value.trim().toLowerCase();
+    const st = $('nd-status');
+    let handleOk = false;
+    if (!h) {
+      st.textContent = ''; st.className = 'url-status';
+    } else if (TAKEN.indexOf(h) >= 0) {
+      st.textContent = '사용 중'; st.className = 'url-status no';
+    } else {
+      st.textContent = '사용 가능'; st.className = 'url-status ok'; handleOk = true;
+    }
+    const nameChanged = $('nd-name').value.trim() && $('nd-name').value.trim() !== P.name;
+    $('nd-save').disabled = !(handleOk || nameChanged);
+  }
+
+  $('nd-name').addEventListener('input', ndCheck);
+  $('nd-handle').addEventListener('input', ndCheck);
+  $('nd-cancel').onclick = () => $('layer-name').classList.remove('on');
+  $('nd-save').onclick = () => {
+    const n = $('nd-name').value.trim();
+    const h = $('nd-handle').value.trim().toLowerCase();
+    if (n) P.name = n;
+    if (h && TAKEN.indexOf(h) < 0) P.handle = h;
+    $('layer-name').classList.remove('on');
+    touch(); render();
+    toast('변경했어요');
+  };
+
+  $('head').addEventListener('click', e => {
+    if (previewMode || document.body.classList.contains('design-open')) return;
+    if (e.target.closest('.head-name')) { openNameDialog(); return; }
+    if (e.target.closest('.head-avatar')) {
+      pickFile(v => { P.avatar = v[0].src; touch(); render(); });
+    }
+  });
+
+  /* ============================================================
+     확인 다이얼로그
+     ============================================================ */
+  let cfCb = null;
+  function confirmDlg(title, yes, danger, cb) {
+    cfCb = cb;
+    $('cf-title').textContent = title;
+    $('cf-yes').textContent = yes;
+    $('cf-yes').className = 'btn btn-md ' + (danger ? 'btn-fill-danger' : 'btn-fill-primary');
+    $('layer-confirm').classList.add('on');
+  }
+  $('cf-no').onclick = () => { $('layer-confirm').classList.remove('on'); cfCb = null; };
+  $('cf-yes').onclick = () => {
+    $('layer-confirm').classList.remove('on');
+    const cb = cfCb; cfCb = null;
+    if (cb) cb();
+  };
+
+  /* ============================================================
+     저장 · 이탈
+     ============================================================ */
+  $('btn-apply').onclick = () => {
+    dirty = false;
+    $('btn-apply').disabled = true;
+    closeAllSheets();
+    toast('저장했어요');
+  };
+
+  $('btn-cancel').onclick = () => {
+    if (!dirty) { toast('편집을 닫았어요'); return; }
+    confirmDlg('변경사항을 저장하지 않고 나갈까요?', '나가기', false, () => {
+      dirty = false;
+      $('btn-apply').disabled = true;
+      closeAllSheets();
+      toast('편집을 닫았어요');
+    });
+  };
+
+  /* ============================================================
+     미리보기 모드
+     ============================================================ */
+  $('chip-preview').onclick = function () {
+    previewMode = !previewMode;
+    if (previewMode) { closeLayer('layer-full'); closeAllSheets(); }
+    document.body.classList.toggle('preview', previewMode);
+    this.classList.toggle('is-active', previewMode);
+    $('chip-design').disabled = previewMode;
+    $('chip-name').disabled = previewMode;
+    $('chip-autofill').disabled = previewMode;
+    render();
+  };
+
+  render();
+  icons();
+  </script>
+</body>
+</html>
