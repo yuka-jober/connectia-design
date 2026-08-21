@@ -110,6 +110,24 @@
   --palette-zinc-800: #27272a;
   --palette-zinc-900: #18181b;
 
+  /* Brand — 외부 서비스(소셜 로그인) 고정 브랜드 컬러 */
+  --palette-kakao-yellow: #fee500;
+  --palette-kakao-ink:    #191919;
+
+  /* Pastel — 프로필 페이지 배경용 저채도 색 */
+  /* 대화하기 버튼 — 파스텔 배경과 어울리도록 채도를 낮춘 깊은 색 */
+  --palette-soft-apricot: #f0c9a4;
+  --palette-soft-blossom: #f6c3cd;
+  --palette-deep-plum:   #6a5b9a;
+  --palette-deep-ocean:  #4a6f96;
+  --palette-deep-forest: #4e7d63;
+
+  --palette-pastel-cream: #fdf4e7;
+  --palette-pastel-blush: #fdeef1;
+  --palette-pastel-lilac: #f1eefb;
+  --palette-pastel-sky:   #e9f2fb;
+  --palette-pastel-mint:  #e8f5ee;
+
 
   /* ==========================================
      SEMANTIC COLORS
@@ -151,9 +169,29 @@
   --color-on-primary-faint: rgba(255,255,255,0.2);   /* 어두운 배경 위 장식 아이콘 */
   --color-scrim:            rgba(0,0,0,0.4);         /* 이미지 위 삭제 버튼 등 어두운 스크림 */
   --color-surface-glass:    rgba(255,255,255,0.92);  /* 이미지·영상 위에 얹는 반투명 흰 배경 (play 버튼 등) */
+  --color-surface-veil:     rgba(255,255,255,0.7);   /* 페이지 배경 위에 얹는 반투명 흰 면 — 배경 색조가 비쳐 어떤 테마에도 어울린다 */
+
+  /* Social Brand — 소셜 로그인 버튼 (브랜드 가이드상 색 고정) */
+  --color-kakao:    var(--palette-kakao-yellow);
+  --color-on-kakao: var(--palette-kakao-ink);
 
   /* Brand Extended */
   --color-banner-gradient: linear-gradient(135deg, var(--palette-purple-700) 0%, var(--palette-purple-900) 100%);
+
+  /* Profile Page Background — 사용자가 프로필 페이지 배경으로 고르는 파스텔 프리셋 */
+  --color-page-mist:  var(--palette-gray-50);   /* board.html 프로필 페이지와 동일한 기본 배경 */
+  --color-page-cream: var(--palette-pastel-cream);
+  --color-page-blush: var(--palette-pastel-blush);
+  --color-page-lilac: var(--palette-pastel-lilac);
+  --color-page-sky:   var(--palette-pastel-sky);
+  --color-page-mint:  var(--palette-pastel-mint);
+
+  /* Chat CTA — 대화하기 버튼 색상 프리셋 */
+  --color-chat-apricot: var(--palette-soft-apricot);
+  --color-chat-blossom: var(--palette-soft-blossom);
+  --color-chat-plum:    var(--palette-deep-plum);
+  --color-chat-ocean:   var(--palette-deep-ocean);
+  --color-chat-forest:  var(--palette-deep-forest);
 
 
   /* ==========================================
@@ -219,6 +257,16 @@
   --ls-badge:    0.1px;
   --ls-metric:  -1px;
   --ls-nav:      0.2px;
+
+
+  /* ==========================================
+     FORM CONTROL
+     ========================================== */
+
+  --input-h:     40px;   /* input·select 높이 */
+  --input-px:    16px;   /* input·select 좌우 여백 */
+  --textarea-py:  8px;   /* textarea 상하 여백 */
+  --textarea-h:  68px;   /* textarea 최소 높이 */
 
 
   /* ==========================================

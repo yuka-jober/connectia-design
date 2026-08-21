@@ -1,0 +1,1882 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>이벤트 랜딩 — 엘린 피부과</title>
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="../components.css">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-base);
+    background: #e0e0e0;
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ── Frame (mobile) ── */
+  .frame {
+    width: 390px;
+    height: 844px;
+    max-height: 100dvh;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 32px 80px -20px rgba(0,0,0,0.28);
+    background: var(--color-surface);
+    border-radius: 44px;
+  }
+  @media (max-width: 439px) {
+    .frame { width: 100vw; height: 100dvh; max-height: none; border-radius: 0; }
+  }
+
+  /* ── 화면 전환 ── */
+  .screen { position: absolute; inset: 0; display: none; flex-direction: column; background: var(--color-surface); }
+  .screen.on { display: flex; }
+
+  /* ── 공통 ── */
+  i[data-lucide] { display: inline-flex; flex-shrink: 0; }
+  /* Lucide가 <i>를 <svg>로 치환한 뒤에도 크기/색이 적용되도록 svg에도 동일 규칙을 매치시킨다 */
+  svg.lucide { flex-shrink: 0; }
+
+  /* ── Topbar (floating over hero) ── */
+  .topbar {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 8px;
+    pointer-events: none;
+  }
+  .topbar .icon-btn {
+    pointer-events: auto;
+    background: var(--color-scrim);
+    border-radius: var(--r-full);
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+  }
+  .topbar .icon-btn:hover { background: rgba(0,0,0,0.55); }
+  .topbar .icon-btn i[data-lucide],
+  .topbar .icon-btn svg { color: var(--color-on-primary) !important; }
+  .topbar-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .topbar .icon-btn.has-label {
+    width: auto;
+    padding: 0 12px;
+    gap: 6px;
+    color: var(--color-on-primary);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-semibold);
+    font-family: var(--font-base);
+  }
+
+  /* Owner actions stack — 신청자 보기 (topbar 아래 라인, hero 위 오버레이) */
+  .owner-actions-stack {
+    position: absolute;
+    top: 56px;
+    right: 8px;
+    z-index: 9;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+    pointer-events: none;
+  }
+  .owner-actions-stack .icon-btn {
+    pointer-events: auto;
+    background: var(--color-scrim);
+    border-radius: var(--r-full);
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    width: auto;
+    padding: 0 12px;
+    gap: 6px;
+    color: var(--color-on-primary);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-semibold);
+    font-family: var(--font-base);
+  }
+  .owner-actions-stack .icon-btn:hover { background: rgba(0,0,0,0.55); }
+  .owner-actions-stack .icon-btn i[data-lucide],
+  .owner-actions-stack .icon-btn svg { color: var(--color-on-primary) !important; }
+
+  .topbar-solid {
+    position: sticky; top: 0; z-index: 10;
+    display: flex; align-items: center; gap: 8px;
+    padding: 12px 8px;
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    flex-shrink: 0;
+  }
+  .topbar-solid .topbar-title {
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text);
+  }
+
+  /* ── Scroll body + sticky CTA ── */
+  .scroll-body { flex: 1; overflow-y: auto; background: var(--color-surface); padding-bottom: 96px; }
+  .sticky-bar {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    padding: 12px 20px calc(20px + env(safe-area-inset-bottom));
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+    display: flex; flex-direction: column; gap: 8px;
+    z-index: 5;
+  }
+  .sticky-meta {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    font-size: var(--fs-caption); color: var(--color-text-muted);
+  }
+  .sticky-meta strong { color: var(--color-text-sub); font-weight: var(--fw-semibold); }
+  /* 호스트가 사전 등록한 사람에게만 보이는 안내 한 줄 */
+  .sticky-notice {
+    display: flex; align-items: center; justify-content: center; gap: 4px;
+    font-size: var(--fs-caption); line-height: var(--lh-caption);
+    color: var(--color-text-sub);
+    text-align: center;
+  }
+  .sticky-notice i[data-lucide], .sticky-notice svg.lucide {
+    width: 14px; height: 14px; flex-shrink: 0;
+    color: var(--color-text-muted);
+  }
+  .sticky-actions { display: flex; align-items: stretch; gap: 8px; }
+  .sticky-chat {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    border-radius: var(--r-md);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    color: var(--color-primary);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: background var(--motion-fast) var(--ease-standard);
+  }
+  .sticky-chat:hover { background: var(--color-surface-sub); }
+  .sticky-chat i[data-lucide], .sticky-chat svg { width: 22px; height: 22px; }
+
+  /* ============================================
+     LANDING SCREEN
+     ============================================ */
+
+  /* Hero thumbnail — 4:3 slider */
+  .hero {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    flex-shrink: 0;
+    background: var(--color-primary-light);
+  }
+  .hero-slider {
+    width: 100%; height: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    display: flex;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .hero-slider::-webkit-scrollbar { display: none; }
+  .hero-slide {
+    flex: 0 0 100%;
+    width: 100%; height: 100%;
+    scroll-snap-align: start;
+    background-size: cover;
+    background-position: center;
+    background-color: var(--color-primary-light);
+    position: relative;
+  }
+  .hero-slide::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(0,0,0,0) 50%, rgba(0,0,0,0.35) 100%);
+    pointer-events: none;
+  }
+  .hero-pagination {
+    position: absolute; bottom: 12px; right: 12px;
+    z-index: 2;
+    background: rgba(17,19,24,0.55); color: var(--color-on-primary);
+    border-radius: var(--r-full);
+    padding: 4px 10px;
+    font-size: var(--fs-badge); font-weight: var(--fw-medium);
+  }
+
+  /* Hero info block */
+  .hero-info {
+    padding: 24px 20px 16px;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .hero-clinic-row { display: inline-flex; align-items: center; gap: 2px; cursor: pointer; align-self: flex-start; }
+  .hero-clinic-name {
+    font-size: var(--fs-label); font-weight: var(--fw-semibold);
+    color: var(--color-text-sub);
+  }
+  .hero-clinic-row i[data-lucide],
+  .hero-clinic-row svg { width: 16px; height: 16px; color: var(--color-text-muted); }
+  .hero-headline {
+    font-size: 24px; font-weight: var(--fw-bold);
+    line-height: 1.35; letter-spacing: -0.5px; color: var(--color-text);
+  }
+  .hero-target {
+    font-size: var(--fs-body-lg); color: var(--color-text-sub);
+    line-height: 1.5;
+  }
+  .hero-schedule {
+    display: inline-flex; align-items: center; gap: 6px;
+    align-self: flex-start;
+    font-size: var(--fs-label);
+    color: var(--color-text-sub);
+    font-weight: var(--fw-medium);
+  }
+  .hero-schedule i[data-lucide],
+  .hero-schedule svg { width: 16px; height: 16px; color: var(--color-text-muted); }
+  .hero-schedule-label { color: var(--color-text-muted); margin-right: 2px; }
+  .hero-schedule-date { color: var(--color-text-sub); font-weight: var(--fw-medium); }
+  .hero-schedule-sep { color: var(--color-text-muted); }
+  .hero-schedule-time { color: var(--color-text-sub); font-weight: var(--fw-medium); }
+
+  .trust-row {
+    display: flex; align-items: center; gap: 6px;
+    flex-wrap: wrap;
+    padding-top: 4px;
+  }
+  .trust-dot { font-size: var(--fs-caption); color: var(--color-text-muted); }
+  .star-row { display: inline-flex; align-items: center; gap: 4px; }
+  .star-row i[data-lucide],
+  .star-row svg { width: 14px; height: 14px; color: var(--color-star); fill: var(--color-star); }
+  .star-score { font-size: var(--fs-label); font-weight: var(--fw-semibold); color: var(--color-text); margin-left: 2px; }
+  .star-count { font-size: var(--fs-caption); color: var(--color-text-muted); }
+
+  .tag-official {
+    display: inline-flex; align-self: flex-start;
+    align-items: center; gap: 4px;
+    color: var(--color-primary);
+    font-size: var(--fs-caption);
+    font-weight: var(--fw-semibold);
+  }
+  .tag-official i[data-lucide],
+  .tag-official svg { width: 14px; height: 14px; }
+
+  /* Section divider */
+  .section-divider {
+    height: 8px;
+    background: var(--color-bg);
+    flex-shrink: 0;
+  }
+
+  /* Section */
+  .section {
+    padding: 24px 20px;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  .section-title {
+    font-size: var(--fs-heading);
+    font-weight: var(--fw-bold);
+    color: var(--color-text);
+    letter-spacing: -0.2px;
+  }
+  .section-sub {
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+  }
+
+  /* Date pill */
+  .date-card {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--color-surface-sub);
+    border-radius: var(--r-md);
+    padding: 16px 20px;
+  }
+  .date-card i[data-lucide],
+  .date-card svg { width: 20px; height: 20px; color: var(--color-primary); }
+  .date-card-text { flex: 1; }
+  .date-card-label { font-size: var(--fs-caption); color: var(--color-text-muted); margin-bottom: 2px; }
+  .date-card-value { font-size: var(--fs-body); font-weight: var(--fw-semibold); color: var(--color-text); }
+  .date-card-tag {
+    font-size: var(--fs-badge); font-weight: var(--fw-semibold);
+    color: var(--color-destructive);
+    padding: 4px 8px;
+    background: rgba(201,64,34,0.10);
+    border-radius: var(--r-full);
+  }
+
+  /* Checklist */
+  .checklist {
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .check-item {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-md);
+  }
+  .check-item .check-circle {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-on-primary);
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .check-item .check-circle i[data-lucide],
+  .check-item .check-circle svg {
+    width: 12px; height: 12px;
+    stroke-width: 3;
+  }
+  .check-item-text {
+    font-size: var(--fs-body-lg); color: var(--color-text);
+    line-height: 1.5;
+  }
+
+  /* Reviews */
+  .review-scroll {
+    display: flex; gap: 12px;
+    overflow-x: auto;
+    margin: 0 -20px;
+    padding: 0 20px 8px;
+    scrollbar-width: none;
+  }
+  .review-scroll::-webkit-scrollbar { display: none; }
+  .review-card {
+    width: 240px; flex-shrink: 0;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-md);
+    overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .review-img {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    background-size: cover; background-position: center;
+    background-color: var(--color-surface-sub);
+  }
+  .review-body {
+    padding: 12px 14px 14px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .review-stars { display: inline-flex; align-items: center; gap: 2px; }
+  .review-stars i[data-lucide],
+  .review-stars svg { width: 12px; height: 12px; color: var(--color-star); fill: var(--color-star); }
+  .review-text {
+    font-size: var(--fs-label); color: var(--color-text);
+    line-height: 1.5;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .review-meta {
+    font-size: 10px; color: var(--color-text-muted);
+    display: flex; align-items: center; gap: 4px;
+  }
+  .review-meta .verified {
+    display: inline-flex; align-items: center; gap: 2px;
+    color: var(--color-primary);
+    font-weight: var(--fw-medium);
+  }
+  .review-meta .verified i[data-lucide],
+  .review-meta .verified svg { width: 10px; height: 10px; }
+
+  /* Description */
+  .desc {
+    font-size: var(--fs-body); line-height: 1.7;
+    color: var(--color-text-sub);
+  }
+
+  /* Clinic page link card */
+  .clinic-link {
+    display: flex; align-items: center; gap: 12px;
+    padding: 16px;
+    background: var(--color-surface-sub);
+    border-radius: var(--r-md);
+    cursor: pointer;
+    border: none;
+    width: 100%;
+    text-align: left;
+    font-family: var(--font-base);
+  }
+  .clinic-link:hover { background: var(--color-border); }
+  .clinic-link-thumb {
+    width: 44px; height: 44px;
+    border-radius: var(--r-sm);
+    background-color: var(--color-primary-light);
+    background-image: url('../assets/profile.png');
+    background-size: cover; background-position: center;
+    flex-shrink: 0;
+  }
+  .clinic-link-text { flex: 1; }
+  .clinic-link-name {
+    font-size: var(--fs-body); font-weight: var(--fw-semibold);
+    color: var(--color-text);
+  }
+  .clinic-link-sub {
+    font-size: var(--fs-caption); color: var(--color-text-muted);
+    margin-top: 2px;
+  }
+  .clinic-link i.chev,
+  .clinic-link svg.chev { width: 18px; height: 18px; color: var(--color-text-muted); }
+
+  /* Lucide stars row */
+  .star-icons-row i[data-lucide],
+  .star-icons-row svg {
+    width: 14px; height: 14px;
+    color: var(--color-star);
+    fill: var(--color-star);
+  }
+
+  /* ============================================
+     PARTICIPANTS LIST SCREEN
+     ============================================ */
+  .list-body {
+    flex: 1; overflow-y: auto;
+    background: var(--color-bg);
+    padding: 16px 16px 32px;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .event-card {
+    background: var(--color-surface);
+    border-radius: var(--r-md);
+    padding: 16px;
+    display: flex; flex-direction: column;
+    gap: 8px;
+  }
+  .list-event-name {
+    font-size: var(--fs-heading);
+    font-weight: var(--fw-bold);
+    letter-spacing: -0.3px;
+    color: var(--color-text);
+  }
+  .list-event-tag {
+    color: var(--color-primary);
+    margin-right: 8px;
+  }
+  .fields-summary {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  }
+  .fields-summary-text {
+    font-size: var(--fs-label); color: var(--color-text-sub);
+    flex: 1; min-width: 0;
+  }
+  .fields-summary-text strong {
+    color: var(--color-text-sub); font-weight: var(--fw-semibold);
+    margin-right: 4px;
+  }
+  .list-actions {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    padding: 0 4px;
+  }
+  .list-actions-btns { display: flex; align-items: center; gap: 8px; }
+  .list-count {
+    font-size: var(--fs-body); color: var(--color-text-sub);
+  }
+  .list-count strong { color: var(--color-text); font-weight: var(--fw-semibold); }
+  .applicant-rows {
+    background: var(--color-surface);
+    border-radius: var(--r-md);
+    padding: 4px 16px;
+    display: flex; flex-direction: column;
+  }
+  .applicant-row {
+    display: flex; flex-direction: column; gap: 12px;
+    padding: 16px 0;
+    border-top: 1px solid var(--color-border);
+  }
+  .applicant-row:first-child { border-top: none; }
+  .applicant-top {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  }
+  .applicant-name-row {
+    display: flex; align-items: center; gap: 8px;
+    min-width: 0;
+  }
+  .applicant-name {
+    font-size: var(--fs-body-lg); font-weight: var(--fw-bold);
+    color: var(--color-text);
+    letter-spacing: -0.2px;
+  }
+  .applicant-date {
+    font-size: var(--fs-caption); color: var(--color-text-muted);
+    flex-shrink: 0;
+  }
+  /* 행 우측 — 신청일 + 더보기 */
+  .applicant-right {
+    display: flex; align-items: center; gap: 4px;
+    flex-shrink: 0;
+  }
+  .applicant-right .icon-btn i[data-lucide],
+  .applicant-right .icon-btn svg.lucide { width: 16px; height: 16px; }
+  /* 시트에서 대상이 누구인지 다시 보여준다 */
+  .row-menu-target {
+    display: flex; flex-direction: column; gap: 4px;
+    /* 좌우는 .bottom-sheet(20px)에 기대고, 아래 .more-menu-item(4px)과 글머리를 맞춘다 */
+    padding: 0 4px 12px;
+    border-bottom: 1px solid var(--color-border);
+    margin-bottom: 8px;
+  }
+  .row-menu-target-name { font-size: var(--fs-body); font-weight: var(--fw-semibold); }
+  .row-menu-target-sub  { font-size: var(--fs-caption); color: var(--color-text-muted); }
+  .applicant-fields {
+    display: flex; flex-direction: column; gap: 8px;
+    margin: 0;
+  }
+  .applicant-field {
+    display: flex; align-items: baseline; gap: 12px;
+  }
+  .applicant-field-label {
+    flex: 0 0 72px;
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+    font-weight: var(--fw-medium);
+  }
+  .applicant-field-value {
+    flex: 1;
+    margin: 0;
+    font-size: var(--fs-label);
+    color: var(--color-text);
+    line-height: 1.5;
+    display: flex; flex-wrap: wrap; gap: 4px 6px;
+    align-items: center;
+    word-break: break-word;
+  }
+  .applicant-field-value.is-empty {
+    color: var(--color-text-muted);
+  }
+  .answer-chip {
+    display: inline-flex; align-items: center;
+    padding: 4px 8px;
+    background: var(--color-surface-sub);
+    color: var(--color-text-sub);
+    border-radius: var(--r-full);
+    font-size: var(--fs-caption);
+    font-weight: var(--fw-medium);
+  }
+  .answer-text {
+    display: block;
+    width: 100%;
+  }
+
+  /* ── More menu bottom sheet (frame-scoped) ── */
+  .frame .bottom-sheet-overlay,
+  .frame .bottom-sheet { position: absolute; }
+  .more-menu-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .more-menu-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    width: 100%;
+    padding: 16px 4px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: var(--font-base);
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-medium);
+    color: var(--color-text);
+    text-align: left;
+  }
+  .more-menu-item.is-danger { color: var(--color-destructive); }
+  .more-menu-item-text { display: flex; flex-direction: column; gap: 4px; }
+  .more-menu-item-sub {
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+    font-weight: var(--fw-regular);
+  }
+
+
+  /* ============================================
+     프로토타입 전용 — 상태 전환 바 (실서비스엔 없음)
+     ============================================ */
+  .viewer-bar {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    background: var(--color-surface-sub);
+    border-bottom: 1px solid var(--color-border);
+    z-index: 1000;
+    font-family: var(--font-base);
+  }
+  .viewer-bar-row {
+    height: 32px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 12px;
+  }
+  .viewer-bar-label {
+    font-size: var(--fs-nav);
+    font-weight: var(--fw-semibold);
+    letter-spacing: var(--ls-nav);
+    color: var(--color-text-muted);
+  }
+  .viewer-bar-tabs { display: flex; gap: 4px; margin-left: auto; }
+  .viewer-bar-tab {
+    background: none;
+    border: none;
+    border-radius: var(--r-full);
+    padding: 4px 8px;
+    font-family: var(--font-base);
+    font-size: var(--fs-badge);
+    font-weight: var(--fw-medium);
+    color: var(--color-text-muted);
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background var(--motion-fast) var(--ease-standard),
+                color var(--motion-fast) var(--ease-standard);
+  }
+  .viewer-bar-tab:hover { color: var(--color-text-sub); }
+  .viewer-bar-tab.active { background: var(--color-primary); color: var(--color-on-primary); }
+  .viewer-bar-tab:disabled { opacity: 0.4; cursor: not-allowed; }
+  .viewer-bar-opts { display: flex; align-items: center; gap: 16px; margin-left: auto; }
+  .viewer-bar-opt {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: var(--fs-badge);
+    color: var(--color-text-sub);
+    cursor: pointer;
+  }
+
+  /* 화면·오버레이 영역을 viewer-bar 아래로 밀기 */
+  .frame .screen,
+  .frame .bottom-sheet-overlay,
+  .frame .dialog-overlay { top: 96px; }
+
+  /* ============================================
+     시점·상태별 노출 규칙 (CSS 분기)
+     ============================================ */
+  /* 우측 상단 "신청자 보기" — 운영자 전용 */
+  .owner-actions-stack { display: none; }
+  body[data-role="owner"] .owner-actions-stack { display: flex; }
+
+  /* 참석자 스택 — 신청자 목록 노출 ON (운영자·방문자 공통) */
+  .attendee-stack { display: none; }
+  body[data-show-list="on"] .attendee-stack { display: flex; }
+
+  /* sticky "N명이 신청했어요" — 신청자 수 노출 ON */
+  .sticky-meta { display: none; }
+  body[data-show-count="on"] .sticky-meta { display: flex; }
+
+  /* sticky CTA — 상태별 분기 */
+  .cta-guest, .cta-member, .cta-applied { display: none; }
+  body[data-state="guest"]   .cta-guest   { display: inline-flex; }
+  body[data-state="member"]  .cta-member  { display: inline-flex; }
+  body[data-state="applied"] .cta-applied { display: inline-flex; }
+  /* 호스트 사전 등록 — 신청완료와 같은 버튼을 쓴다 */
+  body[data-state="preset"]  .cta-applied { display: inline-flex; }
+  /* 운영자는 상태와 무관하게 "신청하기"(fill-primary) */
+  body[data-role="owner"] .cta-guest,
+  body[data-role="owner"] .cta-applied { display: none; }
+  body[data-role="owner"] .cta-member  { display: inline-flex; }
+
+  /* sticky 안내 줄 — 호스트 사전 등록 상태에서만 (안내 줄만큼 스크롤 여백을 더 준다) */
+  body[data-state="preset"] .scroll-body { padding-bottom: 120px; }
+  .sticky-notice { display: none; }
+  body[data-state="preset"] .sticky-notice { display: flex; }
+  body[data-role="owner"] .sticky-notice { display: none; }
+
+  /* ============================================
+     참석자 스택 (랜딩 첫 화면)
+     ============================================ */
+  .attendee-stack {
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 12px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-md);
+    font-family: var(--font-base);
+    text-align: left;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: background var(--motion-fast) var(--ease-standard);
+  }
+  .attendee-stack:hover { background: var(--color-surface-sub); }
+  .attendee-stack:active { transform: scale(0.99); }
+  .attendee-main {
+    flex: 1; min-width: 0;
+    display: flex; flex-direction: row; align-items: center; gap: 12px;
+  }
+  .attendee-avatars { display: flex; align-items: center; }
+  .attendee-avatars .avatar {
+    position: relative;
+    margin-left: -8px;
+    box-shadow: 0 0 0 2px var(--color-surface);
+  }
+  .attendee-avatars .avatar:first-child { margin-left: 0; }
+  .attendee-avatars .avatar[hidden] { display: none; }
+  /* 왼쪽 아바타가 위로 오도록 */
+  .attendee-avatars .avatar:nth-child(1) { z-index: 5; }
+  .attendee-avatars .avatar:nth-child(2) { z-index: 4; }
+  .attendee-avatars .avatar:nth-child(3) { z-index: 3; }
+  .attendee-avatars .avatar:nth-child(4) { z-index: 2; }
+  .attendee-avatars .avatar:nth-child(5) { z-index: 1; }
+  .attendee-more[hidden] { display: none; }
+  .attendee-more {
+    /* 아바타 모음 뒤로 살짝 겹쳐서 같은 스택으로 읽히게 */
+    margin-left: -12px;
+    padding: 0 12px 0 16px;
+    line-height: 24px;
+    border-radius: var(--r-full);
+    background: var(--color-surface-sub);
+    color: var(--color-text-sub);
+    font-size: var(--fs-badge);
+    font-weight: var(--fw-semibold);
+  }
+  .attendee-label {
+    min-width: 0;
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .attendee-label strong { color: var(--color-text-sub); font-weight: var(--fw-semibold); }
+  .attendee-chev { width: 16px; height: 16px; color: var(--color-text-muted); }
+
+  /* ============================================
+     로그인 유도 모달
+     ============================================ */
+  .login-dialog { text-align: center; }
+  .login-dialog .dialog-desc { margin-bottom: 24px; }
+  /* 주력 소셜 — screens/login.html의 social-stack 구성 */
+  .login-social-stack { display: flex; flex-direction: column; gap: 8px; }
+  .login-social-stack .btn svg { width: 18px; height: 18px; }
+  /* 또는 디바이더 */
+  .login-or {
+    display: flex; align-items: center; gap: 12px;
+    margin: 20px 0;
+  }
+  .login-or::before, .login-or::after {
+    content: ''; flex: 1; height: 1px; background: var(--color-border);
+  }
+  .login-or-text { font-size: var(--fs-caption); color: var(--color-text-muted); }
+  /* 보조 소셜 + 이메일 — 원형 아이콘 행 */
+  .login-icon-row { display: flex; justify-content: center; gap: 12px; }
+  .login-icon-row .icon-btn { border-radius: var(--r-full); }
+  .login-icon-row img { width: 20px; height: 20px; }
+  .login-privacy {
+    display: inline-block; margin-top: 20px;
+    font-size: var(--fs-caption); color: var(--color-text-muted);
+    text-decoration: underline;
+  }
+
+  /* ============================================
+     참석자 추가 시트 (운영자)
+     ============================================ */
+  .att-sheet-body { display: flex; flex-direction: column; gap: 16px; }
+  .att-field { display: flex; flex-direction: column; gap: 8px; }
+  .att-hint {
+    display: flex; align-items: flex-start; gap: 8px;
+    font-size: var(--fs-caption); color: var(--color-text-muted);
+    line-height: 1.5;
+  }
+  .att-hint i[data-lucide], .att-hint svg.lucide {
+    width: 14px; height: 14px; margin-top: 4px;
+  }
+  .att-added {
+    display: flex; flex-direction: column; gap: 4px;
+    border-top: 1px solid var(--color-border);
+    padding-top: 12px;
+  }
+  .att-added[hidden] { display: none; }
+  .att-added-title {
+    font-size: var(--fs-caption); font-weight: var(--fw-medium);
+    color: var(--color-text-muted);
+  }
+  .att-added-list {
+    display: flex; flex-direction: column;
+    max-height: 148px; overflow-y: auto;
+  }
+  .att-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 0;
+    border-top: 1px solid var(--color-border);
+  }
+  .att-added-list > .att-row:first-child { border-top: none; }
+  .att-row-name {
+    font-size: var(--fs-body); font-weight: var(--fw-medium);
+    color: var(--color-text);
+  }
+  .att-row-phone {
+    margin-left: auto;
+    font-size: var(--fs-label); color: var(--color-text-muted);
+  }
+  .att-row .icon-btn i[data-lucide],
+  .att-row .icon-btn svg.lucide { width: 16px; height: 16px; }
+
+  /* 다이얼로그·토스트를 프레임 안에 가두기 */
+  .frame .dialog-overlay { position: absolute; }
+  .frame .dialog-overlay[hidden] { display: none; }
+  .frame .toast-container { position: absolute; bottom: 96px; }
+
+  /* ============================================
+     APPLY SCREEN (신청하기)
+     ============================================ */
+  .apply-body {
+    flex: 1; overflow-y: auto;
+    background: var(--color-bg);
+    padding: 24px 20px 32px;
+    display: flex; flex-direction: column; gap: 24px;
+  }
+  .apply-head { display: flex; flex-direction: column; gap: 4px; }
+  .apply-event-owner { color: var(--color-text-muted); }
+  .apply-fields { display: flex; flex-direction: column; gap: 20px; }
+  .apply-field { display: flex; flex-direction: column; gap: 8px; }
+  .apply-agree {
+    display: flex; align-items: center; gap: 12px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .apply-agree-text { font-size: var(--fs-body); color: var(--color-text-sub); }
+  .apply-footer {
+    flex-shrink: 0;
+    padding: 12px 20px calc(20px + env(safe-area-inset-bottom));
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+  }
+</style>
+</head>
+<body data-role="visitor" data-state="guest" data-show-count="on" data-show-list="on">
+
+<div class="frame">
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- 프로토타입 전용: 상태 전환 바                  -->
+  <!-- ════════════════════════════════════════════ -->
+  <div class="viewer-bar">
+    <div class="viewer-bar-row">
+      <span class="viewer-bar-label">시점</span>
+      <div class="viewer-bar-tabs">
+        <button class="viewer-bar-tab" type="button" data-axis="role" data-value="owner" onclick="setRole('owner')">운영자</button>
+        <button class="viewer-bar-tab" type="button" data-axis="role" data-value="visitor" onclick="setRole('visitor')">방문자</button>
+      </div>
+    </div>
+    <div class="viewer-bar-row">
+      <span class="viewer-bar-label">상태</span>
+      <div class="viewer-bar-tabs">
+        <button class="viewer-bar-tab" type="button" data-axis="state" data-value="guest" onclick="setState('guest')">비로그인</button>
+        <button class="viewer-bar-tab" type="button" data-axis="state" data-value="member" onclick="setState('member')">로그인·미신청</button>
+        <button class="viewer-bar-tab" type="button" data-axis="state" data-value="applied" onclick="setState('applied')">로그인·신청완료</button>
+        <button class="viewer-bar-tab" type="button" data-axis="state" data-value="preset" onclick="setState('preset')">로그인·호스트등록</button>
+      </div>
+    </div>
+    <div class="viewer-bar-row">
+      <span class="viewer-bar-label">옵션</span>
+      <div class="viewer-bar-opts">
+        <label class="viewer-bar-opt">
+          <input type="checkbox" class="toggle toggle-sm" id="opt-show-count" checked onchange="setShowCount(this)">
+          <span>신청자 수 노출</span>
+        </label>
+        <label class="viewer-bar-opt">
+          <input type="checkbox" class="toggle toggle-sm" id="opt-show-list" checked onchange="setShowList(this)">
+          <span>신청자 목록 노출</span>
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- SCREEN 1 — LANDING                            -->
+  <!-- ════════════════════════════════════════════ -->
+  <div class="screen on" id="screen-landing">
+      <div class="scroll-body">
+
+        <!-- Floating topbar -->
+        <div class="topbar">
+          <button class="icon-btn icon-btn-clear" aria-label="뒤로" onclick="goEdit()">
+            <i data-lucide="chevron-left" style="width:22px;height:22px;color:var(--color-text);"></i>
+          </button>
+          <div class="topbar-actions">
+            <button class="icon-btn icon-btn-clear" aria-label="공유">
+              <i data-lucide="share-2" style="width:20px;height:20px;color:var(--color-text);"></i>
+            </button>
+            <button class="icon-btn icon-btn-clear" aria-label="더보기" onclick="openMoreMenu()">
+              <i data-lucide="more-horizontal" style="width:20px;height:20px;color:var(--color-text);"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Owner actions (topbar 아래 라인, hero 위 오버레이) -->
+        <div class="owner-actions-stack">
+          <button class="icon-btn icon-btn-clear has-label" aria-label="신청자 보기" onclick="navigate('screen-list')">
+            <i data-lucide="users" style="width:18px;height:18px;"></i>
+            <span>신청자 보기</span>
+          </button>
+        </div>
+
+
+        <!-- Slot: 썸네일 (4:3) -->
+        <div class="hero">
+          <div class="hero-slider" id="hero-slider">
+            <div class="hero-slide" style="background-image:url('../assets/thumbnail_1.png');"></div>
+          </div>
+        </div>
+
+        <!-- Slot: Hero / 신뢰줄 -->
+        <div class="hero-info">
+          <div class="hero-clinic-row">
+            <span class="hero-clinic-name">엘린 피부과</span>
+            <i data-lucide="chevron-right"></i>
+          </div>
+          <h1 class="hero-headline">수면 리쥬베룩 50% 감사 이벤트</h1>
+          <p class="hero-schedule">
+            <i data-lucide="calendar-check"></i>
+            <span class="hero-schedule-label">일정</span>
+            <span class="hero-schedule-date">2026.07.10 ~ 07.31</span>
+            <span class="hero-schedule-time">14:00 ~ 18:00</span>
+          </p>
+          <div class="trust-row">
+            <div class="star-row star-icons-row">
+              <i data-lucide="star"></i>
+              <span class="star-score">5.0</span>
+              <span class="star-count">· 후기 28개</span>
+            </div>
+          </div>
+
+          <!-- Slot: 참석자 스택 — 누가 오는지가 첫 화면에 보인다 -->
+          <button type="button" class="attendee-stack" aria-label="참석자 명단 보기"
+                  onclick="showToast('참석자 명단 시트가 나옵니다.')">
+            <span class="attendee-main">
+              <span class="attendee-avatars">
+                <span class="avatar avatar-xs"><img src="../assets/profile.png" alt=""></span>
+                <span class="avatar avatar-xs"></span>
+                <span class="avatar avatar-xs"><img src="../assets/yoga-avatar.png" alt=""></span>
+                <span class="avatar avatar-xs"></span>
+                <span class="avatar avatar-xs"><img src="../assets/studiogloss-avatar.png" alt=""></span>
+                <span class="attendee-more" id="attendee-more">+7</span>
+              </span>
+              <span class="attendee-label" id="attendee-label"><strong>양은주</strong>, <strong>자버 유카</strong>님 외 <strong>10명</strong></span>
+            </span>
+            <i data-lucide="chevron-right" class="attendee-chev"></i>
+          </button>
+        </div>
+
+        <div class="section-divider"></div>
+
+        <!-- Slot: 일정 -->
+        <div class="section">
+          <div class="date-card">
+            <i data-lucide="calendar-days"></i>
+            <div class="date-card-text">
+              <div class="date-card-label">신청 기간</div>
+              <div class="date-card-value">2026.06.26 ~ 07.05</div>
+            </div>
+            <span class="date-card-tag">D-9</span>
+          </div>
+        </div>
+
+        <div class="section-divider"></div>
+
+        <!-- Slot: 설명 -->
+        <div class="section">
+          <div class="section-title">이벤트 안내</div>
+          <div>
+            <div class="desc" id="desc-block">
+              <p>엘린 피부과는 피부 재생·항노화 분야에서 다년간 노하우를 쌓아온 피부과 전문 병원입니다.</p>
+              <br>
+              <p>이번 이벤트는 그동안 엘린 피부과를 찾아주신 고객분들께 감사드리는 마음으로, 시그니처 시술인 ‘수면 리쥬베룩’을 50% 할인된 금액으로 제공해드리는 한정 프로모션입니다.</p>
+              <br>
+              <p>수면 리쥬베룩은 수면 마취 하에 진행되는 복합 피부 재생 시술로, 피부 톤과 결을 동시에 개선하고 처짐 케어까지 한 번에 받을 수 있는 프로그램입니다. 시술 전 의료진과의 1:1 상담을 통해 피부 상태에 맞춘 케어 강도가 안내됩니다.</p>
+              <br>
+              <p>의료광고 심의 필 (제2026-서울-456호)</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-divider"></div>
+
+        <!-- Slot: 후기 모음 -->
+        <div class="section">
+          <div class="section-title">실제 후기</div>
+          <div class="review-scroll">
+            <div class="review-card">
+              <div class="review-img" style="background-image:url('https://images.unsplash.com/photo-1559941707-c1bafc8c8f60?w=400&auto=format&fit=crop');"></div>
+              <div class="review-body">
+                <div class="review-stars">
+                  <i data-lucide="star"></i>
+                  <i data-lucide="star"></i>
+                  <i data-lucide="star"></i>
+                  <i data-lucide="star"></i>
+                  <i data-lucide="star"></i>
+                </div>
+                <p class="review-text">상담부터 시술까지 친절하게 안내받았어요. 피부 상태를 꼼꼼히 봐주셔서 안심하고 진행했습니다.</p>
+                <div class="review-meta">
+                  <span class="verified"><i data-lucide="badge-check"></i>실제 후기</span>
+                  <span>·</span>
+                  <span>김○○ · 리쥬베룩</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="review-card">
+              <div class="review-img" style="background-image:url('https://images.unsplash.com/photo-1551601651-bc60f254d532?w=400&auto=format&fit=crop');"></div>
+              <div class="review-body">
+                <div class="review-stars">
+                  <i data-lucide="star"></i>
+                  <i data-lucide="star"></i>
+                  <i data-lucide="star"></i>
+                  <i data-lucide="star"></i>
+                  <i data-lucide="star"></i>
+                </div>
+                <p class="review-text">미뤄왔던 피부 관리, 진작 받을 걸 그랬어요. 시술 다음 날부터 톤이 확 밝아진 게 보였습니다.</p>
+                <div class="review-meta">
+                  <span class="verified"><i data-lucide="badge-check"></i>실제 후기</span>
+                  <span>·</span>
+                  <span>이○○ · 리쥬베룩</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="review-card">
+              <div class="review-img" style="background-image:url('https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&auto=format&fit=crop');"></div>
+              <div class="review-body">
+                <div class="review-stars">
+                  <i data-lucide="star"></i>
+                  <i data-lucide="star"></i>
+                  <i data-lucide="star"></i>
+                  <i data-lucide="star"></i>
+                  <i data-lucide="star"></i>
+                </div>
+                <p class="review-text">피부 상태에 맞춰 강도를 조절해 주셔서 부담 없이 받았어요. 의료진이 다 친절했습니다.</p>
+                <div class="review-meta">
+                  <span class="verified"><i data-lucide="badge-check"></i>실제 후기</span>
+                  <span>·</span>
+                  <span>박○○ · 리쥬베룩</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-divider"></div>
+
+        <!-- Slot: 병원 페이지 가기 -->
+        <div class="section">
+          <button class="clinic-link" aria-label="병원 페이지 가기">
+            <div class="clinic-link-thumb"></div>
+            <div class="clinic-link-text">
+              <div class="clinic-link-name">엘린 피부과</div>
+              <div class="clinic-link-sub">병원 정보 · 의료진 · 위치 보기</div>
+            </div>
+            <i data-lucide="chevron-right" class="chev"></i>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- Sticky CTA -->
+      <div class="sticky-bar">
+        <div class="sticky-meta">
+          <i data-lucide="users" style="width:14px;height:14px;color:var(--color-text-muted);"></i>
+          지금까지 <strong id="sticky-count">12명</strong>이 신청했어요
+        </div>
+        <div class="sticky-notice">
+          <i data-lucide="info"></i>
+          <span>호스트가 회원님을 참석자로 등록했어요</span>
+        </div>
+        <div class="sticky-actions">
+          <!-- 비로그인 -->
+          <button class="btn btn-lg btn-block btn-fill-primary cta-guest" type="button" onclick="openLoginDialog()">
+            신청하기
+          </button>
+          <!-- 로그인·미신청 (운영자 포함) -->
+          <button class="btn btn-lg btn-block btn-fill-primary cta-member" type="button" onclick="navigate('screen-apply')">
+            신청하기
+          </button>
+          <!-- 신청완료 -->
+          <button class="btn btn-lg btn-block btn-weak-primary cta-applied" type="button" onclick="openCancelDialog()">
+            신청 완료 · 취소하기
+          </button>
+          <button class="sticky-chat" type="button" aria-label="AI 상담">
+            <i data-lucide="message-circle-question"></i>
+          </button>
+        </div>
+      </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- SCREEN — PARTICIPANTS LIST (소유자 전용)     -->
+  <!-- ════════════════════════════════════════════ -->
+  <div class="screen" id="screen-list">
+    <div class="topbar-solid">
+      <button class="icon-btn icon-btn-clear" aria-label="뒤로" onclick="navigate('screen-landing')">
+        <i data-lucide="chevron-left" style="width:22px;height:22px;color:var(--color-text);"></i>
+      </button>
+      <span class="topbar-title">신청자 리스트 (관리자 화면)</span>
+    </div>
+
+    <div class="list-body">
+      <div class="event-card">
+        <h2 class="list-event-name"><span class="list-event-tag">이벤트</span>수면 리쥬베룩 50% 감사 이벤트</h2>
+        <div class="fields-summary">
+          <div class="fields-summary-text">
+            <strong>받고 있는 정보</strong><span id="fields-summary-list"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="list-actions">
+        <div class="list-count"><strong id="list-count-total">총 12명</strong> 신청</div>
+        <div class="list-actions-btns">
+          <button class="btn btn-sm btn-line-dark btn-pill" onclick="openAttendeeSheet()">
+            <i data-lucide="user-plus" style="width:14px;height:14px"></i>
+            참석자
+          </button>
+          <button class="btn btn-sm btn-line-dark btn-pill" onclick="downloadExcel()">
+            <i data-lucide="download" style="width:14px;height:14px"></i>
+            엑셀 다운로드
+          </button>
+        </div>
+      </div>
+
+      <div class="applicant-rows" id="applicant-list"></div>
+    </div>
+  </div>
+
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- SCREEN — APPLY (신청하기)                      -->
+  <!-- ════════════════════════════════════════════ -->
+  <div class="screen" id="screen-apply">
+    <div class="topbar-solid">
+      <button class="icon-btn icon-btn-clear" aria-label="뒤로" onclick="navigate('screen-landing')">
+        <i data-lucide="chevron-left" style="width:22px;height:22px;color:var(--color-text);"></i>
+      </button>
+      <span class="topbar-title">신청하기</span>
+    </div>
+
+    <div class="apply-body">
+      <div class="apply-head">
+        <h2 class="text-title apply-event-title">수면 리쥬베룩 50% 감사 이벤트</h2>
+        <p class="text-body apply-event-owner">엘린 피부과</p>
+      </div>
+
+      <div class="apply-fields">
+        <div class="apply-field">
+          <label class="label label-required" for="apply-name">이름</label>
+          <input class="input" type="text" id="apply-name" placeholder="이름을 입력해 주세요">
+        </div>
+        <div class="apply-field">
+          <label class="label label-required" for="apply-phone">전화번호</label>
+          <input class="input" type="tel" id="apply-phone" placeholder="010-0000-0000">
+        </div>
+        <label class="apply-agree">
+          <input class="checkbox" type="checkbox" id="apply-agree" onchange="onAgreeChange(this)">
+          <span class="apply-agree-text">개인정보 수집·이용에 동의합니다.</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="apply-footer">
+      <button class="btn btn-lg btn-block btn-fill-primary" type="button" id="apply-submit" disabled onclick="submitApply()">
+        신청 완료
+      </button>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- MORE MENU — Bottom sheet                       -->
+  <!-- ════════════════════════════════════════════ -->
+  <div class="bottom-sheet-overlay" id="more-menu-overlay" onclick="closeMoreMenu()"></div>
+  <div class="bottom-sheet" id="more-menu-sheet" role="dialog" aria-label="더보기 메뉴">
+    <div class="bottom-sheet-handle"></div>
+    <div class="more-menu-list">
+      <div class="more-menu-item">
+        <div class="more-menu-item-text">
+          <span>AI 학습</span>
+          <span class="more-menu-item-sub">본문을 채팅 답변에 반영해요</span>
+        </div>
+        <input type="checkbox" class="toggle toggle-sm" checked aria-label="AI 학습 사용">
+      </div>
+      <button type="button" class="more-menu-item" onclick="closeMoreMenu()">리뷰 관리</button>
+      <button type="button" class="more-menu-item" onclick="closeMoreMenu()">수정</button>
+      <button type="button" class="more-menu-item" onclick="closeMoreMenu()">이벤트 종료</button>
+      <button type="button" class="more-menu-item is-danger" onclick="closeMoreMenu()">삭제</button>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- LOGIN — Modal (비로그인 신청 유도)              -->
+  <!-- screens/login.html의 소셜 구성을 그대로 가져옴  -->
+  <!-- ════════════════════════════════════════════ -->
+  <div class="dialog-overlay" id="login-overlay" hidden onclick="closeLoginDialog()">
+    <div class="dialog login-dialog" role="dialog" aria-modal="true" aria-label="로그인 안내" onclick="event.stopPropagation()">
+      <div class="dialog-title">신청하려면 로그인이 필요해요</div>
+      <p class="dialog-desc">로그인하면 신청 내역을 확인할 수 있어요</p>
+
+      <div class="login-social-stack">
+        <button class="btn btn-lg btn-block btn-fill-kakao" type="button" onclick="pickLogin()">
+          <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M12 3C6.477 3 2 6.582 2 11c0 2.862 1.674 5.373 4.2 6.896L5.2 21l4.116-2.163A11.7 11.7 0 0012 19c5.523 0 10-3.582 10-8S17.523 3 12 3z"/></svg>
+          카카오로 3초만에 시작하기
+        </button>
+      </div>
+
+      <div class="login-or"><span class="login-or-text">또는</span></div>
+
+      <div class="login-icon-row">
+        <button class="icon-btn icon-btn-lg icon-btn-border" type="button" aria-label="구글로 시작하기" onclick="pickLogin()">
+          <img src="../assets/logo-google.svg" alt="">
+        </button>
+        <button class="icon-btn icon-btn-lg icon-btn-border" type="button" aria-label="이메일로 시작하기" onclick="pickLogin()">
+          <i data-lucide="mail"></i>
+        </button>
+      </div>
+
+      <a href="#" class="login-privacy" onclick="return false;">개인정보 처리방침</a>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- 참석자 추가 — Bottom sheet (운영자)             -->
+  <!-- ════════════════════════════════════════════ -->
+  <div class="bottom-sheet-overlay" id="attendee-overlay" onclick="closeAttendeeSheet()"></div>
+  <div class="bottom-sheet" id="attendee-sheet" role="dialog" aria-label="참석자 추가">
+    <div class="bottom-sheet-handle"></div>
+    <div class="att-sheet-body">
+      <div class="text-title">참석자 추가</div>
+      <div class="att-field">
+        <label class="label label-required" for="att-name">이름</label>
+        <input class="input" type="text" id="att-name" placeholder="이름을 입력해 주세요" oninput="onAttendeeInput()" onkeydown="onAttendeeKey(event)">
+      </div>
+      <div class="att-field">
+        <label class="label" for="att-phone">전화번호</label>
+        <input class="input" type="tel" id="att-phone" placeholder="010-0000-0000" inputmode="tel" onkeydown="onAttendeeKey(event)">
+      </div>
+      <p class="att-hint">
+        <i data-lucide="info"></i>
+        <span>전화번호를 넣으면 본인이 로그인했을 때 이 참석 건을 이어받아 직접 취소할 수 있어요</span>
+      </p>
+      <div class="att-added" id="att-added" hidden>
+        <div class="att-added-title">추가된 사람</div>
+        <div class="att-added-list" id="att-added-list"></div>
+      </div>
+      <button class="btn btn-lg btn-block btn-fill-primary" type="button" id="att-submit" disabled onclick="submitAttendee()">추가하기</button>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- CANCEL — 신청 취소 확인 다이얼로그              -->
+  <!-- ════════════════════════════════════════════ -->
+  <div class="dialog-overlay" id="cancel-overlay" hidden>
+    <div class="dialog" role="dialog" aria-label="신청 취소 확인">
+      <div class="dialog-title">신청을 취소할까요?</div>
+      <p class="dialog-desc">취소하면 참석자 명단에서 빠져요.</p>
+      <div class="dialog-actions">
+        <button class="btn btn-md btn-weak-dark" type="button" onclick="closeCancelDialog()">돌아가기</button>
+        <button class="btn btn-md btn-fill-danger" type="button" onclick="confirmCancel()">신청 취소</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- 신청자 행 더보기 — Bottom sheet (운영자)        -->
+  <!-- ════════════════════════════════════════════ -->
+  <div class="bottom-sheet-overlay" id="row-menu-overlay" onclick="closeRowMenu()"></div>
+  <div class="bottom-sheet" id="row-menu-sheet" role="dialog" aria-label="신청자 관리">
+    <div class="bottom-sheet-handle"></div>
+    <div class="row-menu-target">
+      <span class="row-menu-target-name" id="row-menu-name"></span>
+      <span class="row-menu-target-sub" id="row-menu-sub"></span>
+    </div>
+    <div class="more-menu-list">
+      <button type="button" class="more-menu-item is-danger" onclick="askRemoveApplicant()">참석자에서 빼기</button>
+    </div>
+  </div>
+
+  <!-- 참석자 빼기 확인 — 되돌리기 어려우니 한 번 확인 -->
+  <div class="dialog-overlay" id="remove-overlay" hidden>
+    <div class="dialog" role="dialog" aria-label="참석자 빼기 확인">
+      <div class="dialog-title" id="remove-title">명단에서 뺄까요?</div>
+      <p class="dialog-desc">명단에서 빠지고 신청자 수도 줄어요. 되돌릴 수 없어요.</p>
+      <div class="dialog-actions">
+        <button class="btn btn-md btn-weak-dark" type="button" onclick="closeRemoveDialog()">돌아가기</button>
+        <button class="btn btn-md btn-fill-danger" type="button" onclick="confirmRemoveApplicant()">빼기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast-container" id="toast-container"></div>
+
+</div>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+  lucide.createIcons();
+
+  // Hero slider pagination
+  (function() {
+    var slider = document.getElementById('hero-slider');
+    var page = document.getElementById('hero-pagination');
+    if (!slider || !page) return;
+    var total = slider.querySelectorAll('.hero-slide').length;
+    slider.addEventListener('scroll', function() {
+      var index = Math.round(slider.scrollLeft / slider.clientWidth);
+      page.textContent = (index + 1) + ' / ' + total;
+    });
+  })();
+
+  // More menu bottom sheet
+  function openMoreMenu() {
+    document.getElementById('more-menu-overlay').classList.add('is-open');
+    document.getElementById('more-menu-sheet').classList.add('is-open');
+  }
+  function closeMoreMenu() {
+    document.getElementById('more-menu-overlay').classList.remove('is-open');
+    document.getElementById('more-menu-sheet').classList.remove('is-open');
+  }
+
+  // Screen navigation
+  function navigate(id) {
+    document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('on'); });
+    var target = document.getElementById(id);
+    if (target) {
+      target.classList.add('on');
+      var scroller = target.querySelector('.scroll-body, .list-body, .apply-body');
+      if (scroller) scroller.scrollTop = 0;
+      if (window.lucide) lucide.createIcons();
+    }
+  }
+
+
+  // ══════════════════════════════════════════════
+  // 프로토타입 전용 — 시점·상태 전환
+  // ══════════════════════════════════════════════
+  function syncViewerBar() {
+    var role  = document.body.dataset.role;
+    var state = document.body.dataset.state;
+    document.querySelectorAll('.viewer-bar-tab').forEach(function(t) {
+      var axis = t.dataset.axis;
+      var val  = (axis === 'role') ? role : state;
+      t.classList.toggle('active', t.dataset.value === val);
+      if (axis === 'state') t.disabled = (role === 'owner');
+    });
+  }
+  function setRole(role)  { document.body.dataset.role  = role;  syncViewerBar(); }
+  function setState(state){ document.body.dataset.state = state; syncViewerBar(); }
+  function setShowCount(chk) { document.body.dataset.showCount = chk.checked ? 'on' : 'off'; }
+  function setShowList(chk)  { document.body.dataset.showList  = chk.checked ? 'on' : 'off'; }
+  syncViewerBar();
+
+  // ══════════════════════════════════════════════
+  // Toast
+  // ══════════════════════════════════════════════
+  function showToast(message) {
+    var wrap = document.getElementById('toast-container');
+    if (!wrap) return;
+    var el = document.createElement('div');
+    el.className = 'toast';
+    el.textContent = message;
+    wrap.appendChild(el);
+    setTimeout(function(){ el.remove(); }, 2000);
+  }
+
+  // ══════════════════════════════════════════════
+  // 로그인 유도 모달
+  // ══════════════════════════════════════════════
+  function openLoginDialog() {
+    document.getElementById('login-overlay').hidden = false;
+    if (window.lucide) lucide.createIcons();
+  }
+  function closeLoginDialog() {
+    document.getElementById('login-overlay').hidden = true;
+  }
+  function pickLogin() {
+    closeLoginDialog();
+    showToast('로그인 화면으로 이동합니다.');
+  }
+
+  // ══════════════════════════════════════════════
+  // 신청 취소 확인 다이얼로그
+  // ══════════════════════════════════════════════
+  /* ── 신청자 행 더보기 → 참석자에서 빼기 ──
+     사전 등록 건이든 본인 신청 건이든 여기 한 곳에서 뺀다. */
+  var rowMenuIdx = -1;
+  function openRowMenu(idx) {
+    var a = APPLICANTS[idx];
+    if (!a) return;
+    rowMenuIdx = idx;
+    document.getElementById('row-menu-name').textContent = a.name;
+    document.getElementById('row-menu-sub').textContent =
+      (a.preset ? '호스트 등록' : '본인 신청') + ' · ' + (a.values.phone || '전화번호 없음');
+    document.getElementById('row-menu-overlay').classList.add('is-open');
+    document.getElementById('row-menu-sheet').classList.add('is-open');
+  }
+  function closeRowMenu() {
+    document.getElementById('row-menu-overlay').classList.remove('is-open');
+    document.getElementById('row-menu-sheet').classList.remove('is-open');
+  }
+  function askRemoveApplicant() {
+    var a = APPLICANTS[rowMenuIdx];
+    if (!a) return;
+    closeRowMenu();
+    document.getElementById('remove-title').textContent = a.name + '님을 명단에서 뺄까요?';
+    document.getElementById('remove-overlay').hidden = false;
+  }
+  function closeRemoveDialog() { document.getElementById('remove-overlay').hidden = true; }
+  function confirmRemoveApplicant() {
+    var a = APPLICANTS[rowMenuIdx];
+    if (!a) { closeRemoveDialog(); return; }
+    APPLICANTS.splice(rowMenuIdx, 1);
+    var i = attendeeAdded.indexOf(a);
+    if (i > -1) attendeeAdded.splice(i, 1);
+    rowMenuIdx = -1;
+    closeRemoveDialog();
+    renderApplicants();
+    renderAttendeeAdded();
+    syncAttendeeUI();
+    showToast(a.name + '님을 명단에서 뺐어요.');
+  }
+
+  function openCancelDialog()  { document.getElementById('cancel-overlay').hidden = false; }
+  function closeCancelDialog() { document.getElementById('cancel-overlay').hidden = true; }
+  function confirmCancel() {
+    closeCancelDialog();
+    setState('member');
+  }
+
+  // ══════════════════════════════════════════════
+  // 신청 화면
+  // ══════════════════════════════════════════════
+  function onAgreeChange(chk) {
+    document.getElementById('apply-submit').disabled = !chk.checked;
+  }
+  function normPhone(v) { return String(v || '').replace(/\D/g, ''); }
+
+  /* 제출 시점에 사전 등록 명단과 전화번호로 매칭한다.
+     매칭되면 새 참석 건을 만들지 않고 기존 사전 등록 건에 계정을 연결한다. */
+  function submitApply() {
+    var name  = document.getElementById('apply-name').value.trim();
+    var phone = normPhone(document.getElementById('apply-phone').value);
+    var matched = !!phone && APPLICANTS.some(function(a){
+      return a.preset && normPhone(a.values.phone) === phone;
+    });
+    navigate('screen-landing');
+    if (matched) {
+      setState('preset');
+      showToast('이미 등록되어 있어서 회원님 신청으로 연결했어요.');
+    } else {
+      APPLICANTS.unshift({
+        name: name || '나',
+        preset: false,
+        date: nowStamp(),
+        values: { phone: document.getElementById('apply-phone').value.trim(), email:'', experience:'', interest:[], message:'' }
+      });
+      renderApplicants();
+      syncAttendeeUI();
+      setState('applied');
+      showToast('신청이 완료되었어요.');
+    }
+  }
+
+  function nowStamp() {
+    function pad(n){ return (n < 10 ? '0' : '') + n; }
+    var d = new Date();
+    return d.getFullYear() + '.' + pad(d.getMonth()+1) + '.' + pad(d.getDate())
+         + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+  }
+
+  // ══════════════════════════════════════════════
+  // 참석자 추가 시트 (운영자)
+  // ══════════════════════════════════════════════
+  var attendeeAdded = [];   // 이번 시트에서 추가한 사람
+
+  function openAttendeeSheet() {
+    attendeeAdded = [];
+    document.getElementById('att-name').value = '';
+    document.getElementById('att-phone').value = '';
+    onAttendeeInput();
+    renderAttendeeAdded();
+    document.getElementById('attendee-overlay').classList.add('is-open');
+    document.getElementById('attendee-sheet').classList.add('is-open');
+    if (window.lucide) lucide.createIcons();
+  }
+  function closeAttendeeSheet() {
+    document.getElementById('attendee-overlay').classList.remove('is-open');
+    document.getElementById('attendee-sheet').classList.remove('is-open');
+  }
+  function onAttendeeInput() {
+    var name = document.getElementById('att-name').value.trim();
+    document.getElementById('att-submit').disabled = name === '';
+  }
+  function onAttendeeKey(e) {
+    if (e.key === 'Enter') { e.preventDefault(); submitAttendee(); }
+  }
+  /* 추가하기 — 시트를 닫지 않는다. 연달아 넣는 게 기본 사용 패턴. */
+  function submitAttendee() {
+    var nameEl  = document.getElementById('att-name');
+    var phoneEl = document.getElementById('att-phone');
+    var name = nameEl.value.trim();
+    if (!name) return;
+    var person = {
+      name: name, preset: true, date: nowStamp(),
+      values: { phone: phoneEl.value.trim(), email:'', experience:'', interest:[], message:'' }
+    };
+    APPLICANTS.unshift(person);
+    attendeeAdded.push(person);
+    nameEl.value = '';
+    phoneEl.value = '';
+    onAttendeeInput();
+    renderAttendeeAdded();
+    renderApplicants();
+    syncAttendeeUI();
+    nameEl.focus();
+  }
+  function removeAddedAttendee(idx) {
+    var person = attendeeAdded[idx];
+    if (!person) return;
+    attendeeAdded.splice(idx, 1);
+    var i = APPLICANTS.indexOf(person);
+    if (i > -1) APPLICANTS.splice(i, 1);
+    renderAttendeeAdded();
+    renderApplicants();
+    syncAttendeeUI();
+  }
+  function renderAttendeeAdded() {
+    var box  = document.getElementById('att-added');
+    var list = document.getElementById('att-added-list');
+    if (!box || !list) return;
+    box.hidden = attendeeAdded.length === 0;
+    list.innerHTML = attendeeAdded.map(function(a, i){
+      return ''
+        + '<div class="att-row">'
+        +   '<span class="avatar avatar-sm"></span>'
+        +   '<span class="att-row-name">' + escapeHTML(a.name) + '</span>'
+        +   '<span class="att-row-phone">' + (a.values.phone ? escapeHTML(a.values.phone) : '—') + '</span>'
+        +   '<button type="button" class="icon-btn icon-btn-sm icon-btn-clear" aria-label="' + escapeHTML(a.name) + ' 삭제" '
+        +     'onclick="removeAddedAttendee(' + i + ')"><i data-lucide="x"></i></button>'
+        + '</div>';
+    }).join('');
+    if (window.lucide) lucide.createIcons();
+  }
+
+  // ── 입력폼에서 발행한 이벤트 데이터 적용 ──
+  function goEdit() { window.location.href = 'index.html'; }
+
+  function escapeHTML(s) {
+    return String(s).replace(/[&<>"']/g, function(c) {
+      return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+    });
+  }
+  function fmtDate(iso) {
+    if (!iso) return '';
+    var p = iso.split('-');
+    return p[0] + '.' + p[1] + '.' + p[2];
+  }
+  function fmtDateShort(iso) {
+    if (!iso) return '';
+    var p = iso.split('-');
+    return p[1] + '.' + p[2];
+  }
+  function fmtRange(start, end) {
+    if (start && end) return fmtDate(start) + ' ~ ' + fmtDateShort(end);
+    if (start) return fmtDate(start);
+    return '';
+  }
+  function fmtTimeRange(start, end) {
+    if (start && end) return start + ' ~ ' + end;
+    if (start) return start;
+    return '';
+  }
+
+  function applyEventData(d) {
+    // 타이틀
+    if (d.title) {
+      document.querySelector('.hero-headline').textContent = d.title;
+      document.querySelector('.apply-event-title').textContent = d.title;
+    }
+
+    // 일정 (행사 일정)
+    var sched = d.eventSchedule || {};
+    var dateStr = fmtRange(sched.start, sched.end);
+    var timeStr = fmtTimeRange(sched.startTime, sched.endTime);
+    var schedEl = document.querySelector('.hero-schedule');
+    if (!dateStr && !timeStr) {
+      if (schedEl) schedEl.style.display = 'none';
+    } else {
+      document.querySelector('.hero-schedule-date').textContent = dateStr;
+      var timeNode = document.querySelector('.hero-schedule-time');
+      if (timeStr) timeNode.textContent = timeStr;
+      else timeNode.style.display = 'none';
+    }
+
+    // 신청 기간
+    var ap = d.applyPeriod || {};
+    var dateCardSection = document.querySelector('.date-card').closest('.section');
+    if (ap.start && ap.end) {
+      var periodStr = fmtRange(ap.start, ap.end);
+      document.querySelector('.date-card-value').textContent = periodStr;
+      var tag = document.querySelector('.date-card-tag');
+      var today = new Date(); today.setHours(0,0,0,0);
+      var endD = new Date(ap.end + 'T00:00:00');
+      var diff = Math.ceil((endD - today) / 86400000);
+      if (diff > 0) { tag.textContent = 'D-' + diff; tag.style.display = ''; }
+      else if (diff === 0) { tag.textContent = 'D-DAY'; tag.style.display = ''; }
+      else { tag.style.display = 'none'; }
+    } else {
+      if (dateCardSection) {
+        dateCardSection.style.display = 'none';
+        var div = dateCardSection.nextElementSibling;
+        if (div && div.classList.contains('section-divider')) div.style.display = 'none';
+      }
+    }
+
+    // 설명
+    var descBlock = document.getElementById('desc-block');
+    var descSection = descBlock.closest('.section');
+    if (d.description) {
+      descBlock.innerHTML = '';
+      var lines = d.description.split(/\n+/).filter(function(l){ return l.trim(); });
+      lines.forEach(function(line, i){
+        if (i > 0) descBlock.appendChild(document.createElement('br'));
+        var p = document.createElement('p');
+        p.textContent = line;
+        descBlock.appendChild(p);
+      });
+    } else if (descSection) {
+      descSection.style.display = 'none';
+      var divNext = descSection.nextElementSibling;
+      if (divNext && divNext.classList.contains('section-divider')) divNext.style.display = 'none';
+    }
+
+    // 이미지
+    if (d.images && d.images.length) {
+      var slider = document.getElementById('hero-slider');
+      slider.innerHTML = '';
+      d.images.forEach(function(img){
+        var slide = document.createElement('div');
+        slide.className = 'hero-slide';
+        if (img.src) slide.style.backgroundImage = 'url("' + encodeURI(img.src) + '")';
+        else if (img.bg) slide.style.background = img.bg + ' center/cover';
+        slider.appendChild(slide);
+      });
+      var existingPage = document.getElementById('hero-pagination');
+      if (existingPage) existingPage.remove();
+      if (d.images.length > 1) {
+        var page = document.createElement('div');
+        page.className = 'hero-pagination';
+        page.id = 'hero-pagination';
+        page.textContent = '1 / ' + d.images.length;
+        slider.parentElement.appendChild(page);
+        slider.addEventListener('scroll', function(){
+          var idx = Math.round(slider.scrollLeft / slider.clientWidth);
+          page.textContent = (idx + 1) + ' / ' + d.images.length;
+        });
+      }
+    }
+
+    // CTA
+    if (d.cta) {
+      document.querySelectorAll('.sticky-actions .cta-guest, .sticky-actions .cta-member')
+        .forEach(function(b){ b.textContent = d.cta; });
+    }
+
+    // 리뷰 노출 토글
+    if (d.reviews !== true) {
+      var reviewSection = document.querySelector('.review-scroll');
+      if (reviewSection) {
+        var sec = reviewSection.closest('.section');
+        if (sec) {
+          sec.style.display = 'none';
+          var prev = sec.previousElementSibling;
+          if (prev && prev.classList.contains('section-divider')) prev.style.display = 'none';
+        }
+      }
+      var trustRow = document.querySelector('.trust-row');
+      if (trustRow) trustRow.style.display = 'none';
+    }
+
+    // 참석자 — 입력폼에서 호스트가 미리 등록한 사람들
+    if (Array.isArray(d.attendees)) {
+      APPLICANTS = d.attendees.map(function(a){
+        return {
+          name: a.name, preset: true, date: '호스트 등록',
+          values: { phone: a.phone || '', email:'', experience:'', interest:[], message:'' }
+        };
+      });
+    }
+  }
+
+  // ══════════════════════════════════════════════
+  // 신청자 리스트 (관리자 전용)
+  // ══════════════════════════════════════════════
+  // 필드 정의 — type: 'text' 주관식 | 'choice' 객관식(단일/복수)
+  var FIELDS = [
+    { key:'phone',      label:'전화번호', type:'text' },
+    { key:'email',      label:'이메일',   type:'text' },
+    { key:'experience', label:'시술 경험', type:'choice' },
+    { key:'interest',   label:'관심 부위', type:'choice' },
+    { key:'message',    label:'문의사항',  type:'text' },
+  ];
+
+  // preset:true — 호스트가 사전 등록한 건 (운영자 화면에서만 배지로 구분)
+  var APPLICANTS = [
+    { name:'양은주',    preset:true, date:'2026.06.24 17:40', values:{ phone:'010-1234-5678', email:'', experience:'', interest:[], message:'' } },
+    { name:'자버 유카', preset:true, date:'2026.06.24 17:40', values:{ phone:'010-2841-9032', email:'', experience:'', interest:[], message:'' } },
+    { name:'김민서',    preset:true, date:'2026.06.24 17:40', values:{ phone:'',              email:'', experience:'', interest:[], message:'' } },
+    { name:'이지훈',    preset:true, date:'2026.06.24 17:40', values:{ phone:'010-7193-4820', email:'', experience:'', interest:[], message:'' } },
+    { name:'박서연', date:'2026.06.27 22:45', values:{ phone:'010-3072-1948', email:'seoyeon93@daum.net',    experience:'고민 중',     interest:['피부톤','색소','탄력'], message:'회복 기간이 얼마나 걸리나요?' } },
+    { name:'최도윤', date:'2026.06.27 19:20', values:{ phone:'010-9483-2017', email:'',                      experience:'처음이에요',  interest:['탄력'],               message:'' } },
+    { name:'정하은', date:'2026.06.27 16:11', values:{ phone:'010-5621-8347', email:'haeun.j@gmail.com',     experience:'처음이에요',  interest:['색소','피부톤'],       message:'상담만 먼저 받아볼 수 있을까요?' } },
+    { name:'한지우', date:'2026.06.27 09:54', values:{ phone:'010-4093-7251', email:'jiwoo.han@naver.com',   experience:'경험있어요',  interest:['모공','탄력'],         message:'' } },
+    { name:'송예린', date:'2026.06.26 21:33', values:{ phone:'010-8217-3940', email:'yerin.song@gmail.com',  experience:'처음이에요',  interest:['피부톤'],             message:'' } },
+    { name:'강현우', date:'2026.06.26 18:02', values:{ phone:'010-1937-6428', email:'hyunwoo.k@daum.net',    experience:'고민 중',     interest:['탄력','모공'],         message:'남자도 받아도 되나요?' } },
+    { name:'윤서아', date:'2026.06.26 14:47', values:{ phone:'010-6504-2839', email:'seoa.yoon@gmail.com',   experience:'처음이에요',  interest:['색소'],               message:'' } },
+    { name:'임채원', date:'2026.06.26 10:25', values:{ phone:'',              email:'',                      experience:'경험있어요',  interest:['피부톤','탄력','모공'], message:'전에 받았던 시술이랑 병행 가능한가요?' } },
+  ];
+  function renderFieldValue(field, raw) {
+    var isEmpty = raw === undefined || raw === null || raw === '' || (Array.isArray(raw) && raw.length === 0);
+    if (isEmpty) {
+      return '<dd class="applicant-field-value is-empty">—</dd>';
+    }
+    if (field.type === 'choice') {
+      var list = Array.isArray(raw) ? raw : [raw];
+      var chips = list.map(function(v){
+        return '<span class="answer-chip">' + escapeHTML(v) + '</span>';
+      }).join('');
+      return '<dd class="applicant-field-value">' + chips + '</dd>';
+    }
+    return '<dd class="applicant-field-value"><span class="answer-text">' + escapeHTML(raw) + '</span></dd>';
+  }
+
+  function renderApplicants() {
+    var wrap = document.getElementById('applicant-list');
+    if (!wrap) return;
+    wrap.innerHTML = APPLICANTS.map(function(a, idx){
+      var fieldsHTML = FIELDS.map(function(field){
+        return ''
+          + '<div class="applicant-field">'
+          +   '<dt class="applicant-field-label">' + escapeHTML(field.label) + '</dt>'
+          +   renderFieldValue(field, a.values[field.key])
+          + '</div>';
+      }).join('');
+      return ''
+        + '<div class="applicant-row">'
+        +   '<div class="applicant-top">'
+        +     '<span class="applicant-name-row">'
+        +       '<span class="applicant-name">' + escapeHTML(a.name) + '</span>'
+        +       (a.preset ? '<span class="badge badge-sm badge-weak-neutral">호스트 등록</span>' : '')
+        +     '</span>'
+        +     '<span class="applicant-right">'
+        +       '<span class="applicant-date">' + escapeHTML(a.date) + '</span>'
+        +       '<button type="button" class="icon-btn icon-btn-sm icon-btn-clear" aria-label="' + escapeHTML(a.name) + ' 더보기" '
+        +         'onclick="openRowMenu(' + idx + ')"><i data-lucide="more-horizontal"></i></button>'
+        +     '</span>'
+        +   '</div>'
+        +   '<dl class="applicant-fields">' + fieldsHTML + '</dl>'
+        + '</div>';
+    }).join('');
+    if (window.lucide) lucide.createIcons();
+  }
+
+  // 참석자 수 — 스택(+N·라벨) · sticky · 운영자 리스트 총원이 한 곳에서 나온다
+  function syncAttendeeUI() {
+    var total = APPLICANTS.length;
+
+    var listCount = document.getElementById('list-count-total');
+    if (listCount) listCount.textContent = '총 ' + total + '명';
+
+    var stickyCount = document.getElementById('sticky-count');
+    if (stickyCount) stickyCount.textContent = total + '명';
+
+    var avatars = document.querySelectorAll('.attendee-avatars .avatar');
+    avatars.forEach(function(el, i){ el.hidden = i >= total; });
+
+    var more = document.getElementById('attendee-more');
+    if (more) {
+      var rest = total - avatars.length;
+      more.hidden = rest <= 0;
+      if (rest > 0) more.textContent = '+' + rest;
+    }
+
+    var label = document.getElementById('attendee-label');
+    if (label) {
+      var names = APPLICANTS.slice(0, 2).map(function(a){
+        return '<strong>' + escapeHTML(a.name) + '</strong>';
+      });
+      if (total === 0)      label.innerHTML = '';
+      else if (total <= 2)  label.innerHTML = names.join(', ') + '님';
+      else                  label.innerHTML = names.join(', ') + '님 외 <strong>' + (total - 2) + '명</strong>';
+    }
+
+    // 명단이 비면 보여줄 게 없다
+    if (total === 0) {
+      document.body.dataset.showList  = 'off';
+      document.body.dataset.showCount = 'off';
+      var l = document.getElementById('opt-show-list');
+      var c = document.getElementById('opt-show-count');
+      if (l) l.checked = false;
+      if (c) c.checked = false;
+    }
+  }
+
+  // 입력폼에서 발행한 데이터 적용 (APPLICANTS를 덮어쓸 수 있어 렌더 직전에 실행)
+  (function init(){
+    try {
+      if (!location.search.includes('from=publish')) return;
+      var raw = sessionStorage.getItem('connectia.event');
+      if (!raw) {
+        window.location.replace('index.html');
+        return;
+      }
+      var data = JSON.parse(raw);
+      sessionStorage.removeItem('connectia.event');
+      applyEventData(data);
+      lucide.createIcons();
+    } catch(e) {}
+  })();
+
+  renderApplicants();
+  syncAttendeeUI();
+
+  (function renderFieldsSummary(){
+    var el = document.getElementById('fields-summary-list');
+    if (!el) return;
+    var labels = ['이름'].concat(FIELDS.map(function(f){ return f.label; }));
+    el.textContent = labels.join(' · ');
+  })();
+
+  function downloadExcel() {
+    var header = ['이름'].concat(FIELDS.map(function(f){ return f.label; })).concat(['신청일']);
+    var rows = APPLICANTS.map(function(a){
+      var row = [a.name];
+      FIELDS.forEach(function(f){
+        var v = a.values[f.key];
+        if (Array.isArray(v)) v = v.join(', ');
+        row.push(v == null ? '' : v);
+      });
+      row.push(a.date);
+      return row;
+    });
+    var csv = [header].concat(rows)
+      .map(function(r){ return r.map(function(c){ return '"' + String(c).replace(/"/g,'""') + '"'; }).join(','); })
+      .join('\n');
+    var blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = '신청자_리스트_' + new Date().toISOString().slice(0,10) + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+</script>
+</body>
+</html>
