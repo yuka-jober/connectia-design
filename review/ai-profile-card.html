@@ -112,7 +112,6 @@
       <div class="profile-card-head">
         <span class="text-heading">AI 프로필</span>
         <span class="profile-card-head-right">
-          <span class="badge badge-sm badge-weak-neutral" id="cardStatusBadge">기본</span>
           <i data-lucide="chevron-right"></i>
         </span>
       </div>
@@ -218,10 +217,6 @@
       document.getElementById('cardPhoto').src = saved.photo || PAGE_PHOTO;
       document.getElementById('cardName').textContent = saved.name || PAGE_NAME;
       document.getElementById('cardAiBadge').style.display = saved.badge ? '' : 'none';
-
-      const badge = document.getElementById('cardStatusBadge');
-      badge.textContent = custom ? '직접 설정' : '기본';
-      badge.className = 'badge badge-sm ' + (custom ? 'badge-weak-primary' : 'badge-weak-neutral');
 
       document.getElementById('cardMeta').textContent =
         saved.tone + ' 말투' + (custom ? '' : ' · 페이지 프로필과 동일');
