@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>AI 프로필 카드 — 대화 설정</title>
+  <link rel="stylesheet" href="../tokens.css">
+  <link rel="stylesheet" href="../components.css">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font-base);
+      background: var(--color-bg);
+      color: var(--color-text);
+      max-width: 430px;
+      margin: 0 auto;
+      min-height: 100dvh;
+      position: relative;
+    }
+
+    i[data-lucide] { display: inline-flex; flex-shrink: 0; }
+
+    /* 토스트는 시트보다 위, 상단에 띄운다 (하단은 시트가 덮음) */
+    .toast-container { top: 24px; bottom: auto; }
+
+    /* ── 프로토타입 상태 전환 바 ── */
+    .state-bar {
+      position: sticky; top: 0; z-index: 100;
+      background: var(--color-surface);
+      border-bottom: 1px solid var(--color-border);
+      padding: 12px 16px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .state-bar .state-bar-label { margin-right: 4px; }
+
+    /* ── 화면 본문 ── */
+    .content { padding: 20px 16px 40px; display: flex; flex-direction: column; gap: 16px; }
+    .section-desc { padding: 0 4px; }
+
+    .card {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--r-md);
+      padding: 20px;
+    }
+
+    /* ── AI 프로필 카드 ── */
+    .profile-card {
+      width: 100%;
+      text-align: left;
+      font-family: var(--font-base);
+      cursor: pointer;
+      display: flex; flex-direction: column; gap: 16px;
+      transition: background var(--motion-fast) var(--ease-standard);
+    }
+    .profile-card:active { background: var(--color-bg); }
+
+    .profile-card-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .profile-card-head-right { display: flex; align-items: center; gap: 8px; color: var(--color-text-muted); }
+    .profile-card-head-right i { width: 18px; height: 18px; }
+
+    .profile-card-body { display: flex; align-items: center; gap: 12px; }
+    .profile-card-info { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+    .profile-name-row { display: flex; align-items: center; gap: 8px; }
+    .profile-name {
+      font-size: var(--fs-body-lg);
+      font-weight: var(--fw-semibold);
+      line-height: var(--lh-body-lg);
+      letter-spacing: var(--ls-body-lg);
+      color: var(--color-text);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+
+    /* ── 바텀시트 내부 ── */
+    .sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+    .sheet-title {
+      font-size: var(--fs-title-sm);
+      font-weight: var(--fw-bold);
+      line-height: var(--lh-title-sm);
+      letter-spacing: var(--ls-title-sm);
+    }
+    .sheet-body { display: flex; flex-direction: column; gap: 24px; margin-top: 20px; }
+    .field { display: flex; flex-direction: column; gap: 8px; }
+
+    .photo-row { display: flex; align-items: center; gap: 16px; }
+    .photo-actions { display: flex; gap: 8px; }
+
+    .toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+
+    .chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
+
+    .sheet-actions { display: flex; gap: 8px; margin-top: 24px; }
+    .sheet-actions .btn { flex: 1; }
+    .sheet-actions .btn-line-dark { flex: 0 0 auto; }
+  </style>
+</head>
+<body>
+
+  <!-- 프로토타입 상태 전환 (실제 화면에는 없음) -->
+  <div class="state-bar">
+    <span class="text-caption state-bar-label">미리보기</span>
+    <button class="btn btn-sm btn-pill btn-fill-primary" data-state="default" onclick="setState('default')">설정 안 함</button>
+    <button class="btn btn-sm btn-pill btn-weak-dark" data-state="custom" onclick="setState('custom')">직접 설정</button>
+  </div>
+
+  <div class="content">
+    <p class="text-body section-desc" style="color:var(--color-text-muted)">아바타가 어떻게 대화할지 설정하세요</p>
+
+    <!-- ── AI 프로필 카드 (대화 톤 카드 대체) ── -->
+    <button type="button" class="card profile-card" onclick="openSheet()">
+      <div class="profile-card-head">
+        <span class="text-heading">AI 프로필</span>
+        <span class="profile-card-head-right">
+          <span class="badge badge-sm badge-weak-neutral" id="cardStatusBadge">기본</span>
+          <i data-lucide="chevron-right"></i>
+        </span>
+      </div>
+      <div class="profile-card-body">
+        <span class="avatar avatar-lg">
+          <img id="cardPhoto" src="../assets/profile.png" alt="">
+        </span>
+        <div class="profile-card-info">
+          <div class="profile-name-row">
+            <span class="profile-name" id="cardName">김연우</span>
+            <span class="badge badge-sm badge-weak-primary" id="cardAiBadge">AI</span>
+          </div>
+          <span class="text-caption" id="cardMeta">친근한 말투 · 페이지 프로필과 동일</span>
+        </div>
+      </div>
+    </button>
+
+    <!-- 맥락용 — 뒤따르는 기존 카드 -->
+    <div class="card">
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <span class="text-heading">첫 메시지</span>
+        <span class="text-caption">대화를 시작하면 아바타가 먼저 말을 걸어요</span>
+      </div>
+      <textarea class="textarea" style="margin-top:16px;" placeholder="안녕하세요! 무엇이든 편하게 물어봐 주세요."></textarea>
+    </div>
+  </div>
+
+  <!-- ── 바텀시트 ── -->
+  <div class="bottom-sheet-overlay" id="sheetOverlay" onclick="closeSheet()"></div>
+  <div class="bottom-sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <div class="bottom-sheet-handle"></div>
+
+    <div class="sheet-head">
+      <span class="sheet-title" id="sheetTitle">AI 프로필</span>
+      <button class="icon-btn icon-btn-sm icon-btn-clear" onclick="closeSheet()" aria-label="닫기">
+        <i data-lucide="x"></i>
+      </button>
+    </div>
+    <p class="text-caption">설정하지 않으면 페이지 프로필과 똑같이 보여요.<br>AI 답변 시 이름이나 사진을 따로 두고 싶을 때만 바꾸세요.</p>
+
+    <div class="sheet-body">
+      <!-- 프로필 사진 -->
+      <div class="field">
+        <span class="label">프로필 사진</span>
+        <div class="photo-row">
+          <span class="avatar avatar-xl">
+            <img id="sheetPhoto" src="../assets/profile.png" alt="">
+          </span>
+          <div class="photo-actions">
+            <button class="btn btn-sm btn-line-dark" onclick="changePhoto()">사진 변경</button>
+            <button class="btn btn-sm btn-weak-dark" id="photoResetBtn" onclick="resetPhoto()">기본으로</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 이름 -->
+      <div class="field">
+        <span class="label">이름</span>
+        <input class="input" id="sheetName" type="text" placeholder="김연우" oninput="syncPreview()">
+        <span class="text-caption">비워두면 페이지 이름을 그대로 써요</span>
+      </div>
+
+      <!-- AI 뱃지 -->
+      <div class="toggle-row">
+        <span class="text-body" style="font-weight:var(--fw-medium)">이름 옆에 AI 뱃지 표시</span>
+        <input class="toggle toggle-sm" type="checkbox" id="sheetBadge" checked onchange="syncPreview()">
+      </div>
+
+      <!-- 대화 톤 -->
+      <div class="field">
+        <span class="label">대화 톤</span>
+        <div class="chip-row" id="toneChips">
+          <button class="btn btn-sm btn-pill btn-fill-primary" data-tone="친근한" onclick="selectTone(this)">친근한</button>
+          <button class="btn btn-sm btn-pill btn-weak-dark" data-tone="정중한" onclick="selectTone(this)">정중한</button>
+          <button class="btn btn-sm btn-pill btn-weak-dark" data-tone="전문적인" onclick="selectTone(this)">전문적인</button>
+          <button class="btn btn-sm btn-pill btn-weak-dark" data-tone="캐주얼" onclick="selectTone(this)">캐주얼</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="sheet-actions">
+      <button class="btn btn-lg btn-line-dark" onclick="resetAll()">초기화</button>
+      <button class="btn btn-lg btn-fill-primary" onclick="save()">저장</button>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    const PAGE_NAME  = '김연우';
+    const PAGE_PHOTO = '../assets/profile.png';
+    const PHOTOS = ['../assets/tntn-avatar.png', '../assets/yoga-avatar.png', '../assets/studiogloss-avatar.png'];
+
+    // 저장된 값 (설정 안 하면 name/photo 는 null = 페이지 프로필과 동일)
+    let saved = { name: null, photo: null, badge: true, tone: '친근한' };
+    // 시트에서 편집 중인 값
+    let draft = { ...saved };
+
+    /* ── 카드 ── */
+    function renderCard() {
+      const custom = saved.name !== null || saved.photo !== null;
+      document.getElementById('cardPhoto').src = saved.photo || PAGE_PHOTO;
+      document.getElementById('cardName').textContent = saved.name || PAGE_NAME;
+      document.getElementById('cardAiBadge').style.display = saved.badge ? '' : 'none';
+
+      const badge = document.getElementById('cardStatusBadge');
+      badge.textContent = custom ? '직접 설정' : '기본';
+      badge.className = 'badge badge-sm ' + (custom ? 'badge-weak-primary' : 'badge-weak-neutral');
+
+      document.getElementById('cardMeta').textContent =
+        saved.tone + ' 말투' + (custom ? '' : ' · 페이지 프로필과 동일');
+
+      document.querySelectorAll('.state-bar [data-state]').forEach(b => {
+        const on = (b.dataset.state === 'custom') === custom;
+        b.className = 'btn btn-sm btn-pill ' + (on ? 'btn-fill-primary' : 'btn-weak-dark');
+      });
+    }
+
+    /* ── 프로토타입 상태 전환 ── */
+    function setState(state) {
+      saved = state === 'custom'
+        ? { name: '현우', photo: PHOTOS[0], badge: true, tone: '친근한' }
+        : { name: null, photo: null, badge: true, tone: '친근한' };
+      renderCard();
+    }
+
+    /* ── 시트 ── */
+    function openSheet() {
+      draft = { ...saved };
+      document.getElementById('sheetName').value = draft.name || '';
+      document.getElementById('sheetBadge').checked = draft.badge;
+      document.querySelectorAll('#toneChips [data-tone]').forEach(b => {
+        const on = b.dataset.tone === draft.tone;
+        b.className = 'btn btn-sm btn-pill ' + (on ? 'btn-fill-primary' : 'btn-weak-dark');
+      });
+      syncPreview();
+      document.getElementById('sheetOverlay').classList.add('is-open');
+      document.getElementById('sheet').classList.add('is-open');
+    }
+
+    function closeSheet() {
+      document.getElementById('sheetOverlay').classList.remove('is-open');
+      document.getElementById('sheet').classList.remove('is-open');
+    }
+
+    function syncPreview() {
+      draft.name  = document.getElementById('sheetName').value.trim() || null;
+      draft.badge = document.getElementById('sheetBadge').checked;
+
+      document.getElementById('sheetPhoto').src = draft.photo || PAGE_PHOTO;
+      document.getElementById('photoResetBtn').style.display = draft.photo ? '' : 'none';
+    }
+
+    function changePhoto() {
+      const i = PHOTOS.indexOf(draft.photo);
+      draft.photo = PHOTOS[(i + 1) % PHOTOS.length];
+      syncPreview();
+    }
+
+    function resetPhoto() {
+      draft.photo = null;
+      syncPreview();
+    }
+
+    function selectTone(btn) {
+      draft.tone = btn.dataset.tone;
+      document.querySelectorAll('#toneChips [data-tone]').forEach(b => {
+        const on = b === btn;
+        b.className = 'btn btn-sm btn-pill ' + (on ? 'btn-fill-primary' : 'btn-weak-dark');
+      });
+      syncPreview();
+    }
+
+    function resetAll() {
+      draft = { name: null, photo: null, badge: true, tone: draft.tone };
+      document.getElementById('sheetName').value = '';
+      document.getElementById('sheetBadge').checked = true;
+      syncPreview();
+      toast('페이지 프로필과 동일하게 되돌렸어요');
+    }
+
+    function save() {
+      saved = { ...draft };
+      renderCard();
+      closeSheet();
+      toast('AI 프로필을 저장했어요');
+    }
+
+    /* ── 토스트 ── */
+    function toast(msg) {
+      const el = document.createElement('div');
+      el.className = 'toast';
+      el.textContent = msg;
+      document.getElementById('toastContainer').appendChild(el);
+      setTimeout(() => el.remove(), 2000);
+    }
+
+    renderCard();
+    lucide.createIcons();
+  </script>
+</body>
+</html>
