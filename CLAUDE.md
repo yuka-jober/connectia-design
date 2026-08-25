@@ -31,6 +31,7 @@
 - **타이포(유틸 클래스):** `.text-display .text-title .text-heading .text-body-lg .text-body .text-label .text-caption .text-badge .text-link .text-metric .text-nav` (title-sm 18px는 유틸 없이 `var(--fs-title-sm)`·`--lh-title-sm`·`--ls-title-sm` 토큰만 사용)
 - **radius:** `--r-xs/sm/md/lg/xl/full` · **shadow:** `--shadow-1`~`--shadow-4` · **motion:** `--motion-fast/standard/slow`, `--ease-enter/exit/standard`
 - **폼 컨트롤:** `--input-h`(input·select 높이) · `--input-px`(좌우 여백) · `--textarea-py` · `--textarea-h`(최소 높이). 인풋 배경은 흰색(`--color-surface`)
+- **포스터 썸네일(blur-fill):** `--blur-fill`(썸네일 배경 레이어 블러 반경, 24px)
 
 ## 사용 가능한 컴포넌트 (components.css)
 모두 클래스 조합 방식. **새로 만들기 전에 여기 있는지 먼저 확인한다.**
