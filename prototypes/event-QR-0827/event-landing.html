@@ -1050,7 +1050,7 @@
   }
 
   /* ============================================
-     신청 화면 — 유형 헤더 · 팀원 행 · 결제 · 완료
+     신청 화면 — 유형 헤더 · 팀원 행 · 완료
      ============================================ */
   .apply-type-bar {
     display: flex; align-items: center; gap: 8px;
@@ -1124,26 +1124,6 @@
     align-self: flex-start;
     margin-top: 4px;
   }
-
-  /* 결제 단계 */
-  .pay-amount {
-    display: flex; flex-direction: column; gap: 4px;
-    padding: 20px;
-    background: var(--color-primary-light);
-    border-radius: var(--r-md);
-  }
-  .pay-amount-label { font-size: var(--fs-caption); color: var(--color-text-muted); }
-  .pay-amount-value {
-    font-size: var(--fs-display); font-weight: var(--fw-bold);
-    letter-spacing: var(--ls-display);
-    color: var(--color-text);
-  }
-  .pay-note {
-    display: flex; align-items: flex-start; gap: 8px;
-    font-size: var(--fs-caption); color: var(--color-text-muted);
-    line-height: 1.5;
-  }
-  .pay-note i[data-lucide], .pay-note svg.lucide { width: 14px; height: 14px; margin-top: 4px; }
 
   /* 완료 화면 */
   .done-body {
@@ -1222,7 +1202,7 @@
   .done-person-to { font-size: var(--fs-label); color: var(--color-text-muted); }
 
   /* ============================================
-     명단 화면 — 요약 바 · 필터 칩 · 유형/결제 배지 · 팀 아코디언
+     명단 화면 — 요약 바 · 필터 칩 · 팀 아코디언
      ============================================ */
   /* .btn은 display:inline-flex라 hidden이 눌린다 — 명시적으로 되살린다 */
 
@@ -1302,6 +1282,13 @@
           <input type="checkbox" class="toggle toggle-sm" id="opt-show-list" checked onchange="setShowList(this)">
           <span>신청자 목록 노출</span>
         </label>
+      </div>
+    </div>
+    <div class="viewer-bar-row">
+      <span class="viewer-bar-label">노출 방식</span>
+      <div class="viewer-bar-tabs">
+        <button class="viewer-bar-tab" type="button" data-axis="showcase" data-value="off" onclick="setShowcase(false)">기본</button>
+        <button class="viewer-bar-tab" type="button" data-axis="showcase" data-value="on" onclick="setShowcase(true)">크게</button>
       </div>
     </div>
     <div class="viewer-bar-row">
@@ -1628,36 +1615,6 @@
   </div>
 
   <!-- ════════════════════════════════════════════ -->
-  <!-- SCREEN — PAY (참가비가 있는 유형만)             -->
-  <!-- ════════════════════════════════════════════ -->
-  <div class="screen" id="screen-pay">
-    <div class="topbar-solid">
-      <button class="icon-btn icon-btn-clear" aria-label="뒤로" onclick="navigate('screen-apply')">
-        <i data-lucide="chevron-left" style="width:22px;height:22px;color:var(--color-text);"></i>
-      </button>
-      <span class="topbar-title">결제하기</span>
-    </div>
-
-    <div class="apply-body">
-      <div class="pay-amount">
-        <span class="pay-amount-label" id="pay-amount-label">졸업생 후원금</span>
-        <span class="pay-amount-value" id="pay-amount-value">100,000원</span>
-      </div>
-
-      <p class="pay-note">
-        <i data-lucide="info"></i>
-        <span>프로토타입이라 실제 결제는 일어나지 않아요. 결제하기를 누르면 완료 화면으로 넘어갑니다.</span>
-      </p>
-    </div>
-
-    <div class="apply-footer">
-      <button class="btn btn-lg btn-block btn-fill-primary" type="button" id="pay-submit" onclick="submitPay()">
-        결제하기
-      </button>
-    </div>
-  </div>
-
-  <!-- ════════════════════════════════════════════ -->
   <!-- SCREEN — DONE (신청 완료 · 현장 체크인 QR)      -->
   <!-- ════════════════════════════════════════════ -->
   <div class="screen" id="screen-done">
@@ -1683,7 +1640,7 @@
 
       <p class="done-alim" id="done-alim">
         <i data-lucide="message-square"></i>
-        <span id="done-alim-text">신청 내용과 QR을 알림톡으로도 보내드렸어요</span>
+        <span>신청 내용과 QR을 알림톡으로도 보내드렸어요</span>
       </p>
     </div>
 
@@ -1909,10 +1866,20 @@
       /* CHECKIN은 아래쪽에서 선언돼서 첫 동기화 때는 아직 비어 있다 */
       if (axis === 'role') val = role;
       else if (axis === 'checkin') val = (window.CHECKIN && CHECKIN.enabled) ? CHECKIN.issueUnit : 'off';
+      else if (axis === 'showcase') val = showcaseOn() ? 'on' : 'off';
       else val = state;
       t.classList.toggle('active', t.dataset.value === val);
       if (axis === 'state') t.disabled = (role === 'owner');
     });
+  }
+  /* 공개가 켜진 유형 중 하나라도 크게 보여주면 켜진 것으로 본다 */
+  function showcaseOn() {
+    return (window.PTYPES || []).some(function(t){ return t.reveal && t.reveal.enabled && t.reveal.showcase; });
+  }
+  function setShowcase(on) {
+    (window.PTYPES || []).forEach(function(t){ if (t.reveal && t.reveal.enabled) t.reveal.showcase = on; });
+    syncAttendeeUI();
+    syncViewerBar();
   }
   function setRole(role)  { document.body.dataset.role  = role;  syncViewerBar(); renderCtaTypes(); }
   function setState(state){ document.body.dataset.state = state; syncViewerBar(); renderCtaTypes(); }
@@ -2346,7 +2313,7 @@
     };
   }
 
-  /* 제출 — 참가비가 있으면 결제 단계로, 없으면 바로 완료로 */
+  /* 제출 — 폼을 채우면 바로 완료 화면으로 */
   function submitApply() {
     var t = currentApplyType();
 
@@ -2364,7 +2331,7 @@
       } else {
         APPLICANTS.unshift({
           name: name || '나', typeId:'', preset: false, date: nowStamp(),
-          paid: null, checkedIn: false, photo: '',
+          checkedIn: false, photo: '',
           values: { phone: val('apply-phone'), email:'' }, team: null
         });
         renderApplicants();
@@ -2375,7 +2342,6 @@
       return;
     }
 
-    if (t.fee && t.fee.enabled) { renderPay(t); navigate('screen-pay'); return; }
     finishApply(t);
   }
 
@@ -2387,7 +2353,6 @@
     APPLICANTS.unshift({
       name: isTeam ? teamData.title : (val('apply-name') || '나'),
       typeId: t.id, preset: false, date: nowStamp(),
-      paid: (t.fee && t.fee.enabled) ? true : null,
       checkedIn: false,
       photo: '',
       /* 신청 폼 답변이 그대로 answers가 된다 */
@@ -2422,7 +2387,6 @@
         +   ' onclick="pickType(\'' + t.id + '\')">'
         +   '<span class="more-menu-item-text">'
         +     '<span>' + escapeHTML(t.name) + '</span>'
-        +     '<span class="more-menu-item-sub">' + escapeHTML(feeText(t)) + '</span>'
         +   '</span>'
         +   (t.id === applyTypeId ? '<i data-lucide="check" style="width:18px;height:18px;color:var(--color-primary)"></i>' : '')
         + '</button>';
@@ -2439,22 +2403,6 @@
     closeTypePicker();
     selectPtype(id);
     startApply(id);
-  }
-
-  // ══════════════════════════════════════════════
-  // 결제 단계 (참가비가 있는 유형만)
-  // ══════════════════════════════════════════════
-  function renderPay(t) {
-    /* 참가비 명칭은 유형이 들고 있으면 그걸 쓰고, 없으면 중립적으로 '참가비' */
-    document.getElementById('pay-amount-label').textContent =
-      t.name + ' ' + '참가비';
-    document.getElementById('pay-amount-value').textContent = (+t.fee.amount).toLocaleString('ko-KR') + '원';
-    if (window.lucide) lucide.createIcons();
-  }
-  function submitPay() {
-    var t = currentApplyType();
-    if (!t) return;
-    finishApply(t);
   }
 
   // ══════════════════════════════════════════════
@@ -2534,9 +2482,6 @@
     } else {
       rows.push(['신청자', val('apply-name') || '—']);
     }
-    if (t && t.fee && t.fee.enabled) {
-      rows.push(['결제', (+t.fee.amount).toLocaleString('ko-KR') + '원 결제완료']);
-    }
     if (meta.when)  rows.push(['일시', meta.when]);
     if (meta.where) rows.push(['장소', meta.where]);
 
@@ -2547,17 +2492,12 @@
         + '</div>';
     }).join('');
 
-    /* 알림톡 발송이 꺼져 있으면 문구를 빼고 QR만 남긴다 */
-    document.getElementById('done-alim').hidden = !ALIMTALK.applyComplete;
-    /* 체크인을 안 쓰면 QR이 없으므로 문구에서도 QR을 뺀다 */
-    document.getElementById('done-alim-text').textContent = CHECKIN.enabled
-      ? '신청 내용과 QR을 알림톡으로도 보내드렸어요'
-      : '신청 내용을 알림톡으로도 보내드렸어요';
-
-    /* 현장 체크인을 안 쓰는 이벤트면 QR 영역 자체를 그리지 않는다.
+    /* 알림톡은 QR을 보낼 때만 나간다 — 현장 체크인을 안 쓰는 이벤트면
+       QR도 알림톡 문구도 통째로 빠진다.
        신청이 완료된 시점이면 유형과 상관없이 발급된다. */
     var issued = !!CHECKIN.enabled;
     document.getElementById('done-qr-card').hidden = !issued;
+    document.getElementById('done-alim').hidden = !issued;
     if (issued) renderQR(APPLICANTS.length + 7);
     renderDonePeople(t, teamData, issued);
     if (window.lucide) lucide.createIcons();
@@ -2846,8 +2786,6 @@
     var person = {
       name: name, preset: true, date: nowStamp(),
       typeId: attType ? attType.id : '',
-      /* 사전 등록 경로(applyEventData)와 같은 규칙 — 참가비 유형이면 결제 완료다 */
-      paid: (attType && attType.fee && attType.fee.enabled) ? true : null,
       checkedIn: false, photo: '',
       values: { phone: phoneEl.value.trim(), email:'' },
       team: null
@@ -3048,7 +2986,6 @@
         return {
           id: t.id, name: t.name, unit: t.unit || 'individual',
           guide: t.guide || '',
-          fee: t.fee || { enabled:false, amount:0 },
           reveal: t.reveal || { enabled:false, fields:{}, questions:[] },
           cta: t.cta || (t.name + ' 신청'),
           form: t.form || { unit: t.unit || 'individual', fields:{}, questions:[] }
@@ -3060,7 +2997,6 @@
         (t.attendees || []).forEach(function(p){
           APPLICANTS.push({
             name: p.name, typeId: t.id, preset: true, date: '호스트 등록',
-            paid: (t.fee && t.fee.enabled) ? true : null,
             checkedIn: false,
             photo: p.photo || '',
             /* 신청폼 답변이 그대로 answers다 */
@@ -3076,7 +3012,6 @@
           var t = ptypeById(a.typeId) || PTYPES[0];
           APPLICANTS.push({
             name: a.name, typeId: t.id, preset: true, date: '호스트 등록',
-            paid: (t.fee && t.fee.enabled) ? true : null,
             checkedIn: false,
             photo: '',
             values: { phone: a.phone || '', email:'' },
@@ -3093,7 +3028,7 @@
         APPLICANTS = d.attendees.map(function(a){
           return {
             name: a.name, typeId:'', preset: true, date: '호스트 등록',
-            paid: null, checkedIn: false, photo: '',
+            checkedIn: false, photo: '',
             values: { phone: a.phone || '', email:'' },
             team: null
           };
@@ -3106,8 +3041,6 @@
         if (d.fields.email && d.fields.email.enabled) FIELDS.push({ key:'email', label:'이메일', type:'text' });
       }
     }
-
-    if (d.alimtalk) ALIMTALK = d.alimtalk;
 
     if (d.checkin) {
       CHECKIN = {
@@ -3150,14 +3083,12 @@
   // ══════════════════════════════════════════════
   var PT_ENABLED = true;
   var SHOW_ATTENDEE_LIST = true;
-  var ALIMTALK = { applyComplete: true, dayBeforeRemind: true };
   /* 현장 체크인 — issueUnit: 'registration' | 'person' */
   var CHECKIN = { enabled: true, issueUnit: 'registration' };
   var PTYPES = [
     {
       id:'pt1', name:'졸업생', unit:'individual',
       guide:'후배들에게 들려줄 이야기를 하나만 준비해 오세요. 후원금은 전액 재학생 장학금으로 쓰입니다.',
-      fee:{ enabled:true, amount:100000 },
       /* name·photo는 항상 공개라 계약에 없다. fields는 신청폼에서 켜진 기본 필드만. */
       reveal:{
         enabled:true, showcase:true,
@@ -3182,7 +3113,6 @@
     {
       id:'pt2', name:'재학생 팀', unit:'team',
       guide:'팀을 꾸려 함께 신청해 주세요. 팀 사연을 함께 적어주시면 선정된 팀에 장학금을 드립니다.',
-      fee:{ enabled:false, amount:0 },
       reveal:{ enabled:false, showcase:false, fields:{ phone:false, email:false }, questions:[] },
       cta:'재학생 팀 신청',
       form:{
@@ -3212,26 +3142,26 @@
     }
   ];
 
-  // [이름, 학과·학번, 소속, 후배에게 한마디, 전화번호, 결제여부, 사진, 신청일]
+  // [이름, 학과·학번, 소속, 후배에게 한마디, 전화번호, 사진, 신청일]
   var GRAD_SEED = [
-    ['김도현','경영학부 04학번','삼성전자','궁금한 건 뭐든 물어보세요','010-2841-9032',true,'../../assets/profile.png','2026.08.21 10:12'],
-    ['박서연','도시공학과 07학번','서울시청','진로 고민 들고 오세요','010-3391-5527',true,'../../assets/yoga-avatar.png','2026.08.21 11:04'],
-    ['이준호','전자전기컴퓨터공학부 09학번','네이버','첫 회사 고르는 법 알려드릴게요','010-7712-0384',true,'../../assets/studiogloss-avatar.png','2026.08.21 14:36'],
-    ['최유진','국제관계학과 06학번','외교부','유학 준비 이야기 해드릴게요','010-4820-6613',true,'../../assets/avatar-sft.png','2026.08.22 09:41'],
-    ['정민수','건축학부 03학번','희림종합건축','포트폴리오 봐드립니다','010-2255-7788',true,'../../assets/tntn-avatar.png','2026.08.22 18:22'],
-    ['한지영','세무학과 08학번','삼일회계법인','자격증 루트 정리해 왔어요','010-6612-3390',true,'','2026.08.23 08:57'],
-    ['오세훈','환경공학부 05학번','환경공단','공기업 준비 물어보세요','010-3348-1129',true,'','2026.08.23 13:15'],
-    ['배소연','행정학과 10학번','서울시','행정고시 이야기 나눠요','010-9930-4471',true,'','2026.08.24 10:03'],
-    ['신재현','물리학과 02학번','LG전자','대학원 진학 상담 가능해요','010-5580-2214',true,'','2026.08.24 15:48'],
-    ['윤하늘','디자인학부 11학번','카카오','포트폴리오 리뷰해 드려요','010-7043-8891',true,'','2026.08.24 20:31'],
-    ['강태오','기계정보공학과 06학번','현대자동차','제조업 취업 이야기해요','010-2170-5563',true,'','2026.08.25 09:12'],
-    ['서지안','경제학부 09학번','한국은행','금융권 준비 도와드릴게요','010-8846-2205',true,'','2026.08.25 12:40'],
-    ['문가영','조경학과 07학번','조경설계 서안','현장 이야기 많이 해드려요','010-3327-9014',true,'','2026.08.25 17:26'],
-    ['임도현','통계학과 12학번','쿠팡','데이터 직군 로드맵 있어요','010-6693-3378',true,'','2026.08.25 21:09'],
-    ['조하린','영어영문학과 08학번','대한항공','승무원 준비 물어보세요','010-4419-7752',true,'','2026.08.26 08:44'],
-    ['남기훈','컴퓨터과학부 13학번','토스','이직 이야기도 환영이에요','010-2903-6640',true,'','2026.08.26 09:58'],
-    ['황수민','도시행정학과 09학번','국토연구원','연구직 진로 이야기해요','010-7758-1136',true,'','2026.08.26 10:22'],
-    ['백준영','재료공학과 04학번','포스코','현장직 궁금한 거 물어보세요','010-5502-8823',true,'','2026.08.26 11:05']
+    ['김도현','경영학부 04학번','삼성전자','궁금한 건 뭐든 물어보세요','010-2841-9032','../../assets/profile.png','2026.08.21 10:12'],
+    ['박서연','도시공학과 07학번','서울시청','진로 고민 들고 오세요','010-3391-5527','../../assets/yoga-avatar.png','2026.08.21 11:04'],
+    ['이준호','전자전기컴퓨터공학부 09학번','네이버','첫 회사 고르는 법 알려드릴게요','010-7712-0384','../../assets/studiogloss-avatar.png','2026.08.21 14:36'],
+    ['최유진','국제관계학과 06학번','외교부','유학 준비 이야기 해드릴게요','010-4820-6613','../../assets/avatar-sft.png','2026.08.22 09:41'],
+    ['정민수','건축학부 03학번','희림종합건축','포트폴리오 봐드립니다','010-2255-7788','../../assets/tntn-avatar.png','2026.08.22 18:22'],
+    ['한지영','세무학과 08학번','삼일회계법인','자격증 루트 정리해 왔어요','010-6612-3390','','2026.08.23 08:57'],
+    ['오세훈','환경공학부 05학번','환경공단','공기업 준비 물어보세요','010-3348-1129','','2026.08.23 13:15'],
+    ['배소연','행정학과 10학번','서울시','행정고시 이야기 나눠요','010-9930-4471','','2026.08.24 10:03'],
+    ['신재현','물리학과 02학번','LG전자','대학원 진학 상담 가능해요','010-5580-2214','','2026.08.24 15:48'],
+    ['윤하늘','디자인학부 11학번','카카오','포트폴리오 리뷰해 드려요','010-7043-8891','','2026.08.24 20:31'],
+    ['강태오','기계정보공학과 06학번','현대자동차','제조업 취업 이야기해요','010-2170-5563','','2026.08.25 09:12'],
+    ['서지안','경제학부 09학번','한국은행','금융권 준비 도와드릴게요','010-8846-2205','','2026.08.25 12:40'],
+    ['문가영','조경학과 07학번','조경설계 서안','현장 이야기 많이 해드려요','010-3327-9014','','2026.08.25 17:26'],
+    ['임도현','통계학과 12학번','쿠팡','데이터 직군 로드맵 있어요','010-6693-3378','','2026.08.25 21:09'],
+    ['조하린','영어영문학과 08학번','대한항공','승무원 준비 물어보세요','010-4419-7752','','2026.08.26 08:44'],
+    ['남기훈','컴퓨터과학부 13학번','토스','이직 이야기도 환영이에요','010-2903-6640','','2026.08.26 09:58'],
+    ['황수민','도시행정학과 09학번','국토연구원','연구직 진로 이야기해요','010-7758-1136','','2026.08.26 10:22'],
+    ['백준영','재료공학과 04학번','포스코','현장직 궁금한 거 물어보세요','010-5502-8823','','2026.08.26 11:05']
   ];
 
   /* 팀원 값 — member.questions의 id가 키 (m1 학번 · m2 학과) */
@@ -3263,9 +3193,9 @@
   function buildApplicants() {
     var rows = GRAD_SEED.map(function(g){
       return {
-        name: g[0], typeId: 'pt1', preset: false, date: g[7],
-        paid: g[5], checkedIn: false,
-        photo: g[6] || '',
+        name: g[0], typeId: 'pt1', preset: false, date: g[6],
+        checkedIn: false,
+        photo: g[5] || '',
         /* 신청폼 답변이 그대로 answers다 — 질문 id가 키 */
         values: { phone: g[4], email: '', q1: g[1], q2: g[2], q3: g[3] },
         team: null
@@ -3274,7 +3204,7 @@
     var teams = TEAM_SEED.map(function(t){
       return {
         name: t.title, typeId: 'pt2', preset: false, date: t.date,
-        paid: null, checkedIn: false,
+        checkedIn: false,
         photo: '',
         /* 팀 층 답변 — member 답변은 team.members가 각자 들고 있다 */
         values: { q1: t.story },
@@ -3296,7 +3226,6 @@
     if (!SHOW_ATTENDEE_LIST) return [];
     return PTYPES.filter(function(t){ return t.reveal && t.reveal.enabled; });
   }
-  function feeTypes() { return PTYPES.filter(function(t){ return t.fee && t.fee.enabled; }); }
   /* 답변 키 — 인덱스가 아니라 질문 id라 재정렬·삭제에 밀리지 않는다 */
   function qKey(q, i) { return (q && q.id) || ('q' + i); }
 
@@ -3326,11 +3255,6 @@
     });
   }
   function unitWord(t) { return t && t.unit === 'team' ? '팀' : '명'; }
-  function feeText(t) {
-    return (t.fee && t.fee.enabled)
-      ? ('참가비 ' + (+t.fee.amount).toLocaleString('ko-KR') + '원')
-      : '참가비 없음';
-  }
   function typeRows(id) { return APPLICANTS.filter(function(a){ return a.typeId === id; }); }
   function renderFieldValue(field, raw) {
     var isEmpty = raw === undefined || raw === null || raw === '' || (Array.isArray(raw) && raw.length === 0);
@@ -3619,7 +3543,7 @@
       return writeCsv(header, rows);
     }
     /* 유형별로 필드가 달라서 라벨·값을 한 쌍으로 펼친다 */
-    var header = ['유형', '이름/팀명', '결제', '팀원', '답변', '신청일'];
+    var header = ['유형', '이름/팀명', '팀원', '답변', '신청일'];
     var rows = APPLICANTS.map(function(a){
       var t = ptypeById(a.typeId);
       var answers = rowFields(a).map(function(f){
@@ -3634,8 +3558,7 @@
               + (m.phone ? ' ' + m.phone : '');
           }).join(', ')
         : '';
-      var pay = a.paid === true ? '결제완료' : '해당없음';
-      return [t ? t.name : '', a.name, pay, members, answers, a.date];
+      return [t ? t.name : '', a.name, members, answers, a.date];
     });
     return writeCsv(header, rows);
   }

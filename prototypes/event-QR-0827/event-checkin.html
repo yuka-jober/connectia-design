@@ -461,12 +461,6 @@
     font-weight: var(--fw-semibold);
     color: var(--color-text);
   }
-  .onsite-type-fee {
-    margin-left: auto;
-    font-size: var(--fs-label);
-    font-weight: var(--fw-medium);
-    color: var(--color-text-muted);
-  }
 </style>
 </head>
 <body data-role="owner">
@@ -628,7 +622,6 @@
   var PTYPES = [
     {
       id:'pt1', name:'졸업생', unit:'individual',
-      fee:{ enabled:true, amount:100000 },
       form:{
         unit:'individual',
         fields:{ name:{enabled:true,required:true}, phone:{enabled:true,required:true}, email:{enabled:true,required:false} },
@@ -641,7 +634,6 @@
     },
     {
       id:'pt2', name:'재학생 팀', unit:'team',
-      fee:{ enabled:false, amount:0 },
       form:{
         unit:'team',
         team:{
@@ -660,26 +652,26 @@
     }
   ];
 
-  // [이름, 학과·학번, 소속, 후배에게 한마디, 전화번호, 결제여부, 신청일]
+  // [이름, 학과·학번, 소속, 후배에게 한마디, 전화번호, 신청일]
   var GRAD_SEED = [
-    ['김도현','경영학부 04학번','삼성전자','궁금한 건 뭐든 물어보세요','010-2841-9032',true,'2026.08.21 10:12'],
-    ['박서연','도시공학과 07학번','서울시청','진로 고민 들고 오세요','010-3391-5527',true,'2026.08.21 11:04'],
-    ['이준호','전자전기컴퓨터공학부 09학번','네이버','첫 회사 고르는 법 알려드릴게요','010-7712-0384',true,'2026.08.21 14:36'],
-    ['최유진','국제관계학과 06학번','외교부','유학 준비 이야기 해드릴게요','010-4820-6613',true,'2026.08.22 09:41'],
-    ['정민수','건축학부 03학번','희림종합건축','포트폴리오 봐드립니다','010-2255-7788',true,'2026.08.22 18:22'],
-    ['한지영','세무학과 08학번','삼일회계법인','자격증 루트 정리해 왔어요','010-6612-3390',true,'2026.08.23 08:57'],
-    ['오세훈','환경공학부 05학번','환경공단','공기업 준비 물어보세요','010-3348-1129',true,'2026.08.23 13:15'],
-    ['배소연','행정학과 10학번','서울시','행정고시 이야기 나눠요','010-9930-4471',true,'2026.08.24 10:03'],
-    ['신재현','물리학과 02학번','LG전자','대학원 진학 상담 가능해요','010-5580-2214',true,'2026.08.24 15:48'],
-    ['윤하늘','디자인학부 11학번','카카오','포트폴리오 리뷰해 드려요','010-7043-8891',true,'2026.08.24 20:31'],
-    ['강태오','기계정보공학과 06학번','현대자동차','제조업 취업 이야기해요','010-2170-5563',true,'2026.08.25 09:12'],
-    ['서지안','경제학부 09학번','한국은행','금융권 준비 도와드릴게요','010-8846-2205',true,'2026.08.25 12:40'],
-    ['문가영','조경학과 07학번','조경설계 서안','현장 이야기 많이 해드려요','010-3327-9014',true,'2026.08.25 17:26'],
-    ['임도현','통계학과 12학번','쿠팡','데이터 직군 로드맵 있어요','010-6693-3378',true,'2026.08.25 21:09'],
-    ['조하린','영어영문학과 08학번','대한항공','승무원 준비 물어보세요','010-4419-7752',true,'2026.08.26 08:44'],
-    ['남기훈','컴퓨터과학부 13학번','토스','이직 이야기도 환영이에요','010-2903-6640',true,'2026.08.26 09:58'],
-    ['황수민','도시행정학과 09학번','국토연구원','연구직 진로 이야기해요','010-7758-1136',true,'2026.08.26 10:22'],
-    ['백준영','재료공학과 04학번','포스코','현장직 궁금한 거 물어보세요','010-5502-8823',true,'2026.08.26 11:05']
+    ['김도현','경영학부 04학번','삼성전자','궁금한 건 뭐든 물어보세요','010-2841-9032','2026.08.21 10:12'],
+    ['박서연','도시공학과 07학번','서울시청','진로 고민 들고 오세요','010-3391-5527','2026.08.21 11:04'],
+    ['이준호','전자전기컴퓨터공학부 09학번','네이버','첫 회사 고르는 법 알려드릴게요','010-7712-0384','2026.08.21 14:36'],
+    ['최유진','국제관계학과 06학번','외교부','유학 준비 이야기 해드릴게요','010-4820-6613','2026.08.22 09:41'],
+    ['정민수','건축학부 03학번','희림종합건축','포트폴리오 봐드립니다','010-2255-7788','2026.08.22 18:22'],
+    ['한지영','세무학과 08학번','삼일회계법인','자격증 루트 정리해 왔어요','010-6612-3390','2026.08.23 08:57'],
+    ['오세훈','환경공학부 05학번','환경공단','공기업 준비 물어보세요','010-3348-1129','2026.08.23 13:15'],
+    ['배소연','행정학과 10학번','서울시','행정고시 이야기 나눠요','010-9930-4471','2026.08.24 10:03'],
+    ['신재현','물리학과 02학번','LG전자','대학원 진학 상담 가능해요','010-5580-2214','2026.08.24 15:48'],
+    ['윤하늘','디자인학부 11학번','카카오','포트폴리오 리뷰해 드려요','010-7043-8891','2026.08.24 20:31'],
+    ['강태오','기계정보공학과 06학번','현대자동차','제조업 취업 이야기해요','010-2170-5563','2026.08.25 09:12'],
+    ['서지안','경제학부 09학번','한국은행','금융권 준비 도와드릴게요','010-8846-2205','2026.08.25 12:40'],
+    ['문가영','조경학과 07학번','조경설계 서안','현장 이야기 많이 해드려요','010-3327-9014','2026.08.25 17:26'],
+    ['임도현','통계학과 12학번','쿠팡','데이터 직군 로드맵 있어요','010-6693-3378','2026.08.25 21:09'],
+    ['조하린','영어영문학과 08학번','대한항공','승무원 준비 물어보세요','010-4419-7752','2026.08.26 08:44'],
+    ['남기훈','컴퓨터과학부 13학번','토스','이직 이야기도 환영이에요','010-2903-6640','2026.08.26 09:58'],
+    ['황수민','도시행정학과 09학번','국토연구원','연구직 진로 이야기해요','010-7758-1136','2026.08.26 10:22'],
+    ['백준영','재료공학과 04학번','포스코','현장직 궁금한 거 물어보세요','010-5502-8823','2026.08.26 11:05']
   ];
 
   /* 팀원 값 — member.questions의 id가 키 (m1 학번 · m2 학과) */
@@ -711,8 +703,8 @@
   function buildApplicants() {
     var rows = GRAD_SEED.map(function(g){
       return {
-        name: g[0], typeId: 'pt1', preset: false, date: g[6],
-        paid: g[5], checkedIn: false, checkedInAt: null, onsite: false,
+        name: g[0], typeId: 'pt1', preset: false, date: g[5],
+        checkedIn: false, checkedInAt: null, onsite: false,
         values: { phone: g[4], email: '', q1: g[1], q2: g[2], q3: g[3] },
         team: null
       };
@@ -720,7 +712,7 @@
     var teams = TEAM_SEED.map(function(t){
       return {
         name: t.title, typeId: 'pt2', preset: false, date: t.date,
-        paid: null, checkedIn: false, checkedInAt: null, onsite: false,
+        checkedIn: false, checkedInAt: null, onsite: false,
         values: { q1: t.story },
         team: { leaderIndex: t.leaderIndex, members: t.members }
       };
@@ -762,7 +754,6 @@
     return times.length ? times[times.length - 1] : null;
   }
   function tail(phone) { return phone ? phone.replace(/[^0-9]/g, '').slice(-4) : ''; }
-  function won(n) { return n.toLocaleString('ko-KR') + '원'; }
 
   function rowSub(a) {
     if (isTeam(a)) {
@@ -906,10 +897,6 @@
     return '<div class="dt-row"><div class="dt-key">' + k + '</div><div class="dt-val">' + v + '</div></div>';
   }
 
-  function payText(t) {
-    return t.fee.enabled ? '결제 완료 · ' + won(t.fee.amount) : '참가비 없음';
-  }
-
   function renderDetail() {
     if (detailIdx === null) return;
     var a = APPS[detailIdx], t = ptypeById(a.typeId), team = isTeam(a);
@@ -932,7 +919,6 @@
 
     html += '<div class="dt-card">';
     html += dtRow('참가 유형', t.name + (a.onsite ? ' <span class="badge badge-sm badge-weak-neutral">현장 등록</span>' : ''));
-    html += dtRow('결제', payText(t));
 
     if (team) {
       html += dtRow(t.form.team.questions[0].text, a.values.q1 || '-');
@@ -1043,7 +1029,6 @@
            +   '<input type="radio" class="radio" name="onsite-type" value="' + t.id + '"'
            +     (t.id === onsiteTypeId ? ' checked' : '') + ' onchange="pickOnsiteType(\'' + t.id + '\')">'
            +   '<span class="onsite-type-name">' + t.name + '</span>'
-           +   '<span class="onsite-type-fee">' + (t.fee.enabled ? won(t.fee.amount) : '무료') + '</span>'
            + '</label>';
     }).join('');
   }
@@ -1068,7 +1053,6 @@
     var t = ptypeById(onsiteTypeId);
     var app = {
       name: name, typeId: t.id, preset: false, date: '2026.08.27 ' + peekClock(),
-      paid: t.fee.enabled ? true : null,
       checkedIn: true, checkedInAt: stamp(), onsite: true,
       values: { phone: phone, email: '' },
       team: null
