@@ -1,0 +1,3659 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>이벤트 랜딩 — 26년 청춘건배</title>
+<link rel="stylesheet" href="../../tokens.css">
+<link rel="stylesheet" href="../../components.css">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-base);
+    background: #e0e0e0;
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ── Frame (mobile) ── */
+  .frame {
+    width: 390px;
+    height: 844px;
+    max-height: 100dvh;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 32px 80px -20px rgba(0,0,0,0.28);
+    background: var(--color-surface);
+    border-radius: 44px;
+  }
+  @media (max-width: 439px) {
+    .frame { width: 100vw; height: 100dvh; max-height: none; border-radius: 0; }
+  }
+
+  /* ── 화면 전환 ── */
+  .screen { position: absolute; inset: 0; display: none; flex-direction: column; background: var(--color-surface); }
+  .screen.on { display: flex; }
+
+  /* ── 공통 ── */
+  i[data-lucide] { display: inline-flex; flex-shrink: 0; }
+  /* Lucide가 <i>를 <svg>로 치환한 뒤에도 크기/색이 적용되도록 svg에도 동일 규칙을 매치시킨다 */
+  svg.lucide { flex-shrink: 0; }
+
+  /* ── Topbar (floating over hero) ── */
+  .topbar {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 8px;
+    pointer-events: none;
+  }
+  .topbar .icon-btn {
+    pointer-events: auto;
+    background: var(--color-scrim);
+    border-radius: var(--r-full);
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+  }
+  .topbar .icon-btn:hover { background: rgba(0,0,0,0.55); }
+  .topbar .icon-btn i[data-lucide],
+  .topbar .icon-btn svg { color: var(--color-on-primary) !important; }
+  .topbar-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .topbar .icon-btn.has-label {
+    width: auto;
+    padding: 0 12px;
+    gap: 6px;
+    color: var(--color-on-primary);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-semibold);
+    font-family: var(--font-base);
+  }
+
+  /* Owner actions stack — 신청자 보기 (topbar 아래 라인, hero 위 오버레이) */
+  .owner-actions-stack {
+    position: absolute;
+    top: 56px;
+    right: 8px;
+    z-index: 9;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+    pointer-events: none;
+  }
+  .owner-actions-stack .icon-btn {
+    pointer-events: auto;
+    background: var(--color-scrim);
+    border-radius: var(--r-full);
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    width: auto;
+    padding: 0 12px;
+    gap: 6px;
+    color: var(--color-on-primary);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-semibold);
+    font-family: var(--font-base);
+  }
+  .owner-actions-stack .icon-btn:hover { background: rgba(0,0,0,0.55); }
+  .owner-actions-stack .icon-btn i[data-lucide],
+  .owner-actions-stack .icon-btn svg { color: var(--color-on-primary) !important; }
+
+  .topbar-solid {
+    position: sticky; top: 0; z-index: 10;
+    display: flex; align-items: center; gap: 8px;
+    padding: 12px 8px;
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    flex-shrink: 0;
+  }
+  .topbar-solid .topbar-title {
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text);
+  }
+
+  /* ── Scroll body + sticky CTA ── */
+  .scroll-body { flex: 1; overflow-y: auto; background: var(--color-surface); padding-bottom: 96px; }
+  .sticky-bar {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    padding: 12px 20px calc(20px + env(safe-area-inset-bottom));
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+    display: flex; flex-direction: column; gap: 8px;
+    z-index: 5;
+  }
+  .sticky-meta {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    font-size: var(--fs-caption); color: var(--color-text-muted);
+  }
+  .sticky-meta strong { color: var(--color-text-sub); font-weight: var(--fw-semibold); }
+  /* 호스트가 사전 등록한 사람에게만 보이는 안내 한 줄 */
+  .sticky-notice {
+    display: flex; align-items: center; justify-content: center; gap: 4px;
+    font-size: var(--fs-caption); line-height: var(--lh-caption);
+    color: var(--color-text-sub);
+    text-align: center;
+  }
+  .sticky-notice i[data-lucide], .sticky-notice svg.lucide {
+    width: 14px; height: 14px; flex-shrink: 0;
+    color: var(--color-text-muted);
+  }
+  .sticky-actions { display: flex; align-items: stretch; gap: 8px; }
+  .sticky-chat {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    border-radius: var(--r-md);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    color: var(--color-primary);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: background var(--motion-fast) var(--ease-standard);
+  }
+  .sticky-chat:hover { background: var(--color-surface-sub); }
+  .sticky-chat i[data-lucide], .sticky-chat svg { width: 22px; height: 22px; }
+
+  /* ============================================
+     LANDING SCREEN
+     ============================================ */
+
+  /* Hero thumbnail — 4:3 slider */
+  .hero {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    flex-shrink: 0;
+    background: var(--color-primary-light);
+  }
+  .hero-slider {
+    width: 100%; height: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    display: flex;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .hero-slider::-webkit-scrollbar { display: none; }
+  .hero-slide {
+    flex: 0 0 100%;
+    width: 100%; height: 100%;
+    scroll-snap-align: start;
+    background-size: cover;
+    background-position: center;
+    background-color: var(--color-primary-light);
+    position: relative;
+  }
+  .hero-slide::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(0,0,0,0) 50%, rgba(0,0,0,0.35) 100%);
+    pointer-events: none;
+  }
+  .hero-pagination {
+    position: absolute; bottom: 12px; right: 12px;
+    z-index: 2;
+    background: rgba(17,19,24,0.55); color: var(--color-on-primary);
+    border-radius: var(--r-full);
+    padding: 4px 10px;
+    font-size: var(--fs-badge); font-weight: var(--fw-medium);
+  }
+
+  /* Hero info block */
+  .hero-info {
+    padding: 24px 20px 16px;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .hero-clinic-row { display: inline-flex; align-items: center; gap: 2px; cursor: pointer; align-self: flex-start; }
+  .hero-clinic-name {
+    font-size: var(--fs-label); font-weight: var(--fw-semibold);
+    color: var(--color-text-sub);
+  }
+  .hero-clinic-row i[data-lucide],
+  .hero-clinic-row svg { width: 16px; height: 16px; color: var(--color-text-muted); }
+  .hero-headline {
+    font-size: 24px; font-weight: var(--fw-bold);
+    line-height: 1.35; letter-spacing: -0.5px; color: var(--color-text);
+  }
+  .hero-target {
+    font-size: var(--fs-body-lg); color: var(--color-text-sub);
+    line-height: 1.5;
+  }
+  .hero-schedule {
+    display: inline-flex; align-items: center; gap: 6px;
+    align-self: flex-start;
+    font-size: var(--fs-label);
+    color: var(--color-text-sub);
+    font-weight: var(--fw-medium);
+  }
+  .hero-schedule i[data-lucide],
+  .hero-schedule svg { width: 16px; height: 16px; color: var(--color-text-muted); }
+  .hero-schedule-label { color: var(--color-text-muted); margin-right: 2px; }
+  .hero-schedule-date { color: var(--color-text-sub); font-weight: var(--fw-medium); }
+  .hero-schedule-sep { color: var(--color-text-muted); }
+  .hero-schedule-time { color: var(--color-text-sub); font-weight: var(--fw-medium); }
+
+  .trust-row {
+    display: flex; align-items: center; gap: 6px;
+    flex-wrap: wrap;
+    padding-top: 4px;
+  }
+  .trust-dot { font-size: var(--fs-caption); color: var(--color-text-muted); }
+  .star-row { display: inline-flex; align-items: center; gap: 4px; }
+  .star-row i[data-lucide],
+  .star-row svg { width: 14px; height: 14px; color: var(--color-star); fill: var(--color-star); }
+  .star-score { font-size: var(--fs-label); font-weight: var(--fw-semibold); color: var(--color-text); margin-left: 2px; }
+  .star-count { font-size: var(--fs-caption); color: var(--color-text-muted); }
+
+  .tag-official {
+    display: inline-flex; align-self: flex-start;
+    align-items: center; gap: 4px;
+    color: var(--color-primary);
+    font-size: var(--fs-caption);
+    font-weight: var(--fw-semibold);
+  }
+  .tag-official i[data-lucide],
+  .tag-official svg { width: 14px; height: 14px; }
+
+  /* Section divider */
+  .section-divider {
+    height: 8px;
+    background: var(--color-bg);
+    flex-shrink: 0;
+  }
+
+  /* Section */
+  .section {
+    padding: 24px 20px;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  .section-title {
+    font-size: var(--fs-heading);
+    font-weight: var(--fw-bold);
+    color: var(--color-text);
+    letter-spacing: -0.2px;
+  }
+  .section-sub {
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+  }
+
+  /* Date pill */
+  .date-card {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--color-surface-sub);
+    border-radius: var(--r-md);
+    padding: 16px 20px;
+  }
+  .date-card i[data-lucide],
+  .date-card svg { width: 20px; height: 20px; color: var(--color-primary); }
+  .date-card-text { flex: 1; }
+  .date-card-label { font-size: var(--fs-caption); color: var(--color-text-muted); margin-bottom: 2px; }
+  .date-card-value { font-size: var(--fs-body); font-weight: var(--fw-semibold); color: var(--color-text); }
+  .date-card-tag {
+    font-size: var(--fs-badge); font-weight: var(--fw-semibold);
+    color: var(--color-destructive);
+    padding: 4px 8px;
+    background: rgba(201,64,34,0.10);
+    border-radius: var(--r-full);
+  }
+
+  /* Checklist */
+  .checklist {
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .check-item {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-md);
+  }
+  .check-item .check-circle {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-on-primary);
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .check-item .check-circle i[data-lucide],
+  .check-item .check-circle svg {
+    width: 12px; height: 12px;
+    stroke-width: 3;
+  }
+  .check-item-text {
+    font-size: var(--fs-body-lg); color: var(--color-text);
+    line-height: 1.5;
+  }
+
+  /* Reviews */
+  .review-scroll {
+    display: flex; gap: 12px;
+    overflow-x: auto;
+    margin: 0 -20px;
+    padding: 0 20px 8px;
+    scrollbar-width: none;
+  }
+  .review-scroll::-webkit-scrollbar { display: none; }
+  .review-card {
+    width: 240px; flex-shrink: 0;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-md);
+    overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .review-body {
+    padding: 12px 14px 14px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .review-stars { display: inline-flex; align-items: center; gap: 2px; }
+  .review-stars i[data-lucide],
+  .review-stars svg { width: 12px; height: 12px; color: var(--color-star); fill: var(--color-star); }
+  .review-text {
+    font-size: var(--fs-label); color: var(--color-text);
+    line-height: 1.5;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .review-meta {
+    font-size: 10px; color: var(--color-text-muted);
+    display: flex; align-items: center; gap: 4px;
+  }
+  .review-meta .verified {
+    display: inline-flex; align-items: center; gap: 2px;
+    color: var(--color-primary);
+    font-weight: var(--fw-medium);
+  }
+  .review-meta .verified i[data-lucide],
+  .review-meta .verified svg { width: 10px; height: 10px; }
+
+  /* 참석자 쇼케이스 — 세로로 긴 카드가 가로로 이어진다 */
+  .showcase-scroll {
+    display: flex; gap: 12px;
+    overflow-x: auto;
+    margin: 0 -20px;
+    padding: 0 20px 8px;
+    scrollbar-width: none;
+  }
+  .showcase-scroll::-webkit-scrollbar { display: none; }
+  .showcase-card {
+    width: 152px; flex-shrink: 0;
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    padding: 16px 12px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-md);
+    font-family: var(--font-base);
+    text-align: center;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: background var(--motion-fast) var(--ease-standard);
+  }
+  .showcase-card:hover { background: var(--color-surface-sub); }
+  .showcase-card:active { transform: scale(0.99); }
+  .showcase-card > .avatar { margin-bottom: 4px; }
+  .showcase-name {
+    margin-bottom: 4px;
+    font-size: var(--fs-body-lg); font-weight: var(--fw-bold);
+    color: var(--color-text);
+    max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .showcase-line {
+    font-size: var(--fs-caption); color: var(--color-text-muted);
+    line-height: var(--lh-caption);
+    max-width: 100%;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  /* 스크롤 맨 끝 — 카드와 같은 높이로 늘어난다 */
+  .showcase-more {
+    flex-shrink: 0;
+    align-self: center;
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    padding: 0 8px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .showcase-more-circle {
+    width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: var(--r-full);
+    background: var(--color-surface-sub);
+    transition: background var(--motion-fast) var(--ease-standard);
+  }
+  .showcase-more:hover .showcase-more-circle { background: var(--color-border); }
+  .showcase-more-label {
+    font-family: var(--font-base);
+    font-size: var(--fs-caption);
+    font-weight: var(--fw-medium);
+    color: var(--color-text-sub);
+  }
+  .showcase-more i[data-lucide], .showcase-more svg.lucide {
+    width: 20px; height: 20px; color: var(--color-text-sub);
+  }
+
+  /* Description */
+  .desc {
+    font-size: var(--fs-body); line-height: 1.7;
+    color: var(--color-text-sub);
+  }
+
+  /* Clinic page link card */
+  .clinic-link {
+    display: flex; align-items: center; gap: 12px;
+    padding: 16px;
+    background: var(--color-surface-sub);
+    border-radius: var(--r-md);
+    cursor: pointer;
+    border: none;
+    width: 100%;
+    text-align: left;
+    font-family: var(--font-base);
+  }
+  .clinic-link:hover { background: var(--color-border); }
+  .clinic-link-thumb {
+    width: 44px; height: 44px;
+    border-radius: var(--r-sm);
+    background-color: var(--color-primary-light);
+    background-image: url('../../assets/poster-cheongchun.jpg');
+    background-size: cover; background-position: center;
+    flex-shrink: 0;
+  }
+  .clinic-link-text { flex: 1; }
+  .clinic-link-name {
+    font-size: var(--fs-body); font-weight: var(--fw-semibold);
+    color: var(--color-text);
+  }
+  .clinic-link-sub {
+    font-size: var(--fs-caption); color: var(--color-text-muted);
+    margin-top: 2px;
+  }
+  .clinic-link i.chev,
+  .clinic-link svg.chev { width: 18px; height: 18px; color: var(--color-text-muted); }
+
+  /* Lucide stars row */
+  .star-icons-row i[data-lucide],
+  .star-icons-row svg {
+    width: 14px; height: 14px;
+    color: var(--color-star);
+    fill: var(--color-star);
+  }
+
+  /* ============================================
+     PARTICIPANTS LIST SCREEN
+     ============================================ */
+  .list-body {
+    flex: 1; overflow-y: auto;
+    background: var(--color-bg);
+    padding: 16px 16px 32px;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .event-card {
+    background: var(--color-surface);
+    border-radius: var(--r-md);
+    padding: 16px;
+    display: flex; flex-direction: column;
+    gap: 8px;
+  }
+  .list-event-name {
+    font-size: var(--fs-heading);
+    font-weight: var(--fw-bold);
+    letter-spacing: -0.3px;
+    color: var(--color-text);
+  }
+  .list-event-tag {
+    color: var(--color-primary);
+    margin-right: 8px;
+  }
+  .fields-summary {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  }
+  .fields-summary-text {
+    font-size: var(--fs-label); color: var(--color-text-sub);
+    flex: 1; min-width: 0;
+  }
+  .fields-summary-text strong {
+    color: var(--color-text-sub); font-weight: var(--fw-semibold);
+    margin-right: 4px;
+  }
+  .list-actions {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    padding: 0 4px;
+  }
+  .list-actions-btns { display: flex; align-items: center; gap: 8px; }
+  .list-count {
+    font-size: var(--fs-body); color: var(--color-text-sub);
+  }
+  .list-count strong { color: var(--color-text); font-weight: var(--fw-semibold); }
+  .applicant-rows {
+    background: var(--color-surface);
+    border-radius: var(--r-md);
+    padding: 4px 16px;
+    display: flex; flex-direction: column;
+  }
+  .applicant-row {
+    display: flex; flex-direction: column; gap: 12px;
+    padding: 16px 0;
+    border-top: 1px solid var(--color-border);
+  }
+  .applicant-row:first-child { border-top: none; }
+  .applicant-top {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  }
+  .applicant-name-row {
+    display: flex; align-items: center; gap: 8px;
+    min-width: 0;
+  }
+  .applicant-name {
+    font-size: var(--fs-body-lg); font-weight: var(--fw-bold);
+    color: var(--color-text);
+    letter-spacing: -0.2px;
+  }
+  .applicant-date {
+    font-size: var(--fs-caption); color: var(--color-text-muted);
+    flex-shrink: 0;
+  }
+  /* 행 우측 — 신청일 + 더보기 */
+  .applicant-right {
+    display: flex; align-items: center; gap: 4px;
+    flex-shrink: 0;
+  }
+  .applicant-right .icon-btn i[data-lucide],
+  .applicant-right .icon-btn svg.lucide { width: 16px; height: 16px; }
+  /* 시트에서 대상이 누구인지 다시 보여준다 */
+  .row-menu-target {
+    display: flex; flex-direction: column; gap: 4px;
+    /* 좌우는 .bottom-sheet(20px)에 기대고, 아래 .more-menu-item(4px)과 글머리를 맞춘다 */
+    padding: 0 4px 12px;
+    border-bottom: 1px solid var(--color-border);
+    margin-bottom: 8px;
+  }
+  .row-menu-target-name { font-size: var(--fs-body); font-weight: var(--fw-semibold); }
+  .row-menu-target-sub  { font-size: var(--fs-caption); color: var(--color-text-muted); }
+  .applicant-fields {
+    display: flex; flex-direction: column; gap: 8px;
+    margin: 0;
+  }
+  .applicant-field {
+    display: flex; align-items: baseline; gap: 12px;
+  }
+  .applicant-field-label {
+    flex: 0 0 72px;
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+    font-weight: var(--fw-medium);
+  }
+  .applicant-field-value {
+    flex: 1;
+    margin: 0;
+    font-size: var(--fs-label);
+    color: var(--color-text);
+    line-height: 1.5;
+    display: flex; flex-wrap: wrap; gap: 4px 6px;
+    align-items: center;
+    word-break: break-word;
+  }
+  .applicant-field-value.is-empty {
+    color: var(--color-text-muted);
+  }
+  .answer-chip {
+    display: inline-flex; align-items: center;
+    padding: 4px 8px;
+    background: var(--color-surface-sub);
+    color: var(--color-text-sub);
+    border-radius: var(--r-full);
+    font-size: var(--fs-caption);
+    font-weight: var(--fw-medium);
+  }
+  .answer-text {
+    display: block;
+    width: 100%;
+  }
+
+  /* ── More menu bottom sheet (frame-scoped) ── */
+  .frame .bottom-sheet-overlay,
+  .frame .bottom-sheet { position: absolute; }
+  .more-menu-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .more-menu-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    width: 100%;
+    padding: 16px 4px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: var(--font-base);
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-medium);
+    color: var(--color-text);
+    text-align: left;
+  }
+  .more-menu-item.is-danger { color: var(--color-destructive); }
+  .more-menu-item:disabled { opacity: 0.4; cursor: not-allowed; }
+  .more-menu-item-text { display: flex; flex-direction: column; gap: 4px; }
+  .more-menu-item-sub {
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+    font-weight: var(--fw-regular);
+  }
+
+
+  /* ============================================
+     프로토타입 전용 — 상태 전환 바 (실서비스엔 없음)
+     ============================================ */
+  .viewer-bar {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    background: var(--color-surface-sub);
+    border-bottom: 1px solid var(--color-border);
+    z-index: 1000;
+    font-family: var(--font-base);
+  }
+  .viewer-bar-row {
+    height: 32px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 12px;
+  }
+  .viewer-bar-label {
+    font-size: var(--fs-nav);
+    font-weight: var(--fw-semibold);
+    letter-spacing: var(--ls-nav);
+    color: var(--color-text-muted);
+  }
+  .viewer-bar-tabs { display: flex; gap: 4px; margin-left: auto; }
+  .viewer-bar-tab {
+    background: none;
+    border: none;
+    border-radius: var(--r-full);
+    padding: 4px 8px;
+    font-family: var(--font-base);
+    font-size: var(--fs-badge);
+    font-weight: var(--fw-medium);
+    color: var(--color-text-muted);
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background var(--motion-fast) var(--ease-standard),
+                color var(--motion-fast) var(--ease-standard);
+  }
+  .viewer-bar-tab:hover { color: var(--color-text-sub); }
+  .viewer-bar-tab.active { background: var(--color-primary); color: var(--color-on-primary); }
+  .viewer-bar-tab:disabled { opacity: 0.4; cursor: not-allowed; }
+  .viewer-bar-opts { display: flex; align-items: center; gap: 16px; margin-left: auto; }
+  .viewer-bar-opt {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: var(--fs-badge);
+    color: var(--color-text-sub);
+    cursor: pointer;
+  }
+
+  /* 화면·오버레이 영역을 viewer-bar 아래로 밀기 */
+  .frame .screen,
+  .frame .bottom-sheet-overlay,
+  .frame .dialog-overlay { top: 128px; }
+
+  /* ============================================
+     시점·상태별 노출 규칙 (CSS 분기)
+     ============================================ */
+  /* 우측 상단 "신청자 보기" — 운영자 전용 */
+  .owner-actions-stack { display: none; }
+  body[data-role="owner"] .owner-actions-stack { display: flex; }
+
+  /* 현장 체크인 진입·링크 — 체크인을 켠 이벤트 + 운영자 시점에만 */
+  .checkin-only { display: none; }
+  body[data-role="owner"][data-checkin="on"] .checkin-only { display: flex; }
+
+  /* 참석자 스택 — 신청자 목록 노출 ON (운영자·방문자 공통) */
+  .attendee-stack { display: none; }
+  body[data-show-list="on"] .attendee-stack { display: flex; }
+  /* 참석자를 크게 보여주는 유형이 있으면 스택 대신 쇼케이스 섹션이 나온다 */
+  body[data-showcase="on"] .attendee-stack { display: none; }
+  body[data-show-list="off"] #showcase-sections { display: none; }
+
+  /* sticky "N명이 신청했어요" — 신청자 수 노출 ON */
+  .sticky-meta { display: none; }
+  body[data-show-count="on"] .sticky-meta { display: flex; }
+
+  /* sticky CTA — 상태별 분기 */
+  .cta-guest, .cta-member, .cta-applied { display: none; }
+  body[data-state="guest"]   .cta-guest   { display: inline-flex; }
+  body[data-state="member"]  .cta-member  { display: inline-flex; }
+  body[data-state="applied"] .cta-applied { display: inline-flex; }
+  /* 호스트 사전 등록 — 신청완료와 같은 버튼을 쓴다 */
+  body[data-state="preset"]  .cta-applied { display: inline-flex; }
+  /* 운영자는 상태와 무관하게 "신청하기"(fill-primary) */
+  body[data-role="owner"] .cta-guest,
+  body[data-role="owner"] .cta-applied { display: none; }
+  body[data-role="owner"] .cta-member  { display: inline-flex; }
+
+  /* sticky 안내 줄 — 호스트 사전 등록 상태에서만 (안내 줄만큼 스크롤 여백을 더 준다) */
+  body[data-state="preset"] .scroll-body { padding-bottom: 120px; }
+  .sticky-notice { display: none; }
+  body[data-state="preset"] .sticky-notice { display: flex; }
+  body[data-role="owner"] .sticky-notice { display: none; }
+
+  /* ============================================
+     참석자 스택 (랜딩 첫 화면)
+     ============================================ */
+  .attendee-stack {
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 12px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-md);
+    font-family: var(--font-base);
+    text-align: left;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: background var(--motion-fast) var(--ease-standard);
+  }
+  .attendee-stack:hover { background: var(--color-surface-sub); }
+  .attendee-stack:active { transform: scale(0.99); }
+  .attendee-main {
+    flex: 1; min-width: 0;
+    display: flex; flex-direction: row; align-items: center; gap: 12px;
+  }
+  .attendee-avatars { display: flex; align-items: center; }
+  .attendee-avatars .avatar {
+    position: relative;
+    margin-left: -8px;
+    box-shadow: 0 0 0 2px var(--color-surface);
+  }
+  .attendee-avatars .avatar:first-child { margin-left: 0; }
+  .attendee-avatars .avatar[hidden] { display: none; }
+  /* 왼쪽 아바타가 위로 오도록 */
+  .attendee-avatars .avatar:nth-child(1) { z-index: 5; }
+  .attendee-avatars .avatar:nth-child(2) { z-index: 4; }
+  .attendee-avatars .avatar:nth-child(3) { z-index: 3; }
+  .attendee-avatars .avatar:nth-child(4) { z-index: 2; }
+  .attendee-avatars .avatar:nth-child(5) { z-index: 1; }
+  .attendee-more[hidden] { display: none; }
+  .attendee-more {
+    /* 아바타 모음 뒤로 살짝 겹쳐서 같은 스택으로 읽히게 */
+    margin-left: -12px;
+    padding: 0 12px 0 16px;
+    line-height: 24px;
+    border-radius: var(--r-full);
+    background: var(--color-surface-sub);
+    color: var(--color-text-sub);
+    font-size: var(--fs-badge);
+    font-weight: var(--fw-semibold);
+  }
+  .attendee-label {
+    min-width: 0;
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .attendee-label strong { color: var(--color-text-sub); font-weight: var(--fw-semibold); }
+  .attendee-chev { width: 16px; height: 16px; color: var(--color-text-muted); }
+
+  /* ============================================
+     로그인 유도 모달
+     ============================================ */
+  .login-dialog { text-align: center; }
+  .login-dialog .dialog-desc { margin-bottom: 24px; }
+  /* 주력 소셜 — screens/login.html의 social-stack 구성 */
+  .login-social-stack { display: flex; flex-direction: column; gap: 8px; }
+  .login-social-stack .btn svg { width: 18px; height: 18px; }
+  /* 또는 디바이더 */
+  .login-or {
+    display: flex; align-items: center; gap: 12px;
+    margin: 20px 0;
+  }
+  .login-or::before, .login-or::after {
+    content: ''; flex: 1; height: 1px; background: var(--color-border);
+  }
+  .login-or-text { font-size: var(--fs-caption); color: var(--color-text-muted); }
+  /* 보조 소셜 + 이메일 — 원형 아이콘 행 */
+  .login-icon-row { display: flex; justify-content: center; gap: 12px; }
+  .login-icon-row .icon-btn { border-radius: var(--r-full); }
+  .login-icon-row img { width: 20px; height: 20px; }
+  .login-privacy {
+    display: inline-block; margin-top: 20px;
+    font-size: var(--fs-caption); color: var(--color-text-muted);
+    text-decoration: underline;
+  }
+
+  /* ============================================
+     참석자 추가 시트 (운영자)
+     ============================================ */
+  .att-sheet-body { display: flex; flex-direction: column; gap: 16px; }
+  .att-field { display: flex; flex-direction: column; gap: 8px; }
+  .att-hint {
+    display: flex; align-items: flex-start; gap: 8px;
+    font-size: var(--fs-caption); color: var(--color-text-muted);
+    line-height: 1.5;
+  }
+  .att-hint i[data-lucide], .att-hint svg.lucide {
+    width: 14px; height: 14px; margin-top: 4px;
+  }
+  .att-added {
+    display: flex; flex-direction: column; gap: 4px;
+    border-top: 1px solid var(--color-border);
+    padding-top: 12px;
+  }
+  .att-added[hidden] { display: none; }
+  .att-added-title {
+    font-size: var(--fs-caption); font-weight: var(--fw-medium);
+    color: var(--color-text-muted);
+  }
+  .att-added-list {
+    display: flex; flex-direction: column;
+    max-height: 148px; overflow-y: auto;
+  }
+  .att-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 0;
+    border-top: 1px solid var(--color-border);
+  }
+  .att-added-list > .att-row:first-child { border-top: none; }
+  .att-row-name {
+    font-size: var(--fs-body); font-weight: var(--fw-medium);
+    color: var(--color-text);
+  }
+  .att-row-phone {
+    margin-left: auto;
+    font-size: var(--fs-label); color: var(--color-text-muted);
+  }
+  .att-row .icon-btn i[data-lucide],
+  .att-row .icon-btn svg.lucide { width: 16px; height: 16px; }
+
+  /* 다이얼로그·토스트를 프레임 안에 가두기 */
+  .frame .dialog-overlay { position: absolute; }
+  .frame .dialog-overlay[hidden] { display: none; }
+  .frame .toast-container { position: absolute; bottom: 96px; }
+
+  /* ============================================
+     APPLY SCREEN (신청하기)
+     ============================================ */
+  .apply-body {
+    flex: 1; overflow-y: auto;
+    background: var(--color-bg);
+    padding: 24px 20px 32px;
+    display: flex; flex-direction: column; gap: 24px;
+  }
+  .apply-head { display: flex; flex-direction: column; gap: 4px; }
+  .apply-event-owner { color: var(--color-text-muted); }
+  .apply-fields { display: flex; flex-direction: column; gap: 20px; }
+  .apply-field { display: flex; flex-direction: column; gap: 8px; }
+  .apply-field[hidden] { display: none; }
+  .apply-field-desc {
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+  }
+  .apply-agree {
+    display: flex; align-items: center; gap: 12px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .apply-agree-text { font-size: var(--fs-body); color: var(--color-text-sub); }
+  .apply-footer {
+    flex-shrink: 0;
+    padding: 12px 20px calc(20px + env(safe-area-inset-bottom));
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+  }
+
+  /* ============================================
+     참가 유형 — 안내 탭 · 메타 (랜딩 "이벤트 안내")
+     ============================================ */
+  .ptype-tabs {
+    display: flex; gap: 8px;
+    overflow-x: auto;
+    margin: 0 -20px;
+    padding: 4px 20px;
+    scrollbar-width: none;
+  }
+  .ptype-tabs::-webkit-scrollbar { display: none; }
+  .ptype-tabs[hidden] { display: none; }
+  .ptype-tab {
+    flex-shrink: 0;
+    padding: 8px 16px;
+    border-radius: var(--r-full);
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-text-sub);
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-semibold);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: background var(--motion-fast) var(--ease-standard),
+                color var(--motion-fast) var(--ease-standard),
+                border-color var(--motion-fast) var(--ease-standard);
+  }
+  .ptype-tab:hover { background: var(--color-surface-sub); }
+  .ptype-tab.is-active {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: var(--color-on-primary);
+  }
+
+  /* 유형별 안내 — 텍스트 + 밑줄 탭 */
+  .ptype-tabs-line {
+    display: flex;
+    gap: 4px;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .ptype-tabs-line[hidden] { display: none; }
+  .ptype-tab-line {
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    padding: 8px 12px;
+    font-family: var(--font-base);
+    font-size: var(--fs-body);
+    font-weight: var(--fw-medium);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: color var(--motion-fast) var(--ease-standard);
+  }
+  .ptype-tab-line.is-active {
+    color: var(--color-text);
+    border-bottom-color: var(--color-text);
+    font-weight: var(--fw-bold);
+  }
+
+  .ptype-panel { display: flex; flex-direction: column; gap: 12px; }
+  .ptype-panel[hidden] { display: none; }
+
+  /* ============================================
+     sticky CTA — 유형별 버튼
+     ============================================ */
+  .cta-types { display: none; gap: 8px; flex: 1; min-width: 0; }
+  .cta-type-btn {
+    flex: 1 1 0; min-width: 0;
+    height: 48px;
+    flex-direction: column;
+    gap: 4px;
+    padding: 0 8px;
+  }
+  .cta-type-name {
+    font-size: var(--fs-body); font-weight: var(--fw-semibold);
+    max-width: 100%; overflow: hidden; text-overflow: ellipsis;
+  }
+  .cta-type-sub { font-size: var(--fs-badge); font-weight: var(--fw-medium); opacity: 0.8; }
+
+  /* ============================================
+     참석자 명단 시트
+     ============================================ */
+  .attlist-sheet { display: flex; flex-direction: column; gap: 16px; max-height: 620px; }
+  .attlist-head { display: flex; flex-direction: column; gap: 4px; }
+  .attlist-tabs { margin: 0; padding: 0 0 4px; }
+  .attlist-scroll {
+    flex: 1; min-height: 0;
+    overflow-y: auto;
+    margin: 0 -20px;
+    padding: 0 20px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .att-card {
+    display: flex; align-items: flex-start; gap: 12px;
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-md);
+    background: var(--color-surface);
+    font-family: var(--font-base);
+    text-align: left;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: background var(--motion-fast) var(--ease-standard);
+  }
+  .att-card:hover { background: var(--color-surface-sub); }
+  .att-card-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+  .att-card-name {
+    font-size: var(--fs-body-lg); font-weight: var(--fw-semibold);
+    color: var(--color-text);
+  }
+  .att-card-line {
+    font-size: var(--fs-caption); color: var(--color-text-muted);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .att-card-chev { width: 16px; height: 16px; color: var(--color-text-muted); margin-top: 8px; }
+  .attlist-empty {
+    padding: 32px 0;
+    text-align: center;
+    font-size: var(--fs-body); color: var(--color-text-muted);
+  }
+
+  /* ============================================
+     신청 화면 — 유형 헤더 · 팀원 행 · 결제 · 완료
+     ============================================ */
+  .apply-type-bar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 12px 16px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-md);
+  }
+  .apply-type-bar[hidden] { display: none; }
+  .apply-type-text { flex: 1; min-width: 0; font-size: var(--fs-label); color: var(--color-text-sub); }
+  .apply-type-change {
+    flex-shrink: 0;
+    background: none; border: none; padding: 4px;
+    font-family: var(--font-base);
+    font-size: var(--fs-label); font-weight: var(--fw-semibold);
+    color: var(--color-primary);
+    cursor: pointer;
+    text-decoration: underline;
+  }
+  .apply-choices { display: flex; flex-direction: column; gap: 8px; }
+  .apply-choice {
+    display: flex; align-items: center; gap: 12px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    font-size: var(--fs-body); color: var(--color-text-sub);
+  }
+
+  /* 신청 폼 — 팀 정보 / 팀원 정보 두 층을 가르는 구분선 */
+  .apply-section-title {
+    font-size: var(--fs-heading);
+    font-weight: var(--fw-bold);
+    color: var(--color-text);
+    letter-spacing: var(--ls-heading);
+    padding-top: 20px;
+    border-top: 1px solid var(--color-border);
+  }
+
+  /* 팀원 카드 — 팀원마다 기본 필드 + 팀원 질문을 통째로 받는다 */
+  .member-cards { display: flex; flex-direction: column; gap: 12px; }
+  .member-card {
+    display: flex; flex-direction: column; gap: 16px;
+    padding: 16px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-md);
+  }
+  .member-card-head {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .member-card-title {
+    flex: 1; min-width: 0;
+    font-size: var(--fs-body-lg); font-weight: var(--fw-bold);
+    color: var(--color-text);
+  }
+  .member-leader {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: var(--fs-label); font-weight: var(--fw-medium);
+    color: var(--color-text-sub);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .member-card-head .icon-btn i[data-lucide],
+  .member-card-head .icon-btn svg.lucide { width: 16px; height: 16px; }
+  .member-card-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px 12px;
+  }
+  .member-card-grid .apply-field-wide { grid-column: 1 / -1; }
+  .team-add {
+    align-self: flex-start;
+    margin-top: 4px;
+  }
+
+  /* 결제 단계 */
+  .pay-amount {
+    display: flex; flex-direction: column; gap: 4px;
+    padding: 20px;
+    background: var(--color-primary-light);
+    border-radius: var(--r-md);
+  }
+  .pay-amount-label { font-size: var(--fs-caption); color: var(--color-text-muted); }
+  .pay-amount-value {
+    font-size: var(--fs-display); font-weight: var(--fw-bold);
+    letter-spacing: var(--ls-display);
+    color: var(--color-text);
+  }
+  .pay-note {
+    display: flex; align-items: flex-start; gap: 8px;
+    font-size: var(--fs-caption); color: var(--color-text-muted);
+    line-height: 1.5;
+  }
+  .pay-note i[data-lucide], .pay-note svg.lucide { width: 14px; height: 14px; margin-top: 4px; }
+
+  /* 완료 화면 */
+  .done-body {
+    flex: 1; overflow-y: auto;
+    background: var(--color-bg);
+    padding: 32px 20px;
+    display: flex; flex-direction: column; align-items: center; gap: 20px;
+  }
+  .done-icon {
+    width: 56px; height: 56px;
+    border-radius: var(--r-full);
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .done-icon i[data-lucide], .done-icon svg.lucide { width: 28px; height: 28px; stroke-width: 3; }
+  .done-head { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; }
+  .done-sub { font-size: var(--fs-body); color: var(--color-text-sub); line-height: 1.6; }
+  .done-card {
+    width: 100%;
+    background: var(--color-surface);
+    border-radius: var(--r-md);
+    padding: 20px;
+    display: flex; flex-direction: column; align-items: center; gap: 12px;
+  }
+  .done-card[hidden] { display: none; }
+  .done-card-title { font-size: var(--fs-heading); font-weight: var(--fw-bold); color: var(--color-text); }
+  .done-card-sub { font-size: var(--fs-caption); color: var(--color-text-muted); text-align: center; line-height: 1.5; }
+  /* QR 자리표시자 — 현장 체크인용 (프로토타입) */
+  .done-qr {
+    width: 160px; height: 160px;
+    padding: 8px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-sm);
+    display: grid;
+    grid-template-columns: repeat(21, 1fr);
+    grid-template-rows: repeat(21, 1fr);
+  }
+  .done-qr span { background: var(--color-text); }
+  .done-summary {
+    width: 100%;
+    display: flex; flex-direction: column; gap: 8px;
+    background: var(--color-surface);
+    border-radius: var(--r-md);
+    padding: 16px 20px;
+  }
+  .done-summary-row { display: flex; align-items: baseline; gap: 12px; }
+  .done-summary-label {
+    flex: 0 0 68px;
+    font-size: var(--fs-caption); color: var(--color-text-muted); font-weight: var(--fw-medium);
+  }
+  .done-summary-value { flex: 1; font-size: var(--fs-label); color: var(--color-text); line-height: 1.5; }
+  .done-alim {
+    display: flex; align-items: flex-start; gap: 8px;
+    width: 100%;
+    font-size: var(--fs-caption); color: var(--color-text-muted);
+    line-height: 1.5;
+  }
+  .done-alim[hidden] { display: none; }
+  .done-alim i[data-lucide], .done-alim svg.lucide { width: 14px; height: 14px; margin-top: 4px; }
+
+  /* 1인당 발급 — 팀원별로 QR이 어디로 갔는지 목록 */
+  .done-people { width: 100%; display: flex; flex-direction: column; }
+  .done-person {
+    display: flex; align-items: center; gap: 8px;
+    padding: 12px 0;
+    border-top: 1px solid var(--color-border);
+  }
+  .done-people > .done-person:first-child { border-top: none; padding-top: 0; }
+  .done-person > :last-child { margin-left: auto; }
+  .done-person-name {
+    font-size: var(--fs-body); font-weight: var(--fw-medium);
+    color: var(--color-text);
+  }
+  .done-person-to { font-size: var(--fs-label); color: var(--color-text-muted); }
+
+  /* ============================================
+     명단 화면 — 요약 바 · 필터 칩 · 유형/결제 배지 · 팀 아코디언
+     ============================================ */
+  /* .btn은 display:inline-flex라 hidden이 눌린다 — 명시적으로 되살린다 */
+
+
+  .applicant-badges { display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+  .applicant-sub { font-size: var(--fs-caption); color: var(--color-text-muted); }
+  .team-toggle {
+    display: flex; align-items: center; gap: 4px;
+    align-self: flex-start;
+    background: none; border: none; padding: 4px 0;
+    font-family: var(--font-base);
+    font-size: var(--fs-caption); font-weight: var(--fw-semibold);
+    color: var(--color-primary);
+    cursor: pointer;
+  }
+  .team-toggle i[data-lucide], .team-toggle svg.lucide { width: 14px; height: 14px; }
+  .team-members {
+    display: flex; flex-direction: column;
+    border-top: 1px solid var(--color-border);
+  }
+  .team-members[hidden] { display: none; }
+  .team-member {
+    display: flex; flex-direction: column; gap: 8px;
+    padding: 12px 0;
+  }
+  .team-member + .team-member { border-top: 1px solid var(--color-border); }
+  .team-member-top { display: flex; align-items: center; gap: 8px; }
+  .team-member-name {
+    font-size: var(--fs-body); color: var(--color-text); font-weight: var(--fw-semibold);
+  }
+
+  /* ============================================
+     유형 노출 규칙 (CSS 분기 — 하위호환)
+     data-ptypes: off(기존과 동일) | single | multi
+     ============================================ */
+  body[data-ptypes="multi"] .cta-types { display: flex; }
+  body[data-ptypes="multi"] .cta-guest,
+  body[data-ptypes="multi"] .cta-member,
+  body[data-ptypes="multi"] .cta-applied { display: none; }
+  /* 유형이 있으면 sticky가 두 줄이 되므로 스크롤 여백을 더 준다 */
+  body[data-ptypes="multi"] .scroll-body { padding-bottom: 120px; }
+  body[data-ptypes="multi"][data-state="preset"] .scroll-body { padding-bottom: 144px; }
+</style>
+</head>
+<body data-role="visitor" data-state="guest" data-show-count="on" data-show-list="on" data-ptypes="off" data-checkin="on">
+
+<div class="frame">
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- 프로토타입 전용: 상태 전환 바                  -->
+  <!-- ════════════════════════════════════════════ -->
+  <div class="viewer-bar">
+    <div class="viewer-bar-row">
+      <span class="viewer-bar-label">시점</span>
+      <div class="viewer-bar-tabs">
+        <button class="viewer-bar-tab" type="button" data-axis="role" data-value="owner" onclick="setRole('owner')">운영자</button>
+        <button class="viewer-bar-tab" type="button" data-axis="role" data-value="visitor" onclick="setRole('visitor')">방문자</button>
+      </div>
+    </div>
+    <div class="viewer-bar-row">
+      <span class="viewer-bar-label">상태</span>
+      <div class="viewer-bar-tabs">
+        <button class="viewer-bar-tab" type="button" data-axis="state" data-value="guest" onclick="setState('guest')">비로그인</button>
+        <button class="viewer-bar-tab" type="button" data-axis="state" data-value="member" onclick="setState('member')">로그인·미신청</button>
+        <button class="viewer-bar-tab" type="button" data-axis="state" data-value="applied" onclick="setState('applied')">로그인·신청완료</button>
+        <button class="viewer-bar-tab" type="button" data-axis="state" data-value="preset" onclick="setState('preset')">로그인·호스트등록</button>
+      </div>
+    </div>
+    <div class="viewer-bar-row">
+      <span class="viewer-bar-label">옵션</span>
+      <div class="viewer-bar-opts">
+        <label class="viewer-bar-opt">
+          <input type="checkbox" class="toggle toggle-sm" id="opt-show-count" checked onchange="setShowCount(this)">
+          <span>신청자 수 노출</span>
+        </label>
+        <label class="viewer-bar-opt">
+          <input type="checkbox" class="toggle toggle-sm" id="opt-show-list" checked onchange="setShowList(this)">
+          <span>신청자 목록 노출</span>
+        </label>
+      </div>
+    </div>
+    <div class="viewer-bar-row">
+      <span class="viewer-bar-label">체크인</span>
+      <div class="viewer-bar-tabs">
+        <button class="viewer-bar-tab" type="button" data-axis="checkin" data-value="off" onclick="setCheckin('off')">끔</button>
+        <button class="viewer-bar-tab" type="button" data-axis="checkin" data-value="registration" onclick="setCheckin('registration')">신청 건당</button>
+        <button class="viewer-bar-tab" type="button" data-axis="checkin" data-value="person" onclick="setCheckin('person')">1인당</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- SCREEN 1 — LANDING                            -->
+  <!-- ════════════════════════════════════════════ -->
+  <div class="screen on" id="screen-landing">
+      <div class="scroll-body">
+
+        <!-- Floating topbar -->
+        <div class="topbar">
+          <button class="icon-btn icon-btn-clear" aria-label="뒤로" onclick="goEdit()">
+            <i data-lucide="chevron-left" style="width:22px;height:22px;color:var(--color-text);"></i>
+          </button>
+          <div class="topbar-actions">
+            <button class="icon-btn icon-btn-clear" aria-label="공유">
+              <i data-lucide="share-2" style="width:20px;height:20px;color:var(--color-text);"></i>
+            </button>
+            <button class="icon-btn icon-btn-clear" aria-label="더보기" onclick="openMoreMenu()">
+              <i data-lucide="more-horizontal" style="width:20px;height:20px;color:var(--color-text);"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Owner actions (topbar 아래 라인, hero 위 오버레이) -->
+        <div class="owner-actions-stack">
+          <button class="icon-btn icon-btn-clear has-label" aria-label="신청자 보기" onclick="navigate('screen-list')">
+            <i data-lucide="users" style="width:18px;height:18px;"></i>
+            <span>신청자 보기</span>
+          </button>
+          <button class="icon-btn icon-btn-clear has-label checkin-only" aria-label="체크인" onclick="openCheckin()">
+            <i data-lucide="scan-line" style="width:18px;height:18px;"></i>
+            <span>체크인</span>
+          </button>
+        </div>
+
+
+        <!-- Slot: 썸네일 (4:3) -->
+        <div class="hero">
+          <div class="hero-slider" id="hero-slider">
+            <div class="hero-slide" style="background-image:url('../../assets/poster-cheongchun.jpg');"></div>
+          </div>
+        </div>
+
+        <!-- Slot: Hero / 신뢰줄 -->
+        <div class="hero-info">
+          <div class="hero-clinic-row">
+            <span class="hero-clinic-name">서울시립대학교 총동문회</span>
+            <i data-lucide="chevron-right"></i>
+          </div>
+          <h1 class="hero-headline">26년 청춘건배</h1>
+          <p class="hero-schedule">
+            <i data-lucide="calendar-check"></i>
+            <span class="hero-schedule-label">일정</span>
+            <span class="hero-schedule-date">2026.09.21(월)</span>
+            <span class="hero-schedule-time">18:00 ~ 21:00</span>
+          </p>
+          <p class="hero-schedule" id="hero-place">
+            <i data-lucide="map-pin"></i>
+            <span class="hero-schedule-label">장소</span>
+            <span class="hero-schedule-date" id="hero-place-value">서울시립대학교 배봉관 앞</span>
+          </p>
+          <div class="trust-row">
+            <div class="star-row star-icons-row">
+              <i data-lucide="star"></i>
+              <span class="star-score">4.9</span>
+              <span class="star-count">· 후기 32개</span>
+            </div>
+          </div>
+
+          <!-- Slot: 참석자 스택 — 누가 오는지가 첫 화면에 보인다 -->
+          <button type="button" class="attendee-stack" aria-label="참석자 명단 보기"
+                  onclick="openAttListSheet()">
+            <span class="attendee-main">
+              <span class="attendee-avatars" id="attendee-avatars"></span>
+              <span class="attendee-label" id="attendee-label"></span>
+            </span>
+            <i data-lucide="chevron-right" class="attendee-chev"></i>
+          </button>
+        </div>
+
+        <div class="section-divider"></div>
+
+        <!-- Slot: 일정 -->
+        <div class="section">
+          <div class="date-card">
+            <i data-lucide="calendar-days"></i>
+            <div class="date-card-text">
+              <div class="date-card-label">신청 기간</div>
+              <div class="date-card-value">2026.08.21 ~ 09.21</div>
+            </div>
+            <span class="date-card-tag">D-26</span>
+          </div>
+        </div>
+
+        <div class="section-divider"></div>
+
+        <!-- Slot: 설명 -->
+        <div class="section">
+          <div class="section-title">이벤트 안내</div>
+          <div>
+            <div class="desc" id="desc-block">
+              <p>서울시립대학교 총동문회가 여는 동문·재학생 교류의 밤입니다.</p>
+              <br>
+              <p>· 일시  2026년 9월 21일(월) 저녁 6시 ~ 9시</p>
+              <p>· 장소  서울시립대학교 배봉관 앞</p>
+              <br>
+              <p>졸업생 선배와 재학생 팀이 한자리에 모여 이야기를 나눕니다. 우천 시에도 예정대로 진행해요.</p>
+            </div>
+          </div>
+
+          <!-- 유형별 안내 — 유형이 2개 이상일 때만 탭이 나온다 -->
+          <div class="ptype-tabs-line" id="ptype-tabs" hidden></div>
+          <div class="ptype-panel" id="ptype-panel" hidden>
+            <div class="desc" id="ptype-guide"></div>
+          </div>
+        </div>
+
+        <div class="section-divider"></div>
+
+        <!-- Slot: 참석자 쇼케이스 (reveal.showcase가 켜진 유형마다 한 섹션) -->
+        <div id="showcase-sections"></div>
+
+        <!-- Slot: 후기 모음 -->
+        <div class="section">
+          <div class="section-title">실제 후기</div>
+          <div class="review-scroll">
+            <div class="review-card">
+              <div class="review-body">
+                <div class="review-stars">
+                  <i data-lucide="star"></i>
+                  <i data-lucide="star"></i>
+                  <i data-lucide="star"></i>
+                  <i data-lucide="star"></i>
+                  <i data-lucide="star"></i>
+                </div>
+                <p class="review-text">작년에 처음 갔는데 선배들이 먼저 말을 걸어주셔서 어색할 틈이 없었어요. 올해도 팀으로 신청합니다.</p>
+                <div class="review-meta">
+                  <span class="verified"><i data-lucide="badge-check"></i>실제 후기</span>
+                  <span>·</span>
+                  <span>김○○ · 재학생</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="review-card">
+              <div class="review-body">
+                <div class="review-stars">
+                  <i data-lucide="star"></i>
+                  <i data-lucide="star"></i>
+                  <i data-lucide="star"></i>
+                  <i data-lucide="star"></i>
+                  <i data-lucide="star"></i>
+                </div>
+                <p class="review-text">후배들 이야기를 듣다 보니 제 신입 시절이 떠오르더라고요. 후원금이 장학금으로 간다는 것도 좋았습니다.</p>
+                <div class="review-meta">
+                  <span class="verified"><i data-lucide="badge-check"></i>실제 후기</span>
+                  <span>·</span>
+                  <span>이○○ · 졸업생</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="review-card">
+              <div class="review-body">
+                <div class="review-stars">
+                  <i data-lucide="star"></i>
+                  <i data-lucide="star"></i>
+                  <i data-lucide="star"></i>
+                  <i data-lucide="star"></i>
+                  <i data-lucide="star"></i>
+                </div>
+                <p class="review-text">진행이 깔끔했어요. 참석자 명단을 미리 볼 수 있어서 누구랑 이야기할지 정하고 갔습니다.</p>
+                <div class="review-meta">
+                  <span class="verified"><i data-lucide="badge-check"></i>실제 후기</span>
+                  <span>·</span>
+                  <span>박○○ · 졸업생</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-divider"></div>
+
+        <!-- Slot: 총동문회 페이지 가기 -->
+        <div class="section">
+          <button class="clinic-link" aria-label="총동문회 페이지 가기">
+            <div class="clinic-link-thumb"></div>
+            <div class="clinic-link-text">
+              <div class="clinic-link-name">서울시립대학교 총동문회</div>
+              <div class="clinic-link-sub">동문회 소식 · 지난 행사 · 위치 보기</div>
+            </div>
+            <i data-lucide="chevron-right" class="chev"></i>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- Sticky CTA -->
+      <div class="sticky-bar">
+        <div class="sticky-meta">
+          <i data-lucide="users" style="width:14px;height:14px;color:var(--color-text-muted);"></i>
+          지금까지 <strong id="sticky-count">12명</strong>이 신청했어요
+        </div>
+        <div class="sticky-notice">
+          <i data-lucide="info"></i>
+          <span>호스트가 회원님을 참석자로 등록했어요</span>
+        </div>
+        <div class="sticky-actions">
+          <!-- 유형이 2개 이상일 때 — 유형별 버튼 (JS 렌더) -->
+          <div class="cta-types" id="cta-types"></div>
+          <!-- 비로그인 -->
+          <button class="btn btn-lg btn-block btn-fill-primary cta-guest" type="button" onclick="openLoginDialog()">
+            신청하기
+          </button>
+          <!-- 로그인·미신청 (운영자 포함) -->
+          <button class="btn btn-lg btn-block btn-fill-primary cta-member" type="button" onclick="startApplyDefault()">
+            신청하기
+          </button>
+          <!-- 신청완료 -->
+          <button class="btn btn-lg btn-block btn-weak-primary cta-applied" type="button" onclick="openCancelDialog()">
+            신청 완료 · 취소하기
+          </button>
+          <button class="sticky-chat" type="button" aria-label="AI 상담">
+            <i data-lucide="message-circle-question"></i>
+          </button>
+        </div>
+      </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- SCREEN — PARTICIPANTS LIST (소유자 전용)     -->
+  <!-- ════════════════════════════════════════════ -->
+  <div class="screen" id="screen-list">
+    <div class="topbar-solid">
+      <button class="icon-btn icon-btn-clear" aria-label="뒤로" onclick="navigate('screen-landing')">
+        <i data-lucide="chevron-left" style="width:22px;height:22px;color:var(--color-text);"></i>
+      </button>
+      <span class="topbar-title">신청자 리스트 (관리자 화면)</span>
+    </div>
+
+    <div class="list-body">
+      <div class="event-card">
+        <h2 class="list-event-name"><span class="list-event-tag">이벤트</span>26년 청춘건배</h2>
+        <div class="fields-summary">
+          <div class="fields-summary-text">
+            <strong>받고 있는 정보</strong><span id="fields-summary-list"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 요약 바 — 유형이 있을 때만 (JS 렌더) -->
+
+      <!-- 유형 필터 칩 — 유형이 2개 이상일 때만 (JS 렌더) -->
+      <div class="ptype-tabs-line" id="filter-chips" hidden></div>
+
+      <div class="list-actions">
+        <div class="list-count"><strong id="list-count-total">총 12명</strong> 신청</div>
+        <div class="list-actions-btns">
+          <button class="btn btn-sm btn-line-dark btn-pill" onclick="openAttendeeSheet()">
+            <i data-lucide="user-plus" style="width:14px;height:14px"></i>
+            참석자
+          </button>
+          <button class="btn btn-sm btn-line-dark btn-pill" onclick="downloadExcel()">
+            <i data-lucide="download" style="width:14px;height:14px"></i>
+            엑셀 다운로드
+          </button>
+        </div>
+      </div>
+
+      <div class="applicant-rows" id="applicant-list"></div>
+    </div>
+  </div>
+
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- SCREEN — APPLY (신청하기)                      -->
+  <!-- ════════════════════════════════════════════ -->
+  <div class="screen" id="screen-apply">
+    <div class="topbar-solid">
+      <button class="icon-btn icon-btn-clear" aria-label="뒤로" onclick="navigate('screen-landing')">
+        <i data-lucide="chevron-left" style="width:22px;height:22px;color:var(--color-text);"></i>
+      </button>
+      <span class="topbar-title">신청하기</span>
+    </div>
+
+    <div class="apply-body">
+      <div class="apply-head">
+        <h2 class="text-title apply-event-title">26년 청춘건배</h2>
+        <p class="text-body apply-event-owner">서울시립대학교 총동문회</p>
+      </div>
+
+      <!-- 어느 유형으로 신청 중인지 + 바꾸는 경로 (유형이 2개 이상일 때만) -->
+      <div class="apply-type-bar" id="apply-type-bar" hidden>
+        <span class="badge badge-sm badge-weak-primary" id="apply-type-badge">졸업생</span>
+        <span class="apply-type-text">으로 신청하고 있어요</span>
+        <button type="button" class="apply-type-change" onclick="openTypePicker()">유형 바꾸기</button>
+      </div>
+
+      <!-- 기본 필드 + 질문 + 팀원 (JS 렌더) -->
+      <div class="apply-fields" id="apply-fields"></div>
+
+      <label class="apply-agree">
+        <input class="checkbox" type="checkbox" id="apply-agree" onchange="onAgreeChange(this)">
+        <span class="apply-agree-text">개인정보 수집·이용에 동의합니다.</span>
+      </label>
+    </div>
+
+    <div class="apply-footer">
+      <button class="btn btn-lg btn-block btn-fill-primary" type="button" id="apply-submit" disabled onclick="submitApply()">
+        신청 완료
+      </button>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- SCREEN — PAY (참가비가 있는 유형만)             -->
+  <!-- ════════════════════════════════════════════ -->
+  <div class="screen" id="screen-pay">
+    <div class="topbar-solid">
+      <button class="icon-btn icon-btn-clear" aria-label="뒤로" onclick="navigate('screen-apply')">
+        <i data-lucide="chevron-left" style="width:22px;height:22px;color:var(--color-text);"></i>
+      </button>
+      <span class="topbar-title">결제하기</span>
+    </div>
+
+    <div class="apply-body">
+      <div class="pay-amount">
+        <span class="pay-amount-label" id="pay-amount-label">졸업생 후원금</span>
+        <span class="pay-amount-value" id="pay-amount-value">100,000원</span>
+      </div>
+
+      <p class="pay-note">
+        <i data-lucide="info"></i>
+        <span>프로토타입이라 실제 결제는 일어나지 않아요. 결제하기를 누르면 완료 화면으로 넘어갑니다.</span>
+      </p>
+    </div>
+
+    <div class="apply-footer">
+      <button class="btn btn-lg btn-block btn-fill-primary" type="button" id="pay-submit" onclick="submitPay()">
+        결제하기
+      </button>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- SCREEN — DONE (신청 완료 · 현장 체크인 QR)      -->
+  <!-- ════════════════════════════════════════════ -->
+  <div class="screen" id="screen-done">
+    <div class="done-body">
+      <div class="done-icon"><i data-lucide="check"></i></div>
+      <div class="done-head">
+        <h2 class="text-title">신청이 완료되었어요</h2>
+        <p class="done-sub" id="done-sub">졸업생으로 신청했어요</p>
+      </div>
+
+      <div class="done-card" id="done-qr-card">
+        <div class="done-card-title">현장 체크인 QR</div>
+        <div class="done-qr" id="done-qr" aria-label="현장 체크인 QR 코드"></div>
+        <p class="done-card-sub">행사장 입구에서 이 화면을 보여주세요</p>
+      </div>
+
+      <div class="done-card" id="done-qr-people" hidden>
+        <div class="done-card-title">QR 받는 사람</div>
+        <div class="done-people" id="done-people-list"></div>
+      </div>
+
+      <div class="done-summary" id="done-summary"></div>
+
+      <p class="done-alim" id="done-alim">
+        <i data-lucide="message-square"></i>
+        <span id="done-alim-text">신청 내용과 QR을 알림톡으로도 보내드렸어요</span>
+      </p>
+    </div>
+
+    <div class="apply-footer">
+      <button class="btn btn-lg btn-block btn-fill-primary" type="button" onclick="closeDone()">
+        확인
+      </button>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- MORE MENU — Bottom sheet                       -->
+  <!-- ════════════════════════════════════════════ -->
+  <div class="bottom-sheet-overlay" id="more-menu-overlay" onclick="closeMoreMenu()"></div>
+  <div class="bottom-sheet" id="more-menu-sheet" role="dialog" aria-label="더보기 메뉴">
+    <div class="bottom-sheet-handle"></div>
+    <div class="more-menu-list">
+      <div class="more-menu-item">
+        <div class="more-menu-item-text">
+          <span>AI 학습</span>
+          <span class="more-menu-item-sub">본문을 채팅 답변에 반영해요</span>
+        </div>
+        <input type="checkbox" class="toggle toggle-sm" checked aria-label="AI 학습 사용">
+      </div>
+      <button type="button" class="more-menu-item checkin-only" onclick="copyCheckinLink()">체크인 링크 복사</button>
+      <button type="button" class="more-menu-item checkin-only" onclick="askReissueCheckinLink()">링크 재발급</button>
+      <button type="button" class="more-menu-item" onclick="closeMoreMenu()">리뷰 관리</button>
+      <button type="button" class="more-menu-item" onclick="closeMoreMenu()">수정</button>
+      <button type="button" class="more-menu-item" onclick="closeMoreMenu()">이벤트 종료</button>
+      <button type="button" class="more-menu-item is-danger" onclick="closeMoreMenu()">삭제</button>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- LOGIN — Modal (비로그인 신청 유도)              -->
+  <!-- screens/login.html의 소셜 구성을 그대로 가져옴  -->
+  <!-- ════════════════════════════════════════════ -->
+  <div class="dialog-overlay" id="login-overlay" hidden onclick="closeLoginDialog()">
+    <div class="dialog login-dialog" role="dialog" aria-modal="true" aria-label="로그인 안내" onclick="event.stopPropagation()">
+      <div class="dialog-title">신청하려면 로그인이 필요해요</div>
+      <p class="dialog-desc">로그인하면 신청 내역을 확인할 수 있어요</p>
+
+      <div class="login-social-stack">
+        <button class="btn btn-lg btn-block btn-fill-kakao" type="button" onclick="pickLogin()">
+          <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M12 3C6.477 3 2 6.582 2 11c0 2.862 1.674 5.373 4.2 6.896L5.2 21l4.116-2.163A11.7 11.7 0 0012 19c5.523 0 10-3.582 10-8S17.523 3 12 3z"/></svg>
+          카카오로 3초만에 시작하기
+        </button>
+      </div>
+
+      <div class="login-or"><span class="login-or-text">또는</span></div>
+
+      <div class="login-icon-row">
+        <button class="icon-btn icon-btn-lg icon-btn-border" type="button" aria-label="구글로 시작하기" onclick="pickLogin()">
+          <img src="../../assets/logo-google.svg" alt="">
+        </button>
+        <button class="icon-btn icon-btn-lg icon-btn-border" type="button" aria-label="이메일로 시작하기" onclick="pickLogin()">
+          <i data-lucide="mail"></i>
+        </button>
+      </div>
+
+      <a href="#" class="login-privacy" onclick="return false;">개인정보 처리방침</a>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- 참석자 명단 — Bottom sheet (공개된 유형만)      -->
+  <!-- ════════════════════════════════════════════ -->
+  <div class="bottom-sheet-overlay" id="attlist-overlay" onclick="closeAttListSheet()"></div>
+  <div class="bottom-sheet attlist-sheet" id="attlist-sheet" role="dialog" aria-label="참석자 명단">
+    <div class="bottom-sheet-handle"></div>
+    <div class="attlist-head">
+      <div class="text-title" id="attlist-title">참석자</div>
+      <p class="text-caption" style="color:var(--color-text-muted)">주최자가 공개한 정보만 보여요</p>
+    </div>
+    <div class="ptype-tabs attlist-tabs" id="attlist-tabs" hidden></div>
+    <div class="attlist-scroll" id="attlist-scroll"></div>
+  </div>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- 유형 바꾸기 — Bottom sheet (신청 화면)          -->
+  <!-- ════════════════════════════════════════════ -->
+  <div class="bottom-sheet-overlay" id="typepick-overlay" onclick="closeTypePicker()"></div>
+  <div class="bottom-sheet" id="typepick-sheet" role="dialog" aria-label="참가 유형 선택">
+    <div class="bottom-sheet-handle"></div>
+    <div class="text-title" style="margin-bottom:16px">어떤 유형으로 신청할까요?</div>
+    <div class="more-menu-list" id="typepick-list"></div>
+  </div>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- 참석자 추가 — Bottom sheet (운영자)             -->
+  <!-- ════════════════════════════════════════════ -->
+  <div class="bottom-sheet-overlay" id="attendee-overlay" onclick="closeAttendeeSheet()"></div>
+  <div class="bottom-sheet" id="attendee-sheet" role="dialog" aria-label="참석자 추가">
+    <div class="bottom-sheet-handle"></div>
+    <div class="att-sheet-body">
+      <div class="text-title">참석자 추가</div>
+      <div class="att-field">
+        <label class="label label-required" for="att-name">이름</label>
+        <input class="input" type="text" id="att-name" placeholder="이름을 입력해 주세요" oninput="onAttendeeInput()" onkeydown="onAttendeeKey(event)">
+      </div>
+      <div class="att-field">
+        <label class="label" for="att-phone">전화번호</label>
+        <input class="input" type="tel" id="att-phone" placeholder="010-0000-0000" inputmode="tel" onkeydown="onAttendeeKey(event)">
+      </div>
+      <p class="att-hint">
+        <i data-lucide="info"></i>
+        <span>전화번호를 넣으면 본인이 로그인했을 때 이 참석 건을 이어받아 직접 취소할 수 있어요</span>
+      </p>
+      <div class="att-added" id="att-added" hidden>
+        <div class="att-added-title">추가된 사람</div>
+        <div class="att-added-list" id="att-added-list"></div>
+      </div>
+      <button class="btn btn-lg btn-block btn-fill-primary" type="button" id="att-submit" disabled onclick="submitAttendee()">추가하기</button>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- CANCEL — 신청 취소 확인 다이얼로그              -->
+  <!-- ════════════════════════════════════════════ -->
+  <div class="dialog-overlay" id="cancel-overlay" hidden>
+    <div class="dialog" role="dialog" aria-label="신청 취소 확인">
+      <div class="dialog-title">신청을 취소할까요?</div>
+      <p class="dialog-desc">취소하면 참석자 명단에서 빠져요.</p>
+      <div class="dialog-actions">
+        <button class="btn btn-md btn-weak-dark" type="button" onclick="closeCancelDialog()">돌아가기</button>
+        <button class="btn btn-md btn-fill-danger" type="button" onclick="confirmCancel()">신청 취소</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- 신청자 행 더보기 — Bottom sheet (운영자)        -->
+  <!-- ════════════════════════════════════════════ -->
+  <div class="bottom-sheet-overlay" id="row-menu-overlay" onclick="closeRowMenu()"></div>
+  <div class="bottom-sheet" id="row-menu-sheet" role="dialog" aria-label="신청자 관리">
+    <div class="bottom-sheet-handle"></div>
+    <div class="row-menu-target">
+      <span class="row-menu-target-name" id="row-menu-name"></span>
+      <span class="row-menu-target-sub" id="row-menu-sub"></span>
+    </div>
+    <div class="more-menu-list">
+      <button type="button" class="more-menu-item is-danger" onclick="askRemoveApplicant()">참석자에서 빼기</button>
+    </div>
+  </div>
+
+  <!-- 참석자 빼기 확인 — 되돌리기 어려우니 한 번 확인 -->
+  <div class="dialog-overlay" id="remove-overlay" hidden>
+    <div class="dialog" role="dialog" aria-label="참석자 빼기 확인">
+      <div class="dialog-title" id="remove-title">명단에서 뺄까요?</div>
+      <p class="dialog-desc">명단에서 빠지고 신청자 수도 줄어요. 되돌릴 수 없어요.</p>
+      <div class="dialog-actions">
+        <button class="btn btn-md btn-weak-dark" type="button" onclick="closeRemoveDialog()">돌아가기</button>
+        <button class="btn btn-md btn-fill-danger" type="button" onclick="confirmRemoveApplicant()">빼기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 체크인 링크 재발급 확인 — 기존 링크가 무효화된다 -->
+  <div class="dialog-overlay" id="reissue-overlay" hidden>
+    <div class="dialog" role="dialog" aria-label="체크인 링크 재발급 확인">
+      <div class="dialog-title">체크인 링크를 다시 발급할까요?</div>
+      <p class="dialog-desc">지금까지 전달한 링크는 더 이상 열리지 않아요.</p>
+      <div class="dialog-actions">
+        <button class="btn btn-md btn-weak-dark" type="button" onclick="closeReissueDialog()">돌아가기</button>
+        <button class="btn btn-md btn-fill-danger" type="button" onclick="confirmReissueCheckinLink()">재발급</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast-container" id="toast-container"></div>
+
+</div>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+  lucide.createIcons();
+
+  // Hero slider pagination
+  (function() {
+    var slider = document.getElementById('hero-slider');
+    var page = document.getElementById('hero-pagination');
+    if (!slider || !page) return;
+    var total = slider.querySelectorAll('.hero-slide').length;
+    slider.addEventListener('scroll', function() {
+      var index = Math.round(slider.scrollLeft / slider.clientWidth);
+      page.textContent = (index + 1) + ' / ' + total;
+    });
+  })();
+
+  // More menu bottom sheet
+  function openMoreMenu() {
+    document.getElementById('more-menu-overlay').classList.add('is-open');
+    document.getElementById('more-menu-sheet').classList.add('is-open');
+  }
+  function closeMoreMenu() {
+    document.getElementById('more-menu-overlay').classList.remove('is-open');
+    document.getElementById('more-menu-sheet').classList.remove('is-open');
+  }
+
+  // Screen navigation
+  function navigate(id) {
+    document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('on'); });
+    var target = document.getElementById(id);
+    if (target) {
+      target.classList.add('on');
+      var scroller = target.querySelector('.scroll-body, .list-body, .apply-body');
+      if (scroller) scroller.scrollTop = 0;
+      if (window.lucide) lucide.createIcons();
+    }
+  }
+
+
+  // ══════════════════════════════════════════════
+  // 프로토타입 전용 — 시점·상태 전환
+  // ══════════════════════════════════════════════
+  function syncViewerBar() {
+    var role  = document.body.dataset.role;
+    var state = document.body.dataset.state;
+    document.querySelectorAll('.viewer-bar-tab').forEach(function(t) {
+      var axis = t.dataset.axis;
+      var val;
+      /* CHECKIN은 아래쪽에서 선언돼서 첫 동기화 때는 아직 비어 있다 */
+      if (axis === 'role') val = role;
+      else if (axis === 'checkin') val = (window.CHECKIN && CHECKIN.enabled) ? CHECKIN.issueUnit : 'off';
+      else val = state;
+      t.classList.toggle('active', t.dataset.value === val);
+      if (axis === 'state') t.disabled = (role === 'owner');
+    });
+  }
+  function setRole(role)  { document.body.dataset.role  = role;  syncViewerBar(); renderCtaTypes(); }
+  function setState(state){ document.body.dataset.state = state; syncViewerBar(); renderCtaTypes(); }
+  function setShowCount(chk) { document.body.dataset.showCount = chk.checked ? 'on' : 'off'; }
+  function setShowList(chk)  { document.body.dataset.showList  = chk.checked ? 'on' : 'off'; }
+  syncViewerBar();
+
+  // ══════════════════════════════════════════════
+  // Toast
+  // ══════════════════════════════════════════════
+  function showToast(message) {
+    var wrap = document.getElementById('toast-container');
+    if (!wrap) return;
+    var el = document.createElement('div');
+    el.className = 'toast';
+    el.textContent = message;
+    wrap.appendChild(el);
+    setTimeout(function(){ el.remove(); }, 2000);
+  }
+
+  // ══════════════════════════════════════════════
+  // 현장 체크인 — 진입 · 스태프 링크
+  // ══════════════════════════════════════════════
+  /* 기획상 "행사 시작 3시간 전 ~ 종료 3시간 후"에만 열리지만,
+     프로토타입에서는 시간 조건을 흉내 내지 않고 항상 노출한다. */
+  var checkinLinkToken = 'a7f3c9';
+
+  function syncCheckinUI() {
+    document.body.dataset.checkin = CHECKIN.enabled ? 'on' : 'off';
+    syncViewerBar();
+  }
+  /* 프로토타입 전용 — 발급 단위까지 한 줄에서 바꾼다 */
+  function setCheckin(v) {
+    CHECKIN.enabled = (v !== 'off');
+    if (v !== 'off') CHECKIN.issueUnit = v;
+    syncCheckinUI();
+  }
+  function openCheckin() { window.location.href = 'event-checkin.html'; }
+
+  function checkinLink() {
+    return new URL('event-checkin.html?staff=' + checkinLinkToken, window.location.href).href;
+  }
+  function copyCheckinLink() {
+    var url = checkinLink();
+    closeMoreMenu();
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).catch(function(){});
+    }
+    showToast('체크인 링크를 복사했어요.');
+  }
+  function askReissueCheckinLink() {
+    closeMoreMenu();
+    document.getElementById('reissue-overlay').hidden = false;
+  }
+  function closeReissueDialog() { document.getElementById('reissue-overlay').hidden = true; }
+  function confirmReissueCheckinLink() {
+    checkinLinkToken = Math.random().toString(36).slice(2, 8);
+    closeReissueDialog();
+    showToast('체크인 링크를 새로 발급했어요.');
+  }
+
+  // ══════════════════════════════════════════════
+  // 로그인 유도 모달
+  // ══════════════════════════════════════════════
+  function openLoginDialog() {
+    document.getElementById('login-overlay').hidden = false;
+    if (window.lucide) lucide.createIcons();
+  }
+  function closeLoginDialog() {
+    document.getElementById('login-overlay').hidden = true;
+  }
+  function pickLogin() {
+    closeLoginDialog();
+    showToast('로그인 화면으로 이동합니다.');
+  }
+
+  // ══════════════════════════════════════════════
+  // 신청 취소 확인 다이얼로그
+  // ══════════════════════════════════════════════
+  /* ── 신청자 행 더보기 → 참석자에서 빼기 ──
+     사전 등록 건이든 본인 신청 건이든 여기 한 곳에서 뺀다. */
+  var rowMenuIdx = -1;
+  function openRowMenu(idx) {
+    var a = APPLICANTS[idx];
+    if (!a) return;
+    rowMenuIdx = idx;
+    document.getElementById('row-menu-name').textContent = a.name;
+    document.getElementById('row-menu-sub').textContent =
+      (a.preset ? '호스트 등록' : '본인 신청') + ' · ' + (a.values.phone || '전화번호 없음');
+    document.getElementById('row-menu-overlay').classList.add('is-open');
+    document.getElementById('row-menu-sheet').classList.add('is-open');
+  }
+  function closeRowMenu() {
+    document.getElementById('row-menu-overlay').classList.remove('is-open');
+    document.getElementById('row-menu-sheet').classList.remove('is-open');
+  }
+  function askRemoveApplicant() {
+    var a = APPLICANTS[rowMenuIdx];
+    if (!a) return;
+    closeRowMenu();
+    document.getElementById('remove-title').textContent = a.name + '님을 명단에서 뺄까요?';
+    document.getElementById('remove-overlay').hidden = false;
+  }
+  function closeRemoveDialog() { document.getElementById('remove-overlay').hidden = true; }
+  function confirmRemoveApplicant() {
+    var a = APPLICANTS[rowMenuIdx];
+    if (!a) { closeRemoveDialog(); return; }
+    APPLICANTS.splice(rowMenuIdx, 1);
+    var i = attendeeAdded.indexOf(a);
+    if (i > -1) attendeeAdded.splice(i, 1);
+    rowMenuIdx = -1;
+    closeRemoveDialog();
+    renderApplicants();
+    renderAttendeeAdded();
+    syncAttendeeUI();
+    showToast(a.name + '님을 명단에서 뺐어요.');
+  }
+
+  function openCancelDialog()  { document.getElementById('cancel-overlay').hidden = false; }
+  function closeCancelDialog() { document.getElementById('cancel-overlay').hidden = true; }
+  function confirmCancel() {
+    closeCancelDialog();
+    setState('member');
+  }
+
+  // ══════════════════════════════════════════════
+  // 신청 화면
+  // ══════════════════════════════════════════════
+  function onAgreeChange() { syncApplySubmit(); }
+  function normPhone(v) { return String(v || '').replace(/\D/g, ''); }
+
+  /* ── 유형별 신청 폼 ── */
+  var applyTypeId = null;
+  var teamMembers = [];        /* [{ name, phone, email, values:{ 질문id: 답변 } }] */
+  var teamLeaderIndex = 0;     /* 팀원 중 대표자 — 정확히 한 명 */
+
+  function teamFormOf(t)   { return (t && t.form && t.form.team)   || { fields:{}, questions:[] }; }
+  function memberFormOf(t) { return (t && t.form && t.form.member) || { fields:{}, questions:[] }; }
+  function newMember() { return { name:'', phone:'', email:'', values:{} }; }
+
+  function currentApplyType() {
+    return ptypesActive() ? ptypeById(applyTypeId) : null;
+  }
+
+  /* 단일 CTA(유형 1개 또는 유형 없음)에서 들어오는 경로 */
+  function startApplyDefault() {
+    startApply(ptypesActive() ? PTYPES[0].id : null);
+  }
+
+  /* 랜딩에서 유형을 고르고 바로 그 유형의 폼으로 들어온다 */
+  function startApply(typeId) {
+    applyTypeId = typeId || null;
+    var t = currentApplyType();
+    teamMembers = [];
+    teamLeaderIndex = 0;
+    if (t && t.unit === 'team') teamMembers.push(newMember());
+    renderApplyForm();
+    navigate('screen-apply');
+  }
+
+  function fieldHTML(id, label, required, type, placeholder) {
+    return ''
+      + '<div class="apply-field">'
+      +   '<label class="label' + (required ? ' label-required' : '') + '" for="' + id + '">' + escapeHTML(label) + '</label>'
+      +   '<input class="input" type="' + type + '" id="' + id + '" placeholder="' + escapeHTML(placeholder || '') + '" oninput="syncApplySubmit()">'
+      + '</div>';
+  }
+
+  /* 주관식·객관식 질문 하나를 그린다. onInput은 값이 상태로 흘러야 하는 곳(팀원 카드)에서 넘긴다. */
+  function questionHTML(q, id, value, onInput) {
+    var handler = onInput || 'syncApplySubmit()';
+    if (q.type === 'mc') {
+      return ''
+        + '<div class="apply-field apply-field-wide">'
+        +   '<span class="label' + (q.required ? ' label-required' : '') + '">' + escapeHTML(q.text) + '</span>'
+        +   (q.desc ? '<span class="apply-field-desc">' + escapeHTML(q.desc) + '</span>' : '')
+        +   '<div class="apply-choices">'
+        +     (q.options || []).map(function(opt, oi){
+                return '<label class="apply-choice">'
+                  + '<input class="' + (q.multi ? 'checkbox' : 'radio') + '" type="' + (q.multi ? 'checkbox' : 'radio') + '" '
+                  +   'name="' + id + '" value="' + escapeHTML(opt) + '" id="' + id + '-' + oi + '" onchange="' + handler + '">'
+                  + '<span>' + escapeHTML(opt) + '</span></label>';
+              }).join('')
+        +   '</div>'
+        + '</div>';
+    }
+    return ''
+      + '<div class="apply-field">'
+      +   '<label class="label' + (q.required ? ' label-required' : '') + '" for="' + id + '">' + escapeHTML(q.text) + '</label>'
+      +   (q.desc ? '<span class="apply-field-desc">' + escapeHTML(q.desc) + '</span>' : '')
+      +   '<input class="input" type="text" id="' + id + '" value="' + escapeHTML(value || '') + '" '
+      +     'placeholder="' + escapeHTML(q.placeholder || '') + '" oninput="' + handler + '">'
+      + '</div>';
+  }
+
+  function renderApplyForm() {
+    var wrap = document.getElementById('apply-fields');
+    if (!wrap) return;
+    var t = currentApplyType();
+    var bar = document.getElementById('apply-type-bar');
+
+    /* 유형이 2개 이상일 때만 "무슨 유형으로 신청 중인지 + 바꾸기" 줄이 뜬다 */
+    if (bar) {
+      if (t && PTYPES.length > 1) {
+        bar.hidden = false;
+        document.getElementById('apply-type-badge').textContent = t.name;
+      } else {
+        bar.hidden = true;
+      }
+    }
+
+    var isTeam = !!(t && t.unit === 'team');
+    var html = '';
+
+    if (isTeam) {
+      /* ── 팀 정보 (한 번만) ── */
+      var tf = teamFormOf(t);
+      if (!tf.fields.title || tf.fields.title.enabled !== false) {
+        html += fieldHTML('apply-team-title', '팀 이름', !!(tf.fields.title && tf.fields.title.required), 'text', '예) 건축 다섯');
+      }
+      (tf.questions || []).forEach(function(q, i){
+        html += questionHTML(q, 'apply-tq' + i, '');
+      });
+
+      /* ── 팀원 정보 (팀원마다) ── */
+      html += '<div class="apply-section-title">팀원</div>'
+        + '<div class="member-cards" id="member-cards"></div>'
+        + '<button type="button" class="btn btn-sm btn-line-dark btn-pill team-add" onclick="addTeamMember()">'
+        +   '<i data-lucide="plus" style="width:14px;height:14px"></i>팀원 추가'
+        + '</button>';
+    } else {
+      var f = (t && t.form && t.form.fields) || { name:{enabled:true,required:true}, phone:{enabled:true,required:true} };
+      if (f.name && f.name.enabled)  html += fieldHTML('apply-name', '이름', !!f.name.required, 'text', '이름을 입력해 주세요');
+      if (f.phone && f.phone.enabled) html += fieldHTML('apply-phone', '전화번호', !!f.phone.required, 'tel', '010-0000-0000');
+      if (f.email && f.email.enabled) html += fieldHTML('apply-email', '이메일', !!f.email.required, 'email', 'example@email.com');
+      ((t && t.form && t.form.questions) || []).forEach(function(q, i){
+        html += questionHTML(q, 'apply-q' + i, '');
+      });
+    }
+
+    wrap.innerHTML = html;
+    var agree = document.getElementById('apply-agree');
+    if (agree) agree.checked = false;
+    renderMemberCards();
+    syncApplySubmit();
+    if (window.lucide) lucide.createIcons();
+  }
+
+  /* 팀원 카드 — 기본 필드(켜진 것만) + 팀원 질문을 통째로 받는다 */
+  function renderMemberCards() {
+    var box = document.getElementById('member-cards');
+    if (!box) return;
+    var t = currentApplyType();
+    var mf = memberFormOf(t);
+    var f = mf.fields || {};
+    var only = teamMembers.length <= 1;   /* 팀원이 1명 미만이 되면 안 된다 */
+
+    box.innerHTML = teamMembers.map(function(m, i){
+      var grid = '';
+      if (f.name && f.name.enabled) {
+        grid += ''
+          + '<div class="apply-field">'
+          +   '<label class="label' + (f.name.required ? ' label-required' : '') + '" for="m' + i + '-name">이름</label>'
+          +   '<input class="input" type="text" id="m' + i + '-name" value="' + escapeHTML(m.name) + '" '
+          +     'placeholder="이름" oninput="onMemberInput(' + i + ', \'name\', this.value)">'
+          + '</div>';
+      }
+      if (f.phone && f.phone.enabled) {
+        grid += ''
+          + '<div class="apply-field">'
+          +   '<label class="label' + (f.phone.required ? ' label-required' : '') + '" for="m' + i + '-phone">전화번호</label>'
+          +   '<input class="input" type="tel" id="m' + i + '-phone" value="' + escapeHTML(m.phone) + '" '
+          +     'placeholder="010-0000-0000" oninput="onMemberInput(' + i + ', \'phone\', this.value)">'
+          + '</div>';
+      }
+      if (f.email && f.email.enabled) {
+        grid += ''
+          + '<div class="apply-field">'
+          +   '<label class="label' + (f.email.required ? ' label-required' : '') + '" for="m' + i + '-email">이메일</label>'
+          +   '<input class="input" type="email" id="m' + i + '-email" value="' + escapeHTML(m.email) + '" '
+          +     'placeholder="example@email.com" oninput="onMemberInput(' + i + ', \'email\', this.value)">'
+          + '</div>';
+      }
+      (mf.questions || []).forEach(function(q, qi){
+        grid += questionHTML(q, 'm' + i + '-q' + qi, m.values[qKey(q, qi)],
+          'onMemberAnswer(' + i + ', ' + qi + ', this)');
+      });
+
+      return ''
+        + '<div class="member-card">'
+        +   '<div class="member-card-head">'
+        +     '<span class="member-card-title">팀원 ' + (i + 1) + '</span>'
+        +     (mf.leaderPick === false ? '' :
+              '<label class="member-leader">'
+              + '<input class="radio" type="radio" name="team-leader"' + (i === teamLeaderIndex ? ' checked' : '') + ' '
+              +   'onchange="setTeamLeader(' + i + ')"><span>대표자</span></label>')
+        +     '<button type="button" class="icon-btn icon-btn-sm icon-btn-clear" aria-label="팀원 ' + (i + 1) + ' 삭제" '
+        +       (only ? 'disabled ' : '') + 'onclick="removeTeamMember(' + i + ')"><i data-lucide="trash-2"></i></button>'
+        +   '</div>'
+        +   '<div class="member-card-grid">' + grid + '</div>'
+        + '</div>';
+    }).join('');
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function addTeamMember() {
+    teamMembers.push(newMember());
+    renderMemberCards();
+    syncApplySubmit();
+  }
+  function removeTeamMember(i) {
+    if (teamMembers.length <= 1) return;
+    teamMembers.splice(i, 1);
+    /* 대표자가 빠지면 남은 첫 팀원이 대표자가 된다 */
+    if (teamLeaderIndex === i) teamLeaderIndex = 0;
+    else if (teamLeaderIndex > i) teamLeaderIndex -= 1;
+    renderMemberCards();
+    syncApplySubmit();
+  }
+  function setTeamLeader(i) {
+    teamLeaderIndex = i;
+    syncApplySubmit();
+  }
+  function onMemberInput(i, key, v) {
+    if (!teamMembers[i]) return;
+    teamMembers[i][key] = v;
+    syncApplySubmit();
+  }
+  function onMemberAnswer(i, qi, el) {
+    if (!teamMembers[i]) return;
+    var t = currentApplyType();
+    var q = (memberFormOf(t).questions || [])[qi];
+    if (q && q.type === 'mc') {
+      var picked = Array.prototype.slice.call(
+        document.querySelectorAll('[name="m' + i + '-q' + qi + '"]:checked')).map(function(e){ return e.value; });
+      teamMembers[i].values[qKey(q, qi)] = q.multi ? picked : (picked[0] || '');
+    } else {
+      teamMembers[i].values[qKey(q, qi)] = el.value;
+    }
+    syncApplySubmit();
+  }
+
+  function val(id) {
+    var el = document.getElementById(id);
+    return el ? el.value.trim() : '';
+  }
+
+  function answered(q, id) {
+    if (q.type === 'mc') return !!document.querySelector('[name="' + id + '"]:checked');
+    return !!val(id);
+  }
+  function readAnswer(q, id) {
+    if (q.type === 'mc') {
+      var picked = Array.prototype.slice.call(document.querySelectorAll('[name="' + id + '"]:checked'))
+        .map(function(el){ return el.value; });
+      return q.multi ? picked : (picked[0] || '');
+    }
+    return val(id);
+  }
+
+  function syncApplySubmit() {
+    var btn = document.getElementById('apply-submit');
+    if (!btn) return;
+    var agree = document.getElementById('apply-agree');
+    var ok = !!(agree && agree.checked);
+    var t = currentApplyType();
+
+    if (ok && t && t.unit === 'team') {
+      var tf = teamFormOf(t);
+      if (tf.fields.title && tf.fields.title.required && !val('apply-team-title')) ok = false;
+      (tf.questions || []).forEach(function(q, i){
+        if (q.required && !answered(q, 'apply-tq' + i)) ok = false;
+      });
+
+      /* 팀원 1명 이상 + 모든 팀원의 필수 항목 + 대표자 1명 */
+      if (teamMembers.length < 1) ok = false;
+      if (teamLeaderIndex < 0 || teamLeaderIndex >= teamMembers.length) ok = false;
+      var mf = memberFormOf(t);
+      var mfields = mf.fields || {};
+      teamMembers.forEach(function(m){
+        ['name', 'phone', 'email'].forEach(function(k){
+          var cfg = mfields[k];
+          if (cfg && cfg.enabled && cfg.required && !String(m[k] || '').trim()) ok = false;
+        });
+        (mf.questions || []).forEach(function(q, qi){
+          if (!q.required) return;
+          var v = m.values[qKey(q, qi)];
+          if (Array.isArray(v) ? v.length === 0 : !String(v || '').trim()) ok = false;
+        });
+      });
+    } else if (ok && t) {
+      var f = t.form.fields || {};
+      if (f.name && f.name.enabled && f.name.required && !val('apply-name')) ok = false;
+      if (f.phone && f.phone.enabled && f.phone.required && !val('apply-phone')) ok = false;
+      if (f.email && f.email.enabled && f.email.required && !val('apply-email')) ok = false;
+      (t.form.questions || []).forEach(function(q, i){
+        if (q.required && !answered(q, 'apply-q' + i)) ok = false;
+      });
+    }
+    btn.disabled = !ok;
+  }
+
+  /* 개인 유형 — 기본 필드 + 질문 */
+  function collectAnswers(t) {
+    var values = { phone: val('apply-phone'), email: val('apply-email') };
+    (t.form.questions || []).forEach(function(q, i){
+      values[qKey(q, i)] = readAnswer(q, 'apply-q' + i);
+    });
+    return values;
+  }
+
+  /* 팀 유형 — 팀 층 답변 + 팀원 층 답변 */
+  function collectTeam(t) {
+    var tf = teamFormOf(t);
+    var values = {};
+    (tf.questions || []).forEach(function(q, i){
+      values[qKey(q, i)] = readAnswer(q, 'apply-tq' + i);
+    });
+    return {
+      title: val('apply-team-title') || '우리 팀',
+      values: values,
+      leaderIndex: teamLeaderIndex,
+      members: teamMembers.map(function(m){
+        var out = { name: m.name.trim(), phone: m.phone.trim(), email: m.email.trim(), values: {} };
+        Object.keys(m.values).forEach(function(k){
+          var v = m.values[k];
+          out.values[k] = Array.isArray(v) ? v.slice() : String(v || '').trim();
+        });
+        return out;
+      })
+    };
+  }
+
+  /* 제출 — 참가비가 있으면 결제 단계로, 없으면 바로 완료로 */
+  function submitApply() {
+    var t = currentApplyType();
+
+    /* 유형이 없을 때는 예전 흐름 그대로 (사전 등록 전화번호 매칭) */
+    if (!t) {
+      var name  = val('apply-name');
+      var phone = normPhone(val('apply-phone'));
+      var matched = !!phone && APPLICANTS.some(function(a){
+        return a.preset && normPhone(a.values.phone) === phone;
+      });
+      navigate('screen-landing');
+      if (matched) {
+        setState('preset');
+        showToast('이미 등록되어 있어서 회원님 신청으로 연결했어요.');
+      } else {
+        APPLICANTS.unshift({
+          name: name || '나', typeId:'', preset: false, date: nowStamp(),
+          paid: null, checkedIn: false, photo: '',
+          values: { phone: val('apply-phone'), email:'' }, team: null
+        });
+        renderApplicants();
+        syncAttendeeUI();
+        setState('applied');
+        showToast('신청이 완료되었어요.');
+      }
+      return;
+    }
+
+    if (t.fee && t.fee.enabled) { renderPay(t); navigate('screen-pay'); return; }
+    finishApply(t);
+  }
+
+  function finishApply(t) {
+    var isTeam = t.unit === 'team';
+    var teamData = isTeam ? collectTeam(t) : null;
+    var values = isTeam ? teamData.values : collectAnswers(t);
+
+    APPLICANTS.unshift({
+      name: isTeam ? teamData.title : (val('apply-name') || '나'),
+      typeId: t.id, preset: false, date: nowStamp(),
+      paid: (t.fee && t.fee.enabled) ? true : null,
+      checkedIn: false,
+      photo: '',
+      /* 신청 폼 답변이 그대로 answers가 된다 */
+      values: values,
+      team: isTeam ? { leaderIndex: teamData.leaderIndex, members: teamData.members } : null
+    });
+    appliedTypeId = t.id;
+
+    renderDone(t, teamData);
+    navigate('screen-done');
+  }
+
+  function closeDone() {
+    navigate('screen-landing');
+    setState('applied');
+    renderApplicants();
+    renderFilterChips();
+    renderFieldsSummary();
+    syncAttendeeUI();
+    syncPtypeUI();
+  }
+
+  // ══════════════════════════════════════════════
+  // 유형 바꾸기 시트 (신청 화면)
+  // ══════════════════════════════════════════════
+  function openTypePicker() {
+    var list = document.getElementById('typepick-list');
+    if (!list) return;
+    list.innerHTML = PTYPES.map(function(t){
+      return ''
+        + '<button type="button" class="more-menu-item"'
+        +   ' onclick="pickType(\'' + t.id + '\')">'
+        +   '<span class="more-menu-item-text">'
+        +     '<span>' + escapeHTML(t.name) + '</span>'
+        +     '<span class="more-menu-item-sub">' + escapeHTML(feeText(t)) + '</span>'
+        +   '</span>'
+        +   (t.id === applyTypeId ? '<i data-lucide="check" style="width:18px;height:18px;color:var(--color-primary)"></i>' : '')
+        + '</button>';
+    }).join('');
+    document.getElementById('typepick-overlay').classList.add('is-open');
+    document.getElementById('typepick-sheet').classList.add('is-open');
+    if (window.lucide) lucide.createIcons();
+  }
+  function closeTypePicker() {
+    document.getElementById('typepick-overlay').classList.remove('is-open');
+    document.getElementById('typepick-sheet').classList.remove('is-open');
+  }
+  function pickType(id) {
+    closeTypePicker();
+    selectPtype(id);
+    startApply(id);
+  }
+
+  // ══════════════════════════════════════════════
+  // 결제 단계 (참가비가 있는 유형만)
+  // ══════════════════════════════════════════════
+  function renderPay(t) {
+    /* 참가비 명칭은 유형이 들고 있으면 그걸 쓰고, 없으면 중립적으로 '참가비' */
+    document.getElementById('pay-amount-label').textContent =
+      t.name + ' ' + '참가비';
+    document.getElementById('pay-amount-value').textContent = (+t.fee.amount).toLocaleString('ko-KR') + '원';
+    if (window.lucide) lucide.createIcons();
+  }
+  function submitPay() {
+    var t = currentApplyType();
+    if (!t) return;
+    finishApply(t);
+  }
+
+  // ══════════════════════════════════════════════
+  // 완료 화면 — 현장 체크인 QR + 알림톡 안내
+  // ══════════════════════════════════════════════
+  /* 자리표시자 QR — 실제 인코딩이 아니라 QR처럼 읽히는 21×21 패턴 */
+  function renderQR(seed) {
+    var box = document.getElementById('done-qr');
+    if (!box) return;
+    var N = 21;
+    var cells = [];
+    var s = seed || 1;
+    function rnd() { s = (s * 1103515245 + 12345) % 2147483648; return s / 2147483648; }
+    function inFinder(r, c) {
+      function block(r0, c0) { return r >= r0 && r < r0 + 7 && c >= c0 && c < c0 + 7; }
+      return block(0, 0) || block(0, N - 7) || block(N - 7, 0);
+    }
+    function finderOn(r, c) {
+      var rr = r < 7 ? r : r - (N - 7);
+      var cc = c < 7 ? c : c - (N - 7);
+      var edge = (rr === 0 || rr === 6 || cc === 0 || cc === 6);
+      var core = (rr >= 2 && rr <= 4 && cc >= 2 && cc <= 4);
+      return edge || core;
+    }
+    for (var r = 0; r < N; r++) {
+      for (var c = 0; c < N; c++) {
+        var on = inFinder(r, c) ? finderOn(r, c) : rnd() > 0.55;
+        cells.push('<span' + (on ? '' : ' style="background:transparent"') + '></span>');
+      }
+    }
+    box.innerHTML = cells.join('');
+  }
+
+  /* 완료 화면 요약은 랜딩에 이미 반영된 이벤트 정보를 그대로 따라간다.
+     applyEventData()가 제목·일정을 갈아끼우므로 다른 이벤트를 발행해도 같이 바뀐다. */
+  function eventMeta() {
+    /* applyEventData()가 빈 값을 style.display로 감춘다 — screen-landing이 꺼져 있어도 읽히게 인라인만 본다 */
+    function visible(el) {
+      while (el && !el.classList.contains('hero-info')) {
+        if (el.style && el.style.display === 'none') return false;
+        el = el.parentElement;
+      }
+      return true;
+    }
+    function text(el) { return (el && visible(el)) ? el.textContent.trim() : ''; }
+    var rows = document.querySelectorAll('.hero-info .hero-schedule');
+    var when = '';
+    if (rows[0]) {
+      var d = text(rows[0].querySelector('.hero-schedule-date'));
+      var tm = text(rows[0].querySelector('.hero-schedule-time'));
+      when = [d, tm].filter(Boolean).join(' ');
+    }
+    var where = rows[1] ? text(rows[1].querySelector('.hero-schedule-date')) : '';
+    var titleEl = document.querySelector('.hero-headline');
+    return {
+      title: (titleEl && titleEl.textContent.trim()) || '이벤트',
+      when: when,
+      where: where
+    };
+  }
+
+  function renderDone(t, teamData) {
+    document.getElementById('done-sub').textContent = t
+      ? (t.name + '으로 신청했어요')
+      : '신청이 접수되었어요';
+
+    var meta = eventMeta();
+    var rows = [];
+    rows.push(['이벤트', meta.title]);
+    if (t) rows.push(['참가 유형', t.name]);
+    if (t && t.unit === 'team') {
+      var mem = (teamData && teamData.members) || [];
+      var leader = mem[(teamData && teamData.leaderIndex) || 0];
+      rows.push(['팀 이름', (teamData && teamData.title) || '—']);
+      rows.push(['팀원', mem.length + '명']);
+      rows.push(['대표자', (leader && leader.name) || '—']);
+    } else {
+      rows.push(['신청자', val('apply-name') || '—']);
+    }
+    if (t && t.fee && t.fee.enabled) {
+      rows.push(['결제', (+t.fee.amount).toLocaleString('ko-KR') + '원 결제완료']);
+    }
+    if (meta.when)  rows.push(['일시', meta.when]);
+    if (meta.where) rows.push(['장소', meta.where]);
+
+    document.getElementById('done-summary').innerHTML = rows.map(function(r){
+      return '<div class="done-summary-row">'
+        + '<span class="done-summary-label">' + escapeHTML(r[0]) + '</span>'
+        + '<span class="done-summary-value">' + escapeHTML(r[1]) + '</span>'
+        + '</div>';
+    }).join('');
+
+    /* 알림톡 발송이 꺼져 있으면 문구를 빼고 QR만 남긴다 */
+    document.getElementById('done-alim').hidden = !ALIMTALK.applyComplete;
+    /* 체크인을 안 쓰면 QR이 없으므로 문구에서도 QR을 뺀다 */
+    document.getElementById('done-alim-text').textContent = CHECKIN.enabled
+      ? '신청 내용과 QR을 알림톡으로도 보내드렸어요'
+      : '신청 내용을 알림톡으로도 보내드렸어요';
+
+    /* 현장 체크인을 안 쓰는 이벤트면 QR 영역 자체를 그리지 않는다.
+       신청이 완료된 시점이면 유형과 상관없이 발급된다. */
+    var issued = !!CHECKIN.enabled;
+    document.getElementById('done-qr-card').hidden = !issued;
+    if (issued) renderQR(APPLICANTS.length + 7);
+    renderDonePeople(t, teamData, issued);
+    if (window.lucide) lucide.createIcons();
+  }
+
+  /* 1인당 발급 + 팀 신청 — 팀원 각자의 QR이 어디로 갔는지 목록으로 드러낸다.
+     연락처를 적은 팀원은 그 번호로 개별 발송, 없는 팀원은 대표자 QR에 포함된다. */
+  function renderDonePeople(t, teamData, issued) {
+    var card = document.getElementById('done-qr-people');
+    var list = document.getElementById('done-people-list');
+    if (!card || !list) return;
+
+    var members = (teamData && teamData.members) || [];
+    var show = issued && CHECKIN.issueUnit === 'person'
+      && !!(t && t.unit === 'team') && members.length > 0;
+    card.hidden = !show;
+    if (!show) { list.innerHTML = ''; return; }
+
+    var leaderIndex = (teamData && teamData.leaderIndex) || 0;
+    list.innerHTML = members.map(function(m, i){
+      var isLeader = i === leaderIndex;
+      var phone = String(m.phone || '').trim();
+      var right = phone
+        ? '<span class="done-person-to">' + escapeHTML(phone) + '</span>'
+        : (isLeader ? '' : '<span class="badge badge-sm badge-weak-neutral">대표자 QR 포함</span>');
+      return ''
+        + '<div class="done-person">'
+        +   '<span class="done-person-name">' + escapeHTML(m.name || ('팀원 ' + (i + 1))) + '</span>'
+        +   (isLeader ? '<span class="badge badge-sm badge-weak-primary">대표자</span>' : '')
+        +   right
+        + '</div>';
+    }).join('');
+  }
+
+  // ══════════════════════════════════════════════
+  // 유형 탭 · 유형별 CTA (랜딩)
+  // ══════════════════════════════════════════════
+  var activeTypeId = null;
+  var appliedTypeId = null;
+  /* 호스트가 이벤트 입력폼에서 직접 지정한 CTA 문구 (있으면 유형 CTA보다 우선) */
+  var hostCta = null;
+
+  function selectPtype(id) {
+    activeTypeId = id;
+    renderPtypePanel();
+    renderCtaTypes();
+  }
+
+  function renderPtypeTabs() {
+    var tabs = document.getElementById('ptype-tabs');
+    if (!tabs) return;
+    /* 유형이 1개거나 꺼져 있으면 탭을 만들지 않는다 */
+    if (!ptypesActive() || PTYPES.length < 2) { tabs.hidden = true; tabs.innerHTML = ''; return; }
+    tabs.hidden = false;
+    tabs.innerHTML = PTYPES.map(function(t){
+      return '<button type="button" class="ptype-tab-line' + (t.id === activeTypeId ? ' is-active' : '') + '" '
+        + 'onclick="selectPtype(\'' + t.id + '\')">' + escapeHTML(t.name) + '</button>';
+    }).join('');
+  }
+
+  function renderPtypePanel() {
+    var panel = document.getElementById('ptype-panel');
+    if (!panel) return;
+    var t = ptypesActive() ? ptypeById(activeTypeId) : null;
+    if (!t) { panel.hidden = true; return; }
+    panel.hidden = false;
+    renderPtypeTabs();
+
+    var guide = document.getElementById('ptype-guide');
+    guide.innerHTML = t.guide ? t.guide : '';
+    guide.hidden = !t.guide;
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function renderCtaTypes() {
+    var box = document.getElementById('cta-types');
+    if (!box) return;
+    if (!ptypesActive() || PTYPES.length < 2) { box.innerHTML = ''; return; }
+    var state = document.body.dataset.state;
+    var owner = document.body.dataset.role === 'owner';
+    box.innerHTML = PTYPES.map(function(t){
+      var mine = !owner && (state === 'applied' || state === 'preset') && appliedTypeId === t.id;
+      var active = t.id === activeTypeId;
+      var style = mine ? 'btn-weak-primary' : (active ? 'btn-fill-primary' : 'btn-weak-primary');
+      return ''
+        + '<button type="button" class="btn btn-lg ' + style + ' cta-type-btn"'
+        +   ' onclick="onTypeCta(\'' + t.id + '\')">'
+        +   '<span class="cta-type-name">' + escapeHTML(mine ? '신청 완료 · 취소' : t.name) + '</span>'
+        +   (mine ? '<span class="cta-type-sub">' + escapeHTML(t.name) + '</span>' : '')
+        + '</button>';
+    }).join('');
+  }
+
+  function onTypeCta(id) {
+    selectPtype(id);
+    var state = document.body.dataset.state;
+    var owner = document.body.dataset.role === 'owner';
+    if (!owner && (state === 'applied' || state === 'preset') && appliedTypeId === id) {
+      openCancelDialog();
+      return;
+    }
+    if (!owner && state === 'guest') { openLoginDialog(); return; }
+    startApply(id);
+  }
+
+  /* 유형 상태를 화면 전체에 반영 — off면 기존 화면과 완전히 같다 */
+  function syncPtypeUI() {
+    var mode = !ptypesActive() ? 'off' : (PTYPES.length > 1 ? 'multi' : 'single');
+    document.body.dataset.ptypes = mode;
+
+    if (mode === 'off') {
+      var tabs = document.getElementById('ptype-tabs');
+      var panel = document.getElementById('ptype-panel');
+      if (tabs) { tabs.hidden = true; tabs.innerHTML = ''; }
+      if (panel) panel.hidden = true;
+      document.getElementById('cta-types').innerHTML = '';
+      return;
+    }
+    if (!activeTypeId || !ptypeById(activeTypeId)) activeTypeId = PTYPES[0].id;
+    renderPtypePanel();
+    renderCtaTypes();
+
+    /* 유형이 1개면 기존 단일 CTA를 그대로 쓰되 문구만 유형 것으로.
+       단, 호스트가 이벤트 CTA 문구를 직접 지정했으면 그쪽이 이긴다. */
+    if (mode === 'single' && !hostCta) {
+      var t = PTYPES[0];
+      document.querySelectorAll('.sticky-actions .cta-guest, .sticky-actions .cta-member')
+        .forEach(function(b){ b.textContent = t.cta || '신청하기'; });
+    }
+  }
+
+  // ══════════════════════════════════════════════
+  // 참석자 명단 시트 — 카드 목록 (공개 항목만)
+  // ══════════════════════════════════════════════
+  var attListTypeId = null;
+
+  function openAttListSheet(typeId) {
+    var types = revealedTypes();
+    var wanted = typeId && types.some(function(t){ return t.id === typeId; }) ? typeId : null;
+    attListTypeId = wanted || (types.length ? types[0].id : null);
+    renderAttList();
+    document.getElementById('attlist-overlay').classList.add('is-open');
+    document.getElementById('attlist-sheet').classList.add('is-open');
+    if (window.lucide) lucide.createIcons();
+  }
+  function closeAttListSheet() {
+    document.getElementById('attlist-overlay').classList.remove('is-open');
+    document.getElementById('attlist-sheet').classList.remove('is-open');
+  }
+  function setAttListType(id) { attListTypeId = id; renderAttList(); }
+
+  function renderAttList() {
+    var tabs   = document.getElementById('attlist-tabs');
+    var scroll = document.getElementById('attlist-scroll');
+    var title  = document.getElementById('attlist-title');
+    if (!scroll) return;
+
+    var types = revealedTypes();
+    /* 공개 유형이 둘 이상일 때만 시트 안에 탭을 둔다 */
+    if (ptypesActive() && types.length > 1) {
+      tabs.hidden = false;
+      tabs.innerHTML = types.map(function(t){
+        return '<button type="button" class="ptype-tab' + (t.id === attListTypeId ? ' is-active' : '') + '" '
+          + 'onclick="setAttListType(\'' + t.id + '\')">' + escapeHTML(t.name) + '</button>';
+      }).join('');
+    } else {
+      tabs.hidden = true;
+      tabs.innerHTML = '';
+    }
+
+    var t = ptypesActive() ? ptypeById(attListTypeId) : null;
+    var people = ptypesActive()
+      ? (t ? typeRows(t.id) : [])
+      : APPLICANTS;
+    title.textContent = t ? (t.name + ' ' + people.length + unitWord(t)) : ('참석자 ' + people.length + '명');
+
+    if (people.length === 0) {
+      scroll.innerHTML = '<p class="attlist-empty">아직 참석자가 없어요.</p>';
+      return;
+    }
+
+    scroll.innerHTML = people.map(function(a){
+      var lines = revealLines(t, a).map(function(line){
+        return '<span class="att-card-line">' + escapeHTML(line) + '</span>';
+      }).join('');
+      return ''
+        + '<button type="button" class="att-card" onclick="openAttendeeProfile(\'' + escapeHTML(a.name) + '\')">'
+        +   '<span class="avatar avatar-md">'
+        +     (a.photo ? '<img src="' + encodeURI(a.photo) + '" alt="">' : '') + '</span>'
+        +   '<span class="att-card-body">'
+        +     '<span class="att-card-name">' + escapeHTML(a.name) + '</span>'
+        +     lines
+        +   '</span>'
+        +   '<i data-lucide="chevron-right" class="att-card-chev"></i>'
+        + '</button>';
+    }).join('');
+    if (window.lucide) lucide.createIcons();
+  }
+
+  /* 참석자 쇼케이스 — 유형마다 한 섹션. 5장까지 보여주고 나머지는 명단 시트로 넘긴다. */
+  var SHOWCASE_MAX = 5;
+
+  function renderShowcase() {
+    var box = document.getElementById('showcase-sections');
+    if (!box) return;
+    var types = showcaseTypes();
+    document.body.dataset.showcase = types.length ? 'on' : 'off';
+    if (!types.length) { box.innerHTML = ''; return; }
+
+    box.innerHTML = types.map(function(t){
+      var people = typeRows(t.id);
+      var cards = people.slice(0, SHOWCASE_MAX).map(function(a){
+        var lines = revealLines(t, a).map(function(line){
+          return '<span class="showcase-line">' + escapeHTML(line) + '</span>';
+        }).join('');
+        return ''
+          + '<button type="button" class="showcase-card" onclick="openAttendeeProfile(\'' + escapeHTML(a.name) + '\')">'
+          +   '<span class="avatar avatar-lg">'
+          +     (a.photo ? '<img src="' + encodeURI(a.photo) + '" alt="">' : '') + '</span>'
+          +   '<span class="showcase-name">' + escapeHTML(a.name) + '</span>'
+          +   lines
+          + '</button>';
+      }).join('');
+
+      var more = people.length > SHOWCASE_MAX
+        ? '<button type="button" class="showcase-more" onclick="openAttListSheet(\'' + t.id + '\')">'
+          + '<span class="showcase-more-circle"><i data-lucide="chevron-right"></i></span>'
+          + '<span class="showcase-more-label">더보기</span></button>'
+        : '';
+
+      return ''
+        + '<div class="section">'
+        +   '<div class="section-title">' + escapeHTML(t.name) + ' 참석자</div>'
+        +   '<div class="showcase-scroll">' + cards + more + '</div>'
+        + '</div>'
+        + '<div class="section-divider"></div>';
+    }).join('');
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function openAttendeeProfile(name) {
+    showToast(name + '님의 프로필 페이지로 이동합니다.');
+  }
+
+  function nowStamp() {
+    function pad(n){ return (n < 10 ? '0' : '') + n; }
+    var d = new Date();
+    return d.getFullYear() + '.' + pad(d.getMonth()+1) + '.' + pad(d.getDate())
+         + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+  }
+
+  // ══════════════════════════════════════════════
+  // 참석자 추가 시트 (운영자)
+  // ══════════════════════════════════════════════
+  var attendeeAdded = [];   // 이번 시트에서 추가한 사람
+
+  function openAttendeeSheet() {
+    attendeeAdded = [];
+    document.getElementById('att-name').value = '';
+    document.getElementById('att-phone').value = '';
+    onAttendeeInput();
+    renderAttendeeAdded();
+    document.getElementById('attendee-overlay').classList.add('is-open');
+    document.getElementById('attendee-sheet').classList.add('is-open');
+    if (window.lucide) lucide.createIcons();
+  }
+  function closeAttendeeSheet() {
+    document.getElementById('attendee-overlay').classList.remove('is-open');
+    document.getElementById('attendee-sheet').classList.remove('is-open');
+  }
+  function onAttendeeInput() {
+    var name = document.getElementById('att-name').value.trim();
+    document.getElementById('att-submit').disabled = name === '';
+  }
+  function onAttendeeKey(e) {
+    if (e.key === 'Enter') { e.preventDefault(); submitAttendee(); }
+  }
+  /* 추가하기 — 시트를 닫지 않는다. 연달아 넣는 게 기본 사용 패턴. */
+  function submitAttendee() {
+    var nameEl  = document.getElementById('att-name');
+    var phoneEl = document.getElementById('att-phone');
+    var name = nameEl.value.trim();
+    if (!name) return;
+    var revealed = revealedTypes();
+    var attType = revealed.length ? revealed[0] : (PTYPES[0] || null);
+    var person = {
+      name: name, preset: true, date: nowStamp(),
+      typeId: attType ? attType.id : '',
+      /* 사전 등록 경로(applyEventData)와 같은 규칙 — 참가비 유형이면 결제 완료다 */
+      paid: (attType && attType.fee && attType.fee.enabled) ? true : null,
+      checkedIn: false, photo: '',
+      values: { phone: phoneEl.value.trim(), email:'' },
+      team: null
+    };
+    APPLICANTS.unshift(person);
+    attendeeAdded.push(person);
+    nameEl.value = '';
+    phoneEl.value = '';
+    onAttendeeInput();
+    renderAttendeeAdded();
+    renderApplicants();
+    syncAttendeeUI();
+    nameEl.focus();
+  }
+  function removeAddedAttendee(idx) {
+    var person = attendeeAdded[idx];
+    if (!person) return;
+    attendeeAdded.splice(idx, 1);
+    var i = APPLICANTS.indexOf(person);
+    if (i > -1) APPLICANTS.splice(i, 1);
+    renderAttendeeAdded();
+    renderApplicants();
+    syncAttendeeUI();
+  }
+  function renderAttendeeAdded() {
+    var box  = document.getElementById('att-added');
+    var list = document.getElementById('att-added-list');
+    if (!box || !list) return;
+    box.hidden = attendeeAdded.length === 0;
+    list.innerHTML = attendeeAdded.map(function(a, i){
+      return ''
+        + '<div class="att-row">'
+        +   '<span class="avatar avatar-sm"></span>'
+        +   '<span class="att-row-name">' + escapeHTML(a.name) + '</span>'
+        +   '<span class="att-row-phone">' + (a.values.phone ? escapeHTML(a.values.phone) : '—') + '</span>'
+        +   '<button type="button" class="icon-btn icon-btn-sm icon-btn-clear" aria-label="' + escapeHTML(a.name) + ' 삭제" '
+        +     'onclick="removeAddedAttendee(' + i + ')"><i data-lucide="x"></i></button>'
+        + '</div>';
+    }).join('');
+    if (window.lucide) lucide.createIcons();
+  }
+
+  // ── 입력폼에서 발행한 이벤트 데이터 적용 ──
+  function goEdit() { window.location.href = 'index.html'; }
+
+  function escapeHTML(s) {
+    return String(s).replace(/[&<>"']/g, function(c) {
+      return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+    });
+  }
+  function fmtDate(iso) {
+    if (!iso) return '';
+    var p = iso.split('-');
+    return p[0] + '.' + p[1] + '.' + p[2];
+  }
+  function fmtDateShort(iso) {
+    if (!iso) return '';
+    var p = iso.split('-');
+    return p[1] + '.' + p[2];
+  }
+  function fmtRange(start, end) {
+    if (start && end) return fmtDate(start) + ' ~ ' + fmtDateShort(end);
+    if (start) return fmtDate(start);
+    return '';
+  }
+  function fmtTimeRange(start, end) {
+    if (start && end) return start + ' ~ ' + end;
+    if (start) return start;
+    return '';
+  }
+
+  function applyEventData(d) {
+    // 타이틀
+    if (d.title) {
+      document.querySelector('.hero-headline').textContent = d.title;
+      document.querySelector('.apply-event-title').textContent = d.title;
+    }
+
+    // 일정 (행사 일정)
+    var sched = d.eventSchedule || {};
+    var dateStr = fmtRange(sched.start, sched.end);
+    var timeStr = fmtTimeRange(sched.startTime, sched.endTime);
+    var schedEl = document.querySelector('.hero-schedule');
+    if (!dateStr && !timeStr) {
+      if (schedEl) schedEl.style.display = 'none';
+    } else {
+      document.querySelector('.hero-schedule-date').textContent = dateStr;
+      var timeNode = document.querySelector('.hero-schedule-time');
+      if (timeStr) timeNode.textContent = timeStr;
+      else timeNode.style.display = 'none';
+    }
+
+    // 장소
+    var placeEl = document.getElementById('hero-place');
+    if (placeEl) {
+      if (sched.place) {
+        document.getElementById('hero-place-value').textContent = sched.place;
+        placeEl.style.display = '';
+      } else {
+        placeEl.style.display = 'none';
+      }
+    }
+
+    // 신청 기간
+    var ap = d.applyPeriod || {};
+    var dateCardSection = document.querySelector('.date-card').closest('.section');
+    if (ap.start && ap.end) {
+      var periodStr = fmtRange(ap.start, ap.end);
+      document.querySelector('.date-card-value').textContent = periodStr;
+      var tag = document.querySelector('.date-card-tag');
+      var today = new Date(); today.setHours(0,0,0,0);
+      var endD = new Date(ap.end + 'T00:00:00');
+      var diff = Math.ceil((endD - today) / 86400000);
+      if (diff > 0) { tag.textContent = 'D-' + diff; tag.style.display = ''; }
+      else if (diff === 0) { tag.textContent = 'D-DAY'; tag.style.display = ''; }
+      else { tag.style.display = 'none'; }
+    } else {
+      if (dateCardSection) {
+        dateCardSection.style.display = 'none';
+        var div = dateCardSection.nextElementSibling;
+        if (div && div.classList.contains('section-divider')) div.style.display = 'none';
+      }
+    }
+
+    // 설명
+    var descBlock = document.getElementById('desc-block');
+    var descSection = descBlock.closest('.section');
+    if (d.description) {
+      descBlock.innerHTML = '';
+      var lines = d.description.split(/\n+/).filter(function(l){ return l.trim(); });
+      lines.forEach(function(line, i){
+        if (i > 0) descBlock.appendChild(document.createElement('br'));
+        var p = document.createElement('p');
+        p.textContent = line;
+        descBlock.appendChild(p);
+      });
+    } else if (descSection) {
+      descSection.style.display = 'none';
+      var divNext = descSection.nextElementSibling;
+      if (divNext && divNext.classList.contains('section-divider')) divNext.style.display = 'none';
+    }
+
+    // 이미지
+    if (d.images && d.images.length) {
+      var slider = document.getElementById('hero-slider');
+      slider.innerHTML = '';
+      d.images.forEach(function(img){
+        var slide = document.createElement('div');
+        slide.className = 'hero-slide';
+        if (img.src) slide.style.backgroundImage = 'url("' + encodeURI(img.src) + '")';
+        else if (img.bg) slide.style.background = img.bg + ' center/cover';
+        slider.appendChild(slide);
+      });
+      var existingPage = document.getElementById('hero-pagination');
+      if (existingPage) existingPage.remove();
+      if (d.images.length > 1) {
+        var page = document.createElement('div');
+        page.className = 'hero-pagination';
+        page.id = 'hero-pagination';
+        page.textContent = '1 / ' + d.images.length;
+        slider.parentElement.appendChild(page);
+        slider.addEventListener('scroll', function(){
+          var idx = Math.round(slider.scrollLeft / slider.clientWidth);
+          page.textContent = (idx + 1) + ' / ' + d.images.length;
+        });
+      }
+    }
+
+    // CTA — 호스트가 지정한 문구는 유형 CTA보다 우선한다
+    if (d.cta) {
+      hostCta = d.cta;
+      document.querySelectorAll('.sticky-actions .cta-guest, .sticky-actions .cta-member')
+        .forEach(function(b){ b.textContent = d.cta; });
+    }
+
+    // 리뷰 노출 토글
+    if (d.reviews !== true) {
+      var reviewSection = document.querySelector('.review-scroll');
+      if (reviewSection) {
+        var sec = reviewSection.closest('.section');
+        if (sec) {
+          sec.style.display = 'none';
+          var prev = sec.previousElementSibling;
+          if (prev && prev.classList.contains('section-divider')) prev.style.display = 'none';
+        }
+      }
+      var trustRow = document.querySelector('.trust-row');
+      if (trustRow) trustRow.style.display = 'none';
+    }
+
+    // ── 참가 유형 ──
+    // 유형이 없거나 꺼져 있으면 아무것도 얹지 않는다 (기존 화면 그대로)
+    var pt = d.participantTypes;
+    if (pt && pt.enabled && Array.isArray(pt.types) && pt.types.length) {
+      PT_ENABLED = true;
+      SHOW_ATTENDEE_LIST = pt.showAttendeeList !== false;
+      PTYPES = pt.types.map(function(t){
+        return {
+          id: t.id, name: t.name, unit: t.unit || 'individual',
+          guide: t.guide || '',
+          fee: t.fee || { enabled:false, amount:0 },
+          reveal: t.reveal || { enabled:false, fields:{}, questions:[] },
+          cta: t.cta || (t.name + ' 신청'),
+          form: t.form || { unit: t.unit || 'individual', fields:{}, questions:[] }
+        };
+      });
+      /* 유형별 사전 등록 참석자를 명단 행으로 바꾼다 */
+      APPLICANTS = [];
+      pt.types.forEach(function(t){
+        (t.attendees || []).forEach(function(p){
+          APPLICANTS.push({
+            name: p.name, typeId: t.id, preset: true, date: '호스트 등록',
+            paid: (t.fee && t.fee.enabled) ? true : null,
+            checkedIn: false,
+            photo: p.photo || '',
+            /* 신청폼 답변이 그대로 answers다 */
+            values: Object.assign({ phone: p.phone || '', email: p.email || '' }, p.answers || {}),
+            team: null
+          });
+        });
+      });
+      /* 유형에 안 붙은 사전 등록 건은 typeName으로 이어 붙인다 */
+      if (Array.isArray(d.attendees)) {
+        d.attendees.forEach(function(a){
+          if (APPLICANTS.some(function(x){ return x.name === a.name && x.typeId === a.typeId; })) return;
+          var t = ptypeById(a.typeId) || PTYPES[0];
+          APPLICANTS.push({
+            name: a.name, typeId: t.id, preset: true, date: '호스트 등록',
+            paid: (t.fee && t.fee.enabled) ? true : null,
+            checkedIn: false,
+            photo: '',
+            values: { phone: a.phone || '', email:'' },
+            team: null
+          });
+        });
+      }
+      activeTypeId = PTYPES[0].id;
+    } else {
+      PT_ENABLED = false;
+      PTYPES = [];
+      // 참석자 — 입력폼에서 호스트가 미리 등록한 사람들
+      if (Array.isArray(d.attendees)) {
+        APPLICANTS = d.attendees.map(function(a){
+          return {
+            name: a.name, typeId:'', preset: true, date: '호스트 등록',
+            paid: null, checkedIn: false, photo: '',
+            values: { phone: a.phone || '', email:'' },
+            team: null
+          };
+        });
+      }
+      /* 유형이 없으면 예전 폼 구성을 그대로 쓴다 */
+      if (d.fields) {
+        FIELDS = [];
+        if (d.fields.phone && d.fields.phone.enabled) FIELDS.push({ key:'phone', label:'전화번호', type:'text' });
+        if (d.fields.email && d.fields.email.enabled) FIELDS.push({ key:'email', label:'이메일', type:'text' });
+      }
+    }
+
+    if (d.alimtalk) ALIMTALK = d.alimtalk;
+
+    if (d.checkin) {
+      CHECKIN = {
+        enabled: !!d.checkin.enabled,
+        issueUnit: d.checkin.issueUnit || 'registration'
+      };
+    }
+
+    /* 외부 신청폼이면 유형 UI를 전부 숨기고 링크로 보낸다 */
+    if (d.externalForm && d.externalForm.enabled) {
+      PT_ENABLED = false;
+      PTYPES = [];
+      document.body.dataset.showCount = 'off';
+      applyExternalCta(d.externalForm.url);
+    }
+  }
+
+  /* 외부 링크 이벤트 — sticky CTA가 외부 폼을 새 탭으로 연다 */
+  function applyExternalCta(url) {
+    document.querySelectorAll('.sticky-actions .cta-guest, .sticky-actions .cta-member, .sticky-actions .cta-applied')
+      .forEach(function(b){
+        b.onclick = function(){ if (url) window.open(url, '_blank', 'noopener'); };
+        b.innerHTML = escapeHTML(b.textContent.trim()) + '<i data-lucide="external-link" style="width:16px;height:16px"></i>';
+      });
+    if (window.lucide) lucide.createIcons();
+  }
+
+  // ══════════════════════════════════════════════
+  // 신청자 리스트 (관리자 전용)
+  // ══════════════════════════════════════════════
+  // 필드 정의 — type: 'text' 주관식 | 'choice' 객관식(단일/복수)
+  // 유형이 꺼져 있을 때 쓰는 기본 폼 (하위호환)
+  var FIELDS = [
+    { key:'phone', label:'전화번호', type:'text' },
+    { key:'email', label:'이메일',   type:'text' },
+  ];
+
+  // ══════════════════════════════════════════════
+  // 참가 유형 — event-input의 participantTypes와 같은 모양
+  // ══════════════════════════════════════════════
+  var PT_ENABLED = true;
+  var SHOW_ATTENDEE_LIST = true;
+  var ALIMTALK = { applyComplete: true, dayBeforeRemind: true };
+  /* 현장 체크인 — issueUnit: 'registration' | 'person' */
+  var CHECKIN = { enabled: true, issueUnit: 'registration' };
+  var PTYPES = [
+    {
+      id:'pt1', name:'졸업생', unit:'individual',
+      guide:'후배들에게 들려줄 이야기를 하나만 준비해 오세요. 후원금은 전액 재학생 장학금으로 쓰입니다.',
+      fee:{ enabled:true, amount:100000 },
+      /* name·photo는 항상 공개라 계약에 없다. fields는 신청폼에서 켜진 기본 필드만. */
+      reveal:{
+        enabled:true, showcase:true,
+        fields:{ phone:false, email:false },
+        questions:[
+          { id:'q1', label:'학과 · 학번' },
+          { id:'q2', label:'소속' },
+          { id:'q3', label:'후배에게 한마디' }
+        ]
+      },
+      cta:'졸업생 신청',
+      form:{
+        unit:'individual',
+        fields:{ name:{enabled:true,required:true}, phone:{enabled:true,required:true}, email:{enabled:true,required:false} },
+        questions:[
+          { id:'q1', type:'short', text:'학과 · 학번', desc:'', placeholder:'예) 경영학부 04학번', required:true, multi:false, options:[] },
+          { id:'q2', type:'short', text:'소속', desc:'', placeholder:'예) 삼성전자', required:false, multi:false, options:[] },
+          { id:'q3', type:'short', text:'후배에게 한마디', desc:'이벤트 페이지의 참석자 카드에 그대로 보여요', placeholder:'예) 궁금한 건 뭐든 물어보세요', required:true, multi:false, options:[] }
+        ]
+      }
+    },
+    {
+      id:'pt2', name:'재학생 팀', unit:'team',
+      guide:'팀을 꾸려 함께 신청해 주세요. 팀 사연을 함께 적어주시면 선정된 팀에 장학금을 드립니다.',
+      fee:{ enabled:false, amount:0 },
+      reveal:{ enabled:false, showcase:false, fields:{ phone:false, email:false }, questions:[] },
+      cta:'재학생 팀 신청',
+      form:{
+        unit:'team',
+        /* 한 팀에 한 번만 받는다 */
+        team:{
+          fields:{ title:{ enabled:true, required:true } },
+          questions:[
+            { id:'q1', type:'short', text:'팀 사연', desc:'선정된 팀에 장학금을 드려요', placeholder:'', required:true, multi:false, options:[] }
+          ]
+        },
+        /* 팀원마다 반복해서 받는다 */
+        member:{
+          fields:{
+            name:  { enabled:true,  required:true },
+            phone: { enabled:true,  required:false },
+            email: { enabled:false, required:false }
+          },
+          questions:[
+            { id:'m1', type:'short', text:'학번', desc:'', placeholder:'예) 20학번', required:true, multi:false, options:[] },
+            { id:'m2', type:'short', text:'학과', desc:'', placeholder:'예) 건축학부', required:false, multi:false, options:[] }
+          ],
+          repeat:true,
+          leaderPick:true
+        }
+      }
+    }
+  ];
+
+  // [이름, 학과·학번, 소속, 후배에게 한마디, 전화번호, 결제여부, 사진, 신청일]
+  var GRAD_SEED = [
+    ['김도현','경영학부 04학번','삼성전자','궁금한 건 뭐든 물어보세요','010-2841-9032',true,'../../assets/profile.png','2026.08.21 10:12'],
+    ['박서연','도시공학과 07학번','서울시청','진로 고민 들고 오세요','010-3391-5527',true,'../../assets/yoga-avatar.png','2026.08.21 11:04'],
+    ['이준호','전자전기컴퓨터공학부 09학번','네이버','첫 회사 고르는 법 알려드릴게요','010-7712-0384',true,'../../assets/studiogloss-avatar.png','2026.08.21 14:36'],
+    ['최유진','국제관계학과 06학번','외교부','유학 준비 이야기 해드릴게요','010-4820-6613',true,'../../assets/avatar-sft.png','2026.08.22 09:41'],
+    ['정민수','건축학부 03학번','희림종합건축','포트폴리오 봐드립니다','010-2255-7788',true,'../../assets/tntn-avatar.png','2026.08.22 18:22'],
+    ['한지영','세무학과 08학번','삼일회계법인','자격증 루트 정리해 왔어요','010-6612-3390',true,'','2026.08.23 08:57'],
+    ['오세훈','환경공학부 05학번','환경공단','공기업 준비 물어보세요','010-3348-1129',true,'','2026.08.23 13:15'],
+    ['배소연','행정학과 10학번','서울시','행정고시 이야기 나눠요','010-9930-4471',true,'','2026.08.24 10:03'],
+    ['신재현','물리학과 02학번','LG전자','대학원 진학 상담 가능해요','010-5580-2214',true,'','2026.08.24 15:48'],
+    ['윤하늘','디자인학부 11학번','카카오','포트폴리오 리뷰해 드려요','010-7043-8891',true,'','2026.08.24 20:31'],
+    ['강태오','기계정보공학과 06학번','현대자동차','제조업 취업 이야기해요','010-2170-5563',true,'','2026.08.25 09:12'],
+    ['서지안','경제학부 09학번','한국은행','금융권 준비 도와드릴게요','010-8846-2205',true,'','2026.08.25 12:40'],
+    ['문가영','조경학과 07학번','조경설계 서안','현장 이야기 많이 해드려요','010-3327-9014',true,'','2026.08.25 17:26'],
+    ['임도현','통계학과 12학번','쿠팡','데이터 직군 로드맵 있어요','010-6693-3378',true,'','2026.08.25 21:09'],
+    ['조하린','영어영문학과 08학번','대한항공','승무원 준비 물어보세요','010-4419-7752',true,'','2026.08.26 08:44'],
+    ['남기훈','컴퓨터과학부 13학번','토스','이직 이야기도 환영이에요','010-2903-6640',true,'','2026.08.26 09:58'],
+    ['황수민','도시행정학과 09학번','국토연구원','연구직 진로 이야기해요','010-7758-1136',true,'','2026.08.26 10:22'],
+    ['백준영','재료공학과 04학번','포스코','현장직 궁금한 거 물어보세요','010-5502-8823',true,'','2026.08.26 11:05']
+  ];
+
+  /* 팀원 값 — member.questions의 id가 키 (m1 학번 · m2 학과) */
+  function tm(name, phone, no, dept) {
+    return { name:name, phone:phone, email:'', values:{ m1:no, m2:dept } };
+  }
+  var TEAM_SEED = [
+    { title:'건축 다섯', story:'설계 스튜디오에서 밤새운 다섯 명이 선배 이야기를 듣고 싶어 신청했어요.', date:'2026.08.22 21:14', leaderIndex:0,
+      members:[
+        tm('정윤재','010-3382-7714','19학번','건축학부'),
+        tm('서하늘','010-4471-2298','20학번','건축학부'),
+        tm('김태윤','','21학번','건축학부'),
+        tm('노지민','010-6620-5583','20학번','도시공학과'),
+        tm('이서준','','22학번','건축학부')
+      ] },
+    { title:'경영 삼총사', story:'창업 동아리에서 만난 셋이 함께 갑니다. 실무 이야기가 궁금해요.', date:'2026.08.24 16:02', leaderIndex:0,
+      members:[
+        tm('한지우','010-8120-4436','20학번','경영학부'),
+        tm('문채원','010-9931-2074','21학번','경영학부'),
+        tm('류시원','','21학번','세무학과')
+      ] },
+    { title:'전컴 듀오', story:'개발자 선배들께 첫 회사 고르는 기준을 여쭤보고 싶습니다.', date:'2026.08.26 07:38', leaderIndex:1,
+      members:[
+        tm('오세진','010-2249-6607','21학번','전자전기컴퓨터공학부'),
+        tm('강민재','010-5573-8840','20학번','전자전기컴퓨터공학부')
+      ] }
+  ];
+
+  function buildApplicants() {
+    var rows = GRAD_SEED.map(function(g){
+      return {
+        name: g[0], typeId: 'pt1', preset: false, date: g[7],
+        paid: g[5], checkedIn: false,
+        photo: g[6] || '',
+        /* 신청폼 답변이 그대로 answers다 — 질문 id가 키 */
+        values: { phone: g[4], email: '', q1: g[1], q2: g[2], q3: g[3] },
+        team: null
+      };
+    });
+    var teams = TEAM_SEED.map(function(t){
+      return {
+        name: t.title, typeId: 'pt2', preset: false, date: t.date,
+        paid: null, checkedIn: false,
+        photo: '',
+        /* 팀 층 답변 — member 답변은 team.members가 각자 들고 있다 */
+        values: { q1: t.story },
+        team: { leaderIndex: t.leaderIndex, members: t.members }
+      };
+    });
+    return rows.concat(teams);
+  }
+
+  var APPLICANTS = buildApplicants();
+
+  // ── 유형 헬퍼 ──
+  function ptypeById(id) {
+    for (var i = 0; i < PTYPES.length; i++) if (PTYPES[i].id === id) return PTYPES[i];
+    return null;
+  }
+  function ptypesActive() { return PT_ENABLED && PTYPES.length > 0; }
+  function revealedTypes() {
+    if (!SHOW_ATTENDEE_LIST) return [];
+    return PTYPES.filter(function(t){ return t.reveal && t.reveal.enabled; });
+  }
+  function feeTypes() { return PTYPES.filter(function(t){ return t.fee && t.fee.enabled; }); }
+  /* 답변 키 — 인덱스가 아니라 질문 id라 재정렬·삭제에 밀리지 않는다 */
+  function qKey(q, i) { return (q && q.id) || ('q' + i); }
+
+  /* 참석자 카드에 실릴 줄 — 아바타·이름만 식별자, 나머지는 전부 같은 줄.
+     순서: reveal.fields(phone → email) → reveal.questions(배열 순서) */
+  function revealLines(t, a) {
+    var reveal = (t && t.reveal) || {};
+    var fields = reveal.fields || {};
+    var vals = a.values || {};
+    var out = [];
+    if (fields.phone && vals.phone) out.push(vals.phone);
+    if (fields.email && vals.email) out.push(vals.email);
+    (reveal.questions || []).forEach(function(q){
+      var v = vals[q.id];
+      if (Array.isArray(v)) v = v.join(', ');
+      v = String(v == null ? '' : v).trim();
+      if (v) out.push(v);          /* 값이 비면 그 줄만 건너뛴다 */
+    });
+    return out;
+  }
+
+  /* 공개 유형 중 '크게 보여주기'가 켜지고 실제로 보여줄 사람이 있는 것 */
+  function showcaseTypes() {
+    if (!ptypesActive()) return [];
+    return revealedTypes().filter(function(t){
+      return t.reveal && t.reveal.showcase && typeRows(t.id).length > 0;
+    });
+  }
+  function unitWord(t) { return t && t.unit === 'team' ? '팀' : '명'; }
+  function feeText(t) {
+    return (t.fee && t.fee.enabled)
+      ? ('참가비 ' + (+t.fee.amount).toLocaleString('ko-KR') + '원')
+      : '참가비 없음';
+  }
+  function typeRows(id) { return APPLICANTS.filter(function(a){ return a.typeId === id; }); }
+  function renderFieldValue(field, raw) {
+    var isEmpty = raw === undefined || raw === null || raw === '' || (Array.isArray(raw) && raw.length === 0);
+    if (isEmpty) {
+      return '<dd class="applicant-field-value is-empty">—</dd>';
+    }
+    if (field.type === 'choice') {
+      var list = Array.isArray(raw) ? raw : [raw];
+      var chips = list.map(function(v){
+        return '<span class="answer-chip">' + escapeHTML(v) + '</span>';
+      }).join('');
+      return '<dd class="applicant-field-value">' + chips + '</dd>';
+    }
+    return '<dd class="applicant-field-value"><span class="answer-text">' + escapeHTML(raw) + '</span></dd>';
+  }
+
+  /* 행에 보여줄 필드 — 유형이 있으면 그 유형의 폼을 따른다 */
+  function rowFields(a) {
+    if (!ptypesActive()) return FIELDS;
+    var t = ptypeById(a.typeId);
+    if (!t) return FIELDS;
+    var out = [];
+    if (t.unit === 'team') {
+      /* 팀 층 답변만 — 팀 이름은 행 제목, 팀원 답변은 아코디언 안 */
+      ((t.form && t.form.team && t.form.team.questions) || []).forEach(function(q, i){
+        out.push({ key:qKey(q, i), label:q.text, type: q.type === 'mc' ? 'choice' : 'text' });
+      });
+      return out;
+    }
+    var f = (t.form && t.form.fields) || {};
+    if (f.phone && f.phone.enabled) out.push({ key:'phone', label:'전화번호', type:'text' });
+    if (f.email && f.email.enabled) out.push({ key:'email', label:'이메일', type:'text' });
+    ((t.form && t.form.questions) || []).forEach(function(q, i){
+      out.push({ key:qKey(q, i), label:q.text, type: q.type === 'mc' ? 'choice' : 'text' });
+    });
+    return out;
+  }
+
+  /* 팀원 카드에 보여줄 필드 — 그 유형의 member 폼을 따른다 */
+  function memberFields(t) {
+    var mf = (t && t.form && t.form.member) || { fields:{}, questions:[] };
+    var f = mf.fields || {};
+    var out = [];
+    if (f.phone && f.phone.enabled) out.push({ key:'phone', label:'전화번호', type:'text' });
+    if (f.email && f.email.enabled) out.push({ key:'email', label:'이메일', type:'text' });
+    (mf.questions || []).forEach(function(q, i){
+      out.push({ key:qKey(q, i), label:q.text, type: q.type === 'mc' ? 'choice' : 'text' });
+    });
+    return out;
+  }
+
+  /* 필터 — 전체 / 유형 */
+  var listFilter = 'all';
+  function setListFilter(key) {
+    listFilter = key;
+    renderFilterChips();
+    renderApplicants();
+  }
+  function filteredApplicants() {
+    if (!ptypesActive() || listFilter === 'all') return APPLICANTS;
+    return APPLICANTS.filter(function(a){ return a.typeId === listFilter; });
+  }
+
+  function renderFilterChips() {
+    var wrap = document.getElementById('filter-chips');
+    if (!wrap) return;
+    /* 유형이 1개거나 꺼져 있으면 유형 칩을 만들지 않는다 */
+    if (!ptypesActive() || PTYPES.length < 2) { wrap.hidden = true; wrap.innerHTML = ''; return; }
+    if (!PTYPES.some(function(t){ return t.id === listFilter; })) listFilter = PTYPES[0].id;
+    wrap.hidden = false;
+    wrap.innerHTML = PTYPES.map(function(t){
+      return '<button type="button" class="ptype-tab-line' + (listFilter === t.id ? ' is-active' : '') + '" '
+        + 'onclick="setListFilter(\'' + t.id + '\')">' + escapeHTML(t.name) + '</button>';
+    }).join('');
+  }
+
+
+  var openTeams = {};
+  function toggleTeam(idx) {
+    openTeams[idx] = !openTeams[idx];
+    renderApplicants();
+  }
+
+  function renderApplicants() {
+    var wrap = document.getElementById('applicant-list');
+    if (!wrap) return;
+    var rows = filteredApplicants();
+    if (rows.length === 0) {
+      wrap.innerHTML = '<div class="applicant-row"><span class="applicant-sub">해당하는 신청자가 없어요.</span></div>';
+      return;
+    }
+    wrap.innerHTML = rows.map(function(a){
+      var idx = APPLICANTS.indexOf(a);
+      var t = ptypesActive() ? ptypeById(a.typeId) : null;
+      var isTeam = !!(a.team && t && t.unit === 'team');
+
+      var fieldsHTML = rowFields(a).map(function(field){
+        return ''
+          + '<div class="applicant-field">'
+          +   '<dt class="applicant-field-label">' + escapeHTML(field.label) + '</dt>'
+          +   renderFieldValue(field, a.values[field.key])
+          + '</div>';
+      }).join('');
+
+      var badges = '';
+      if (a.preset) badges += '<span class="badge badge-sm badge-weak-neutral">호스트 등록</span>';
+
+      var title = isTeam
+        ? escapeHTML(a.name) + ' <span class="applicant-sub">' + a.team.members.length + '명</span>'
+        : escapeHTML(a.name);
+      var leader = isTeam ? a.team.members[a.team.leaderIndex || 0] : null;
+      var subLine = (isTeam && leader)
+        ? '<div class="applicant-sub">대표 ' + escapeHTML(leader.name) + '</div>'
+        : '';
+
+      var teamHTML = '';
+      if (isTeam) {
+        var open = !!openTeams[idx];
+        teamHTML = ''
+          + '<button type="button" class="team-toggle" onclick="toggleTeam(' + idx + ')">'
+          +   '<i data-lucide="' + (open ? 'chevron-up' : 'chevron-down') + '"></i>'
+          +   (open ? '팀원 접기' : '팀원 ' + a.team.members.length + '명 보기')
+          + '</button>'
+          + '<div class="team-members"' + (open ? '' : ' hidden') + '>'
+          +   a.team.members.map(function(m, mi){
+                var mFields = memberFields(t).map(function(field){
+                  var raw = (field.key === 'phone' || field.key === 'email') ? m[field.key] : (m.values || {})[field.key];
+                  return '<div class="applicant-field">'
+                    + '<dt class="applicant-field-label">' + escapeHTML(field.label) + '</dt>'
+                    + renderFieldValue(field, raw)
+                    + '</div>';
+                }).join('');
+                return '<div class="team-member">'
+                  + '<div class="team-member-top">'
+                  +   '<span class="team-member-name">' + escapeHTML(m.name) + '</span>'
+                  +   (mi === (a.team.leaderIndex || 0)
+                        ? '<span class="badge badge-sm badge-weak-primary">대표자</span>' : '')
+                  + '</div>'
+                  + '<dl class="applicant-fields">' + mFields + '</dl>'
+                  + '</div>';
+              }).join('')
+          + '</div>';
+      }
+
+      return ''
+        + '<div class="applicant-row">'
+        +   '<div class="applicant-top">'
+        +     '<span class="applicant-name-row">'
+        +       '<span class="applicant-name">' + title + '</span>'
+        +     '</span>'
+        +     '<span class="applicant-right">'
+        +       '<span class="applicant-date">' + escapeHTML(a.date) + '</span>'
+        +       '<button type="button" class="icon-btn icon-btn-sm icon-btn-clear" aria-label="' + escapeHTML(a.name) + ' 더보기" '
+        +         'onclick="openRowMenu(' + idx + ')"><i data-lucide="more-horizontal"></i></button>'
+        +     '</span>'
+        +   '</div>'
+        +   subLine
+        +   (badges ? '<div class="applicant-badges">' + badges + '</div>' : '')
+        +   '<dl class="applicant-fields">' + fieldsHTML + '</dl>'
+        +   teamHTML
+        + '</div>';
+    }).join('');
+    if (window.lucide) lucide.createIcons();
+  }
+
+  /* 스택·시트에 노출되는 사람 — 유형이 있으면 "공개" 켜진 유형의 신청자만 */
+  function revealedApplicants() {
+    if (!ptypesActive()) return APPLICANTS;
+    var ids = revealedTypes().map(function(t){ return t.id; });
+    return APPLICANTS.filter(function(a){ return ids.indexOf(a.typeId) > -1; });
+  }
+
+  // 참석자 수 — 스택(아바타·라벨) · sticky · 운영자 리스트 총원이 한 곳에서 나온다
+  function syncAttendeeUI() {
+    var total = APPLICANTS.length;
+    var shown = revealedApplicants();
+
+    var listCount = document.getElementById('list-count-total');
+    if (listCount) listCount.textContent = '총 ' + total + '명';
+
+    var stickyCount = document.getElementById('sticky-count');
+    if (stickyCount) stickyCount.textContent = total + '명';
+
+    var MAX_AVATARS = 5;
+    /* 유형 없이 쓰던 계약에는 photo가 없다 — 기준 화면과 같은 자리에 같은 이미지를 채운다 */
+    var LEGACY_AVATARS = ['../../assets/profile.png', '', '../../assets/yoga-avatar.png', '', '../../assets/studiogloss-avatar.png'];
+    var box = document.getElementById('attendee-avatars');
+    if (box) {
+      var head = shown.slice(0, MAX_AVATARS);
+      var rest = shown.length - head.length;
+      box.innerHTML = head.map(function(a, i){
+        var photo = a.photo || (!ptypesActive() ? LEGACY_AVATARS[i] : '');
+        return '<span class="avatar avatar-xs">'
+          + (photo ? '<img src="' + encodeURI(photo) + '" alt="">' : '')
+          + '</span>';
+      }).join('') + (rest > 0 ? '<span class="attendee-more">+' + rest + '</span>' : '');
+    }
+
+    var label = document.getElementById('attendee-label');
+    if (label) {
+      var names = shown.slice(0, 2).map(function(a){
+        return '<strong>' + escapeHTML(a.name) + '</strong>';
+      });
+      if (shown.length === 0)      label.innerHTML = '';
+      else if (shown.length <= 2)  label.innerHTML = names.join(', ') + '님';
+      else                         label.innerHTML = names.join(', ') + '님 외 <strong>' + (shown.length - 2) + '명</strong>';
+    }
+
+    // 보여줄 명단이 없으면 스택 자체를 감춘다
+    if (shown.length === 0) {
+      document.body.dataset.showList = 'off';
+      var l = document.getElementById('opt-show-list');
+      if (l) l.checked = false;
+    }
+    if (total === 0) {
+      document.body.dataset.showCount = 'off';
+      var c = document.getElementById('opt-show-count');
+      if (c) c.checked = false;
+    }
+
+    renderShowcase();
+  }
+
+  // 입력폼에서 발행한 데이터 적용 (APPLICANTS를 덮어쓸 수 있어 렌더 직전에 실행)
+  (function init(){
+    try {
+      if (!location.search.includes('from=publish')) return;
+      var raw = sessionStorage.getItem('connectia.event');
+      if (!raw) {
+        window.location.replace('index.html');
+        return;
+      }
+      var data = JSON.parse(raw);
+      sessionStorage.removeItem('connectia.event');
+      applyEventData(data);
+      lucide.createIcons();
+    } catch(e) {}
+  })();
+
+  syncCheckinUI();
+  syncPtypeUI();
+  renderFilterChips();
+  renderFieldsSummary();
+  renderApplicants();
+  syncAttendeeUI();
+
+  function renderFieldsSummary() {
+    var el = document.getElementById('fields-summary-list');
+    if (!el) return;
+    if (!ptypesActive()) {
+      el.textContent = ['이름'].concat(FIELDS.map(function(f){ return f.label; })).join(' · ');
+      return;
+    }
+    el.innerHTML = PTYPES.map(function(t){
+      var labels;
+      if (t.unit === 'team') {
+        var tf = (t.form && t.form.team) || { fields:{}, questions:[] };
+        labels = ['팀 이름'];
+        (tf.questions || []).forEach(function(q){ labels.push(q.text); });
+        var member = memberFields(t).map(function(x){ return x.label; });
+        labels.push('팀원(이름 · ' + member.join(' · ') + ')');
+      } else {
+        labels = ['이름'];
+        var f = (t.form && t.form.fields) || {};
+        if (f.phone && f.phone.enabled) labels.push('전화번호');
+        if (f.email && f.email.enabled) labels.push('이메일');
+        ((t.form && t.form.questions) || []).forEach(function(q){ labels.push(q.text); });
+      }
+      return '<span class="answer-text">' + escapeHTML(t.name) + ' — ' + escapeHTML(labels.join(' · ')) + '</span>';
+    }).join('');
+  }
+
+  function downloadExcel() {
+    if (!ptypesActive()) {
+      var header = ['이름'].concat(FIELDS.map(function(f){ return f.label; })).concat(['신청일']);
+      var rows = APPLICANTS.map(function(a){
+        var row = [a.name];
+        FIELDS.forEach(function(f){
+          var v = a.values[f.key];
+          if (Array.isArray(v)) v = v.join(', ');
+          row.push(v == null ? '' : v);
+        });
+        row.push(a.date);
+        return row;
+      });
+      return writeCsv(header, rows);
+    }
+    /* 유형별로 필드가 달라서 라벨·값을 한 쌍으로 펼친다 */
+    var header = ['유형', '이름/팀명', '결제', '팀원', '답변', '신청일'];
+    var rows = APPLICANTS.map(function(a){
+      var t = ptypeById(a.typeId);
+      var answers = rowFields(a).map(function(f){
+        var v = a.values[f.key];
+        if (Array.isArray(v)) v = v.join(', ');
+        return f.label + ': ' + (v == null ? '' : v);
+      }).join(' | ');
+      var members = a.team
+        ? a.team.members.map(function(m, mi){
+            return m.name
+              + (mi === (a.team.leaderIndex || 0) ? '(대표)' : '')
+              + (m.phone ? ' ' + m.phone : '');
+          }).join(', ')
+        : '';
+      var pay = a.paid === true ? '결제완료' : '해당없음';
+      return [t ? t.name : '', a.name, pay, members, answers, a.date];
+    });
+    return writeCsv(header, rows);
+  }
+
+  function writeCsv(header, rows) {
+    var csv = [header].concat(rows)
+      .map(function(r){ return r.map(function(c){ return '"' + String(c).replace(/"/g,'""') + '"'; }).join(','); })
+      .join('\n');
+    var blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = '신청자_리스트_' + new Date().toISOString().slice(0,10) + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+</script>
+</body>
+</html>

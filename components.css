@@ -53,6 +53,7 @@
 .btn[disabled]      { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
 
 /* sizes */
+.btn-xs  { height: 28px; padding: 0 8px;  font-size: var(--fs-badge);    border-radius: var(--r-xs); }
 .btn-sm  { height: 32px; padding: 0 12px; font-size: 13px;               border-radius: var(--r-xs); }
 .btn-md  { height: 40px; padding: 0 16px; font-size: var(--fs-body);     border-radius: var(--r-sm); }
 .btn-lg  { height: 48px; padding: 0 20px; font-size: var(--fs-body-lg);  border-radius: var(--r-md); }
@@ -72,6 +73,9 @@
 /* fill — danger */
 .btn-fill-danger             { background: var(--color-destructive); color: var(--color-on-primary); }
 .btn-fill-danger:hover       { filter: brightness(0.9); }
+
+.btn-fill-success            { background: var(--color-success-dark); color: var(--color-on-primary); }
+.btn-fill-success:hover      { filter: brightness(0.92); }
 
 /* fill — kakao (소셜 로그인 전용 브랜드 버튼) */
 .btn-fill-kakao              { background: var(--color-kakao); color: var(--color-on-kakao); }
@@ -432,6 +436,8 @@
 .badge-weak-dark    { background: rgba(37,38,56,0.07);          color: var(--color-text-sub); }
 .badge-weak-danger  { background: rgba(201,64,34,0.10);         color: var(--color-destructive); }
 .badge-weak-neutral { background: var(--color-surface-sub);     color: var(--color-text-muted); }
+.badge-weak-success { background: var(--color-success-subtle);  color: var(--color-success-dark); }
+.badge-weak-warning { background: var(--color-warning-subtle);  color: var(--color-warning-dark); }
 
 
 /* ==========================================
@@ -530,6 +536,29 @@
   color: var(--color-primary-subtle);
   white-space: nowrap;
 }
+
+/* 크게 — 현장에서 한눈에 읽히는 결과 토스트 */
+.toast-lg {
+  padding: 16px 20px;
+  border-radius: var(--r-md);
+  font-size: var(--fs-title-sm);
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-title-sm);
+  letter-spacing: var(--ls-title-sm);
+}
+.toast-sub {
+  font-size: var(--fs-body);
+  font-weight: var(--fw-medium);
+  color: var(--color-on-primary-sub);
+}
+
+/* 결과 색 */
+.toast-success { background: var(--color-success-dark); }
+.toast-warning { background: var(--color-warning-dark); }
+.toast-neutral { background: var(--color-text-muted); }
+.toast-success .toast-action,
+.toast-warning .toast-action,
+.toast-neutral .toast-action { color: var(--color-on-primary); }
 
 
 /* ==========================================

@@ -54,6 +54,7 @@
   --palette-orange-500: #f97316;
 
   /* Amber */
+  --palette-amber-100: #fef3c7;
   --palette-amber-300: #fcd34d;
   --palette-amber-400: #f59e0b;
   --palette-amber-600: #d97706;
@@ -64,9 +65,11 @@
   --palette-yellow-500: #eab308;
 
   /* Green */
+  --palette-green-100: #dcfce7;
   --palette-green-400: #4ade80;
   --palette-green-500: #22c55e;
   --palette-green-600: #16a34a;
+  --palette-green-700: #15803d;
 
   /* Emerald */
   --palette-emerald-400: #34d399;
@@ -121,6 +124,7 @@
   --palette-deep-plum:   #6a5b9a;
   --palette-deep-ocean:  #4a6f96;
   --palette-deep-forest: #4e7d63;
+  --palette-deep-clay:   #b5824f;
 
   --palette-pastel-cream: #fdf4e7;
   --palette-pastel-blush: #fdeef1;
@@ -146,6 +150,7 @@
   --color-surface:     var(--palette-gray-0);
   --color-surface-sub: var(--palette-gray-100);
   --color-card:        #fefefe;
+  --color-surface-dark: var(--palette-gray-900);  /* 카메라 뷰 등 어두운 면 */
 
   /* Text */
   --color-text:       var(--palette-gray-900);
@@ -159,7 +164,12 @@
   /* Status */
   --color-destructive:        var(--palette-red-500);
   --color-destructive-subtle: var(--palette-red-100);
-  --color-success:     var(--palette-green-500);
+  --color-success:         var(--palette-green-500);
+  --color-success-dark:    var(--palette-deep-forest); /* 흰 배경 위 성공 텍스트·채워진 성공 버튼 */
+  --color-success-subtle:  var(--palette-green-100);
+  --color-warning:         var(--palette-amber-400);  /* 주의 — 중복 스캔 등 */
+  --color-warning-dark:    var(--palette-deep-clay);
+  --color-warning-subtle:  var(--palette-amber-100);
   --color-star:        var(--palette-amber-400);
   --color-star-empty:  var(--palette-gray-200);
 
