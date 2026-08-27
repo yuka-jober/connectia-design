@@ -1,0 +1,5262 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>이벤트 만들기 — 미리보기 작성</title>
+<link rel="stylesheet" href="../../tokens.css">
+<link rel="stylesheet" href="../../components.css">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* iOS Safari: prevent auto-zoom on focus by ensuring editable font-size ≥ 16px */
+  input, textarea, [contenteditable]:not(.pv-title) { font-size: 16px !important; }
+
+  body {
+    font-family: var(--font-base);
+    background: #e0e0e0;
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .frame {
+    width: 390px;
+    height: 844px;
+    max-height: 100dvh;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 32px 80px -20px rgba(0,0,0,0.28);
+    background: var(--color-surface);
+    border-radius: 44px;
+    display: flex;
+    flex-direction: column;
+  }
+  @media (max-width: 439px) {
+    .frame { width: 100vw; height: 100dvh; max-height: none; border-radius: 0; }
+  }
+
+  i[data-lucide] { display: inline-flex; flex-shrink: 0; }
+  svg.lucide { flex-shrink: 0; }
+
+  /* ── Topbar ── */
+  .topbar {
+    position: relative;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 8px;
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    flex-shrink: 0;
+    gap: 4px;
+    z-index: 10;
+  }
+  .topbar-title {
+    position: absolute;
+    left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text);
+    pointer-events: none;
+  }
+  .topbar-spacer { width: 40px; height: 40px; }
+  .topbar-actions { display: flex; align-items: center; gap: 4px; }
+
+  /* ── 미리보기 화면 (frame-scoped overlay) ── */
+  .pv-preview {
+    position: absolute; inset: 0;
+    z-index: 80;
+    background: var(--color-surface);
+    display: none;
+    flex-direction: column;
+  }
+  .pv-preview.is-open { display: flex; }
+  .pv-preview [hidden] { display: none !important; }
+  .pv-preview-topbar {
+    position: sticky; top: 0; z-index: 10;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 8px;
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    flex-shrink: 0;
+  }
+  .pv-preview-topbar-title {
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text);
+    padding-left: 8px;
+  }
+  .pv-preview-body {
+    flex: 1;
+    overflow-y: auto;
+    background: var(--color-surface);
+    padding-bottom: 96px;
+  }
+  .pv-prev-hero {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    background: var(--color-surface-sub);
+  }
+  .pv-prev-hero-slider {
+    width: 100%; height: 100%;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    display: flex;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .pv-prev-hero-slider::-webkit-scrollbar { display: none; }
+  .pv-prev-hero-slide {
+    flex: 0 0 100%;
+    width: 100%; height: 100%;
+    scroll-snap-align: start;
+    background-size: cover;
+    background-position: center;
+    position: relative;
+  }
+  .pv-prev-hero-slide::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(0,0,0,0) 50%, rgba(0,0,0,0.35) 100%);
+    pointer-events: none;
+  }
+  .pv-prev-hero-pagination {
+    position: absolute; bottom: 12px; right: 12px;
+    z-index: 2;
+    background: rgba(17,19,24,0.55); color: var(--color-on-primary);
+    border-radius: var(--r-full);
+    padding: 4px 10px;
+    font-size: var(--fs-badge); font-weight: var(--fw-medium);
+  }
+  .pv-prev-info {
+    padding: 24px 20px 16px;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .pv-prev-clinic-row {
+    display: inline-flex; align-items: center; gap: 2px; cursor: pointer; align-self: flex-start;
+  }
+  .pv-prev-clinic-name {
+    font-size: var(--fs-label); color: var(--color-text-sub); font-weight: var(--fw-medium);
+  }
+  .pv-prev-clinic-row i[data-lucide],
+  .pv-prev-clinic-row svg { width: 16px; height: 16px; color: var(--color-text-muted); }
+  .pv-prev-headline {
+    font-size: 24px; font-weight: var(--fw-bold);
+    line-height: var(--lh-display); letter-spacing: var(--ls-display); color: var(--color-text);
+    word-break: keep-all;
+  }
+  .pv-prev-schedule {
+    display: inline-flex; align-items: center; gap: 6px;
+    align-self: flex-start;
+    font-size: var(--fs-label);
+    color: var(--color-text-sub);
+    font-weight: var(--fw-medium);
+  }
+  .pv-prev-schedule i[data-lucide],
+  .pv-prev-schedule svg { width: 16px; height: 16px; color: var(--color-text-muted); }
+  .pv-prev-schedule-label { color: var(--color-text-muted); margin-right: 2px; }
+  .pv-prev-schedule-date { color: var(--color-text-sub); font-weight: var(--fw-medium); }
+  .pv-prev-schedule-time { color: var(--color-text-sub); font-weight: var(--fw-medium); }
+  .pv-prev-target {
+    font-size: var(--fs-body-lg); color: var(--color-text-sub);
+    line-height: 1.5; word-break: keep-all;
+  }
+  .pv-prev-trust-row {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    margin-top: 4px;
+  }
+  .pv-prev-trust-dot { font-size: var(--fs-caption); color: var(--color-text-muted); }
+  .pv-prev-star-row { display: inline-flex; align-items: center; gap: 4px; }
+  .pv-prev-star-row i[data-lucide],
+  .pv-prev-star-row svg { width: 14px; height: 14px; color: var(--color-star); fill: var(--color-star); }
+  .pv-prev-star-score { font-size: var(--fs-label); font-weight: var(--fw-semibold); color: var(--color-text); margin-left: 2px; }
+  .pv-prev-star-count { font-size: var(--fs-caption); color: var(--color-text-muted); }
+  .pv-prev-tag-official {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: var(--fs-label); font-weight: var(--fw-medium);
+    color: var(--color-primary);
+  }
+  .pv-prev-tag-official i[data-lucide],
+  .pv-prev-tag-official svg { width: 14px; height: 14px; }
+  .pv-prev-divider {
+    height: 8px;
+    background: var(--color-bg);
+    flex-shrink: 0;
+  }
+  .pv-prev-section {
+    padding: 24px 20px;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  .pv-prev-section-title {
+    font-size: var(--fs-heading);
+    font-weight: var(--fw-bold);
+    color: var(--color-text);
+    letter-spacing: -0.2px;
+  }
+  .pv-prev-date-card {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--color-surface-sub);
+    border-radius: var(--r-md);
+    padding: 16px 20px;
+  }
+  .pv-prev-date-card i[data-lucide], .pv-prev-date-card svg.lucide {
+    width: 20px; height: 20px; color: var(--color-primary);
+  }
+  .pv-prev-date-card-text { flex: 1; }
+  .pv-prev-date-label {
+    font-size: var(--fs-caption); color: var(--color-text-muted); margin-bottom: 2px;
+  }
+  .pv-prev-date-value {
+    font-size: var(--fs-body); font-weight: var(--fw-semibold); color: var(--color-text);
+  }
+  .pv-prev-date-tag {
+    font-size: var(--fs-badge); font-weight: var(--fw-semibold);
+    color: var(--color-destructive);
+    padding: 4px 8px;
+    background: rgba(201,64,34,0.10);
+    border-radius: var(--r-full);
+  }
+  .pv-prev-desc {
+    font-size: var(--fs-body); line-height: 1.7;
+    color: var(--color-text-sub);
+    white-space: pre-wrap;
+    word-break: keep-all;
+  }
+  .pv-prev-checklist {
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .pv-prev-check-item {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-md);
+  }
+  .pv-prev-check-circle {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--color-on-primary);
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .pv-prev-check-circle i[data-lucide], .pv-prev-check-circle svg.lucide {
+    width: 12px; height: 12px;
+    stroke-width: 3;
+  }
+  .pv-prev-check-text {
+    font-size: var(--fs-body-lg); color: var(--color-text);
+    line-height: 1.5; word-break: keep-all;
+  }
+  .pv-prev-empty-section {
+    font-size: var(--fs-label); color: var(--color-text-muted);
+    text-align: center;
+    padding: 8px 0;
+  }
+  .pv-prev-review-scroll {
+    display: flex; gap: 12px;
+    overflow-x: auto;
+    margin: 0 -20px;
+    padding: 0 20px 8px;
+    scrollbar-width: none;
+  }
+  .pv-prev-review-scroll::-webkit-scrollbar { display: none; }
+  .pv-prev-review-card {
+    width: 240px; flex-shrink: 0;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-md);
+    overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .pv-prev-review-body {
+    padding: 12px 14px 14px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .pv-prev-review-stars { display: inline-flex; align-items: center; gap: 2px; }
+  .pv-prev-review-stars i[data-lucide],
+  .pv-prev-review-stars svg { width: 12px; height: 12px; color: var(--color-star); fill: var(--color-star); }
+  .pv-prev-review-text {
+    font-size: var(--fs-label); color: var(--color-text);
+    line-height: 1.5;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .pv-prev-review-meta {
+    font-size: var(--fs-nav); color: var(--color-text-muted);
+    display: flex; align-items: center; gap: 4px;
+  }
+  .pv-prev-review-meta .verified {
+    display: inline-flex; align-items: center; gap: 2px;
+    color: var(--color-primary);
+    font-weight: var(--fw-medium);
+  }
+  .pv-prev-review-meta .verified i[data-lucide],
+  .pv-prev-review-meta .verified svg { width: 10px; height: 10px; }
+  .pv-prev-clinic-link {
+    display: flex; align-items: center; gap: 12px;
+    padding: 16px;
+    background: var(--color-surface-sub);
+    border-radius: var(--r-md);
+    cursor: pointer;
+    border: none;
+    width: 100%;
+    text-align: left;
+    font-family: var(--font-base);
+  }
+  .pv-prev-clinic-link:hover { background: var(--color-border); }
+  .pv-prev-clinic-link-thumb {
+    width: 44px; height: 44px;
+    border-radius: var(--r-sm);
+    background-color: var(--color-primary-light);
+    background-size: cover; background-position: center;
+    flex-shrink: 0;
+  }
+  .pv-prev-clinic-link-text { flex: 1; }
+  .pv-prev-clinic-link-name {
+    font-size: var(--fs-body); font-weight: var(--fw-semibold);
+    color: var(--color-text);
+  }
+  .pv-prev-clinic-link-sub {
+    font-size: var(--fs-caption); color: var(--color-text-muted);
+    margin-top: 2px;
+  }
+  .pv-prev-clinic-link i.chev,
+  .pv-prev-clinic-link svg.chev { width: 18px; height: 18px; color: var(--color-text-muted); }
+  .pv-prev-sticky {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    padding: 12px 20px calc(20px + env(safe-area-inset-bottom));
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+    display: flex; flex-direction: column; gap: 8px;
+    z-index: 5;
+  }
+
+  /* ── Edit body ── */
+  .edit-body {
+    flex: 1;
+    overflow-y: auto;
+    background: var(--color-surface);
+  }
+
+  /* ── Hero / image uploader ── */
+  .pv-hero {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    background-color: var(--color-surface-sub);
+    overflow: hidden;
+  }
+  .pv-hero-track {
+    width: 100%; height: 100%;
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .pv-hero-track::-webkit-scrollbar { display: none; }
+  .pv-hero-slide {
+    flex: 0 0 100%;
+    width: 100%; height: 100%;
+    background-size: cover;
+    background-position: center;
+    scroll-snap-align: start;
+  }
+  .pv-hero-empty {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 8px;
+    color: var(--color-text-muted);
+    background: var(--color-surface-sub);
+    border: none;
+    cursor: pointer;
+    font-family: var(--font-base);
+  }
+  .pv-hero-empty svg,
+  .pv-hero-empty i[data-lucide] { width: 32px; height: 32px; color: var(--color-primary); }
+  .pv-hero-empty .label { font-size: var(--fs-body); font-weight: var(--fw-medium); color: var(--color-text-sub); }
+  .pv-hero-empty .sub { font-size: var(--fs-caption); color: var(--color-text-muted); }
+
+  .pv-hero-counter {
+    position: absolute;
+    right: 12px;
+    bottom: 12px;
+    padding: 4px 12px;
+    background: rgba(17,19,24,0.6);
+    color: var(--color-on-primary);
+    font-size: var(--fs-caption);
+    font-weight: var(--fw-semibold);
+    border-radius: var(--r-full);
+    z-index: 3;
+    display: none;
+  }
+  .pv-hero-cover {
+    position: absolute; top: 12px; left: 12px;
+    padding: 4px 10px;
+    background: rgba(17,19,24,0.65);
+    color: var(--color-on-primary);
+    border-radius: var(--r-full);
+    font-size: var(--fs-nav);
+    font-weight: var(--fw-semibold);
+    z-index: 3;
+    display: none;
+  }
+
+  /* ── Thumbnail strip ── */
+  .pv-thumb-strip {
+    display: flex; gap: 8px;
+    padding: 12px 16px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .pv-thumb-strip::-webkit-scrollbar { display: none; }
+  .pv-thumb {
+    position: relative;
+    flex-shrink: 0;
+    width: 56px; height: 56px;
+    border-radius: var(--r-sm);
+    background: var(--color-surface-sub);
+    background-size: cover;
+    background-position: center;
+    cursor: pointer;
+    border: none;
+    padding: 0;
+    overflow: visible;
+  }
+  .pv-thumb-remove {
+    position: absolute;
+    top: -4px; right: -4px;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--color-text);
+    color: var(--color-on-primary);
+    border: none;
+    display: inline-flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    padding: 0;
+  }
+  .pv-thumb-remove i[data-lucide], .pv-thumb-remove svg.lucide {
+    width: 10px; height: 10px;
+    stroke-width: 2.5;
+  }
+  .pv-thumb-add {
+    flex-shrink: 0;
+    width: 56px; height: 56px;
+    border-radius: var(--r-sm);
+    background: var(--color-surface-sub);
+    border: 1.5px dashed var(--color-border);
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    padding: 0;
+  }
+  .pv-thumb-add:hover { border-color: var(--color-primary); color: var(--color-primary); }
+  .pv-thumb-add i[data-lucide] { width: 18px; height: 18px; }
+
+  /* ── 업로드 영역 (템플릿 모달 상단) ── */
+  .pv-upload-zone {
+    margin: 12px 16px 0;
+    padding: 16px;
+    background: var(--color-surface-sub);
+    border: 1.5px dashed var(--color-border);
+    border-radius: var(--r-md);
+    text-align: center;
+    cursor: pointer;
+    transition: border-color var(--motion-fast) var(--ease-standard);
+  }
+  .pv-upload-zone:hover { border-color: var(--color-primary); }
+  .pv-upload-title {
+    font-size: var(--fs-body);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text);
+  }
+  .pv-upload-sub {
+    margin-top: 4px;
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+  }
+  .pv-upload-input { display: none; }
+
+  /* ── Info (clinic + editable title/target) ── */
+  .pv-info {
+    padding: 32px 20px 8px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .pv-clinic-row {
+    display: inline-flex; align-items: center; gap: 2px;
+    align-self: flex-start;
+  }
+  .pv-clinic {
+    font-size: var(--fs-label);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text-sub);
+  }
+  .pv-clinic-row svg,
+  .pv-clinic-row i[data-lucide] { width: 16px; height: 16px; color: var(--color-text-muted); }
+
+  /* ── Editable (contenteditable) ── */
+  .editable {
+    outline: none;
+    border-radius: var(--r-xs);
+    padding: 4px 6px;
+    margin: 0 -6px;
+    cursor: text;
+    transition: background var(--motion-fast) var(--ease-standard);
+  }
+  .editable:hover:not(:focus) {
+    background: var(--color-surface-sub);
+  }
+  .editable:empty::before {
+    content: attr(data-placeholder);
+    color: var(--color-text-muted);
+    pointer-events: none;
+  }
+
+  .pv-title {
+    font-size: 24px;
+    font-weight: var(--fw-bold);
+    line-height: var(--lh-display);
+    letter-spacing: var(--ls-display);
+    color: var(--color-text);
+    min-height: 34px;
+  }
+  .pv-title.is-error {
+    background: var(--color-destructive-subtle);
+    box-shadow: 0 0 0 4px var(--color-destructive-subtle);
+    border-radius: var(--r-xs);
+  }
+  .pv-target {
+    font-size: var(--fs-body-lg);
+    color: var(--color-text-sub);
+    line-height: 1.5;
+    min-height: 26px;
+  }
+  .pv-trust-row {
+    display: flex; align-items: center; gap: 6px;
+    flex-wrap: wrap;
+    padding-top: 4px;
+  }
+  .pv-trust-row svg,
+  .pv-trust-row i[data-lucide] { width: 14px; height: 14px; }
+  .pv-star-row { display: inline-flex; align-items: center; gap: 4px; }
+  .pv-star-row svg,
+  .pv-star-row i[data-lucide] { color: var(--color-star); fill: var(--color-star); }
+  .pv-star-score { font-size: var(--fs-label); font-weight: var(--fw-semibold); color: var(--color-text); margin-left: 2px; }
+  .pv-star-count { font-size: var(--fs-caption); color: var(--color-text-muted); }
+  .pv-trust-dot { font-size: var(--fs-caption); color: var(--color-text-muted); }
+  .pv-tag-official {
+    display: inline-flex; align-items: center; gap: 4px;
+    color: var(--color-primary);
+    font-size: var(--fs-caption);
+    font-weight: var(--fw-semibold);
+  }
+
+  /* ── Divider (visual divider removed; keeps top-only spacing) ── */
+
+  /* ── Section ── */
+  .pv-section {
+    padding: 16px 20px;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .pv-section-title-meta {
+    color: var(--color-text-muted);
+    font-weight: var(--fw-regular);
+  }
+  .pv-section-title {
+    font-size: var(--fs-label);
+    font-weight: var(--fw-medium);
+    color: var(--color-text-sub);
+    letter-spacing: -0.1px;
+    margin-top: 8px;
+  }
+
+  /* ── Date timeline (시작 / 종료) ── */
+  .pv-date-card {
+    position: relative;
+    background: var(--color-surface-sub);
+    border-radius: var(--r-md);
+    padding: 12px 20px;
+    display: flex; flex-direction: column;
+    gap: 4px;
+  }
+  .pv-date-card-title {
+    font-size: var(--fs-label);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text-sub);
+    flex-shrink: 0;
+  }
+  .pv-date-card-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .pv-date-card-row .pv-date-row {
+    flex: 1;
+    min-width: 0;
+    justify-content: flex-end;
+  }
+  .pv-date-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .pv-date-row[hidden] { display: none; }
+  .pv-datetime-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .pv-datetime-row + .pv-datetime-row {
+    margin-top: 8px;
+  }
+  .pv-place-row { margin-top: 8px; }
+  .pv-place-input { flex: 1; min-width: 0; }
+  .pv-datetime-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: var(--fs-label);
+    font-weight: var(--fw-medium);
+    color: var(--color-text-sub);
+    width: 48px;
+    flex-shrink: 0;
+  }
+  .pv-datetime-label::before {
+    content: '';
+    display: inline-block;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--color-border);
+    flex-shrink: 0;
+  }
+  .pv-datetime-label-end::before {
+    background: transparent;
+    box-shadow: inset 0 0 0 1.5px var(--color-border);
+  }
+  .pv-datetime-label-start {
+    position: relative;
+  }
+  .pv-datetime-label-start::after {
+    content: '';
+    position: absolute;
+    left: 4.5px;
+    top: calc(50% + 8px);
+    width: 0;
+    transform: translateX(-50%);
+    height: 30px;
+    border-left: 1.5px dashed var(--color-border);
+    pointer-events: none;
+  }
+  .pv-datetime-row .pv-date-pill {
+    flex: 1;
+    text-align: left;
+  }
+  .pv-datetime-row .pv-time-input {
+    flex: 0 0 92px;
+    text-align: center;
+  }
+  .pv-date-card:not(.has-time) .pv-datetime-row .pv-time-input { display: none; }
+  .pv-date-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 4px;
+  }
+  .pv-date-footer .pv-time-toggle { margin-top: 0; }
+  .pv-date-footer .pv-date-dday {
+    margin-top: 0;
+    padding-left: 0;
+    margin-left: auto;
+  }
+  .pv-date-group {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+  .pv-date-sep {
+    color: var(--color-text-muted);
+    font-size: var(--fs-body);
+    flex-shrink: 0;
+  }
+  .pv-timeline-label {
+    font-size: var(--fs-label);
+    color: var(--color-text-sub);
+    font-weight: var(--fw-medium);
+    flex-shrink: 0;
+  }
+  .pv-date-pill {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    box-sizing: border-box;
+    height: 36px;
+    background: var(--color-border);
+    border: none;
+    border-radius: var(--r-sm);
+    padding: 0 12px;
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-medium);
+    line-height: 36px;
+    color: var(--color-text);
+    cursor: pointer;
+    text-align: center;
+    transition: background var(--motion-fast) var(--ease-standard);
+  }
+  .pv-date-pill-text {
+    pointer-events: none;
+    display: inline-block;
+  }
+  .pv-date-pill.is-empty .pv-date-pill-text {
+    color: var(--color-text-muted);
+  }
+  .pv-pill-input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    font-family: var(--font-base);
+    padding: 0;
+  }
+  .pv-pill-input::-webkit-calendar-picker-indicator {
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    opacity: 0;
+  }
+  .pv-date-dday {
+    font-size: var(--fs-caption);
+    color: var(--color-primary);
+    margin-top: 10px;
+    padding-left: 28px;
+    display: none;
+  }
+  .pv-date-dday.on { display: block; }
+  .pv-native-date {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    font-family: var(--font-base);
+    padding: 0;
+  }
+  .pv-native-date::-webkit-calendar-picker-indicator {
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    opacity: 0;
+  }
+  .pv-time-input {
+    -webkit-appearance: none;
+    appearance: none;
+    text-align: center;
+    cursor: pointer;
+    font-size: var(--fs-label) !important;
+  }
+  .pv-time-input::-webkit-calendar-picker-indicator {
+    opacity: 0;
+    cursor: pointer;
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+  .pv-time-input::-webkit-date-and-time-value { text-align: center; }
+  .pv-date-toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 0;
+    margin-top: 8px;
+    cursor: pointer;
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-medium);
+    color: var(--color-text-sub);
+  }
+  .pv-card-divider {
+    height: 1px;
+    background: var(--color-border);
+    margin: 8px 0 4px;
+  }
+  .pv-time-toggle {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: transparent;
+    border: none;
+    color: var(--color-text-muted);
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-medium);
+    padding: 4px 0;
+    margin-top: 4px;
+    cursor: pointer;
+  }
+  .pv-time-toggle:hover { color: var(--color-primary); }
+  .pv-time-toggle.is-on { color: var(--color-primary); }
+  .pv-time-toggle i[data-lucide], .pv-time-toggle svg.lucide { width: 14px; height: 14px; }
+
+  /* ── Picker overlay (calendar) ── */
+  .pv-calendar {
+    position: absolute;
+    left: 8px;
+    right: 8px;
+    background: var(--color-surface);
+    border-radius: var(--r-lg);
+    box-shadow: var(--shadow-3);
+    padding: 16px 16px 12px;
+    z-index: 20;
+  }
+  .pv-calendar[hidden],
+  .pv-mc-editor[hidden] { display: none !important; }
+  .pv-cal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4px;
+  }
+  .pv-cal-month {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: transparent;
+    border: none;
+    padding: 6px 0;
+    font-family: var(--font-base);
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-bold);
+    color: var(--color-text);
+    cursor: pointer;
+  }
+  .pv-cal-month svg,
+  .pv-cal-month i[data-lucide] {
+    width: 14px; height: 14px;
+    color: var(--color-text-muted);
+  }
+  .pv-cal-nav button {
+    color: var(--color-primary);
+  }
+  .pv-cal-nav button svg,
+  .pv-cal-nav button i[data-lucide] { width: 20px; height: 20px; }
+  .pv-cal-weekdays {
+    grid-template-columns: repeat(7, 1fr);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-medium);
+    color: var(--color-text-sub);
+    margin-bottom: 0;
+  }
+  .pv-cal-grid {
+    row-gap: 2px;
+  }
+  .pv-cal-day {
+    border-radius: 50%;
+    aspect-ratio: 1;
+    font-weight: var(--fw-medium);
+  }
+  .pv-cal-day:hover { background: var(--color-surface-sub); }
+  .pv-cal-day.is-outside { visibility: hidden; }
+  .pv-cal-day.is-selected {
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+    font-weight: var(--fw-bold);
+  }
+  .pv-cal-day.is-selected:hover { background: var(--color-primary); }
+  .pv-cal-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--color-border);
+  }
+  .pv-cal-footer button {
+    background: transparent;
+    border: none;
+    color: var(--color-primary);
+    font-family: var(--font-base);
+    font-size: var(--fs-body);
+    font-weight: var(--fw-medium);
+    cursor: pointer;
+    padding: 6px 4px;
+  }
+  .pv-cal-footer button.is-strong { font-weight: var(--fw-bold); }
+  .pv-cal-footer .pv-date-toggle-row { flex: 1; margin-top: 0; padding: 4px 0; }
+
+  /* Shared bits used by the calendar picker */
+  .pv-cal-nav {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .pv-cal-nav button {
+    background: transparent;
+    border: none;
+    width: 32px; height: 32px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    border-radius: var(--r-sm);
+    padding: 0;
+  }
+  .pv-cal-nav button:hover { background: var(--color-surface-sub); }
+  .pv-cal-weekdays {
+    display: grid;
+    text-align: center;
+  }
+  .pv-cal-weekdays span {
+    padding: 8px 0;
+  }
+  .pv-cal-weekdays span:first-child,
+  .pv-cal-weekdays span:last-child {
+    color: var(--color-text-muted);
+  }
+  .pv-cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+  }
+  .pv-cal-day {
+    display: flex; align-items: center; justify-content: center;
+    background: transparent;
+    border: none;
+    font-family: var(--font-base);
+    font-size: var(--fs-body);
+    color: var(--color-text);
+    cursor: pointer;
+    padding: 0;
+  }
+  .pv-cal-day.is-disabled {
+    color: var(--color-text-muted);
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .pv-cal-day.is-disabled:hover { background: transparent; }
+  .pv-date-pill.is-active { background: var(--color-bg); box-shadow: inset 0 0 0 1.5px var(--color-primary); }
+
+  /* ── Conditions checklist ── */
+  .pv-checklist { display: flex; flex-direction: column; gap: 12px; align-items: stretch; }
+  .pv-check-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-md);
+  }
+  .pv-check-circle {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--color-on-primary);
+    flex-shrink: 0;
+  }
+  .pv-check-circle svg,
+  .pv-check-circle i[data-lucide] { width: 11px; height: 11px; stroke-width: 3; }
+  .pv-check-text {
+    flex: 1;
+    font-size: var(--fs-label) !important;
+    line-height: 1.5;
+    color: var(--color-text);
+    outline: none;
+    cursor: text;
+    border-radius: var(--r-xs);
+    padding: 2px 4px;
+    margin: 0 -4px;
+    min-width: 0;
+  }
+  .pv-check-text:hover:not(:focus) {
+    background: var(--color-surface-sub);
+  }
+  .pv-check-text:empty::before {
+    content: attr(data-placeholder);
+    color: var(--color-text-muted);
+    pointer-events: none;
+  }
+  .pv-check-remove {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    color: var(--color-text-muted);
+    display: inline-flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    margin-right: -4px;
+  }
+  .pv-check-remove svg,
+  .pv-check-remove i[data-lucide] { width: 14px; height: 14px; }
+  .pv-check-remove:hover { color: var(--color-destructive); background: var(--color-surface-sub); }
+
+  .pv-check-add {
+    display: flex; align-items: center; gap: 12px;
+    width: 100%;
+    padding: 16px;
+    background: var(--color-surface);
+    border: 1px dashed var(--color-border);
+    border-radius: var(--r-md);
+    color: var(--color-text-muted);
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-medium);
+    font-family: var(--font-base);
+    cursor: pointer;
+    text-align: left;
+    transition: color var(--motion-fast) var(--ease-standard), border-color var(--motion-fast) var(--ease-standard), background var(--motion-fast) var(--ease-standard);
+  }
+  .pv-check-add:hover {
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+    background: var(--color-primary-light);
+  }
+  .pv-check-add-circle {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: var(--color-surface-sub);
+    color: var(--color-text-muted);
+    display: inline-flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+    transition: background var(--motion-fast) var(--ease-standard), color var(--motion-fast) var(--ease-standard);
+  }
+  .pv-check-add:hover .pv-check-add-circle {
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+  }
+  .pv-check-add-circle svg,
+  .pv-check-add-circle i[data-lucide] { width: 12px; height: 12px; stroke-width: 3; }
+
+  /* ── Description ── */
+  .pv-desc {
+    font-size: var(--fs-body);
+    line-height: 1.7;
+    color: var(--color-text-sub);
+    min-height: 24px;
+    white-space: pre-wrap;
+    flex: 1;
+  }
+  .pv-desc-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    cursor: text;
+  }
+  .pv-desc-row i[data-lucide], .pv-desc-row svg.lucide {
+    width: 18px; height: 18px;
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+    margin-top: 4px;
+  }
+
+  /* ── Luma-style content card (자격 조건 · 이벤트 안내) ── */
+  .pv-luma-card {
+    background: var(--color-surface-sub);
+    border-radius: var(--r-md);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  .pv-luma-head {
+    display: flex; align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 16px 16px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-family: var(--font-base);
+    text-align: left;
+  }
+  .pv-luma-head i[data-lucide], .pv-luma-head svg.lucide {
+    width: 16px; height: 16px;
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+  }
+  .pv-luma-label {
+    flex: 1;
+    font-size: var(--fs-body);
+    font-weight: var(--fw-medium);
+    color: var(--color-text);
+  }
+  .pv-luma-action { color: var(--color-text-muted); }
+  .pv-luma-action-label {
+    font-size: var(--fs-label);
+    color: var(--color-text-muted);
+    font-weight: var(--fw-medium);
+    margin-right: 4px;
+  }
+  .pv-luma-card .pv-checklist {
+    width: 100%;
+    padding: 0 16px 16px;
+    gap: 8px;
+  }
+  .pv-luma-card .pv-check-item {
+    background: var(--color-surface);
+  }
+
+  /* 이벤트 설명 card */
+  #desc-card {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 16px 20px;
+    gap: 12px;
+    cursor: text;
+    min-height: 200px;
+  }
+  #desc-card[data-desc-mode="pdf"] { min-height: 0; }
+  #desc-card .pv-desc { flex: 1; margin: 0; }
+  .pv-desc-head {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .pv-desc-mode-link {
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+    font-size: var(--fs-caption);
+    font-weight: var(--fw-medium);
+    color: var(--color-text-muted);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .pv-desc-mode-link:hover { color: var(--color-text-sub); }
+  .pv-desc-label {
+    font-size: var(--fs-label);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text-sub);
+  }
+  .desc-mode-text { display: flex; flex-direction: column; gap: 12px; flex: 1; min-height: 0; }
+  .desc-mode-pdf { display: flex; flex-direction: column; gap: 8px; }
+  .desc-mode-text[hidden], .desc-mode-pdf[hidden] { display: none !important; }
+
+  /* PDF 업로드 (event-add-branch-0715 이식) */
+  .pdf-dropzone {
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    width: 100%; padding: 32px 16px; background: var(--color-surface-sub);
+    border: 2px dashed var(--color-border); border-radius: var(--r-md);
+    font-family: inherit; cursor: pointer;
+    transition: border-color var(--motion-fast) var(--ease-standard);
+  }
+  .pdf-dropzone:active { border-color: var(--color-primary); }
+  .pdf-dropzone i[data-lucide], .pdf-dropzone svg.lucide { width: 32px; height: 32px; color: var(--color-text-muted); }
+  .pdf-dropzone-title { font-size: var(--fs-body); font-weight: var(--fw-medium); color: var(--color-text); }
+  .pdf-dropzone-sub { font-size: var(--fs-caption); color: var(--color-text-muted); }
+  .pdf-file-chip {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 16px; background: var(--color-surface);
+    border: 1px solid var(--color-border); border-radius: var(--r-md);
+  }
+  .pdf-file-chip-icon { flex-shrink: 0; width: 24px; height: 24px; color: var(--color-primary); }
+  .pdf-file-chip-name { flex: 1; min-width: 0; font-size: var(--fs-body); color: var(--color-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pdf-dropzone[hidden], .pdf-file-chip[hidden] { display: none !important; }
+  .pdf-preview-link {
+    align-self: flex-start;
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 4px 0;
+    background: none; border: none;
+    color: var(--color-primary);
+    font-family: inherit;
+    font-size: var(--fs-caption); font-weight: var(--fw-medium);
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .pdf-preview-link i[data-lucide],
+  .pdf-preview-link svg.lucide { width: 14px; height: 14px; color: var(--color-primary); }
+  .pv-luma-card .pv-desc {
+    background: transparent;
+    border: none;
+    padding: 0;
+    color: var(--color-text);
+    white-space: pre-wrap;
+  }
+  .pv-luma-card .pv-desc:hover:not(:focus) { background: transparent; }
+  .pv-luma-card .pv-desc:empty::before {
+    color: var(--color-text-muted);
+    font-weight: var(--fw-regular);
+    font-size: var(--fs-body);
+    white-space: pre-wrap;
+  }
+  .pv-luma-card .pv-desc:empty {
+    line-height: 1.5;
+    min-height: 21px;
+  }
+  .pv-luma-card[hidden],
+  .pv-checklist[hidden] { display: none !important; }
+
+  /* ── 이벤트 설명 서식 툴바 (rt-editor, profile-edit 재사용) ── */
+  .rt-editor-toolbar {
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    background: var(--color-border);
+    border-radius: var(--r-sm);
+  }
+  .rt-editor-btn {
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    background: transparent;
+    border-radius: var(--r-xs);
+    color: var(--color-text-sub);
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    cursor: pointer;
+  }
+  .rt-editor-btn:hover { background: var(--color-surface-sub); }
+  .rt-editor-btn.is-active {
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+  }
+  .rt-editor-toolbar[hidden] { display: none; }
+
+  /* ── Inline add (자격 조건 빈 상태 등) ── */
+  .pv-inline-add {
+    display: flex; align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 4px 0;
+    background: transparent;
+    border: none;
+    color: var(--color-text-sub);
+    font-family: var(--font-base);
+    font-size: var(--fs-body);
+    font-weight: var(--fw-medium);
+    cursor: pointer;
+    text-align: left;
+  }
+  .pv-inline-add:hover { color: var(--color-primary); }
+  .pv-inline-add i[data-lucide], .pv-inline-add svg.lucide {
+    width: 18px; height: 18px;
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+  }
+  .pv-inline-add:hover i[data-lucide], .pv-inline-add:hover svg.lucide {
+    color: var(--color-primary);
+  }
+
+  /* ── Options block ── */
+  .pv-options {
+    background: var(--color-surface);
+  }
+  .pv-options .pv-section {
+    gap: 20px;
+  }
+  .pv-option-block {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .pv-option-label {
+    font-size: var(--fs-body);
+    font-weight: var(--fw-medium);
+    color: var(--color-text);
+  }
+  .pv-option-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-md);
+    padding: 16px 20px;
+  }
+  .pv-option-card input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    font-family: var(--font-base);
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-medium);
+    color: var(--color-text);
+    outline: none;
+    padding: 0;
+  }
+  .pv-option-card input::placeholder { color: var(--color-text-muted); }
+
+  /* 신청폼 구성 — default + added questions */
+  .pv-form-card {
+    background: var(--color-surface-sub);
+    border-radius: var(--r-md);
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  .pv-field-row {
+    display: flex; align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+  }
+  .pv-form-card .pv-field-row { border-top: 1px solid var(--color-border); }
+  .pv-form-card > .pv-field-row:first-child { border-top: none; }
+  .pv-field-row > .checkbox { cursor: pointer; }
+  .pv-field-row-q { padding-left: 36px; }
+  .pv-field-label {
+    flex: 1;
+    font-size: var(--fs-body);
+    color: var(--color-text);
+    font-weight: var(--fw-semibold);
+    min-width: 0;
+    word-break: break-word;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    cursor: pointer;
+  }
+  .pv-q-text { font-weight: var(--fw-semibold); }
+  .pv-q-meta {
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+    font-weight: var(--fw-regular);
+  }
+  .pv-q-desc {
+    font-size: var(--fs-caption);
+    color: var(--color-text-sub);
+    font-weight: var(--fw-regular);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .pv-req-seg {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  .pv-req-seg-btn {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-full);
+    padding: 4px 14px;
+    font-family: var(--font-base);
+    font-size: var(--fs-caption);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition: background var(--motion-fast) var(--ease-standard), color var(--motion-fast) var(--ease-standard), border-color var(--motion-fast) var(--ease-standard);
+  }
+  .pv-req-seg-btn.is-selected {
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+    border-color: var(--color-primary);
+  }
+  .pv-req-seg.is-disabled .pv-req-seg-btn { opacity: 0.4; pointer-events: none; }
+  .pv-field-add {
+    display: flex; align-items: center; justify-content: center;
+    gap: 6px;
+    background: transparent;
+    border: 1px dashed var(--color-border);
+    border-radius: var(--r-sm);
+    padding: 12px;
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-medium);
+    color: var(--color-text-sub);
+    cursor: pointer;
+    margin-top: 12px;
+  }
+  .pv-field-add:hover {
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+  }
+  .pv-field-add i[data-lucide], .pv-field-add svg.lucide {
+    width: 14px; height: 14px;
+  }
+  /* 신청 방식 선택 (자체 폼 / 외부 링크) */
+  .pv-formtype {
+    display: inline-flex;
+    align-self: flex-start;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  /* 라벨은 .btn의 타이포·색을 그대로 물려받는다 */
+  .pv-formtype-title { font: inherit; color: inherit; }
+  /* 선택 안 된 칩은 한 단계 낮춰 선택된 칩과 대비를 만든다 */
+  .pv-formtype-card.btn-line-dark { color: var(--color-text-muted); }
+  /* 신청 방식 — 지금 쓰는 모드는 감추고 대안만 작은 링크로 보여준다 */
+  .pv-formtype-modes { gap: 12px; }
+  .pv-formtype-modes .pv-formtype-card.is-selected { display: none; }
+  .pv-extform-link {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .pv-extform-link[hidden],
+  .pv-form-card[hidden] { display: none !important; }
+  .pv-extform-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+  }
+  .pv-extform-hint i[data-lucide], .pv-extform-hint svg { width: 14px; height: 14px; }
+  #pv-prev-cta i[data-lucide], #pv-prev-cta svg.lucide { width: 18px; height: 18px; }
+  .pv-form-notice {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--color-surface-sub);
+    border-radius: var(--r-md);
+    padding: 12px 16px;
+    color: var(--color-text);
+    font-size: var(--fs-body);
+    font-weight: var(--fw-semibold);
+    margin: 4px 0 8px;
+  }
+  .pv-form-notice i[data-lucide], .pv-form-notice svg {
+    width: 16px; height: 16px;
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+  }
+  .pv-form-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 4px;
+    color: var(--color-text);
+    font-size: var(--fs-body);
+  }
+  .pv-form-row + .pv-form-row {
+    border-top: 1px solid var(--color-border);
+  }
+  .pv-form-row-label { flex: 1; }
+  .pv-form-row-badge {
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+  }
+  .pv-form-row svg, .pv-form-row i[data-lucide] {
+    width: 16px; height: 16px;
+    color: var(--color-text-muted);
+  }
+  .pv-form-row .pv-form-row-remove {
+    background: transparent;
+    border: none;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    padding: 4px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: var(--r-xs);
+  }
+  .pv-form-row .pv-form-row-remove:hover { background: var(--color-surface-sub); }
+  .pv-form-row .pv-form-question-text {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: var(--font-base);
+    font-size: var(--fs-body);
+    color: var(--color-text);
+    padding: 0;
+  }
+  .pv-form-row .pv-form-question-text::placeholder { color: var(--color-text-muted); }
+  .pv-form-mc-options {
+    display: flex; flex-direction: column;
+    gap: 6px;
+    padding: 6px 4px 10px 28px;
+  }
+  .pv-form-mc-option {
+    display: flex; align-items: center; gap: 8px;
+    font-size: var(--fs-label);
+    color: var(--color-text);
+  }
+  .pv-form-mc-option-circle {
+    width: 14px; height: 14px;
+    border: 1.5px solid var(--color-text-muted);
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .pv-form-mc-option input {
+    background: transparent;
+    border: none;
+    outline: none;
+    flex: 1;
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    color: var(--color-text);
+    padding: 2px 0;
+  }
+  .pv-form-mc-option input::placeholder { color: var(--color-text-muted); }
+  .pv-form-mc-option .pv-form-mc-remove {
+    background: transparent; border: none;
+    color: var(--color-text-muted);
+    cursor: pointer; padding: 2px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .pv-form-mc-option .pv-form-mc-remove svg,
+  .pv-form-mc-option .pv-form-mc-remove i[data-lucide] { width: 14px; height: 14px; }
+  .pv-form-mc-add {
+    margin-left: 28px;
+    margin-top: 4px;
+    background: transparent;
+    border: none;
+    color: var(--color-text-sub);
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    cursor: pointer;
+    align-self: flex-start;
+    padding: 4px 0;
+  }
+  /* 추가된 질문 카드 */
+  .pv-questions-list {
+    display: flex; flex-direction: column;
+    gap: 8px;
+  }
+  .pv-questions-list:empty { display: none; }
+  .pv-question-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-md);
+    padding: 12px 16px;
+    display: flex; flex-direction: column;
+    gap: 8px;
+  }
+  .pv-question-head {
+    display: flex; align-items: center;
+    gap: 8px;
+  }
+  .pv-question-type-badge {
+    font-size: var(--fs-caption);
+    font-weight: var(--fw-medium);
+    color: var(--color-primary);
+    background: var(--color-primary-light);
+    padding: 2px 8px;
+    border-radius: var(--r-full);
+    flex-shrink: 0;
+  }
+  .pv-question-text {
+    flex: 1;
+    font-size: var(--fs-body);
+    color: var(--color-text);
+    word-break: break-word;
+  }
+  .pv-question-remove {
+    background: transparent; border: none;
+    color: var(--color-text-muted);
+    cursor: pointer; padding: 4px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .pv-question-remove i[data-lucide], .pv-question-remove svg { width: 16px; height: 16px; }
+  .pv-question-options {
+    list-style: none;
+    padding: 0; margin: 0;
+    display: flex; flex-direction: column;
+    gap: 4px;
+  }
+  .pv-question-options li {
+    font-size: var(--fs-label);
+    color: var(--color-text-sub);
+    padding-left: 16px;
+    position: relative;
+  }
+  .pv-question-options li::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 8px;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--color-text-muted);
+  }
+
+  /* 추가 질문 모달 내부 */
+  .pv-qtype-row {
+    display: flex; gap: 8px;
+  }
+  .pv-qtype-row .pv-chip { flex: 1; justify-content: center; display: flex; }
+  .pv-mc-editor {
+    display: flex; flex-direction: column;
+    gap: 8px;
+  }
+  .pv-mc-editor-row {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .pv-mc-editor-row .pv-form-mc-option-circle {
+    width: 14px; height: 14px;
+    border: 1.5px solid var(--color-text-muted);
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .pv-mc-editor-row input {
+    flex: 1;
+    min-width: 0;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-sm);
+    padding: 10px 12px;
+    font-family: var(--font-base);
+    font-size: var(--fs-body);
+    color: var(--color-text);
+    outline: none;
+  }
+  .pv-mc-editor-row input:focus { border-color: var(--color-primary); }
+  .pv-mc-editor-row .pv-mc-editor-remove {
+    background: transparent; border: none;
+    color: var(--color-text-muted);
+    cursor: pointer; padding: 4px;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .pv-mc-editor-add {
+    align-self: flex-start;
+    background: transparent;
+    border: none;
+    color: var(--color-primary);
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-medium);
+    cursor: pointer;
+    padding: 4px 0;
+  }
+  .pv-sheet-addlink {
+    align-self: flex-start;
+    background: transparent;
+    border: none;
+    color: var(--color-primary);
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-medium);
+    cursor: pointer;
+    padding: 4px 0;
+  }
+  .pv-sheet-addlink[hidden] { display: none !important; }
+  .pv-sheet-actions {
+    display: flex; gap: 8px;
+  }
+  .pv-sheet-actions .btn { flex: 1; }
+  .pv-sheet-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 0;
+    font-size: var(--fs-body);
+    color: var(--color-text);
+    font-weight: var(--fw-medium);
+    cursor: pointer;
+  }
+  .pv-sheet-toggle[hidden] { display: none !important; }
+  .pv-sheet-link-danger {
+    align-self: center;
+    background: transparent;
+    border: none;
+    color: var(--color-destructive);
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-medium);
+    cursor: pointer;
+    padding: 4px 8px;
+  }
+  .pv-sheet-link-danger[hidden] { display: none !important; }
+
+  /* ── 참석자 (사전 등록) ── */
+  .pv-att-count {
+    margin-left: auto;
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+    font-weight: var(--fw-regular);
+  }
+  .pv-att-count[hidden] { display: none; }
+  .pv-att-empty {
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+    line-height: 1.5;
+  }
+  .pv-att-empty[hidden] { display: none; }
+  .pv-att-list {
+    display: flex; flex-direction: column;
+  }
+  .pv-att-list:empty { display: none; }
+  .pv-att-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 0;
+    border-top: 1px solid var(--color-border);
+  }
+  .pv-att-list > .pv-att-row:first-child { border-top: none; }
+  .pv-att-name {
+    font-size: var(--fs-body);
+    font-weight: var(--fw-medium);
+    color: var(--color-text);
+  }
+  .pv-att-phone {
+    margin-left: auto;
+    font-size: var(--fs-label);
+    color: var(--color-text-muted);
+  }
+  .pv-att-row .icon-btn i[data-lucide],
+  .pv-att-row .icon-btn svg.lucide { width: 16px; height: 16px; }
+  .pv-att-field {
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .pv-att-added {
+    display: flex; flex-direction: column; gap: 4px;
+    border-top: 1px solid var(--color-border);
+    padding-top: 12px;
+  }
+  .pv-att-added[hidden] { display: none; }
+  .pv-att-added-title {
+    font-size: var(--fs-caption);
+    font-weight: var(--fw-medium);
+    color: var(--color-text-muted);
+  }
+  .pv-att-added-list {
+    display: flex; flex-direction: column;
+    max-height: 148px; overflow-y: auto;
+  }
+
+  /* 옵션 리스트 (luma-style) */
+  .pv-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    width: 100%;
+    padding: 14px 20px;
+    background: var(--color-surface-sub);
+    border: 0;
+    border-radius: var(--r-md);
+    cursor: pointer;
+    font-family: var(--font-base);
+  }
+  .pv-section-header .pv-section-title {
+    margin-top: 0;
+    color: var(--color-text-sub);
+    font-weight: var(--fw-medium);
+    font-size: var(--fs-label);
+    letter-spacing: -0.1px;
+  }
+  .pv-section-header-text {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+    min-width: 0;
+    flex: 1;
+  }
+  .pv-section-summary {
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+    font-weight: var(--fw-regular);
+    line-height: 1.4;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+  }
+  .pv-section-header.is-open .pv-section-summary { display: none; }
+  .pv-section-chevron {
+    width: 18px;
+    height: 18px;
+    color: var(--color-text-muted);
+    transition: transform var(--motion-fast) var(--ease-standard);
+  }
+  .pv-section-header.is-open .pv-section-chevron {
+    transform: rotate(180deg);
+  }
+  .pv-section-header.is-open {
+    border-radius: var(--r-md) var(--r-md) 0 0;
+  }
+  .pv-section-header.is-open + .pv-opt-list {
+    border-radius: 0 0 var(--r-md) var(--r-md);
+    margin-top: -12px;
+  }
+  .pv-opt-list {
+    background: var(--color-surface-sub);
+    border-radius: var(--r-md);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  .pv-opt-list[hidden] { display: none; }
+  .pv-opt-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 16px;
+    background: transparent;
+    border: none;
+    font-family: var(--font-base);
+    color: var(--color-text);
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+    transition: background var(--motion-fast) var(--ease-standard);
+  }
+  .pv-opt-row:hover { background: rgba(0,0,0,0.02); }
+  .pv-opt-row.pv-opt-row-static { cursor: default; }
+  .pv-opt-row.pv-opt-row-static:hover { background: transparent; }
+  .pv-opt-row.pv-opt-row-static .pv-opt-row-label {
+    color: var(--color-text);
+    font-weight: var(--fw-medium);
+  }
+  .pv-opt-row.pv-opt-row-toggle { cursor: pointer; }
+  .pv-opt-row.pv-opt-row-toggle .toggle { flex-shrink: 0; }
+  .pv-opt-row.is-disabled { opacity: 0.45; pointer-events: none; }
+  .pv-opt-row + .pv-opt-row {
+    border-top: 1px solid var(--color-border);
+  }
+  .pv-opt-row i[data-lucide], .pv-opt-row svg.lucide {
+    width: 16px; height: 16px;
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+  }
+  .pv-opt-row .pv-opt-icon-edit {
+    width: 14px; height: 14px;
+    color: var(--color-text-muted);
+    opacity: 0.6;
+    margin-left: 4px;
+  }
+  .pv-opt-row-label {
+    flex: 1;
+    font-size: var(--fs-body);
+    font-weight: var(--fw-medium);
+    color: var(--color-text);
+  }
+  .pv-opt-row-label:has(.pv-opt-row-sub) {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    min-width: 0;
+    flex-wrap: wrap;
+  }
+  .pv-opt-row-sub {
+    font-size: var(--fs-caption);
+    font-weight: var(--fw-regular);
+    color: var(--color-text-muted);
+    line-height: 1.4;
+    white-space: nowrap;
+  }
+  .pv-opt-row-value {
+    font-size: var(--fs-body);
+    color: var(--color-text-muted);
+    display: inline-flex; align-items: center; gap: 0;
+  }
+
+  /* 옵션 편집 모달 (frame-scoped) */
+  .pv-sheet-overlay {
+    position: absolute; inset: 0;
+    background: rgba(17,19,24,0.5);
+    z-index: 50;
+    opacity: 0; pointer-events: none;
+    transition: opacity var(--motion-standard) var(--ease-enter);
+  }
+  .pv-sheet-overlay.is-open { opacity: 1; pointer-events: auto; }
+  .pv-sheet {
+    position: absolute;
+    top: 50%; left: 20px; right: 20px;
+    background: var(--color-surface);
+    border-radius: var(--r-lg);
+    padding: 24px 20px 20px;
+    z-index: 51;
+    box-shadow: var(--shadow-4);
+    opacity: 0;
+    transform: translateY(-50%) scale(0.96);
+    transition: opacity var(--motion-standard) var(--ease-enter),
+                transform var(--motion-standard) var(--ease-enter);
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .pv-sheet.is-open {
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+    pointer-events: auto;
+  }
+  .pv-sheet-handle { display: none; }
+  .pv-sheet-title {
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-bold);
+    color: var(--color-text);
+  }
+  .pv-sheet-input {
+    width: 100%;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-md);
+    padding: 14px 16px;
+    font-family: var(--font-base);
+    font-size: var(--fs-body);
+    color: var(--color-text);
+    outline: none;
+  }
+  .pv-sheet-input:focus { border-color: var(--color-primary); }
+  .pv-sheet-input-lead {
+    font-size: var(--fs-title-sm);
+    line-height: var(--lh-title-sm);
+    letter-spacing: var(--ls-title-sm);
+  }
+  .pv-sheet-input-sub {
+    background: var(--color-surface-sub);
+    border-color: transparent;
+    font-size: var(--fs-label);
+    padding: 12px 16px;
+  }
+  .pv-sheet-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .pv-sheet-field[hidden] { display: none !important; }
+  .pv-sheet-field-label {
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+    font-weight: var(--fw-medium);
+  }
+  .pv-sheet-suggestions {
+    display: flex; flex-wrap: wrap; gap: 8px;
+  }
+  .pv-sheet-suggestion {
+    background: var(--color-surface-sub);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-full);
+    padding: 8px 14px;
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    color: var(--color-text-sub);
+    cursor: pointer;
+  }
+  .pv-sheet-suggestion:hover {
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+  }
+
+  /* ── 이미지 템플릿 선택 모달 ── */
+  .pv-sheet.sheet-template {
+    top: 24px; bottom: 24px;
+    left: 16px; right: 16px;
+    transform: translateY(0) scale(0.96);
+    padding: 0;
+    overflow: hidden;
+  }
+  .pv-sheet.sheet-template.is-open {
+    transform: translateY(0) scale(1);
+  }
+  .pv-tmpl-head {
+    display: flex; align-items: center;
+    padding: 16px 16px 12px;
+    border-bottom: 1px solid var(--color-border);
+    flex-shrink: 0;
+  }
+  .pv-tmpl-title {
+    flex: 1;
+    text-align: center;
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-bold);
+    color: var(--color-text);
+  }
+  .pv-tmpl-close {
+    width: 32px; height: 32px;
+    border: none; background: transparent;
+    color: var(--color-text-sub);
+    cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .pv-tmpl-tabs {
+    display: flex; gap: 8px;
+    padding: 8px 16px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .pv-tmpl-tabs::-webkit-scrollbar { display: none; }
+  .pv-tmpl-tab {
+    flex-shrink: 0;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-full);
+    padding: 8px 16px;
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-medium);
+    color: var(--color-text-sub);
+    cursor: pointer;
+  }
+  .pv-tmpl-tab.is-selected {
+    background: var(--color-text);
+    border-color: var(--color-text);
+    color: var(--color-on-primary);
+  }
+  .pv-tmpl-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+  }
+  .pv-tmpl-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .pv-tmpl-card {
+    aspect-ratio: 4 / 3;
+    background: var(--color-surface-sub);
+    border-radius: var(--r-md);
+    overflow: hidden;
+    cursor: pointer;
+    border: none;
+    padding: 0;
+    background-size: cover;
+    background-position: center;
+    position: relative;
+  }
+  /* ── 리뷰 선택 (리뷰 큐레이션) ── */
+  .pv-opt-row-nested {
+    background: var(--color-border);
+    margin: 0 12px 12px;
+    padding: 12px 16px;
+    border-radius: var(--r-sm);
+    width: auto;
+  }
+  .pv-opt-row + .pv-opt-row-nested {
+    border-top: none;
+  }
+  .pv-opt-row-nested:hover { background: var(--color-border); }
+  .pv-opt-row[hidden] { display: none; }
+  .pv-tmpl-done {
+    height: 32px;
+    padding: 0 12px;
+    border: none; background: transparent;
+    color: var(--color-primary);
+    font-family: var(--font-base);
+    font-size: var(--fs-body);
+    font-weight: var(--fw-semibold);
+    cursor: pointer;
+  }
+  .pv-tmpl-done:hover { color: var(--color-primary-dark); }
+
+  .pv-tmpl-empty {
+    grid-column: 1 / -1;
+    padding: 48px 20px;
+    text-align: center;
+    color: var(--color-text-muted);
+    font-size: var(--fs-label);
+  }
+
+  .pv-chip {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-full);
+    padding: 10px 18px;
+    font-family: var(--font-base);
+    font-size: var(--fs-body);
+    font-weight: var(--fw-medium);
+    color: var(--color-text);
+    cursor: pointer;
+    transition: background var(--motion-fast) var(--ease-standard);
+  }
+  .pv-chip:hover { background: var(--color-surface-sub); }
+  .pv-chip.is-selected {
+    background: var(--color-primary-light);
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+    font-weight: var(--fw-bold);
+  }
+
+  /* ── Publish bar (scrolls with content) ── */
+  /* ── Required asterisk ── */
+  .pv-required::after {
+    content: '*';
+    color: var(--color-destructive);
+    font-weight: var(--fw-semibold);
+    margin-left: 4px;
+  }
+  .pv-title.pv-required:not(:empty)::after { display: none; }
+
+  /* ════════════════════════════════════════════
+     프로토타입 전용 — 맥락 전환 바 (실서비스엔 없음)
+     ════════════════════════════════════════════ */
+  .viewer-bar {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    background: var(--color-surface-sub);
+    border-bottom: 1px solid var(--color-border);
+    z-index: 1000;
+    font-family: var(--font-base);
+  }
+  .viewer-bar-row {
+    height: 32px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 12px;
+  }
+  .viewer-bar-label {
+    font-size: var(--fs-nav);
+    font-weight: var(--fw-semibold);
+    letter-spacing: var(--ls-nav);
+    color: var(--color-text-muted);
+  }
+  .viewer-bar-tabs { display: flex; gap: 4px; margin-left: auto; }
+  .viewer-bar-tab {
+    background: none;
+    border: none;
+    border-radius: var(--r-full);
+    padding: 4px 8px;
+    font-family: var(--font-base);
+    font-size: var(--fs-badge);
+    font-weight: var(--fw-medium);
+    color: var(--color-text-muted);
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background var(--motion-fast) var(--ease-standard),
+                color var(--motion-fast) var(--ease-standard);
+  }
+  .viewer-bar-tab:hover { color: var(--color-text-sub); }
+  .viewer-bar-tab.active { background: var(--color-primary); color: var(--color-on-primary); }
+
+  /* 프레임·오버레이를 viewer-bar 높이(32px)만큼 아래로 밀기 */
+  .frame { padding-top: 32px; }
+  .frame .pv-preview,
+  .frame .pv-sheet-overlay { top: 32px; }
+  .frame .pv-sheet.sheet-template { top: 56px; }
+
+  /* ════════════════════════════════════════════
+     맥락별 섹션 순서 (DOM 재배치 없이 CSS order로만)
+     ════════════════════════════════════════════ */
+  .edit-body {
+    display: flex;
+    flex-direction: column;
+  }
+  .edit-body > * { flex-shrink: 0; }
+
+  /* 공통 상단(대표 이미지·이벤트 이름·이벤트 설명)은 order 0 — 양쪽 동일 */
+  body[data-context="general"] .edit-body > [data-block="schedule"]  { order: 1; }
+  body[data-context="general"] .edit-body > [data-block="ptypes"]    { order: 2; }
+  body[data-context="general"] .edit-body > [data-block="form"]      { order: 3; }
+  body[data-context="general"] .edit-body > [data-block="attendees"] { order: 4; }
+  body[data-context="general"] .edit-body > [data-block="settings"]  { order: 5; }
+
+  body[data-context="community"] .edit-body > [data-block="schedule"]  { order: 1; }
+  body[data-context="community"] .edit-body > [data-block="attendees"] { order: 2; }
+  body[data-context="community"] .edit-body > [data-block="ptypes"]    { order: 3; }
+  body[data-context="community"] .edit-body > [data-block="form"]      { order: 4; }
+  body[data-context="community"] .edit-body > [data-block="settings"]  { order: 5; }
+
+  /* 일정 카드 안에서도 신청 기간 / 행사 일정의 위아래가 뒤집힌다 */
+  body[data-context="general"]   #apply-card { order: 1; }
+  body[data-context="general"]   #event-card { order: 2; }
+  body[data-context="community"] #event-card { order: 1; }
+  body[data-context="community"] #apply-card { order: 2; }
+
+  /* ── 일정 카드 접기/펼치기 (pv-section-header 패턴 재사용) ── */
+  .pv-date-card-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 4px 0;
+    background: transparent;
+    border: 0;
+    font-family: var(--font-base);
+    text-align: left;
+    cursor: pointer;
+  }
+  .pv-date-card-head .pv-section-summary {
+    flex: 1;
+    text-align: right;
+  }
+  .pv-date-card-head .pv-section-chevron { margin-left: auto; }
+  .pv-date-card-head.is-open .pv-section-summary { display: none; }
+  .pv-date-card-head.is-open .pv-section-chevron { transform: rotate(180deg); }
+  .pv-date-card-body[hidden] { display: none !important; }
+
+  /* ── 참석자: 일반 페이지에서는 접힌 헤더 하나로 ── */
+  .pv-att-block {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .pv-att-block[hidden] { display: none !important; }
+  /* 펼치면 헤더와 본문이 한 카드로 붙는다 — .pv-opt-list 패턴과 동일 */
+  #att-section-header.is-open { border-radius: var(--r-md) var(--r-md) 0 0; }
+  #att-section-header.is-open + .pv-att-block { margin-top: -12px; }
+  #att-section-header.is-open + .pv-att-block .pv-form-card {
+    border-radius: 0 0 var(--r-md) var(--r-md);
+  }
+  /* 두 맥락이 같은 접기 헤더를 쓴다 — 다른 건 기본 펼침 여부뿐 */
+
+
+  /* ── 커뮤니티 회원만 신청 가능 — 커뮤니티 맥락에서만 ── */
+  #opt-members-row { display: none; }
+  body[data-context="community"] #opt-members-row { display: flex; }
+
+  /* ════════════════════════════════════════════
+     참가 유형 (여러 유형을 한 이벤트로 받기)
+     ════════════════════════════════════════════ */
+  /* display:flex 가 걸린 요소는 hidden 속성만으로 숨겨지지 않는다 */
+  .edit-body > .pv-section[hidden] { display: none !important; }
+  .pv-field-add[hidden],
+  .pv-att-field[hidden] { display: none !important; }
+
+  .pv-ptype-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .pv-ptype-list[hidden] { display: none !important; }
+
+  .pv-ptype-card {
+    position: relative;
+    background: var(--color-surface-sub);
+    border-radius: var(--r-md);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .pv-ptype-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .pv-ptype-name {
+    flex: 1;
+    min-width: 0;
+    font-size: var(--fs-heading);
+    font-weight: var(--fw-bold);
+    color: var(--color-text);
+    letter-spacing: var(--ls-heading);
+    word-break: break-word;
+  }
+  .pv-ptype-head .icon-btn i[data-lucide],
+  .pv-ptype-head .icon-btn svg.lucide { width: 18px; height: 18px; }
+
+  .pv-ptype-menu {
+    position: absolute;
+    top: 48px; right: 12px;
+    z-index: 30;
+  }
+  .pv-ptype-menu[hidden] { display: none !important; }
+
+  .pv-ptype-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .pv-ptype-field-label {
+    font-size: var(--fs-label);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text-sub);
+  }
+  .pv-ptype-money { width: 132px; }
+  .pv-ptype-unit {
+    font-size: var(--fs-body);
+    color: var(--color-text-sub);
+    flex-shrink: 0;
+  }
+
+  /* 유형별 안내 — 이벤트 설명(#desc-card)과 같은 .pv-luma-card + .pv-desc 조합 */
+  .pv-ptype-card .pv-luma-card { background: var(--color-surface); }
+  .pv-ptype-guide {
+    padding: 12px 16px;
+    gap: 12px;
+    cursor: text;
+    min-height: 88px;
+  }
+  .pv-ptype-guide .pv-desc { flex: 1; }
+
+  /* 카드 안 흰색 서브 블록 (참가비 · 참석자 공개) */
+  .pv-ptype-sub {
+    background: var(--color-surface);
+    border-radius: var(--r-sm);
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .pv-ptype-sub.is-disabled { opacity: 0.45; pointer-events: none; }
+  .pv-ptype-sub-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+  }
+  .pv-ptype-sub-head i[data-lucide],
+  .pv-ptype-sub-head svg.lucide {
+    width: 16px; height: 16px;
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+  }
+  .pv-ptype-sub-title {
+    flex: 1;
+    font-size: var(--fs-body);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text);
+  }
+  .pv-ptype-sub-body {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-top: 4px;
+    border-top: 1px solid var(--color-border);
+  }
+  .pv-ptype-sub-body[hidden] { display: none !important; }
+
+  /* 참가비 — 체크박스 + 금액이 한 줄 (.pv-ptype-sub 의 가로 변형) */
+  .pv-ptype-fee {
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+  }
+  .pv-ptype-fee .pv-ptype-check {
+    flex: 1;
+    min-width: 0;
+    padding: 0;
+  }
+  .pv-ptype-fee .pv-ptype-money { flex-shrink: 0; }
+
+  /* 공개할 항목과 그 하위 옵션을 가르는 선 */
+  .pv-ptype-checks-sep {
+    border-top: 1px solid var(--color-border);
+    padding-top: 12px;
+  }
+  .pv-ptype-checks {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .pv-ptype-check {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: var(--fs-body);
+    color: var(--color-text);
+    cursor: pointer;
+    padding: 4px 0;
+  }
+  .pv-ptype-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+    line-height: 1.5;
+  }
+  .pv-ptype-note i[data-lucide],
+  .pv-ptype-note svg.lucide {
+    width: 14px; height: 14px;
+    flex-shrink: 0;
+    margin-top: 4px;
+  }
+  .pv-ptype-note[hidden] { display: none !important; }
+
+  /* 참석자 카드 본문 — 미리보기 패널의 참석자 카드에서 사용 */
+  .pv-reveal-preview-body {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+  .pv-reveal-avatar {
+    background-size: cover;
+    background-position: center;
+    flex-shrink: 0;
+  }
+  .pv-reveal-name {
+    font-size: var(--fs-body);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text);
+  }
+  .pv-reveal-line {
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+  }
+  /* ── 유형 탭 (신청폼 구성 · 미리보기 공용) ── */
+  .pv-type-tabs {
+    display: flex;
+    gap: 4px;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .pv-type-tabs[hidden] { display: none !important; }
+  .pv-type-tab {
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    padding: 8px 12px;
+    font-family: var(--font-base);
+    font-size: var(--fs-body);
+    font-weight: var(--fw-medium);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition: color var(--motion-fast) var(--ease-standard);
+  }
+  .pv-type-tab.is-selected {
+    color: var(--color-text);
+    border-bottom-color: var(--color-text);
+    font-weight: var(--fw-bold);
+  }
+
+  /* ── 팀 유형 신청폼: 팀 정보 / 팀원 정보 2층 구조 ── */
+  .pv-form-team {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .pv-form-team[hidden] { display: none !important; }
+  .pv-form-block {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .pv-form-block-title {
+    font-size: var(--fs-label);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text-sub);
+  }
+  /* 끌 수 없는 필드(팀원 이름)는 라벨도 클릭 대상이 아니다 */
+  .pv-field-row .checkbox:disabled ~ .pv-field-label { cursor: default; }
+
+  /* ── 미리보기: 신청 폼 (팀 정보 + 팀원 반복) ── */
+  .pv-prev-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .pv-prev-field-label {
+    font-size: var(--fs-caption);
+    font-weight: var(--fw-medium);
+    color: var(--color-text-sub);
+  }
+  .pv-prev-field-box {
+    display: flex;
+    align-items: center;
+    height: var(--input-h);
+    padding: 0 var(--input-px);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-sm);
+    font-size: var(--fs-body);
+    color: var(--color-text-muted);
+  }
+  .pv-prev-member-card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-md);
+  }
+  .pv-prev-member-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .pv-prev-member-name {
+    flex: 1;
+    font-size: var(--fs-label);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text-sub);
+  }
+  .pv-prev-leader {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: var(--fs-caption);
+    font-weight: var(--fw-medium);
+    color: var(--color-text-muted);
+  }
+  .pv-prev-leader.is-on { color: var(--color-primary); }
+  .pv-prev-leader i[data-lucide],
+  .pv-prev-leader svg.lucide { width: 14px; height: 14px; }
+
+  /* ── 미리보기: 참가 유형 · 참석자 · CTA 2개 ── */
+  /* 참석자 크게 보여주기 — 세로로 긴 카드가 가로로 이어진다 */
+  .pv-prev-showcase {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    margin: 0 -20px;
+    padding: 0 20px 8px;
+    scrollbar-width: none;
+  }
+  .pv-prev-showcase::-webkit-scrollbar { display: none; }
+  .pv-prev-show-card {
+    flex: 0 0 152px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 16px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-md);
+    text-align: center;
+  }
+  .pv-prev-show-card .pv-reveal-preview-body {
+    align-items: center;
+    width: 100%;
+  }
+  .pv-prev-show-card .badge { margin-top: auto; }
+  .pv-prev-show-more {
+    flex: 0 0 88px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    border: 1px dashed var(--color-border);
+    border-radius: var(--r-md);
+    background: transparent;
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-medium);
+    color: var(--color-text-muted);
+    cursor: pointer;
+  }
+  .pv-prev-show-more i[data-lucide],
+  .pv-prev-show-more svg.lucide { width: 16px; height: 16px; }
+
+  .pv-prev-attendee-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .pv-prev-attendee-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-md);
+    padding: 12px;
+  }
+  .pv-prev-attendee-card .pv-reveal-preview-body { flex: 1; }
+  .pv-prev-cta-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .pv-prev-cta-list[hidden] { display: none !important; }
+  .pv-preview-body.is-multi-cta { padding-bottom: 176px; }
+  #pv-prev-cta[hidden] { display: none !important; }
+
+  :focus-visible { outline: none; }
+</style>
+</head>
+<body data-context="general">
+
+<div class="frame">
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- 프로토타입 전용: 맥락 전환 바 (실서비스엔 없음) -->
+  <!-- ════════════════════════════════════════════ -->
+  <div class="viewer-bar">
+    <div class="viewer-bar-row">
+      <span class="viewer-bar-label">맥락</span>
+      <div class="viewer-bar-tabs">
+        <button class="viewer-bar-tab" type="button" data-axis="context" data-value="general" onclick="setContext('general')">일반 페이지</button>
+        <button class="viewer-bar-tab" type="button" data-axis="context" data-value="community" onclick="setContext('community')">커뮤니티</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <button class="icon-btn icon-btn-clear" aria-label="뒤로">
+      <i data-lucide="chevron-left" style="width:22px;height:22px;color:var(--color-text);"></i>
+    </button>
+    <span class="topbar-title">이벤트 만들기</span>
+    <div class="topbar-actions">
+      <button class="btn btn-sm btn-line-dark" type="button" onclick="openPreview()">미리보기</button>
+      <button class="btn btn-sm btn-fill-primary" id="publish-btn" type="button" onclick="publishEvent()">발행</button>
+    </div>
+  </div>
+
+  <!-- Editable body -->
+  <div class="edit-body">
+
+    <!-- Hero / image uploader -->
+    <div class="pv-hero" id="pv-hero">
+      <div class="pv-hero-track" id="pv-hero-track" style="display:none;" onscroll="updateHeroCounter()"></div>
+      <button type="button" class="pv-hero-empty" id="pv-hero-empty" onclick="addImage(event)">
+        <i data-lucide="image-plus"></i>
+        <span class="label">대표 사진을 추가하세요</span>
+      </button>
+      <span class="pv-hero-cover" id="pv-hero-cover">대표</span>
+      <span class="pv-hero-counter" id="pv-hero-counter"></span>
+    </div>
+
+    <!-- Thumbnail strip -->
+    <div class="pv-thumb-strip" id="pv-thumb-strip"></div>
+
+    <!-- Title -->
+    <div class="pv-info">
+      <div class="editable pv-title" id="f-title" contenteditable="true" data-placeholder="이벤트 이름" oninput="onInput()" onkeydown="blockEnter(event)"></div>
+    </div>
+
+    <!-- 이벤트 설명 -->
+    <div class="pv-section">
+      <div class="pv-desc-head">
+        <div class="pv-desc-label">이벤트 설명</div>
+        <button type="button" class="pv-desc-mode-link" id="desc-mode-btn" onclick="toggleDescMode(event)">PDF로 등록</button>
+      </div>
+      <div class="pv-luma-card" id="desc-card" data-desc-mode="text" onclick="onDescCardClick(event)">
+        <!-- 직접 입력 -->
+        <div class="desc-mode-text" id="desc-mode-text">
+          <div class="rt-editor-toolbar" id="desc-toolbar" data-rt-for="f-desc" onmousedown="event.preventDefault()" hidden>
+            <button type="button" class="rt-editor-btn" onclick="rtCmd(event, 'bold')" aria-label="굵게"><b>B</b></button>
+            <button type="button" class="rt-editor-btn" onclick="rtCmd(event, 'italic')" aria-label="기울임"><i>I</i></button>
+            <button type="button" class="rt-editor-btn" onclick="rtCmd(event, 'underline')" aria-label="밑줄"><u>U</u></button>
+            <button type="button" class="rt-editor-btn" onclick="rtCmd(event, 'strikeThrough')" aria-label="취소선"><s>S</s></button>
+          </div>
+          <div class="editable pv-desc" id="f-desc" contenteditable="true" data-placeholder="어떤 이벤트인지 자유롭게 적어보세요.&#10;예) 진행 일정, 참여 방법, 혜택, 유의 사항 등" oninput="onInput()" onkeyup="rtSyncState()" onmouseup="rtSyncState()"></div>
+        </div>
+
+        <!-- PDF 등록 -->
+        <div class="desc-mode-pdf" id="desc-mode-pdf" hidden>
+          <button type="button" class="pdf-dropzone" id="pdf-dropzone" onclick="selectPdfFile(event)">
+            <i data-lucide="upload-cloud"></i>
+            <span class="pdf-dropzone-title">PDF 파일 선택</span>
+            <span class="pdf-dropzone-sub">탭하여 PDF를 올려주세요</span>
+          </button>
+          <div class="pdf-file-chip" id="pdf-file-chip" hidden>
+            <i data-lucide="file-text" class="pdf-file-chip-icon"></i>
+            <span class="pdf-file-chip-name" id="pdf-file-chip-name">여름_이벤트_안내.pdf</span>
+            <button type="button" class="icon-btn icon-btn-sm icon-btn-clear" onclick="clearPdfFile(event)" aria-label="파일 제거">
+              <i data-lucide="x"></i>
+            </button>
+          </div>
+          <a class="pdf-preview-link" href="../event-landing-pdf-0716/event-landing-pdf.html" target="_blank" rel="noopener">
+            <i data-lucide="eye"></i>
+            미리보기
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- 참가 유형 -->
+    <div class="pv-section" data-block="ptypes" id="ptype-section">
+      <div class="pv-section-title">참가 유형</div>
+      <div class="pv-opt-list">
+        <label class="pv-opt-row pv-opt-row-toggle">
+          <i data-lucide="users-round"></i>
+          <span class="pv-opt-row-label">참가자를 나눠서 받기</span>
+          <input type="checkbox" class="toggle toggle-sm" id="opt-ptypes" onchange="onPtypesToggle()">
+        </label>
+      </div>
+      <div class="pv-ptype-list" id="ptype-list" hidden></div>
+      <button type="button" class="pv-field-add" id="ptype-add" onclick="addPtype()" hidden>
+        <i data-lucide="plus"></i>
+        <span>유형 추가</span>
+      </button>
+    </div>
+
+    <!-- 신청폼 구성 -->
+    <div class="pv-section" data-block="form">
+      <div class="pv-desc-head">
+        <div class="pv-section-title">신청폼 구성</div>
+        <div class="pv-formtype pv-formtype-modes" role="radiogroup" aria-label="신청 방식">
+          <button type="button" class="pv-desc-mode-link pv-formtype-card is-selected" data-mode="self" role="radio" aria-checked="true" onclick="selectFormType('self')">자체 신청폼</button>
+          <button type="button" class="pv-desc-mode-link pv-formtype-card" data-mode="external" role="radio" aria-checked="false" onclick="selectFormType('external')">외부 링크 등록</button>
+        </div>
+      </div>
+      <div class="pv-extform-link" id="extform-link-block" hidden>
+        <input type="url" class="input" id="f-extform-url" placeholder="https://forms.google.com/..." inputmode="url" oninput="onInput()">
+        <span class="pv-extform-hint"><i data-lucide="external-link"></i><span>신청 버튼을 누르면 이 링크로 이동해요</span></span>
+      </div>
+      <div class="pv-type-tabs" id="pv-form-type-tabs" hidden></div>
+      <div class="pv-form-card" id="f-form-card">
+        <div class="pv-field-row">
+          <input type="checkbox" class="checkbox" id="field-name-enabled" checked onchange="onFormFieldToggle('name')">
+          <label class="pv-field-label" for="field-name-enabled">이름</label>
+          <div class="pv-req-seg" data-field="name">
+            <button type="button" class="pv-req-seg-btn is-selected" onclick="setFieldRequired('name', true)">필수</button>
+            <button type="button" class="pv-req-seg-btn" onclick="setFieldRequired('name', false)">선택</button>
+          </div>
+        </div>
+        <div class="pv-field-row">
+          <input type="checkbox" class="checkbox" id="field-phone-enabled" checked onchange="onFormFieldToggle('phone')">
+          <label class="pv-field-label" for="field-phone-enabled">전화번호</label>
+          <div class="pv-req-seg" data-field="phone">
+            <button type="button" class="pv-req-seg-btn is-selected" onclick="setFieldRequired('phone', true)">필수</button>
+            <button type="button" class="pv-req-seg-btn" onclick="setFieldRequired('phone', false)">선택</button>
+          </div>
+        </div>
+        <div class="pv-field-row">
+          <input type="checkbox" class="checkbox" id="field-email-enabled" checked onchange="onFormFieldToggle('email')">
+          <label class="pv-field-label" for="field-email-enabled">이메일</label>
+          <div class="pv-req-seg" data-field="email">
+            <button type="button" class="pv-req-seg-btn" onclick="setFieldRequired('email', true)">필수</button>
+            <button type="button" class="pv-req-seg-btn is-selected" onclick="setFieldRequired('email', false)">선택</button>
+          </div>
+        </div>
+        <div class="pv-questions-list" id="pv-questions-list"></div>
+        <button type="button" class="pv-field-add" onclick="openAddQuestion()">
+          <i data-lucide="plus"></i>
+          <span>질문 추가</span>
+        </button>
+      </div>
+
+      <!-- 팀 유형 전용 — 팀 정보(신청 1건당) / 팀원 정보(팀원마다 반복) -->
+      <div class="pv-form-team" id="f-form-team" hidden>
+        <div class="pv-form-block">
+          <span class="pv-form-block-title">팀 정보</span>
+          <div class="pv-form-card">
+            <div class="pv-field-row">
+              <input type="checkbox" class="checkbox" id="field-team-title-enabled" checked onchange="onFormFieldToggle('team-title')">
+              <label class="pv-field-label" for="field-team-title-enabled">팀 이름</label>
+              <div class="pv-req-seg" data-field="team-title">
+                <button type="button" class="pv-req-seg-btn is-selected" onclick="setFieldRequired('team-title', true)">필수</button>
+                <button type="button" class="pv-req-seg-btn" onclick="setFieldRequired('team-title', false)">선택</button>
+              </div>
+            </div>
+            <div class="pv-questions-list" id="pv-team-questions-list"></div>
+            <button type="button" class="pv-field-add" onclick="openAddQuestion('team')">
+              <i data-lucide="plus"></i>
+              <span>질문 추가</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="pv-form-block">
+          <span class="pv-form-block-title">팀원 정보</span>
+          <div class="pv-form-card">
+            <div class="pv-field-row">
+              <input type="checkbox" class="checkbox" id="field-member-name-enabled" checked disabled>
+              <span class="pv-field-label">이름</span>
+              <div class="pv-req-seg" data-field="member-name">
+                <button type="button" class="pv-req-seg-btn is-selected" disabled>필수</button>
+              </div>
+            </div>
+            <div class="pv-field-row">
+              <input type="checkbox" class="checkbox" id="field-member-phone-enabled" checked onchange="onFormFieldToggle('member-phone')">
+              <label class="pv-field-label" for="field-member-phone-enabled">전화번호</label>
+              <div class="pv-req-seg" data-field="member-phone">
+                <button type="button" class="pv-req-seg-btn is-selected" onclick="setFieldRequired('member-phone', true)">필수</button>
+                <button type="button" class="pv-req-seg-btn" onclick="setFieldRequired('member-phone', false)">선택</button>
+              </div>
+            </div>
+            <div class="pv-field-row">
+              <input type="checkbox" class="checkbox" id="field-member-email-enabled" checked onchange="onFormFieldToggle('member-email')">
+              <label class="pv-field-label" for="field-member-email-enabled">이메일</label>
+              <div class="pv-req-seg" data-field="member-email">
+                <button type="button" class="pv-req-seg-btn" onclick="setFieldRequired('member-email', true)">필수</button>
+                <button type="button" class="pv-req-seg-btn is-selected" onclick="setFieldRequired('member-email', false)">선택</button>
+              </div>
+            </div>
+            <div class="pv-questions-list" id="pv-member-questions-list"></div>
+            <button type="button" class="pv-field-add" onclick="openAddQuestion('member')">
+              <i data-lucide="plus"></i>
+              <span>질문 추가</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 일정 -->
+    <div class="pv-section" data-block="schedule">
+      <div class="pv-section-title">일정 <span class="pv-section-title-meta">(선택)</span></div>
+      <div class="pv-date-card" id="apply-card">
+        <button type="button" class="pv-date-card-head" id="apply-card-head" onclick="toggleDateCard('apply')">
+          <span class="pv-date-card-title">신청 기간</span>
+          <span class="pv-section-summary" id="apply-card-summary"></span>
+          <i data-lucide="chevron-down" class="pv-section-chevron"></i>
+        </button>
+        <div class="pv-date-card-body" id="apply-card-body">
+          <div class="pv-datetime-row">
+            <span class="pv-datetime-label pv-datetime-label-start">시작</span>
+            <button type="button" class="pv-date-pill is-empty" id="pill-start-date" onclick="openCalendar('start', event)">
+              <span class="pv-date-pill-text" id="disp-start-date">날짜 선택</span>
+              <input type="hidden" id="f-start">
+            </button>
+            <input type="time" class="pv-date-pill pv-time-input" id="f-start-time" oninput="onInput()" onclick="this.showPicker && this.showPicker()">
+          </div>
+          <div class="pv-datetime-row">
+            <span class="pv-datetime-label pv-datetime-label-end">종료</span>
+            <button type="button" class="pv-date-pill is-empty" id="pill-end-date" onclick="openCalendar('end', event)">
+              <span class="pv-date-pill-text" id="disp-end-date">날짜 선택</span>
+              <input type="hidden" id="f-end">
+            </button>
+            <input type="time" class="pv-date-pill pv-time-input" id="f-end-time" oninput="onInput()" onclick="this.showPicker && this.showPicker()">
+          </div>
+          <div class="pv-date-footer">
+            <button type="button" class="pv-time-toggle" id="apply-time-toggle" onclick="toggleTime('apply')">
+              <i data-lucide="plus"></i>
+              <span>시간 추가</span>
+            </button>
+            <div class="pv-date-dday" id="f-dday"></div>
+          </div>
+          <div class="pv-calendar" id="pv-calendar" hidden>
+            <div class="pv-cal-header">
+              <button type="button" class="pv-cal-month" id="pv-cal-month">2026년 6월<i data-lucide="chevron-right"></i></button>
+              <div class="pv-cal-nav">
+                <button type="button" onclick="changeMonth(-1)" aria-label="이전 달"><i data-lucide="chevron-left"></i></button>
+                <button type="button" onclick="changeMonth(1)" aria-label="다음 달"><i data-lucide="chevron-right"></i></button>
+              </div>
+            </div>
+            <div class="pv-cal-weekdays">
+              <span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span>
+            </div>
+            <div class="pv-cal-grid" id="pv-cal-grid"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pv-date-card" id="event-card">
+        <button type="button" class="pv-date-card-head" id="event-card-head" onclick="toggleDateCard('event')">
+          <span class="pv-date-card-title">행사 일정</span>
+          <span class="pv-section-summary" id="event-card-summary"></span>
+          <i data-lucide="chevron-down" class="pv-section-chevron"></i>
+        </button>
+        <div class="pv-date-card-body" id="event-card-body">
+          <div id="event-datetime-group" data-card="event">
+            <div class="pv-datetime-row">
+              <span class="pv-datetime-label pv-datetime-label-start">시작</span>
+              <button type="button" class="pv-date-pill is-empty" id="pill-event-start-date" onclick="openCalendar('event-start', event)">
+                <span class="pv-date-pill-text" id="disp-event-start-date">날짜 선택</span>
+                <input type="hidden" id="f-event-start">
+              </button>
+              <input type="time" class="pv-date-pill pv-time-input" id="f-event-start-time" oninput="onInput()" onclick="this.showPicker && this.showPicker()">
+            </div>
+            <div class="pv-datetime-row">
+              <span class="pv-datetime-label pv-datetime-label-end">종료</span>
+              <button type="button" class="pv-date-pill is-empty" id="pill-event-end-date" onclick="openCalendar('event-end', event)">
+                <span class="pv-date-pill-text" id="disp-event-end-date">날짜 선택</span>
+                <input type="hidden" id="f-event-end">
+              </button>
+              <input type="time" class="pv-date-pill pv-time-input" id="f-event-end-time" oninput="onInput()" onclick="this.showPicker && this.showPicker()">
+            </div>
+            <button type="button" class="pv-time-toggle" id="event-time-toggle" onclick="toggleTime('event')">
+              <i data-lucide="plus"></i>
+              <span>시간 추가</span>
+            </button>
+            <div class="pv-datetime-row pv-place-row">
+              <span class="pv-datetime-label">장소</span>
+              <input type="text" class="input pv-place-input" id="f-event-place" placeholder="예) 서울시립대학교 배봉관 앞" oninput="onInput()">
+            </div>
+            <div class="pv-calendar" id="pv-calendar-event" hidden>
+              <div class="pv-cal-header">
+                <button type="button" class="pv-cal-month" id="pv-cal-event-month">2026년 6월<i data-lucide="chevron-right"></i></button>
+                <div class="pv-cal-nav">
+                  <button type="button" onclick="changeMonth(-1)" aria-label="이전 달"><i data-lucide="chevron-left"></i></button>
+                  <button type="button" onclick="changeMonth(1)" aria-label="다음 달"><i data-lucide="chevron-right"></i></button>
+                </div>
+              </div>
+              <div class="pv-cal-weekdays">
+                <span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span>
+              </div>
+              <div class="pv-cal-grid" id="pv-cal-event-grid"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 참석자 (사전 등록) -->
+    <div class="pv-section" data-block="attendees">
+      <button type="button" class="pv-section-header" id="att-section-header" onclick="toggleAttendees()">
+        <span class="pv-section-header-text">
+          <span class="pv-section-title">참석자</span>
+          <span class="pv-att-count" id="att-count" hidden></span>
+        </span>
+        <i data-lucide="chevron-down" class="pv-section-chevron"></i>
+      </button>
+      <div class="pv-att-block" id="att-block">
+        <div class="pv-form-card">
+          <p class="pv-att-empty" id="att-empty">확정된 참석자를 미리 등록하세요</p>
+          <div class="pv-att-list" id="att-list"></div>
+          <button type="button" class="pv-field-add" onclick="openAttendeeSheet()">
+            <i data-lucide="plus"></i>
+            <span>참석자 추가</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 이벤트 설정 -->
+    <div class="pv-section" data-block="settings">
+      <button type="button" class="pv-section-header" id="opt-section-header" onclick="toggleOptions()">
+        <span class="pv-section-header-text">
+          <span class="pv-section-title">이벤트 설정</span>
+          <span class="pv-section-summary">리뷰, 댓글, 신청자수 등</span>
+        </span>
+        <i data-lucide="chevron-down" class="pv-section-chevron"></i>
+      </button>
+      <div class="pv-opt-list" id="opt-list" hidden>
+        <button type="button" class="pv-opt-row" onclick="openSheet('cta')">
+          <i data-lucide="mouse-pointer-click"></i>
+          <span class="pv-opt-row-label">신청 버튼 문구</span>
+          <span class="pv-opt-row-value" id="disp-cta">신청하기</span>
+          <i data-lucide="chevron-right" class="pv-opt-icon-edit"></i>
+        </button>
+        <label class="pv-opt-row pv-opt-row-toggle">
+          <i data-lucide="star"></i>
+          <span class="pv-opt-row-label">리뷰 노출</span>
+          <input type="checkbox" class="toggle toggle-sm" id="opt-reviews" onchange="onReviewsToggle()">
+        </label>
+        <label class="pv-opt-row pv-opt-row-toggle">
+          <i data-lucide="message-square"></i>
+          <span class="pv-opt-row-label">댓글 허용</span>
+          <input type="checkbox" class="toggle toggle-sm" id="opt-comments">
+        </label>
+        <label class="pv-opt-row pv-opt-row-toggle" id="opt-applicants-row">
+          <i data-lucide="users"></i>
+          <span class="pv-opt-row-label">신청자 수 노출 <span class="pv-opt-row-sub" id="opt-applicants-note" hidden>외부 폼은 집계할 수 없어요</span></span>
+          <input type="checkbox" class="toggle toggle-sm" id="opt-show-applicants">
+        </label>
+        <label class="pv-opt-row pv-opt-row-toggle">
+          <i data-lucide="list"></i>
+          <span class="pv-opt-row-label">신청자 목록 노출 <span class="pv-opt-row-sub" id="opt-list-note" hidden>유형별 ‘참석자 공개’의 상위 설정</span></span>
+          <input type="checkbox" class="toggle toggle-sm" id="opt-show-applicant-list" onchange="onApplicantListToggle()">
+        </label>
+        <label class="pv-opt-row pv-opt-row-toggle" id="opt-login-row">
+          <i data-lucide="shield-check"></i>
+          <span class="pv-opt-row-label">로그인 사용자만 신청 가능 <span class="pv-opt-row-sub" id="opt-login-note" hidden>커뮤니티 회원만 받으면 로그인이 필요해요</span></span>
+          <input type="checkbox" class="toggle toggle-sm" id="opt-login-only">
+        </label>
+        <label class="pv-opt-row pv-opt-row-toggle" id="opt-members-row">
+          <i data-lucide="user-check"></i>
+          <span class="pv-opt-row-label">커뮤니티 회원만 신청 가능</span>
+          <input type="checkbox" class="toggle toggle-sm" id="opt-members-only" onchange="syncMembersOnly()">
+        </label>
+        <label class="pv-opt-row pv-opt-row-toggle">
+          <i data-lucide="send"></i>
+          <span class="pv-opt-row-label">신청 완료 안내 보내기 <span class="pv-opt-row-sub">알림톡</span></span>
+          <input type="checkbox" class="toggle toggle-sm" id="opt-alim-complete" checked>
+        </label>
+        <label class="pv-opt-row pv-opt-row-toggle">
+          <i data-lucide="bell"></i>
+          <span class="pv-opt-row-label">행사 전날 리마인드 보내기 <span class="pv-opt-row-sub">알림톡</span></span>
+          <input type="checkbox" class="toggle toggle-sm" id="opt-alim-remind" checked>
+        </label>
+        <label class="pv-opt-row pv-opt-row-toggle">
+          <i data-lucide="sparkles"></i>
+          <span class="pv-opt-row-label">AI 학습 <span class="pv-opt-row-sub">채팅 답변에 반영</span></span>
+          <input type="checkbox" class="toggle toggle-sm" id="opt-ai-training" checked>
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sheets -->
+  <div class="pv-sheet-overlay" id="sheet-overlay" onclick="closeSheet()"></div>
+
+  <div class="pv-sheet" id="sheet-cta">
+    <div class="pv-sheet-handle"></div>
+    <div class="pv-sheet-title">신청 버튼 문구</div>
+    <input type="text" class="pv-sheet-input" id="f-cta" value="신청하기" placeholder="예) 신청하기" oninput="onSheetInput('cta')">
+    <div class="pv-sheet-suggestions">
+      <button type="button" class="pv-sheet-suggestion" onclick="pickSuggestion('cta','신청하기')">신청하기</button>
+      <button type="button" class="pv-sheet-suggestion" onclick="pickSuggestion('cta','지금 신청하기')">지금 신청하기</button>
+      <button type="button" class="pv-sheet-suggestion" onclick="pickSuggestion('cta','참여 신청')">참여 신청</button>
+      <button type="button" class="pv-sheet-suggestion" onclick="pickSuggestion('cta','상담 신청')">상담 신청</button>
+    </div>
+    <button class="btn btn-lg btn-block btn-fill-primary" onclick="closeSheet()">완료</button>
+  </div>
+
+  <div class="pv-sheet" id="sheet-addq">
+    <div class="pv-sheet-title" id="addq-title">질문 추가</div>
+    <div class="pv-qtype-row" id="addq-qtype">
+      <button type="button" class="pv-chip is-selected" data-qtype="short" onclick="setQType('short')">주관식</button>
+      <button type="button" class="pv-chip" data-qtype="mc" onclick="setQType('mc')">객관식</button>
+    </div>
+    <input type="text" class="pv-sheet-input pv-sheet-input-lead" id="addq-text" placeholder="질문을 입력하세요">
+    <button type="button" class="pv-sheet-addlink" id="addq-desc-link" onclick="showQuestionDesc()">+ 설명 추가</button>
+    <div class="pv-sheet-field" id="addq-desc-field" hidden>
+      <span class="pv-sheet-field-label">설명</span>
+      <input type="text" class="pv-sheet-input pv-sheet-input-sub" id="addq-desc" placeholder="질문 아래 보일 안내 문구">
+    </div>
+    <div class="pv-sheet-field" id="addq-ph-field">
+      <span class="pv-sheet-field-label">입력 예시</span>
+      <input type="text" class="pv-sheet-input pv-sheet-input-sub" id="addq-ph" placeholder="예) 평일 오후 2~6시">
+    </div>
+    <div class="pv-mc-editor" id="addq-mc-editor" hidden>
+      <div class="pv-mc-editor-row">
+        <input type="text" placeholder="보기 1">
+        <button type="button" class="pv-mc-editor-remove" onclick="removeMcEditorRow(this)"><i data-lucide="x"></i></button>
+      </div>
+      <div class="pv-mc-editor-row">
+        <input type="text" placeholder="보기 2">
+        <button type="button" class="pv-mc-editor-remove" onclick="removeMcEditorRow(this)"><i data-lucide="x"></i></button>
+      </div>
+      <button type="button" class="pv-mc-editor-add" onclick="addMcEditorRow()">+ 보기 추가</button>
+    </div>
+    <label class="pv-sheet-toggle" id="addq-multi-row" hidden>
+      <span>복수 선택 허용</span>
+      <input type="checkbox" class="toggle toggle-sm" id="addq-multi">
+    </label>
+    <div class="pv-sheet-actions">
+      <button class="btn btn-lg btn-weak-dark" onclick="closeSheet()">취소</button>
+      <button class="btn btn-lg btn-fill-primary" id="addq-submit" onclick="submitQuestion()">추가</button>
+    </div>
+    <button type="button" class="pv-sheet-link-danger" id="addq-delete" onclick="deleteQuestion()" hidden>질문 삭제</button>
+  </div>
+
+  <!-- 참석자 추가 -->
+  <div class="pv-sheet" id="sheet-attendee">
+    <div class="pv-sheet-handle"></div>
+    <div class="pv-sheet-title">참석자 추가</div>
+    <div class="pv-att-field" id="att-type-field" hidden>
+      <label class="label" for="att-type">참가 유형</label>
+      <select class="select" id="att-type"></select>
+    </div>
+    <div class="pv-att-field">
+      <label class="label label-required" for="att-name">이름</label>
+      <input type="text" class="pv-sheet-input" id="att-name" placeholder="이름을 입력하세요" oninput="onAttendeeInput()" onkeydown="onAttendeeKey(event)">
+    </div>
+    <div class="pv-att-field">
+      <label class="label" for="att-phone">전화번호</label>
+      <input type="tel" class="pv-sheet-input" id="att-phone" placeholder="010-0000-0000" inputmode="tel" onkeydown="onAttendeeKey(event)">
+    </div>
+    <div class="pv-att-added" id="att-added" hidden>
+      <div class="pv-att-added-title">추가된 사람</div>
+      <div class="pv-att-added-list" id="att-added-list"></div>
+    </div>
+    <button class="btn btn-lg btn-block btn-fill-primary" type="button" id="att-submit" disabled onclick="submitAttendee()">추가하기</button>
+  </div>
+
+  <!-- 참가 유형 이름 -->
+  <div class="pv-sheet" id="sheet-ptype-name">
+    <div class="pv-sheet-handle"></div>
+    <div class="pv-sheet-title">유형 이름</div>
+    <input type="text" class="pv-sheet-input pv-sheet-input-lead" id="ptype-name-input" placeholder="예) 졸업생" onkeydown="onPtypeNameKey(event)">
+    <div class="pv-sheet-suggestions">
+      <button type="button" class="pv-sheet-suggestion" onclick="pickPtypeName('졸업생')">졸업생</button>
+      <button type="button" class="pv-sheet-suggestion" onclick="pickPtypeName('재학생 팀')">재학생 팀</button>
+      <button type="button" class="pv-sheet-suggestion" onclick="pickPtypeName('일반 참가자')">일반 참가자</button>
+    </div>
+    <div class="pv-sheet-actions">
+      <button class="btn btn-lg btn-weak-dark" type="button" onclick="closeSheet()">취소</button>
+      <button class="btn btn-lg btn-fill-primary" type="button" onclick="submitPtypeName()">저장</button>
+    </div>
+  </div>
+
+  <!-- 이미지 템플릿 선택 -->
+  <div class="pv-sheet sheet-template" id="sheet-template">
+    <div class="pv-tmpl-head">
+      <span style="width:32px"></span>
+      <div class="pv-tmpl-title">이미지 선택</div>
+      <button type="button" class="pv-tmpl-close" aria-label="닫기" onclick="closeSheet()"><i data-lucide="x"></i></button>
+    </div>
+    <label class="pv-upload-zone" for="tmpl-upload">
+      <div class="pv-upload-title">여기를 탭하여 업로드하세요</div>
+      <div class="pv-upload-sub">이미지를 선택해 사진 목록에 추가됩니다 (4:3 권장)</div>
+      <input class="pv-upload-input" type="file" id="tmpl-upload" accept="image/*" multiple onchange="onUploadFiles(event)">
+    </label>
+    <div class="pv-tmpl-tabs" id="tmpl-tabs">
+      <button type="button" class="pv-tmpl-tab is-selected" data-cat="event" onclick="selectTmplTab('event')">이벤트</button>
+      <button type="button" class="pv-tmpl-tab" data-cat="hospital" onclick="selectTmplTab('hospital')">병원</button>
+      <button type="button" class="pv-tmpl-tab" data-cat="eye" onclick="selectTmplTab('eye')">안과</button>
+      <button type="button" class="pv-tmpl-tab" data-cat="derma" onclick="selectTmplTab('derma')">피부과</button>
+      <button type="button" class="pv-tmpl-tab" data-cat="oriental" onclick="selectTmplTab('oriental')">한의원</button>
+    </div>
+    <div class="pv-tmpl-body">
+      <div class="pv-tmpl-grid" id="tmpl-grid"></div>
+    </div>
+  </div>
+
+  <!-- 미리보기 -->
+  <div class="pv-preview" id="pv-preview">
+    <div class="pv-preview-topbar">
+      <span class="pv-preview-topbar-title">미리보기</span>
+      <button class="icon-btn icon-btn-clear" type="button" aria-label="미리보기 닫기" onclick="closePreview()">
+        <i data-lucide="x" style="width:22px;height:22px;color:var(--color-text);"></i>
+      </button>
+    </div>
+    <div class="pv-preview-body" id="pv-preview-body">
+      <div class="pv-prev-hero" id="pv-prev-hero" hidden>
+        <div class="pv-prev-hero-slider" id="pv-prev-slider"></div>
+        <div class="pv-prev-hero-pagination" id="pv-prev-pagination" hidden></div>
+      </div>
+
+      <div class="pv-prev-info">
+        <div class="pv-prev-clinic-row">
+          <span class="pv-prev-clinic-name">서울시립대학교 총동문회</span>
+          <i data-lucide="chevron-right"></i>
+        </div>
+        <h1 class="pv-prev-headline" id="pv-prev-title"></h1>
+        <p class="pv-prev-schedule" id="pv-prev-schedule" hidden>
+          <i data-lucide="calendar-check"></i>
+          <span class="pv-prev-schedule-label">일정</span>
+          <span class="pv-prev-schedule-date" id="pv-prev-schedule-date"></span>
+          <span class="pv-prev-schedule-time" id="pv-prev-schedule-time"></span>
+        </p>
+        <p class="pv-prev-schedule" id="pv-prev-place" hidden>
+          <i data-lucide="map-pin"></i>
+          <span class="pv-prev-schedule-label">장소</span>
+          <span class="pv-prev-schedule-date" id="pv-prev-place-value"></span>
+        </p>
+        <div class="pv-prev-trust-row" id="pv-prev-trust-row">
+          <div class="pv-prev-star-row">
+            <i data-lucide="star"></i>
+            <span class="pv-prev-star-score">5.0</span>
+            <span class="pv-prev-star-count">· 후기 28개</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="pv-prev-divider" id="pv-prev-date-divider" hidden></div>
+      <div class="pv-prev-section" id="pv-prev-date-section" hidden>
+        <div class="pv-prev-date-card">
+          <i data-lucide="calendar-days"></i>
+          <div class="pv-prev-date-card-text">
+            <div class="pv-prev-date-label">신청 기간</div>
+            <div class="pv-prev-date-value" id="pv-prev-period"></div>
+          </div>
+          <span class="pv-prev-date-tag" id="pv-prev-dday" hidden></span>
+        </div>
+      </div>
+
+      <div class="pv-prev-divider" id="pv-prev-desc-divider" hidden></div>
+      <div class="pv-prev-section" id="pv-prev-desc-section" hidden>
+        <div class="pv-prev-section-title">이벤트 안내</div>
+        <div class="pv-prev-desc" id="pv-prev-desc"></div>
+      </div>
+
+      <div class="pv-prev-divider" id="pv-prev-type-divider" hidden></div>
+      <div class="pv-prev-section" id="pv-prev-type-section" hidden>
+        <div class="pv-prev-section-title">참가 유형</div>
+        <div class="pv-type-tabs" id="pv-prev-type-tabs" hidden></div>
+        <div class="pv-prev-desc" id="pv-prev-type-guide"></div>
+      </div>
+
+
+      <div class="pv-prev-divider" id="pv-prev-att-divider" hidden></div>
+      <div class="pv-prev-section" id="pv-prev-att-section" hidden>
+        <div class="pv-prev-section-title" id="pv-prev-att-title">참석자</div>
+        <div class="pv-prev-attendee-list" id="pv-prev-att-list"></div>
+      </div>
+
+      <div class="pv-prev-divider" id="pv-prev-review-divider"></div>
+      <div class="pv-prev-section" id="pv-prev-review-section">
+        <div class="pv-prev-section-title">지난 행사 후기</div>
+        <div class="pv-prev-review-scroll" id="pv-prev-review-scroll">
+          <div class="pv-prev-review-card">
+            <div class="pv-prev-review-body">
+              <div class="pv-prev-review-stars">
+                <i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i>
+              </div>
+              <p class="pv-prev-review-text">작년에 처음 갔는데 선배들이 먼저 말을 걸어주셔서 편했어요. 올해도 신청합니다.</p>
+              <div class="pv-prev-review-meta">
+                <span class="verified"><i data-lucide="badge-check"></i>실제 후기</span><span>·</span><span>정○○ (재학생)</span>
+              </div>
+            </div>
+          </div>
+          <div class="pv-prev-review-card">
+            <div class="pv-prev-review-body">
+              <div class="pv-prev-review-stars">
+                <i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i>
+              </div>
+              <p class="pv-prev-review-text">같은 학과 선배를 만나서 진로 이야기를 오래 나눴습니다. 팀으로 신청하길 잘했어요.</p>
+              <div class="pv-prev-review-meta">
+                <span class="verified"><i data-lucide="badge-check"></i>실제 후기</span><span>·</span><span>한○○ (재학생)</span>
+              </div>
+            </div>
+          </div>
+          <div class="pv-prev-review-card">
+            <div class="pv-prev-review-body">
+              <div class="pv-prev-review-stars">
+                <i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i>
+              </div>
+              <p class="pv-prev-review-text">후원금이 장학금으로 쓰인다는 게 좋았어요. 배봉관 앞 분위기도 딱 좋았습니다.</p>
+              <div class="pv-prev-review-meta">
+                <span class="verified"><i data-lucide="badge-check"></i>실제 후기</span><span>·</span><span>조○○ (졸업생)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pv-prev-divider"></div>
+      <div class="pv-prev-section">
+        <button class="pv-prev-clinic-link" type="button" aria-label="총동문회 페이지 가기">
+          <div class="pv-prev-clinic-link-thumb" style="background-image:url('../../assets/poster-cheongchun.jpg');"></div>
+          <div class="pv-prev-clinic-link-text">
+            <div class="pv-prev-clinic-link-name">서울시립대학교 총동문회</div>
+            <div class="pv-prev-clinic-link-sub">동문회 소개 · 지난 행사 · 문의</div>
+          </div>
+          <i data-lucide="chevron-right" class="chev"></i>
+        </button>
+      </div>
+    </div>
+
+    <div class="pv-prev-sticky">
+      <button class="btn btn-xl btn-block btn-fill-primary" id="pv-prev-cta">신청하기</button>
+      <div class="pv-prev-cta-list" id="pv-prev-cta-list" hidden></div>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+  lucide.createIcons();
+
+  /* ── Image uploader ── */
+  var images = [{ src: '../../assets/event_thumbnail.png' }];
+  var stockColors = [
+    'linear-gradient(135deg,#a9a9ee,#5555cc)',
+    'linear-gradient(135deg,#fcd34d,#f59e0b)',
+    'linear-gradient(135deg,#93c5fd,#3b82f6)',
+    'linear-gradient(135deg,#f9a8d4,#ec4899)',
+    'linear-gradient(135deg,#34d399,#10b981)'
+  ];
+
+  /* ── 이미지 템플릿 카탈로그 ── */
+  var TMPL_DIR = '../../assets/event_thumbnail_image/';
+  var TEMPLATES = {
+    event: [
+      TMPL_DIR + 'event_basic_1.png',
+      TMPL_DIR + 'event_basic_2.png',
+      TMPL_DIR + 'event_basic_3.png'
+    ],
+    hospital: [
+      TMPL_DIR + 'event_hospital_1.png'
+    ],
+    eye: [
+      TMPL_DIR + 'event_eye clinic_1.png',
+      TMPL_DIR + 'event_eye clinic_2.png'
+    ],
+    derma: [
+      TMPL_DIR + 'event_dermatology_1.png',
+      TMPL_DIR + 'event_dermatology_2.png',
+      TMPL_DIR + 'event_dermatology_3.png',
+      TMPL_DIR + 'event_dermatology_4.png'
+    ],
+    oriental: [
+      TMPL_DIR + 'event_oriental_1.png',
+      TMPL_DIR + 'event_oriental_2.png',
+      TMPL_DIR + 'event_oriental_3.png',
+      TMPL_DIR + 'event_oriental_4.png',
+      TMPL_DIR + 'event_oriental_5.png'
+    ]
+  };
+  var tmplCat = 'event';
+
+  function blockEnter(e) {
+    if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); }
+  }
+
+  /* contenteditable에 남는 <br>·빈 노드를 제거해 :empty 가 다시 매칭되도록 함 */
+  document.addEventListener('input', function(e) {
+    var el = e.target;
+    if (!el.isContentEditable) return;
+    if (el.textContent.trim() === '') el.innerHTML = '';
+  });
+
+  function addImage(e) {
+    if (e) e.preventDefault();
+    if (images.length >= 5) return;
+    openTemplatePicker();
+  }
+
+  function openTemplatePicker() {
+    selectTmplTab(tmplCat);
+    openSheet('template');
+  }
+
+  function selectTmplTab(cat) {
+    tmplCat = cat;
+    document.querySelectorAll('#tmpl-tabs .pv-tmpl-tab').forEach(function(t){
+      t.classList.toggle('is-selected', t.dataset.cat === cat);
+    });
+    var grid = document.getElementById('tmpl-grid');
+    grid.innerHTML = '';
+    var items = TEMPLATES[cat] || [];
+    if (items.length === 0) {
+      var empty = document.createElement('div');
+      empty.className = 'pv-tmpl-empty';
+      empty.textContent = '준비 중인 카테고리예요';
+      grid.appendChild(empty);
+      return;
+    }
+    items.forEach(function(src){
+      var card = document.createElement('button');
+      card.type = 'button';
+      card.className = 'pv-tmpl-card';
+      card.style.backgroundImage = 'url("' + encodeURI(src) + '")';
+      card.onclick = function(){ selectTemplate(src); };
+      grid.appendChild(card);
+    });
+  }
+
+  function selectTemplate(src) {
+    if (images.length >= 5) { closeSheet(); return; }
+    images.push({ src: src });
+    renderImages();
+    closeSheet();
+    onInput();
+  }
+
+  function renderImages() {
+    var emptyEl = document.getElementById('pv-hero-empty');
+    var trackEl = document.getElementById('pv-hero-track');
+    var counterEl = document.getElementById('pv-hero-counter');
+    var coverEl = document.getElementById('pv-hero-cover');
+
+    trackEl.innerHTML = '';
+    if (images.length === 0) {
+      emptyEl.style.display = 'flex';
+      trackEl.style.display = 'none';
+      counterEl.style.display = 'none';
+      coverEl.style.display = 'none';
+      renderThumbStrip(0);
+      return;
+    }
+    emptyEl.style.display = 'none';
+    trackEl.style.display = 'flex';
+    coverEl.style.display = 'block';
+
+    images.forEach(function(img) {
+      var slide = document.createElement('div');
+      slide.className = 'pv-hero-slide';
+      if (img.src) {
+        slide.style.backgroundImage = 'url("' + encodeURI(img.src) + '")';
+      } else if (img.bg) {
+        slide.style.background = img.bg;
+      }
+      slide.style.backgroundSize = 'cover';
+      slide.style.backgroundPosition = 'center';
+      trackEl.appendChild(slide);
+    });
+    trackEl.scrollLeft = 0;
+
+    if (images.length > 1) {
+      counterEl.style.display = 'inline-block';
+      counterEl.textContent = '1 / ' + images.length;
+    } else {
+      counterEl.style.display = 'none';
+    }
+    renderThumbStrip(0);
+    lucide.createIcons();
+  }
+
+  function renderThumbStrip(activeIdx) {
+    var strip = document.getElementById('pv-thumb-strip');
+    if (!strip) return;
+    strip.innerHTML = '';
+    if (images.length === 0) { strip.style.display = 'none'; return; }
+    strip.style.display = 'flex';
+    images.forEach(function(img, idx) {
+      var thumb = document.createElement('button');
+      thumb.type = 'button';
+      thumb.className = 'pv-thumb' + (idx === activeIdx ? ' is-active' : '');
+      if (img.src) thumb.style.backgroundImage = 'url("' + encodeURI(img.src) + '")';
+      else if (img.bg) thumb.style.background = img.bg + ' center/cover';
+      thumb.onclick = function(){ scrollHeroToIndex(idx); };
+      var remove = document.createElement('button');
+      remove.type = 'button';
+      remove.className = 'pv-thumb-remove';
+      remove.setAttribute('aria-label', '사진 삭제');
+      remove.innerHTML = '<i data-lucide="x"></i>';
+      remove.onclick = function(e){ e.stopPropagation(); removeImageAt(idx); };
+      thumb.appendChild(remove);
+      strip.appendChild(thumb);
+    });
+    if (images.length < 5) {
+      var add = document.createElement('button');
+      add.type = 'button';
+      add.className = 'pv-thumb-add';
+      add.setAttribute('aria-label', '사진 추가');
+      add.innerHTML = '<i data-lucide="plus"></i>';
+      add.onclick = function(e){ addImage(e); };
+      strip.appendChild(add);
+    }
+    lucide.createIcons();
+  }
+
+  function scrollHeroToIndex(idx) {
+    var track = document.getElementById('pv-hero-track');
+    if (!track || images.length === 0) return;
+    track.scrollTo({ left: idx * track.clientWidth, behavior: 'smooth' });
+  }
+
+  function removeImageAt(idx) {
+    if (idx < 0 || idx >= images.length) return;
+    images.splice(idx, 1);
+    renderImages();
+    onInput();
+  }
+
+  function onUploadFiles(e) {
+    var files = e.target.files;
+    if (!files || files.length === 0) return;
+    var remaining = 5 - images.length;
+    var slice = Array.prototype.slice.call(files, 0, Math.max(0, remaining));
+    if (slice.length === 0) { e.target.value = ''; closeSheet(); return; }
+    var pending = slice.length;
+    slice.forEach(function(file){
+      var reader = new FileReader();
+      reader.onload = function(){
+        images.push({ src: reader.result });
+        pending -= 1;
+        if (pending === 0) {
+          renderImages();
+          closeSheet();
+          onInput();
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+    e.target.value = '';
+  }
+
+  function updateHeroCounter() {
+    var track = document.getElementById('pv-hero-track');
+    var counter = document.getElementById('pv-hero-counter');
+    var coverEl = document.getElementById('pv-hero-cover');
+    if (images.length === 0) return;
+    var idx = Math.round(track.scrollLeft / track.clientWidth);
+    if (images.length > 1) {
+      counter.textContent = (idx + 1) + ' / ' + images.length;
+    }
+    coverEl.style.display = idx === 0 ? 'block' : 'none';
+    document.querySelectorAll('#pv-thumb-strip .pv-thumb').forEach(function(el, i){
+      el.classList.toggle('is-active', i === idx);
+    });
+  }
+
+  /* ── 추가 질문 (다중 질문) ──
+     질문 목록은 '스코프'별로 따로 있다.
+       main   … 개인 유형(및 유형 나누기 OFF)의 한 벌짜리 폼
+       team   … 팀 유형의 '팀 정보'  — 한 팀에 한 번
+       member … 팀 유형의 '팀원 정보' — 팀원마다 반복 */
+  var editingIdx = -1;
+  var editingScope = 'main';
+  var questionSeq = 0;
+
+  /* 질문은 인덱스가 아니라 id로 가리킨다 — 순서를 바꾸거나 지워도 공개 설정이 따라간다 */
+  function nextQuestionId() { questionSeq += 1; return 'q' + questionSeq; }
+  function newQuestion(o) {
+    return {
+      id: nextQuestionId(),
+      type: o.type || 'short',
+      text: o.text,
+      desc: o.desc || '',
+      placeholder: o.placeholder || '',
+      required: !!o.required,
+      multi: !!o.multi,
+      options: o.options || []
+    };
+  }
+  var SCOPE_TITLE = { main: '질문', team: '팀 정보 질문', member: '팀원 질문' };
+
+  function questionsOf(scope) {
+    var st = formStates[activeFormKey] || (formStates[activeFormKey] = newFormState());
+    if (scope === 'team')   return st.team.questions;
+    if (scope === 'member') return st.member.questions;
+    return st.questions;
+  }
+
+  function setFieldRequired(field, required) {
+    var seg = document.querySelector('.pv-req-seg[data-field="' + field + '"]');
+    if (!seg) return;
+    var btns = seg.querySelectorAll('.pv-req-seg-btn');
+    /* 팀원 '이름'처럼 필수로 잠긴 항목은 버튼이 하나뿐이다 */
+    if (btns[0]) btns[0].classList.toggle('is-selected', required);
+    if (btns[1]) btns[1].classList.toggle('is-selected', !required);
+  }
+
+  function reqSelected(field) {
+    var seg = document.querySelector('.pv-req-seg[data-field="' + field + '"]');
+    if (!seg) return false;
+    return seg.querySelectorAll('.pv-req-seg-btn')[0].classList.contains('is-selected');
+  }
+
+  /* ── 외부 신청폼 연결 ── */
+  function selectFormType(mode) {
+    document.querySelectorAll('.pv-formtype-card[data-mode]').forEach(function(c){
+      var on = c.dataset.mode === mode;
+      c.classList.toggle('is-selected', on);
+      c.setAttribute('aria-checked', on ? 'true' : 'false');
+    });
+    var external = mode === 'external';
+    syncFormVisibility();
+    document.getElementById('extform-link-block').hidden = !external;
+    /* 외부 링크로 받으면 신청폼을 우리가 그리지 않으므로 참가 유형도 의미가 없다 */
+    document.getElementById('ptype-section').hidden = external;
+    renderFormTabs();
+    syncApplicantsOption(external);
+    if (external) setTimeout(function(){ document.getElementById('f-extform-url').focus(); }, 100);
+    if (window.lucide) lucide.createIcons();
+    onInput();
+  }
+
+  /* ── 이벤트 설명 모드 (직접 입력 / PDF 등록) ── */
+  function onDescCardClick(e) {
+    var card = document.getElementById('desc-card');
+    if (e.target.closest('.desc-mode-pdf')) return;
+    if (card.dataset.descMode === 'pdf') return;
+    document.getElementById('f-desc').focus();
+  }
+  function toggleDescMode(e) {
+    if (e) e.stopPropagation();
+    var card = document.getElementById('desc-card');
+    selectDescMode(card.dataset.descMode === 'pdf' ? 'text' : 'pdf');
+  }
+  function selectDescMode(mode) {
+    var card = document.getElementById('desc-card');
+    card.dataset.descMode = mode;
+    var isPdf = mode === 'pdf';
+    document.getElementById('desc-mode-text').hidden = isPdf;
+    document.getElementById('desc-mode-pdf').hidden = !isPdf;
+    document.getElementById('desc-mode-btn').textContent = isPdf ? '직접 입력' : 'PDF로 등록';
+    card.style.cursor = isPdf ? 'default' : 'text';
+    onInput();
+  }
+  function selectPdfFile(e) {
+    if (e) e.stopPropagation();
+    document.getElementById('pdf-dropzone').hidden = true;
+    document.getElementById('pdf-file-chip').hidden = false;
+    onInput();
+  }
+  function clearPdfFile(e) {
+    if (e) e.stopPropagation();
+    document.getElementById('pdf-file-chip').hidden = true;
+    document.getElementById('pdf-dropzone').hidden = false;
+    onInput();
+  }
+
+  function syncApplicantsOption(external) {
+    var row = document.getElementById('opt-applicants-row');
+    var cb = document.getElementById('opt-show-applicants');
+    row.classList.toggle('is-disabled', external);
+    row.setAttribute('aria-disabled', external ? 'true' : 'false');
+    cb.disabled = external;
+    if (external) cb.checked = false;
+    document.getElementById('opt-applicants-note').hidden = !external;
+  }
+
+  function externalFormState() {
+    var sel = document.querySelector('.pv-formtype-card[data-mode].is-selected');
+    var external = !!(sel && sel.dataset.mode === 'external');
+    return {
+      enabled: external,
+      url: document.getElementById('f-extform-url').value.trim()
+    };
+  }
+
+  /* 사용자가 신청폼 기본 필드를 켜고 끌 때 — 공개할 항목이 신청폼을 그대로 따라간다.
+     loadForm()의 프로그램적 적용(applyField)은 toggleFieldEnabled만 부른다. */
+  function onFormFieldToggle(field) {
+    toggleFieldEnabled(field);
+    saveActiveForm();
+    renderPtypes();
+    syncPreviewLive();
+  }
+
+  function toggleFieldEnabled(field) {
+    var cb = document.getElementById('field-' + field + '-enabled');
+    var seg = document.querySelector('.pv-req-seg[data-field="' + field + '"]');
+    if (!seg) return;
+    seg.classList.toggle('is-disabled', !cb.checked);
+  }
+
+  function resetMcEditor(values) {
+    var editor = document.getElementById('addq-mc-editor');
+    var addBtn = editor.querySelector('.pv-mc-editor-add');
+    editor.querySelectorAll('.pv-mc-editor-row').forEach(function(r){ r.remove(); });
+    var defaults = values && values.length ? values : ['', ''];
+    if (defaults.length < 2) defaults.push('');
+    defaults.forEach(function(v, idx){
+      var row = document.createElement('div');
+      row.className = 'pv-mc-editor-row';
+      row.innerHTML =
+        '<input type="text" placeholder="보기 ' + (idx + 1) + '">' +
+        '<button type="button" class="pv-mc-editor-remove" onclick="removeMcEditorRow(this)"><i data-lucide="x"></i></button>';
+      editor.insertBefore(row, addBtn);
+      row.querySelector('input').value = v;
+    });
+    lucide.createIcons();
+  }
+
+  var addqRequired = false;
+
+  function openAddQuestion(scope) {
+    editingIdx = -1;
+    editingScope = scope || 'main';
+    setQType('short');
+    document.getElementById('addq-text').value = '';
+    setQuestionDesc('');
+    document.getElementById('addq-ph').value = '';
+    addqRequired = false;
+    document.getElementById('addq-multi').checked = false;
+    resetMcEditor(null);
+    document.getElementById('addq-title').textContent = SCOPE_TITLE[editingScope] + ' 추가';
+    document.getElementById('addq-submit').textContent = '추가';
+    document.getElementById('addq-delete').hidden = true;
+    openSheet('addq');
+    setTimeout(function(){ document.getElementById('addq-text').focus(); }, 100);
+  }
+
+  function editQuestion(scope, idx) {
+    editingScope = scope || 'main';
+    var q = questionsOf(editingScope)[idx];
+    if (!q) return;
+    editingIdx = idx;
+    setQType(q.type);
+    document.getElementById('addq-text').value = q.text;
+    setQuestionDesc(q.desc || '');
+    document.getElementById('addq-ph').value = q.placeholder || '';
+    addqRequired = !!q.required;
+    document.getElementById('addq-multi').checked = !!q.multi;
+    resetMcEditor(q.type === 'mc' ? q.options : null);
+    document.getElementById('addq-title').textContent = SCOPE_TITLE[editingScope] + ' 편집';
+    document.getElementById('addq-submit').textContent = '저장';
+    document.getElementById('addq-delete').hidden = false;
+    openSheet('addq');
+    setTimeout(function(){ document.getElementById('addq-text').focus(); }, 100);
+  }
+
+  function deleteQuestion() {
+    if (editingIdx >= 0) {
+      questionsOf(editingScope).splice(editingIdx, 1);
+      renderQuestions();
+      renderPtypes();
+    }
+    closeSheet();
+  }
+
+  function setQuestionDesc(value) {
+    document.getElementById('addq-desc').value = value;
+    document.getElementById('addq-desc-field').hidden = !value;
+    document.getElementById('addq-desc-link').hidden = !!value;
+  }
+
+  function showQuestionDesc() {
+    document.getElementById('addq-desc-field').hidden = false;
+    document.getElementById('addq-desc-link').hidden = true;
+    document.getElementById('addq-desc').focus();
+  }
+
+  function setQType(type) {
+    document.querySelectorAll('#addq-qtype .pv-chip').forEach(function(c){
+      c.classList.toggle('is-selected', c.dataset.qtype === type);
+    });
+    document.getElementById('addq-mc-editor').hidden = type !== 'mc';
+    document.getElementById('addq-multi-row').hidden = type !== 'mc';
+    document.getElementById('addq-ph-field').hidden = type !== 'short';
+    document.getElementById('addq-text').placeholder = type === 'mc'
+      ? '객관식 질문을 입력하세요' : '주관식 질문을 입력하세요';
+  }
+
+  function addMcEditorRow() {
+    var editor = document.getElementById('addq-mc-editor');
+    var addBtn = editor.querySelector('.pv-mc-editor-add');
+    var rows = editor.querySelectorAll('.pv-mc-editor-row');
+    var idx = rows.length + 1;
+    var row = document.createElement('div');
+    row.className = 'pv-mc-editor-row';
+    row.innerHTML =
+      '<input type="text" placeholder="보기 ' + idx + '">' +
+      '<button type="button" class="pv-mc-editor-remove" onclick="removeMcEditorRow(this)"><i data-lucide="x"></i></button>';
+    editor.insertBefore(row, addBtn);
+    lucide.createIcons();
+    row.querySelector('input').focus();
+  }
+
+  function removeMcEditorRow(btn) {
+    var editor = document.getElementById('addq-mc-editor');
+    if (editor.querySelectorAll('.pv-mc-editor-row').length <= 2) return;
+    btn.closest('.pv-mc-editor-row').remove();
+  }
+
+  function submitQuestion() {
+    var type = document.querySelector('#addq-qtype .pv-chip.is-selected').dataset.qtype;
+    var text = document.getElementById('addq-text').value.trim();
+    if (!text) { document.getElementById('addq-text').focus(); return; }
+    var desc = document.getElementById('addq-desc').value.trim();
+    var placeholder = type === 'short' ? document.getElementById('addq-ph').value.trim() : '';
+    var required = addqRequired;
+    var multi = document.getElementById('addq-multi').checked;
+    var options = [];
+    if (type === 'mc') {
+      document.querySelectorAll('#addq-mc-editor .pv-mc-editor-row input').forEach(function(i){
+        var v = i.value.trim();
+        if (v) options.push(v);
+      });
+      if (options.length < 2) return;
+    }
+    var q = newQuestion({ type: type, text: text, desc: desc, placeholder: placeholder, required: required, multi: multi, options: options });
+    var list = questionsOf(editingScope);
+    if (editingIdx >= 0) {
+      q.id = list[editingIdx].id;      /* 편집은 id를 유지한다 */
+      list[editingIdx] = q;
+    } else {
+      list.push(q);
+    }
+    renderQuestions();
+    renderPtypes();                    /* 공개할 항목의 질문 목록도 따라간다 */
+    closeSheet();
+  }
+
+  function renderQuestionList(containerId, scope) {
+    var list = document.getElementById(containerId);
+    if (!list) return;
+    list.innerHTML = '';
+    questionsOf(scope).forEach(function(q, idx){
+      var row = document.createElement('div');
+      row.className = 'pv-field-row pv-field-row-q';
+      var typeLabel = q.type === 'mc' ? (q.multi ? '객관식 · 복수' : '객관식') : '주관식';
+      row.innerHTML =
+        '<span class="pv-field-label"><span class="pv-q-text">' + escapeHTML(q.text) + '</span>' +
+          (q.desc ? '<span class="pv-q-desc">' + escapeHTML(q.desc) + '</span>' : '') +
+          '<span class="pv-q-meta">' + typeLabel + '</span></span>' +
+        '<div class="pv-req-seg" data-field="q-' + scope + '-' + idx + '">' +
+          '<button type="button" class="pv-req-seg-btn ' + (q.required ? 'is-selected' : '') + '" onclick="setQuestionRequired(\'' + scope + '\', ' + idx + ', true, event)">필수</button>' +
+          '<button type="button" class="pv-req-seg-btn ' + (q.required ? '' : 'is-selected') + '" onclick="setQuestionRequired(\'' + scope + '\', ' + idx + ', false, event)">선택</button>' +
+        '</div>';
+      row.querySelector('.pv-field-label').onclick = function(){ editQuestion(scope, idx); };
+      list.appendChild(row);
+    });
+    lucide.createIcons();
+  }
+
+  /* 화면에 떠 있는 목록만 그린다 — 팀 레이아웃이면 두 개, 아니면 한 개 */
+  function renderQuestions() {
+    if (activeFormLayout === 'team') {
+      renderQuestionList('pv-team-questions-list', 'team');
+      renderQuestionList('pv-member-questions-list', 'member');
+    } else {
+      renderQuestionList('pv-questions-list', 'main');
+    }
+  }
+
+  function setQuestionRequired(scope, idx, required, e) {
+    if (e) e.stopPropagation();
+    var q = questionsOf(scope)[idx];
+    if (!q) return;
+    q.required = required;
+    renderQuestions();
+  }
+
+  function escapeHTML(s) {
+    return String(s).replace(/[&<>"']/g, function(c){
+      return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+    });
+  }
+
+  /* ════════════════════════════════════════════
+     참가 유형 (졸업생 / 재학생 팀처럼 한 이벤트에서 유형을 나눠 받기)
+
+     · 토글이 꺼져 있으면 이 블록은 아무것도 하지 않는다 → 기존 화면과 완전히 동일.
+     · 신청폼은 유형마다 따로 보관한다. 꺼진 상태의 폼은 '_default' 키에 그대로 남아
+       다시 꺼도 원래 구성으로 돌아온다.
+     ════════════════════════════════════════════ */
+  /* 공개할 항목의 출처는 오직 그 유형의 신청폼이다.
+     기본 필드는 폼에서 켜져 있는 것만 나열되고, 질문은 등록 순서대로 전부 따라온다.
+     프로필 사진과 이름은 설정이 아니라 항상 공개라 후보에서 빠진다. */
+  var REVEAL_BASE_ORDER = ['phone', 'email'];
+  var REVEAL_BASE_LABEL = { phone: '전화번호', email: '이메일' };
+  var ptypes = [];
+  var ptypeSeq = 0;
+  var menuPtypeId = null;
+  var renamingPtypeId = null;
+
+  function defaultRevealFields() {
+    return { phone: false, email: false };
+  }
+  function newPtype(name) {
+    ptypeSeq += 1;
+    return {
+      id: 'pt' + ptypeSeq,
+      name: name || ('참가 유형 ' + ptypeSeq),
+      unit: 'individual',
+      guide: '',
+      fee: { on: false, amount: 0 },
+      reveal: { on: false, showcase: false, fields: defaultRevealFields(), questions: {} },
+      people: []
+    };
+  }
+  function ptypesOn() {
+    var el = document.getElementById('opt-ptypes');
+    return !!(el && el.checked && ptypes.length > 0);
+  }
+  function ptypeById(id) {
+    for (var i = 0; i < ptypes.length; i++) if (ptypes[i].id === id) return ptypes[i];
+    return null;
+  }
+  function formatWon(n) { return (+n || 0).toLocaleString('ko-KR'); }
+
+  /* ── 유형 카드 렌더 ──
+     키 입력이 들어가는 값(금액·유형별 안내)은 상태만 갱신하고 다시 그리지 않는다.
+     구조가 바뀌는 조작(단위 변경·참가비/공개 토글·추가·삭제·이름 변경)만 전체 렌더. */
+  function renderPtypes() {
+    var list = document.getElementById('ptype-list');
+    list.innerHTML = ptypes.map(ptypeCardHTML).join('');
+    syncPtypeMaster();
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function ptypeCardHTML(t) {
+    var team = t.unit === 'team';
+    return ''
+      + '<div class="pv-ptype-card" data-ptype="' + t.id + '">'
+      +   '<div class="pv-ptype-head">'
+      +     '<span class="pv-ptype-name">' + escapeHTML(t.name) + '</span>'
+      +     '<button type="button" class="icon-btn icon-btn-sm icon-btn-clear" aria-label="' + escapeHTML(t.name) + ' 메뉴" onclick="togglePtypeMenu(\'' + t.id + '\', event)"><i data-lucide="more-vertical"></i></button>'
+      +   '</div>'
+      +   '<div class="pv-ptype-menu" id="ptype-menu-' + t.id + '" hidden>'
+      +     '<div class="menu">'
+      +       '<button type="button" class="menu-item" onclick="openPtypeRename(\'' + t.id + '\')">이름 수정</button>'
+      +       '<button type="button" class="menu-item is-danger" onclick="removePtype(\'' + t.id + '\')">삭제</button>'
+      +     '</div>'
+      +   '</div>'
+
+      /* 신청 단위 */
+      +   '<div class="pv-ptype-field">'
+      +     '<span class="pv-ptype-field-label">신청 단위</span>'
+      +     '<div class="pv-formtype" role="radiogroup" aria-label="신청 단위">'
+      +       '<button type="button" class="btn btn-sm ' + (team ? 'btn-line-dark' : 'btn-fill-primary') + ' pv-formtype-card" role="radio" aria-checked="' + (!team) + '" onclick="setPtypeUnit(\'' + t.id + '\', \'individual\')"><span class="pv-formtype-title">개인</span></button>'
+      +       '<button type="button" class="btn btn-sm ' + (team ? 'btn-fill-primary' : 'btn-line-dark') + ' pv-formtype-card" role="radio" aria-checked="' + team + '" onclick="setPtypeUnit(\'' + t.id + '\', \'team\')"><span class="pv-formtype-title">팀</span></button>'
+      +     '</div>'
+      +   '</div>'
+
+
+      /* 유형별 안내 — 이벤트 설명과 같은 에디터 컴포넌트 */
+      +   '<div class="pv-ptype-field">'
+      +     '<span class="pv-ptype-field-label">유형별 안내</span>'
+      +     '<div class="pv-luma-card pv-ptype-guide" onclick="focusPtypeGuide(\'' + t.id + '\')">'
+      +       '<div class="rt-editor-toolbar" data-rt-for="ptype-guide-' + t.id + '" onmousedown="event.preventDefault()" hidden>'
+      +         '<button type="button" class="rt-editor-btn" onclick="rtCmd(event, \'bold\')" aria-label="굵게"><b>B</b></button>'
+      +         '<button type="button" class="rt-editor-btn" onclick="rtCmd(event, \'italic\')" aria-label="기울임"><i>I</i></button>'
+      +         '<button type="button" class="rt-editor-btn" onclick="rtCmd(event, \'underline\')" aria-label="밑줄"><u>U</u></button>'
+      +         '<button type="button" class="rt-editor-btn" onclick="rtCmd(event, \'strikeThrough\')" aria-label="취소선"><s>S</s></button>'
+      +       '</div>'
+      +       '<div class="editable pv-desc" id="ptype-guide-' + t.id + '" contenteditable="true" data-placeholder="이 유형을 고른 참가자에게만 보이는 안내예요" oninput="onPtypeGuideInput(\'' + t.id + '\')" onkeyup="rtSyncState()" onmouseup="rtSyncState()">' + (t.guide || '') + '</div>'
+      +     '</div>'
+      +   '</div>'
+
+      /* 참가비 — 체크박스와 금액이 한 줄. 라벨은 체크박스만 감싼다(금액 클릭으로 토글되면 안 됨) */
+      +   '<div class="pv-ptype-sub pv-ptype-fee">'
+      +     '<label class="pv-ptype-check">'
+      +       '<input type="checkbox" class="checkbox" ' + (t.fee.on ? 'checked' : '') + ' onchange="setPtypeFee(\'' + t.id + '\', this.checked)">'
+      +       '<span>참가비</span>'
+      +     '</label>'
+      +     '<input type="number" class="input pv-ptype-money" id="ptype-fee-amount-' + t.id + '" min="0" step="1000" value="' + t.fee.amount + '" aria-label="참가비 금액"' + (t.fee.on ? '' : ' disabled') + ' oninput="setPtypeFeeAmount(\'' + t.id + '\', this.value)">'
+      +     '<span class="pv-ptype-unit">원</span>'
+      +   '</div>'
+
+      /* 참석자 공개 */
+      +   '<div class="pv-ptype-sub pv-ptype-reveal">'
+      +     '<label class="pv-ptype-sub-head">'
+      +       '<i data-lucide="users"></i>'
+      +       '<span class="pv-ptype-sub-title">참석자 공개</span>'
+      +       '<input type="checkbox" class="toggle toggle-sm" ' + (t.reveal.on ? 'checked' : '') + ' onchange="setPtypeReveal(\'' + t.id + '\', this.checked)">'
+      +     '</label>'
+      +     '<div class="pv-ptype-sub-body"' + (t.reveal.on ? '' : ' hidden') + '>'
+      +       revealRowsHTML(t)
+      +       '<div class="pv-ptype-checks pv-ptype-checks-sep">'
+      +         '<label class="pv-ptype-check">'
+      +           '<input type="checkbox" class="checkbox" ' + (t.reveal.showcase ? 'checked' : '') + ' onchange="setPtypeShowcase(\'' + t.id + '\', this.checked)">'
+      +           '<span>크게 보여주기</span>'
+      +         '</label>'
+      +       '</div>'
+      +     '</div>'
+      +   '</div>'
+      +   '<p class="pv-ptype-note pv-ptype-reveal-lock" hidden><i data-lucide="lock"></i><span>이벤트 설정의 ‘신청자 목록 노출’이 꺼져 있어 참석자를 공개할 수 없어요</span></p>'
+      + '</div>';
+  }
+
+  /* 이 유형의 참석자 카드에 실릴 수 있는 신청폼 질문.
+     팀 유형은 사람 단위인 팀원 질문을 쓴다(팀 층 질문은 대상이 아니다). */
+  function revealQuestionsOf(t) {
+    var st = formStates[t.id];
+    if (!st) return [];
+    return t.unit === 'team' ? st.member.questions : st.questions;
+  }
+  /* 등록해 둔 적 없는 질문은 공개가 기본 — 질문을 추가하면 바로 카드에 실린다 */
+  /* 폼에서 꺼진 기본 필드는 계약에서도 빠진다 */
+  function revealFieldsPayload(t) {
+    var out = {};
+    revealBaseFieldsOf(t).forEach(function(f){ out[f.key] = !!t.reveal.fields[f.key]; });
+    return out;
+  }
+  function revealQuestionOn(t, q) {
+    return t.reveal.questions[q.id] !== false;
+  }
+
+  function revealCheckHTML(checked, handler, label) {
+    return '<label class="pv-ptype-check">'
+      + '<input type="checkbox" class="checkbox" ' + (checked ? 'checked' : '') + ' onchange="' + handler + '">'
+      + '<span>' + escapeHTML(label) + '</span>'
+      + '</label>';
+  }
+
+  /* 신청폼에서 켜져 있는 기본 필드만 (팀 유형은 팀원 층을 본다) */
+  function revealBaseFieldsOf(t) {
+    var st = formStates[t.id];
+    if (!st) return [];
+    var f = (t.unit === 'team') ? st.member.fields : st.fields;
+    return REVEAL_BASE_ORDER.filter(function(k){ return f[k] && f[k].enabled; })
+      .map(function(k){ return { key: k, label: REVEAL_BASE_LABEL[k] }; });
+  }
+
+  function revealRowsHTML(t) {
+    var rows = revealBaseFieldsOf(t).map(function(f){
+      return revealCheckHTML(
+        t.reveal.fields[f.key],
+        'setPtypeRevealField(\'' + t.id + '\', \'' + f.key + '\', this.checked)',
+        f.label);
+    });
+    revealQuestionsOf(t).forEach(function(q){
+      rows.push(revealCheckHTML(
+        revealQuestionOn(t, q),
+        'setPtypeRevealQuestion(\'' + t.id + '\', \'' + q.id + '\', this.checked)',
+        q.text));
+    });
+    if (!rows.length) return '';
+    return '<span class="pv-ptype-field-label">공개할 항목</span>'
+      + '<div class="pv-ptype-checks">' + rows.join('') + '</div>';
+  }
+
+  /* 아바타는 설정과 무관하게 항상 그린다(사진이 없으면 기본 아바타).
+     이름만 식별자 스타일이고, 나머지 필드와 모든 질문 답변은 같은 줄 스타일이다. */
+  function revealBodyHTML(p, t, avatarSize) {
+    var lines = '';
+    if (p.name) lines += '<span class="pv-reveal-name">' + escapeHTML(p.name) + '</span>';
+    if (t) {
+      revealBaseFieldsOf(t).forEach(function(f){
+        if (!t.reveal.fields[f.key]) return;
+        var v = p[f.key];
+        if (!v) return;
+        lines += '<span class="pv-reveal-line">' + escapeHTML(v) + '</span>';
+      });
+      revealQuestionsOf(t).forEach(function(q){
+        if (!revealQuestionOn(t, q)) return;
+        var v = p.answers && p.answers[q.id];
+        if (!v) return;
+        lines += '<span class="pv-reveal-line">' + escapeHTML(v) + '</span>';
+      });
+    }
+    var avatar = '<span class="avatar ' + (avatarSize || 'avatar-md') + ' pv-reveal-avatar"'
+      + (p.photo ? ' style="background-image:url(\'' + encodeURI(p.photo) + '\')"' : '')
+      + '></span>';
+    return avatar + '<div class="pv-reveal-preview-body">' + lines + '</div>';
+  }
+
+  /* ── 유형 값 변경 ── */
+  function setPtypeUnit(id, unit) {
+    var t = ptypeById(id);
+    if (!t || t.unit === unit) return;
+    saveActiveForm();          /* 바뀌기 전 레이아웃 기준으로 먼저 저장 */
+    t.unit = unit;
+    renderPtypes();
+    renderFormTabs();
+    if (activeFormKey === id) loadForm(id);
+    syncPreviewLive();
+  }
+  function onPtypeGuideInput(id) {
+    var t = ptypeById(id);
+    var ed = document.getElementById('ptype-guide-' + id);
+    if (!t || !ed) return;
+    t.guide = ed.textContent.trim() === '' ? '' : ed.innerHTML;
+    syncPreviewLive();
+  }
+  function focusPtypeGuide(id) {
+    var ed = document.getElementById('ptype-guide-' + id);
+    if (ed) ed.focus();
+  }
+  function setPtypeFee(id, on) {
+    var t = ptypeById(id);
+    if (!t) return;
+    t.fee.on = on;
+    renderPtypes();
+    syncPreviewLive();
+    /* 켜자마자 금액을 입력할 수 있게 커서를 옮긴다 */
+    if (on) {
+      var amount = document.getElementById('ptype-fee-amount-' + id);
+      if (amount) amount.focus();
+    }
+  }
+  function setPtypeFeeAmount(id, val) {
+    var t = ptypeById(id);
+    if (!t) return;
+    t.fee.amount = Math.max(0, +val || 0);
+    syncPreviewLive();
+  }
+  function setPtypeReveal(id, on) {
+    var t = ptypeById(id);
+    if (!t) return;
+    t.reveal.on = on;
+    renderPtypes();
+    renderAttendees();
+    syncPreviewLive();
+  }
+  function setPtypeRevealField(id, key, on) {
+    var t = ptypeById(id);
+    if (!t) return;
+    t.reveal.fields[key] = on;
+    syncPreviewLive();
+  }
+  function setPtypeRevealQuestion(id, qid, on) {
+    var t = ptypeById(id);
+    if (!t) return;
+    t.reveal.questions[qid] = on;
+    syncPreviewLive();
+  }
+  function setPtypeShowcase(id, on) {
+    var t = ptypeById(id);
+    if (!t) return;
+    t.reveal.showcase = on;
+    syncPreviewLive();
+  }
+
+  /* ── 더보기 메뉴 · 이름 수정 · 삭제 · 추가 ── */
+  function closePtypeMenus() {
+    document.querySelectorAll('.pv-ptype-menu').forEach(function(m){ m.hidden = true; });
+    menuPtypeId = null;
+  }
+  function togglePtypeMenu(id, e) {
+    if (e) e.stopPropagation();
+    var menu = document.getElementById('ptype-menu-' + id);
+    var open = menu && menu.hidden;
+    closePtypeMenus();
+    if (open) { menu.hidden = false; menuPtypeId = id; }
+  }
+  function openPtypeRename(id) {
+    closePtypeMenus();
+    var t = ptypeById(id);
+    if (!t) return;
+    renamingPtypeId = id;
+    var input = document.getElementById('ptype-name-input');
+    input.value = t.name;
+    openSheet('ptype-name');
+    setTimeout(function(){ input.focus(); input.select(); }, 120);
+  }
+  function pickPtypeName(name) {
+    document.getElementById('ptype-name-input').value = name;
+  }
+  function onPtypeNameKey(e) {
+    if (e.key === 'Enter') { e.preventDefault(); submitPtypeName(); }
+  }
+  function submitPtypeName() {
+    var t = ptypeById(renamingPtypeId);
+    var name = document.getElementById('ptype-name-input').value.trim();
+    if (!t || !name) { closeSheet(); return; }
+    t.name = name;
+    closeSheet();
+    renderPtypes();
+    renderFormTabs();
+    syncAttendeeTypeUI();
+    renderAttendees();
+    syncPreviewLive();
+  }
+  function removePtype(id) {
+    closePtypeMenus();
+    var idx = -1;
+    for (var i = 0; i < ptypes.length; i++) if (ptypes[i].id === id) idx = i;
+    if (idx < 0) return;
+    ptypes.splice(idx, 1);
+    delete formStates[id];
+    if (ptypes.length === 0) {
+      /* 유형이 하나도 없으면 나눠 받기를 끄고 원래 화면으로 돌아간다 */
+      document.getElementById('opt-ptypes').checked = false;
+      onPtypesToggle();
+      return;
+    }
+    if (activeFormKey === id) loadForm(ptypes[0].id);
+    renderPtypes();
+    renderFormTabs();
+    syncAttendeeTypeUI();
+    renderAttendees();
+    syncPreviewLive();
+  }
+  function addPtype() {
+    var t = newPtype();
+    ptypes.push(t);
+    formStates[t.id] = newFormState();
+    renderPtypes();
+    renderFormTabs();
+    syncAttendeeTypeUI();
+    syncPreviewLive();
+    openPtypeRename(t.id);
+  }
+
+  /* ── 나눠 받기 on/off ── */
+  function onPtypesToggle() {
+    var on = document.getElementById('opt-ptypes').checked;
+    saveActiveForm();
+    if (on && ptypes.length === 0) {
+      ptypes.push(newPtype('참가 유형 1'));
+      ptypes.push(newPtype('참가 유형 2'));
+      ptypes.forEach(function(t){ formStates[t.id] = newFormState(); });
+    }
+    var listEl = document.getElementById('ptype-list');
+    var addEl = document.getElementById('ptype-add');
+    listEl.hidden = !on;
+    addEl.hidden = !on;
+    if (on) { renderPtypes(); loadForm(ptypes[0].id); }
+    else    { listEl.innerHTML = ''; loadForm('_default'); }
+    renderFormTabs();
+    syncAttendeeTypeUI();
+    renderAttendees();
+    syncPtypeMaster();
+    syncPreviewLive();
+  }
+
+  /* 마스터(이벤트 설정 > 신청자 목록 노출)가 꺼지면 유형별 참석자 공개를 잠근다 */
+  function syncPtypeMaster() {
+    var master = document.getElementById('opt-show-applicant-list').checked;
+    document.querySelectorAll('.pv-ptype-reveal').forEach(function(el){
+      el.classList.toggle('is-disabled', !master);
+    });
+    document.querySelectorAll('.pv-ptype-reveal-lock').forEach(function(el){
+      el.hidden = master;
+    });
+    document.getElementById('opt-list-note').hidden = !ptypesOn();
+  }
+  function onApplicantListToggle() {
+    syncPtypeMaster();
+    syncPreviewLive();
+  }
+  /* 참석자를 공개하는 유형이 있으면 마스터는 켜져 있어야 한다 */
+  function deriveApplicantListMaster() {
+    if (!ptypesOn()) return;
+    var any = ptypes.some(function(t){ return t.reveal.on; });
+    if (any) document.getElementById('opt-show-applicant-list').checked = true;
+  }
+
+  /* ════════════════════════════════════════════
+     신청폼 — 유형별 구성 보관
+     ════════════════════════════════════════════ */
+  /* 한 유형의 폼 상태는 두 벌을 모두 들고 있다.
+     - fields/questions … 개인 신청(그리고 유형 나누기 OFF)일 때 쓰는 한 벌
+     - team/member      … 팀 신청일 때 쓰는 2층
+     신청 단위를 개인↔팀으로 오가도 각자 적어둔 게 지워지지 않는다. */
+  function newFormState() {
+    return {
+      fields: {
+        name:  { enabled: true, required: true },
+        phone: { enabled: true, required: true },
+        email: { enabled: true, required: false }
+      },
+      questions: [],
+      team: {
+        fields: { title: { enabled: true, required: true } },
+        questions: []
+      },
+      member: {
+        fields: {
+          name:  { enabled: true, required: true },   /* 팀원 식별의 최소 단위 — 항상 켜짐·필수 */
+          phone: { enabled: true, required: true },
+          email: { enabled: true, required: false }
+        },
+        questions: []
+      }
+    };
+  }
+  var formStates = { _default: newFormState() };
+  var activeFormKey = '_default';
+  var activeFormLayout = 'single';   /* 'single' | 'team' — 지금 화면에 떠 있는 레이아웃 */
+
+  function readField(f) {
+    var cb = document.getElementById('field-' + f + '-enabled');
+    return { enabled: cb ? cb.checked : true, required: reqSelected(f) };
+  }
+  function applyField(f, v) {
+    var cb = document.getElementById('field-' + f + '-enabled');
+    if (cb) cb.checked = v.enabled;
+    setFieldRequired(f, v.required);
+    toggleFieldEnabled(f);
+  }
+
+  function saveActiveForm() {
+    var st = formStates[activeFormKey];
+    if (!st) return;
+    if (activeFormLayout === 'team') {
+      st.team.fields.title   = readField('team-title');
+      st.member.fields.phone = readField('member-phone');
+      st.member.fields.email = readField('member-email');
+      st.member.fields.name  = { enabled: true, required: true };   /* 끄거나 선택으로 못 바꾼다 */
+    } else {
+      ['name', 'phone', 'email'].forEach(function(f){ st.fields[f] = readField(f); });
+    }
+  }
+
+  function loadForm(key) {
+    activeFormKey = key;
+    var st = formStates[key] || (formStates[key] = newFormState());
+    var t = ptypesOn() ? ptypeById(key) : null;
+    activeFormLayout = (t && t.unit === 'team') ? 'team' : 'single';
+
+    if (activeFormLayout === 'team') {
+      applyField('team-title',   st.team.fields.title);
+      applyField('member-name',  st.member.fields.name);
+      applyField('member-phone', st.member.fields.phone);
+      applyField('member-email', st.member.fields.email);
+    } else {
+      ['name', 'phone', 'email'].forEach(function(f){ applyField(f, st.fields[f]); });
+    }
+    syncFormVisibility();
+    renderQuestions();
+  }
+
+  /* 신청 방식(자체/외부)과 신청 단위(개인/팀)를 함께 보고 어느 카드를 띄울지 정한다 */
+  function syncFormVisibility() {
+    var sel = document.querySelector('.pv-formtype-card[data-mode].is-selected');
+    var mode = sel ? sel.dataset.mode : 'self';
+    var showForm = mode === 'self';
+    var team = activeFormLayout === 'team';
+    document.getElementById('f-form-card').hidden = !showForm || team;
+    document.getElementById('f-form-team').hidden = !showForm || !team;
+  }
+
+  function renderFormTabs() {
+    var tabs = document.getElementById('pv-form-type-tabs');
+    var ext = externalFormState();
+    if (!ptypesOn() || ptypes.length < 2 || ext.enabled) {
+      tabs.hidden = true;
+      tabs.innerHTML = '';
+      return;
+    }
+    tabs.hidden = false;
+    tabs.innerHTML = ptypes.map(function(t){
+      return '<button type="button" class="pv-type-tab' + (t.id === activeFormKey ? ' is-selected' : '') + '" onclick="selectFormTab(\'' + t.id + '\')">' + escapeHTML(t.name) + '</button>';
+    }).join('');
+  }
+  function selectFormTab(id) {
+    if (id === activeFormKey) return;
+    saveActiveForm();
+    loadForm(id);
+    renderFormTabs();
+  }
+
+  /* ── 참석자 (사전 등록) ── */
+  /* 맥락별 데모 시드 — 일반 페이지는 사전 등록을 거의 쓰지 않으므로 빈 상태가 기본 */
+  var ATTENDEE_SEED = {
+    general: [],
+    community: [
+      { name: '양은주',    phone: '010-1234-5678' },
+      { name: '자버 유카', phone: '010-2841-9032' },
+      { name: '김민서',    phone: '' },
+      { name: '이지훈',    phone: '010-7193-4820' }
+    ]
+  };
+  var attendees = [];
+  var attendeeAdded = [];   // 이번에 시트에서 추가한 사람 (시트 안 목록용)
+
+  /* 유형이 나뉘어 있으면 어느 유형의 참석자인지 배지로 보여준다 */
+  function attendeeType(a) {
+    if (!ptypesOn()) return null;
+    return ptypeById(a.typeId) || ptypes[0];
+  }
+  function attendeeRowHTML(a, idx) {
+    var t = attendeeType(a);
+    var badge = t ? '<span class="badge badge-sm badge-weak-primary">' + escapeHTML(t.name) + '</span>' : '';
+    return ''
+      + '<div class="pv-att-row">'
+      +   '<span class="avatar avatar-sm"></span>'
+      +   '<span class="pv-att-name">' + escapeHTML(a.name) + '</span>'
+      +   badge
+      +   '<span class="pv-att-phone">' + (a.phone ? escapeHTML(a.phone) : '—') + '</span>'
+      +   '<button type="button" class="icon-btn icon-btn-sm icon-btn-clear" aria-label="' + escapeHTML(a.name) + ' 삭제" '
+      +     'onclick="removeAttendee(' + idx + ')"><i data-lucide="x"></i></button>'
+      + '</div>';
+  }
+
+  function renderAttendees() {
+    var list  = document.getElementById('att-list');
+    var count = document.getElementById('att-count');
+    var empty = document.getElementById('att-empty');
+    list.innerHTML = attendees.map(function(a, i){ return attendeeRowHTML(a, i); }).join('');
+    count.textContent = attendees.length + '명';
+    count.hidden = attendees.length === 0;
+    empty.hidden  = attendees.length > 0;
+    renderAttendeeAdded();
+    syncAttendeeSummary();
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function renderAttendeeAdded() {
+    var box = document.getElementById('att-added');
+    var list = document.getElementById('att-added-list');
+    if (!box || !list) return;
+    box.hidden = attendeeAdded.length === 0;
+    list.innerHTML = attendeeAdded.map(function(a){
+      return attendeeRowHTML(a, attendees.indexOf(a));
+    }).join('');
+  }
+
+
+  /* 유형이 1개(또는 나눠 받기 꺼짐)면 선택지가 없다 — 기존과 동일 */
+  function syncAttendeeTypeUI() {
+    var field = document.getElementById('att-type-field');
+    var select = document.getElementById('att-type');
+    var show = ptypesOn() && ptypes.length > 1;
+    field.hidden = !show;
+    if (!show) { select.innerHTML = ''; return; }
+    var prev = select.value;
+    select.innerHTML = ptypes.map(function(t){
+      return '<option value="' + t.id + '">' + escapeHTML(t.name) + '</option>';
+    }).join('');
+    if (ptypeById(prev)) select.value = prev;
+  }
+
+  function openAttendeeSheet() {
+    attendeeAdded = [];
+    syncAttendeeTypeUI();
+    document.getElementById('att-name').value = '';
+    document.getElementById('att-phone').value = '';
+    onAttendeeInput();
+    renderAttendeeAdded();
+    openSheet('attendee');
+    if (window.lucide) lucide.createIcons();
+    setTimeout(function(){ document.getElementById('att-name').focus(); }, 120);
+  }
+
+  function onAttendeeInput() {
+    var name = document.getElementById('att-name').value.trim();
+    document.getElementById('att-submit').disabled = name === '';
+  }
+  function onAttendeeKey(e) {
+    if (e.key === 'Enter') { e.preventDefault(); submitAttendee(); }
+  }
+
+  /* 추가하기 — 시트를 닫지 않고 입력창만 비운다 (연속 입력) */
+  function submitAttendee() {
+    var nameEl  = document.getElementById('att-name');
+    var phoneEl = document.getElementById('att-phone');
+    var name = nameEl.value.trim();
+    if (!name) return;
+    var typeSel = document.getElementById('att-type');
+    var typeId = ptypesOn() ? (typeSel.value || ptypes[0].id) : '';
+    var person = { name: name, phone: phoneEl.value.trim(), typeId: typeId };
+    attendees.push(person);
+    attendeeAdded.push(person);
+    nameEl.value = '';
+    phoneEl.value = '';
+    onAttendeeInput();
+    renderAttendees();
+    nameEl.focus();
+  }
+
+  function removeAttendee(idx) {
+    if (idx < 0 || idx >= attendees.length) return;
+    var person = attendees[idx];
+    attendees.splice(idx, 1);
+    var a = attendeeAdded.indexOf(person);
+    if (a > -1) attendeeAdded.splice(a, 1);
+    renderAttendees();
+  }
+
+  /* ── Option bottom sheets ── */
+  function openSheet(key) {
+    var sheet = document.getElementById('sheet-' + key);
+    var overlay = document.getElementById('sheet-overlay');
+    if (!sheet || !overlay) return;
+    document.querySelectorAll('.pv-sheet').forEach(function(s){ s.classList.remove('is-open'); });
+    sheet.classList.add('is-open');
+    overlay.classList.add('is-open');
+  }
+  function closeSheet() {
+    document.querySelectorAll('.pv-sheet').forEach(function(s){ s.classList.remove('is-open'); });
+    var overlay = document.getElementById('sheet-overlay');
+    if (overlay) overlay.classList.remove('is-open');
+  }
+  function onSheetInput(key) {
+    if (key === 'cta') {
+      var v = document.getElementById('f-cta').value.trim();
+      document.getElementById('disp-cta').textContent = v || '신청하기';
+    }
+  }
+
+  /* ── 리뷰 노출 토글 ── */
+  function onReviewsToggle() {
+    // 리뷰 노출은 on/off만 — 미리보기 후기 섹션 표시/숨김은 미리보기 열 때 반영된다.
+  }
+
+  function escapeText(s) {
+    return String(s).replace(/[&<>"']/g, function(c){
+      return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+    });
+  }
+
+  function pickSuggestion(key, text) {
+    var input = document.getElementById('f-cta');
+    if (input) input.value = text;
+    onSheetInput(key);
+  }
+
+  /* ── Date/Time pill formatters ── */
+  var WEEKDAYS = ['일','월','화','수','목','금','토'];
+  function formatDate(val) {
+    var d = new Date(val + 'T00:00:00');
+    return (d.getMonth()+1) + '월 ' + d.getDate() + '일 (' + WEEKDAYS[d.getDay()] + ')';
+  }
+
+  function toggleOptions() {
+    var header = document.getElementById('opt-section-header');
+    var list = document.getElementById('opt-list');
+    var open = list.hidden;
+    list.hidden = !open;
+    header.classList.toggle('is-open', open);
+  }
+
+  /* ════════════════════════════════════════════
+     맥락(일반 페이지 / 커뮤니티) — 프로토타입 전환
+     실서비스에서는 "어느 페이지에서 만드느냐"로 자동 결정된다.
+     ════════════════════════════════════════════ */
+  var CONTEXT_DEFAULTS = {
+    general:   { reviews: true,  comments: false, applicants: false, list: false, loginOnly: false, ai: true },
+    community: { reviews: false, comments: true,  applicants: false, list: true,  loginOnly: true,  ai: true }
+  };
+
+  /* 맥락의 기본 참석자 상태로 되돌린다 (프로토타입 데모용) */
+  function seedAttendees(ctx) {
+    var seed = ATTENDEE_SEED[ctx] || [];
+    attendees.length = 0;
+    seed.forEach(function(a){ attendees.push({ name: a.name, phone: a.phone, typeId: a.typeId || '' }); });
+    attendeeAdded.length = 0;
+    renderAttendees();
+  }
+
+  function setContext(ctx) {
+    document.body.dataset.context = ctx;
+    seedAttendees(ctx);
+    syncViewerBar();
+    applyContextLayout(ctx);
+    applyContextDefaults(ctx);
+    /* 참석자를 공개하는 유형이 있으면 상위 설정(신청자 목록 노출)은 켜져 있어야 한다 */
+    deriveApplicantListMaster();
+    syncAttendeeTypeUI();
+    renderAttendees();
+    syncPtypeMaster();
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function syncViewerBar() {
+    var ctx = document.body.dataset.context;
+    document.querySelectorAll('.viewer-bar-tab').forEach(function(t){
+      t.classList.toggle('active', t.dataset.value === ctx);
+    });
+  }
+
+  /* 순서는 CSS order가 담당 — 여기서는 펼침 상태만 맞춘다 */
+  function applyContextLayout(ctx) {
+    var community = ctx === 'community';
+
+    /* 일정 — 마감(신청 기간)과 모임(행사 일정)의 중요도가 뒤집힌다 */
+    setDateCardOpen('apply', !community);
+    setDateCardOpen('event', community);
+
+    /* 참석자 — 같은 접기 헤더를 쓰고, 커뮤니티만 펼친 채로 시작한다 */
+    var attBody = document.getElementById('att-block');
+    var attHead = document.getElementById('att-section-header');
+    attBody.hidden = !community;
+    attHead.classList.toggle('is-open', community);
+
+    /* 신청폼 구성 — 커뮤니티는 이메일 해제, 맥락에 안 맞는 방식은 숨김 */
+    var email = document.getElementById('field-email-enabled');
+    email.checked = !community;
+    toggleFieldEnabled('email');
+    /* 위에서 DOM을 직접 건드렸으니 지금 보고 있는 유형의 폼 상태에도 반영한다 */
+    saveActiveForm();
+    syncAttendeeSummary();
+  }
+
+  /* 이벤트 설정 — UI는 그대로, 기본값만 맥락별로 다르다 */
+  function applyContextDefaults(ctx) {
+    var d = CONTEXT_DEFAULTS[ctx] || CONTEXT_DEFAULTS.general;
+    document.getElementById('opt-reviews').checked = d.reviews;
+    onReviewsToggle();
+    document.getElementById('opt-comments').checked = d.comments;
+    var applicants = document.getElementById('opt-show-applicants');
+    if (!applicants.disabled) applicants.checked = d.applicants;
+    document.getElementById('opt-show-applicant-list').checked = d.list;
+    document.getElementById('opt-login-only').checked = d.loginOnly;
+    document.getElementById('opt-ai-training').checked = d.ai;
+    document.getElementById('opt-members-only').checked = false;
+    syncMembersOnly();
+  }
+
+  /* 커뮤니티 회원만 받으려면 로그인이 전제다 — 켜는 동안 로그인 토글을 잠근다 */
+  function syncMembersOnly() {
+    var members = document.getElementById('opt-members-only');
+    var loginRow = document.getElementById('opt-login-row');
+    var login = document.getElementById('opt-login-only');
+    var on = members.checked;
+    if (on) login.checked = true;
+    loginRow.classList.toggle('is-disabled', on);
+    loginRow.setAttribute('aria-disabled', on ? 'true' : 'false');
+    login.disabled = on;
+    document.getElementById('opt-login-note').hidden = !on;
+  }
+
+  /* ── 일정 카드 접기/펼치기 ── */
+  function setDateCardOpen(which, open) {
+    var head = document.getElementById(which + '-card-head');
+    var body = document.getElementById(which + '-card-body');
+    if (!head || !body) return;
+    body.hidden = !open;
+    head.classList.toggle('is-open', open);
+    if (!open) closeCalendar();
+  }
+  function toggleDateCard(which) {
+    var body = document.getElementById(which + '-card-body');
+    if (!body) return;
+    setDateCardOpen(which, body.hidden);
+  }
+
+  function dateRangeLabel(startId, endId) {
+    var s = document.getElementById(startId).value;
+    var e = document.getElementById(endId).value;
+    if (s && e) return formatDate(s) + ' ~ ' + formatDate(e);
+    if (s) return formatDate(s) + ' ~';
+    if (e) return '~ ' + formatDate(e);
+    return '';
+  }
+  function syncDateSummaries() {
+    var applySum = document.getElementById('apply-card-summary');
+    var eventSum = document.getElementById('event-card-summary');
+    /* 힌트 문구 없이 — 날짜가 정해졌을 때만 요약을 보여준다 */
+    if (applySum) applySum.textContent = dateRangeLabel('f-start', 'f-end');
+    if (eventSum) eventSum.textContent = dateRangeLabel('f-event-start', 'f-event-end');
+  }
+
+  /* ── 참석자 접기/펼치기 (일반 페이지에서만 노출) ── */
+  function toggleAttendees() {
+    var head = document.getElementById('att-section-header');
+    var body = document.getElementById('att-block');
+    var open = body.hidden;
+    body.hidden = !open;
+    head.classList.toggle('is-open', open);
+  }
+  function syncAttendeeSummary() { /* 헤더 요약 없음 */ }
+
+
+
+  function toggleTime(which) {
+    var card = document.getElementById(which + '-card');
+    var toggle = document.getElementById(which + '-time-toggle');
+    var on = !card.classList.contains('has-time');
+    card.classList.toggle('has-time', on);
+    var iconEl = toggle.querySelector('i, svg');
+    if (iconEl) {
+      var newIcon = document.createElement('i');
+      newIcon.setAttribute('data-lucide', on ? 'x' : 'plus');
+      iconEl.replaceWith(newIcon);
+    }
+    toggle.querySelector('span').textContent = on ? '시간 제거' : '시간 추가';
+    toggle.classList.toggle('is-on', on);
+    if (window.lucide) lucide.createIcons();
+    if (!on) {
+      var prefix = which === 'apply' ? 'f-' : 'f-event-';
+      document.getElementById(prefix + 'start-time').value = '';
+      document.getElementById(prefix + 'end-time').value = '';
+    }
+    onInput();
+  }
+  /* ── Custom calendar (reusable across cards) ── */
+  var calState = { field: null, pair: null, calId: null, monthId: null, gridId: null, viewYear: 0, viewMonth: 0 };
+  function pad2(n) { return n < 10 ? '0' + n : '' + n; }
+  function toISO(y, m, d) { return y + '-' + pad2(m + 1) + '-' + pad2(d); }
+  function parseISO(s) {
+    var p = s.split('-');
+    return { y: +p[0], m: +p[1] - 1, d: +p[2] };
+  }
+  function getCalCtx(field) {
+    if (field === 'start' || field === 'end') {
+      return { pair: ['start', 'end'], calId: 'pv-calendar', monthId: 'pv-cal-month', gridId: 'pv-cal-grid' };
+    }
+    return { pair: ['event-start', 'event-end'], calId: 'pv-calendar-event', monthId: 'pv-cal-event-month', gridId: 'pv-cal-event-grid' };
+  }
+
+  function openCalendar(field, e) {
+    if (e) e.stopPropagation();
+    closeCalendar();
+    var ctx = getCalCtx(field);
+    var input = document.getElementById('f-' + field);
+    var ref;
+    if (input.value) ref = parseISO(input.value);
+    else {
+      var t = new Date();
+      ref = { y: t.getFullYear(), m: t.getMonth(), d: t.getDate() };
+    }
+    calState.field = field;
+    calState.pair = ctx.pair;
+    calState.calId = ctx.calId;
+    calState.monthId = ctx.monthId;
+    calState.gridId = ctx.gridId;
+    calState.viewYear = ref.y;
+    calState.viewMonth = ref.m;
+    document.querySelectorAll('.pv-date-pill').forEach(function(p) { p.classList.remove('is-active'); });
+    var pill = document.getElementById('pill-' + field + '-date');
+    pill.classList.add('is-active');
+    var cal = document.getElementById(ctx.calId);
+    cal.hidden = false;
+    placePicker(cal, pill);
+    renderCalendar();
+  }
+
+  function placePicker(picker, anchorPill) {
+    var card = picker.closest('.pv-date-card');
+    var cardRect = card.getBoundingClientRect();
+    var pillRect = anchorPill.getBoundingClientRect();
+    picker.style.top = (pillRect.bottom - cardRect.top + 8) + 'px';
+  }
+
+  function closeCalendar() {
+    document.querySelectorAll('.pv-calendar').forEach(function(c){ c.hidden = true; });
+    document.querySelectorAll('.pv-date-pill').forEach(function(p) { p.classList.remove('is-active'); });
+    calState.field = null;
+  }
+
+  function changeMonth(delta) {
+    var m = calState.viewMonth + delta;
+    var y = calState.viewYear;
+    if (m < 0) { m = 11; y--; }
+    else if (m > 11) { m = 0; y++; }
+    calState.viewYear = y;
+    calState.viewMonth = m;
+    renderCalendar();
+  }
+
+  function goToday() {
+    var t = new Date();
+    calState.viewYear = t.getFullYear();
+    calState.viewMonth = t.getMonth();
+    renderCalendar();
+  }
+
+  function renderCalendar() {
+    var y = calState.viewYear, m = calState.viewMonth;
+    var monthBtn = document.getElementById(calState.monthId);
+    monthBtn.innerHTML = y + '년 ' + (m + 1) + '월<i data-lucide="chevron-right"></i>';
+    if (window.lucide) lucide.createIcons();
+
+    var firstDow = new Date(y, m, 1).getDay();
+    var daysInMonth = new Date(y, m + 1, 0).getDate();
+    var prevMonthDays = new Date(y, m, 0).getDate();
+
+    var selected = null;
+    var input = document.getElementById('f-' + calState.field);
+    if (input && input.value) selected = parseISO(input.value);
+
+    var otherField = calState.pair[0] === calState.field ? calState.pair[1] : calState.pair[0];
+    var otherInput = document.getElementById('f-' + otherField);
+    var otherVal = otherInput ? otherInput.value : '';
+    var otherDate = otherVal ? parseISO(otherVal) : null;
+
+    var grid = document.getElementById(calState.gridId);
+    grid.innerHTML = '';
+
+    var cells = [];
+    for (var i = firstDow - 1; i >= 0; i--) {
+      cells.push({ day: prevMonthDays - i, outside: true, year: m === 0 ? y - 1 : y, month: m === 0 ? 11 : m - 1 });
+    }
+    for (var d = 1; d <= daysInMonth; d++) {
+      cells.push({ day: d, outside: false, year: y, month: m });
+    }
+    var nextMonth = m === 11 ? 0 : m + 1;
+    var nextYear = m === 11 ? y + 1 : y;
+    var remainder = cells.length % 7;
+    var trailing = remainder === 0 ? 0 : 7 - remainder;
+    for (var t = 1; t <= trailing; t++) {
+      cells.push({ day: t, outside: true, year: nextYear, month: nextMonth });
+    }
+
+    cells.forEach(function(c) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'pv-cal-day';
+      if (c.outside) btn.classList.add('is-outside');
+      if (selected && selected.y === c.year && selected.m === c.month && selected.d === c.day) {
+        btn.classList.add('is-selected');
+      }
+      var disabled = false;
+      if (otherDate) {
+        var cellTs = new Date(c.year, c.month, c.day).getTime();
+        var otherTs = new Date(otherDate.y, otherDate.m, otherDate.d).getTime();
+        var isStartField = calState.field === calState.pair[0];
+        if (isStartField && cellTs > otherTs) disabled = true;
+        if (!isStartField && cellTs < otherTs) disabled = true;
+      }
+      if (disabled) {
+        btn.classList.add('is-disabled');
+        btn.disabled = true;
+      }
+      btn.textContent = c.day;
+      btn.onclick = function(ev) {
+        ev.stopPropagation();
+        selectDate(c.year, c.month, c.day);
+      };
+      grid.appendChild(btn);
+    });
+  }
+
+  function selectDate(y, m, d) {
+    var input = document.getElementById('f-' + calState.field);
+    var iso = toISO(y, m, d);
+    input.value = iso;
+    var display = document.getElementById('disp-' + calState.field + '-date');
+    var pill = document.getElementById('pill-' + calState.field + '-date');
+    display.textContent = formatDate(iso);
+    pill.classList.remove('is-empty');
+    closeCalendar();
+    onInput();
+  }
+
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('.pv-calendar')) closeCalendar();
+    if (!e.target.closest('.pv-ptype-menu')) closePtypeMenus();
+  });
+
+  /* ── Validation + D-Day ── */
+  function onInput() {
+    var titleEl = document.getElementById('f-title');
+    var titleOK = titleEl.textContent.trim() !== '';
+    var start = document.getElementById('f-start').value;
+    var end = document.getElementById('f-end').value;
+
+    if (titleOK) titleEl.classList.remove('is-error');
+
+    /* D-Day */
+    var dday = document.getElementById('f-dday');
+    if (start && end) {
+      var d1 = new Date(start), d2 = new Date(end);
+      var diff = Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
+      if (diff < 0) {
+        dday.textContent = '종료일이 시작일보다 빨라요';
+        dday.style.color = 'var(--color-destructive)';
+      } else {
+        dday.textContent = '총 ' + (diff + 1) + '일 동안 진행돼요';
+        dday.style.color = 'var(--color-primary)';
+      }
+      dday.classList.add('on');
+    } else {
+      dday.classList.remove('on');
+    }
+
+    syncDateSummaries();
+  }
+
+  /* 신청 단위에 따라 폼 계약이 갈린다.
+     개인 → { fields, questions }            (기존 모양 그대로)
+     팀   → { team:{...}, member:{...} }     (팀 정보 1벌 + 팀원 반복) */
+  function formPayload(t, st) {
+    if (t.unit === 'team') {
+      return {
+        unit: 'team',
+        team: {
+          fields: st.team.fields,          /* { title: {enabled, required} } */
+          questions: st.team.questions     /* 한 팀에 한 번 */
+        },
+        member: {
+          fields: st.member.fields,        /* { name, phone, email } — name은 항상 enabled·required */
+          questions: st.member.questions,  /* 팀원마다 반복 */
+          repeat: true,
+          leaderPick: true                 /* 팀원 중 대표자 1명 지정 — 항상 켜짐 */
+        }
+      };
+    }
+    return { unit: 'individual', fields: st.fields, questions: st.questions };
+  }
+
+  function publishEvent() {
+    var titleEl = document.getElementById('f-title');
+    if (titleEl.textContent.trim() === '') {
+      titleEl.classList.add('is-error');
+      titleEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setTimeout(function(){ titleEl.focus(); }, 250);
+      return;
+    }
+    saveActiveForm();
+    var legacyForm = ptypesOn()
+      ? (formStates[ptypes[0].id] || formStates._default)
+      : formStates._default;
+    /* 예전 랜딩이 읽는 최상위 fields/questions — 팀 유형이면 '사람 한 명' 단위인 member를 준다 */
+    var legacyTeam = ptypesOn() && ptypes[0].unit === 'team';
+    var legacyFields    = legacyTeam ? legacyForm.member.fields    : legacyForm.fields;
+    var legacyQuestions = legacyTeam ? legacyForm.member.questions : legacyForm.questions;
+    var applyPeriod = {
+      start: document.getElementById('f-start').value,
+      end: document.getElementById('f-end').value,
+      startTime: document.getElementById('f-start-time').value,
+      endTime: document.getElementById('f-end-time').value
+    };
+    var eventSchedule = {
+      start: document.getElementById('f-event-start').value,
+      end: document.getElementById('f-event-end').value,
+      startTime: document.getElementById('f-event-start-time').value,
+      endTime: document.getElementById('f-event-end-time').value,
+      place: document.getElementById('f-event-place').value.trim(),
+      sameAsApply: false
+    };
+    var data = {
+      title: titleEl.textContent.trim(),
+      description: document.getElementById('f-desc').textContent.trim(),
+      images: images,
+      applyPeriod: applyPeriod,
+      eventSchedule: eventSchedule,
+      cta: (document.getElementById('disp-cta').textContent.trim() || '신청하기'),
+      /* 유형이 나뉘어도 예전 랜딩이 읽을 수 있도록 첫 유형의 폼을 그대로 남긴다 */
+      fields: legacyFields,
+      questions: legacyQuestions,
+      attendees: attendees.map(function(a){
+        var t = attendeeType(a);
+        return { name: a.name, phone: a.phone, typeId: t ? t.id : '', typeName: t ? t.name : '' };
+      }),
+      externalForm: externalFormState(),
+      reviews:  document.getElementById('opt-reviews').checked,
+      comments: document.getElementById('opt-comments').checked,
+      /* 참가 유형 — event-landing이 유형 탭·유형별 CTA·참석자 카드를 그리는 데 쓴다 */
+      participantTypes: {
+        enabled: ptypesOn(),
+        showAttendeeList: document.getElementById('opt-show-applicant-list').checked,
+        types: ptypes.map(function(t){
+          var st = formStates[t.id] || newFormState();
+          return {
+            id: t.id,
+            name: t.name,
+            unit: t.unit,                                  /* 'individual' | 'team' */
+            guide: t.guide,                                /* 유형별 안내 (리치텍스트 HTML) */
+            fee: { enabled: t.fee.on, amount: t.fee.on ? t.fee.amount : 0 },
+            reveal: {
+              enabled: t.reveal.on,
+              showcase: !!t.reveal.showcase,
+              fields: revealFieldsPayload(t),              /* 신청폼에서 켜진 기본 필드만 */
+              questions: revealQuestionsOf(t)              /* 공개할 신청폼 질문 — 배열 순서가 카드에 실릴 순서 */
+                .filter(function(q){ return revealQuestionOn(t, q); })
+                .map(function(q){ return { id: q.id, label: q.text }; })
+            },
+            cta: t.name + ' 신청',
+            form: formPayload(t, st),
+            attendees: (t.people || []).map(function(p){ return { name: p.name, photo: p.photo, phone: p.phone, email: p.email || '', answers: p.answers || {} }; })
+          };
+        })
+      },
+      alimtalk: {
+        applyComplete: document.getElementById('opt-alim-complete').checked,
+        dayBeforeRemind: document.getElementById('opt-alim-remind').checked
+      }
+    };
+    try { sessionStorage.setItem('connectia.event', JSON.stringify(data)); } catch(e) {}
+    window.location.href = 'event-landing.html?from=publish';
+  }
+
+  /* ── Preview ── */
+  function openPreview() {
+    var hero = document.getElementById('pv-prev-hero');
+    var slider = document.getElementById('pv-prev-slider');
+    var pagination = document.getElementById('pv-prev-pagination');
+    slider.innerHTML = '';
+    if (images.length === 0) {
+      hero.hidden = true;
+      pagination.hidden = true;
+    } else {
+      hero.hidden = false;
+      images.forEach(function(img) {
+        var slide = document.createElement('div');
+        slide.className = 'pv-prev-hero-slide';
+        if (img.src) slide.style.backgroundImage = 'url("' + encodeURI(img.src) + '")';
+        else if (img.bg) slide.style.background = img.bg + ' center/cover';
+        slider.appendChild(slide);
+      });
+      slider.scrollLeft = 0;
+      if (images.length > 1) {
+        pagination.hidden = false;
+        pagination.textContent = '1 / ' + images.length;
+        slider.onscroll = function() {
+          var idx = Math.round(slider.scrollLeft / slider.clientWidth) + 1;
+          pagination.textContent = idx + ' / ' + images.length;
+        };
+      } else {
+        pagination.hidden = true;
+      }
+    }
+
+    var title = document.getElementById('f-title').textContent.trim();
+    document.getElementById('pv-prev-title').textContent = title || '이벤트 이름';
+
+    var evStart = document.getElementById('f-event-start').value;
+    var evEnd = document.getElementById('f-event-end').value;
+    var evStartTime = document.getElementById('f-event-start-time').value;
+    var evEndTime = document.getElementById('f-event-end-time').value;
+    var schedEl = document.getElementById('pv-prev-schedule');
+    var schedDateEl = document.getElementById('pv-prev-schedule-date');
+    var schedTimeEl = document.getElementById('pv-prev-schedule-time');
+    if (evStart || evEnd || evStartTime || evEndTime) {
+      var dateStr = '';
+      if (evStart && evEnd) {
+        var s = new Date(evStart + 'T00:00:00');
+        var e = new Date(evEnd + 'T00:00:00');
+        var sStr = s.getFullYear() + '.' + String(s.getMonth()+1).padStart(2,'0') + '.' + String(s.getDate()).padStart(2,'0');
+        var eStr;
+        if (s.getFullYear() === e.getFullYear()) {
+          eStr = String(e.getMonth()+1).padStart(2,'0') + '.' + String(e.getDate()).padStart(2,'0');
+        } else {
+          eStr = e.getFullYear() + '.' + String(e.getMonth()+1).padStart(2,'0') + '.' + String(e.getDate()).padStart(2,'0');
+        }
+        dateStr = sStr + ' ~ ' + eStr;
+      } else if (evStart) {
+        var s2 = new Date(evStart + 'T00:00:00');
+        dateStr = s2.getFullYear() + '.' + String(s2.getMonth()+1).padStart(2,'0') + '.' + String(s2.getDate()).padStart(2,'0');
+      }
+      var timeStr = '';
+      if (evStartTime && evEndTime) timeStr = evStartTime + ' ~ ' + evEndTime;
+      else if (evStartTime) timeStr = evStartTime;
+      schedDateEl.textContent = dateStr;
+      schedTimeEl.textContent = timeStr;
+      schedTimeEl.hidden = !timeStr;
+      schedEl.hidden = false;
+    } else {
+      schedEl.hidden = true;
+    }
+
+    var place = document.getElementById('f-event-place').value.trim();
+    document.getElementById('pv-prev-place-value').textContent = place;
+    document.getElementById('pv-prev-place').hidden = !place;
+
+    var showReviews = document.getElementById('opt-reviews').checked;
+    document.getElementById('pv-prev-review-section').hidden = !showReviews;
+    document.getElementById('pv-prev-review-divider').hidden = !showReviews;
+    document.getElementById('pv-prev-trust-row').hidden = !showReviews;
+
+    var startDate = document.getElementById('f-start').value;
+    var endDate = document.getElementById('f-end').value;
+    var periodEl = document.getElementById('pv-prev-period');
+    var ddayEl = document.getElementById('pv-prev-dday');
+    var dateSection = document.getElementById('pv-prev-date-section');
+    var dateDivider = document.getElementById('pv-prev-date-divider');
+    if (startDate && endDate) {
+      periodEl.textContent = formatDate(startDate) + ' ~ ' + formatDate(endDate);
+      var today = new Date(); today.setHours(0,0,0,0);
+      var endD = new Date(endDate + 'T00:00:00');
+      var diff = Math.ceil((endD - today) / (1000 * 60 * 60 * 24));
+      if (diff > 0) { ddayEl.textContent = 'D-' + diff; ddayEl.hidden = false; }
+      else if (diff === 0) { ddayEl.textContent = 'D-DAY'; ddayEl.hidden = false; }
+      else { ddayEl.hidden = true; }
+      dateSection.hidden = false;
+      dateDivider.hidden = false;
+    } else {
+      dateSection.hidden = true;
+      dateDivider.hidden = true;
+    }
+
+    var descText = document.getElementById('f-desc').textContent.trim();
+    var descSection = document.getElementById('pv-prev-desc-section');
+    var descDivider = document.getElementById('pv-prev-desc-divider');
+    if (descText) {
+      document.getElementById('pv-prev-desc').textContent = descText;
+      descSection.hidden = false;
+      descDivider.hidden = false;
+    } else {
+      descSection.hidden = true;
+      descDivider.hidden = true;
+    }
+
+    renderPreviewTypes();
+    renderPreviewAttendees();
+    renderPreviewCta();
+
+    document.getElementById('pv-preview').classList.add('is-open');
+    document.getElementById('pv-preview-body').scrollTop = 0;
+    lucide.createIcons();
+  }
+
+  function closePreview() {
+    document.getElementById('pv-preview').classList.remove('is-open');
+  }
+
+  /* ── 미리보기: 참가 유형 · 참석자 · CTA ──
+     주최자가 설정을 바꾸면 바로 결과를 볼 수 있어야 한다.
+     미리보기가 열려 있는 동안의 변경은 syncPreviewLive()가 즉시 다시 그린다. */
+  var prevTypeIdx = 0;
+
+  function previewOpen() {
+    return document.getElementById('pv-preview').classList.contains('is-open');
+  }
+  function syncPreviewLive() {
+    if (!previewOpen()) return;
+    renderPreviewTypes();
+    renderPreviewAttendees();
+    renderPreviewCta();
+    if (window.lucide) lucide.createIcons();
+  }
+  function selectPreviewType(idx) {
+    prevTypeIdx = idx;
+    renderPreviewTypes();
+    if (window.lucide) lucide.createIcons();
+  }
+
+  /* ── 미리보기: 신청할 때 적는 것 ──
+     팀 유형이면 '팀 정보 1벌 + 팀원 카드 반복(대표자 체크)'이 그대로 드러나야 한다. */
+
+
+  function renderPreviewTypes() {
+    var sec = document.getElementById('pv-prev-type-section');
+    var div = document.getElementById('pv-prev-type-divider');
+    var show = ptypesOn() && !externalFormState().enabled;
+    sec.hidden = !show;
+    div.hidden = !show;
+    if (!show) return;
+
+    if (prevTypeIdx >= ptypes.length) prevTypeIdx = 0;
+    var tabs = document.getElementById('pv-prev-type-tabs');
+    tabs.hidden = ptypes.length < 2;
+    tabs.innerHTML = ptypes.map(function(t, i){
+      return '<button type="button" class="pv-type-tab' + (i === prevTypeIdx ? ' is-selected' : '') + '" onclick="selectPreviewType(' + i + ')">' + escapeHTML(t.name) + '</button>';
+    }).join('');
+
+    var t = ptypes[prevTypeIdx];
+    var guide = document.getElementById('pv-prev-type-guide');
+    guide.innerHTML = t.guide
+      ? t.guide
+      : '<span class="pv-prev-empty-section">유형별 안내를 적으면 여기에 보여요</span>';
+  }
+
+  var SHOWCASE_LIMIT = 5;
+
+  /* 참석자 = 주최자가 사전 등록한 사람 + 참석자 공개를 켠 유형의 신청자 */
+  function renderPreviewAttendees() {
+    var sec = document.getElementById('pv-prev-att-section');
+    var div = document.getElementById('pv-prev-att-divider');
+    var list = document.getElementById('pv-prev-att-list');
+    var master = document.getElementById('opt-show-applicant-list').checked;
+    var rows = [];
+
+    if (master) {
+      if (ptypesOn()) {
+        ptypes.forEach(function(t){
+          if (!t.reveal.on) return;
+          (t.people || []).forEach(function(p){ rows.push({ p: p, t: t }); });
+        });
+      }
+      attendees.forEach(function(a){
+        var t = attendeeType(a);
+        if (t && !t.reveal.on) return;
+        rows.push({ p: { name: a.name, phone: a.phone }, t: t });
+      });
+    }
+
+    /* 공개 중인 유형이 하나라도 '크게 보여주기'면 이 섹션 전체가 큰 카드로 바뀐다 */
+    var showcase = master && ptypesOn() && ptypes.some(function(t){
+      return t.reveal.on && t.reveal.showcase;
+    });
+
+    var cards;
+    if (showcase) {
+      cards = rows.slice(0, SHOWCASE_LIMIT)
+        .map(function(r){ return previewShowcaseCard(r.p, r.t); })
+        .filter(Boolean);
+      if (cards.length && rows.length > SHOWCASE_LIMIT) {
+        cards.push('<button type="button" class="pv-prev-show-more"><i data-lucide="chevron-right"></i><span>더보기</span></button>');
+      }
+    } else {
+      cards = rows.map(function(r){ return previewAttendeeCard(r.p, r.t); }).filter(Boolean);
+    }
+
+    var show = cards.length > 0;
+    sec.hidden = !show;
+    div.hidden = !show;
+    list.className = showcase ? 'pv-prev-showcase' : 'pv-prev-attendee-list';
+    list.innerHTML = cards.join('');
+  }
+
+  function typeBadgeHTML(t) {
+    return t ? '<span class="badge badge-sm badge-weak-primary">' + escapeHTML(t.name) + '</span>' : '';
+  }
+
+  function previewAttendeeCard(p, t) {
+    var body = revealBodyHTML(p, t);
+    if (!body) return '';
+    return '<div class="pv-prev-attendee-card">' + body + typeBadgeHTML(t) + '</div>';
+  }
+
+  function previewShowcaseCard(p, t) {
+    var body = revealBodyHTML(p, t, 'avatar-xl');
+    if (!body) return '';
+    return '<div class="pv-prev-show-card">' + body + typeBadgeHTML(t) + '</div>';
+  }
+
+  function renderPreviewCta() {
+    var single = document.getElementById('pv-prev-cta');
+    var list = document.getElementById('pv-prev-cta-list');
+    var body = document.getElementById('pv-preview-body');
+    var ctaText = document.getElementById('disp-cta').textContent.trim() || '신청하기';
+    var ext = externalFormState();
+
+    if (ptypesOn() && ptypes.length > 1 && !ext.enabled) {
+      single.hidden = true;
+      list.hidden = false;
+      body.classList.add('is-multi-cta');
+      list.innerHTML = ptypes.map(function(t, i){
+        return '<button type="button" class="btn btn-xl btn-block ' + (i === 0 ? 'btn-fill-primary' : 'btn-weak-primary') + '">'
+          + '<span>' + escapeHTML(t.name) + ' 신청</span>'
+          + '</button>';
+      }).join('');
+      return;
+    }
+
+    list.hidden = true;
+    list.innerHTML = '';
+    single.hidden = false;
+    body.classList.remove('is-multi-cta');
+    if (ext.enabled) {
+      single.innerHTML = '<span>' + escapeText(ctaText) + '</span><i data-lucide="external-link"></i>';
+      single.onclick = function(){ if (ext.url) window.open(ext.url, '_blank', 'noopener'); };
+    } else {
+      single.textContent = ctaText;
+      single.onclick = null;
+    }
+  }
+
+  /* ── 서식 툴바 (rt-editor, profile-edit 재사용) ──
+     툴바는 data-rt-for 로 자기 에디터를 가리킨다. 이벤트 설명과 유형별 안내가 같은 컴포넌트를 쓴다. */
+  const RT_CMDS = ['bold','italic','underline','strikeThrough'];
+  function rtToolbarFor(id){
+    return id ? document.querySelector('.rt-editor-toolbar[data-rt-for="' + id + '"]') : null;
+  }
+  function rtCmd(e, cmd){
+    e.preventDefault();
+    var tb = e.currentTarget.closest('.rt-editor-toolbar');
+    var ed = tb ? document.getElementById(tb.dataset.rtFor) : null;
+    if (!ed) return;
+    ed.focus();
+    document.execCommand(cmd, false, null);
+    rtSyncState();
+  }
+  function rtSyncState(){
+    var ed = document.activeElement;
+    if (!ed || !ed.isContentEditable) return;
+    var tb = rtToolbarFor(ed.id);
+    if (!tb) return;
+    tb.querySelectorAll('.rt-editor-btn').forEach(function(btn, i){
+      var cmd = RT_CMDS[i];
+      if (!cmd) return;
+      btn.classList.toggle('is-active', document.queryCommandState(cmd));
+    });
+  }
+  // 서식 툴바: 입력창 포커스 시에만 노출 (툴바 버튼 클릭은 onmousedown preventDefault로 blur 방지)
+  document.addEventListener('focusin', function(e){
+    if (!e.target.isContentEditable) return;
+    var tb = rtToolbarFor(e.target.id);
+    if (tb) tb.hidden = false;
+  });
+  document.addEventListener('focusout', function(e){
+    if (!e.target.isContentEditable) return;
+    var tb = rtToolbarFor(e.target.id);
+    if (tb) tb.hidden = true;
+  });
+
+  /* ════════════════════════════════════════════
+     데모 데이터 — 26년 청춘건배 (서울시립대학교 총동문회)
+     프로토타입 전용. 실서비스는 빈 화면에서 시작한다.
+     ════════════════════════════════════════════ */
+  var DEMO_EVENT = {
+    title: '26년 청춘건배',
+    desc: '서울시립대학교 총동문회가 여는 동문·재학생 교류의 밤입니다.\n\n· 일시  2026년 9월 21일(월) 저녁 6시 ~ 9시\n· 장소  서울시립대학교 배봉관 앞\n\n졸업생 선배와 재학생 팀이 한자리에 모여 이야기를 나눕니다. 우천 시에도 예정대로 진행해요.',
+    apply: { start: '2026-08-21', end: '2026-09-21' },
+    schedule: { start: '2026-09-21', end: '2026-09-21', startTime: '18:00', endTime: '21:00' },
+    place: '서울시립대학교 배봉관 앞'
+  };
+
+  function setDateValue(field, iso) {
+    var input = document.getElementById('f-' + field);
+    if (!input) return;
+    input.value = iso;
+    var disp = document.getElementById('disp-' + field + '-date');
+    var pill = document.getElementById('pill-' + field + '-date');
+    if (disp) disp.textContent = formatDate(iso);
+    if (pill) pill.classList.remove('is-empty');
+  }
+
+  function seedDemoEvent() {
+    document.getElementById('f-title').textContent = DEMO_EVENT.title;
+    document.getElementById('f-desc').textContent = DEMO_EVENT.desc;
+    setDateValue('start', DEMO_EVENT.apply.start);
+    setDateValue('end', DEMO_EVENT.apply.end);
+    setDateValue('event-start', DEMO_EVENT.schedule.start);
+    setDateValue('event-end', DEMO_EVENT.schedule.end);
+    if (!document.getElementById('event-card').classList.contains('has-time')) toggleTime('event');
+    document.getElementById('f-event-start-time').value = DEMO_EVENT.schedule.startTime;
+    document.getElementById('f-event-end-time').value = DEMO_EVENT.schedule.endTime;
+    document.getElementById('f-event-place').value = DEMO_EVENT.place;
+    onInput();
+  }
+
+  function seedPerson(person, questions, values) {
+    person.answers = {};
+    questions.forEach(function(q, i){ if (values[i]) person.answers[q.id] = values[i]; });
+    return person;
+  }
+
+  function seedDemoPtypes() {
+    var grad = newPtype('졸업생');
+    grad.unit = 'individual';
+    grad.guide = '후배들에게 들려줄 이야기를 하나만 준비해 오세요. 후원금은 전액 재학생 장학금으로 쓰입니다.';
+    grad.fee = { on: true, amount: 100000 };
+    grad.reveal = { on: true, showcase: true, fields: defaultRevealFields(), questions: {} };
+
+    var team = newPtype('재학생 팀');
+    team.unit = 'team';
+    team.guide = '팀을 꾸려 함께 신청해 주세요. 팀 사연을 함께 적어주시면 선정된 팀에 장학금을 드립니다.';
+    team.fee = { on: false, amount: 0 };
+    team.reveal = { on: false, showcase: false, fields: defaultRevealFields(), questions: {} };
+
+    ptypes = [grad, team];
+    ptypes.forEach(function(t){ formStates[t.id] = newFormState(); });
+
+    formStates[grad.id].questions.push(
+      newQuestion({ text: '학과 · 학번', placeholder: '예) 경영학부 04학번', required: true }),
+      newQuestion({ text: '소속', placeholder: '예) 삼성전자' }),
+      newQuestion({ text: '후배에게 한마디', placeholder: '예) 궁금한 건 뭐든 물어보세요', required: true })
+    );
+
+    /* 참석자 카드에 실릴 답변은 질문 id로 붙인다 */
+    var gq = formStates[grad.id].questions;
+    grad.people = [
+      seedPerson({ name: '김도현', photo: '../../assets/profile.png', phone: '010-2841-9032' },
+        gq, ['경영학부 04학번', '삼성전자', '궁금한 건 뭐든 물어보세요']),
+      seedPerson({ name: '박서연', photo: '../../assets/yoga-avatar.png', phone: '010-3391-5527' },
+        gq, ['도시공학과 07학번', '서울시청', '진로 고민 들고 오세요']),
+      seedPerson({ name: '이준호', photo: '../../assets/studiogloss-avatar.png', phone: '010-7712-0384' },
+        gq, ['전자전기컴퓨터공학부 09학번', '네이버', '첫 회사 고르는 법 알려드릴게요'])
+    ];
+    /* 재학생 팀 — 팀 정보 1벌 + 팀원마다 반복되는 항목 */
+    var teamForm = formStates[team.id];
+    teamForm.team.fields.title = { enabled: true, required: true };
+    teamForm.team.questions.push(
+      newQuestion({ text: '팀 사연', desc: '선정된 팀에 장학금을 드려요', required: true })
+    );
+    teamForm.member.fields.name  = { enabled: true,  required: true };
+    teamForm.member.fields.phone = { enabled: true,  required: false };
+    teamForm.member.fields.email = { enabled: false, required: false };
+    teamForm.member.questions.push(
+      newQuestion({ text: '학번', placeholder: '예) 20학번', required: true }),
+      newQuestion({ text: '학과', placeholder: '예) 건축학부' })
+    );
+
+    /* 졸업생이 참석자를 공개하므로 상위 설정도 켜진 상태로 시작한다 */
+    document.getElementById('opt-show-applicant-list').checked = true;
+    document.getElementById('opt-ptypes').checked = true;
+    onPtypesToggle();
+  }
+
+  // 초기 호출
+  renderImages();
+  onInput();
+  renderAttendees();
+  setContext('general');
+  seedDemoEvent();
+  seedDemoPtypes();
+  lucide.createIcons();
+</script>
+</body>
+</html>

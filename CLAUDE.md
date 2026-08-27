@@ -8,6 +8,12 @@
 - 여백(padding·margin·gap)은 **4의 배수**(8 / 12 / 16 / 20 / 24…)로만 쓴다. 임의의 px 값(13px, 17px 등) 금지.
 - **`components.css`나 `tokens.css`에 클래스/토큰을 추가하거나 변경하면, 아래 "사용 가능한 토큰/컴포넌트" 목록도 같은 작업에서 반드시 함께 갱신한다.**
 
+## 문구 (YOU MUST)
+- **설명용 작은 글씨를 임의로 넣지 않는다.** 라벨·항목 아래 붙는 보조 설명, 힌트, 안내 문구(`ⓘ …`, `~에게 먼저 가요`, `~하는 데 써요` 같은 것)는 **기본이 "넣지 않음"이다.**
+- 그 문구가 없으면 사용자가 **실제로 잘못 조작하거나 결과를 예측할 수 없는 경우**에만 필요하다고 보고, 그때는 **넣기 전에 사용자에게 허가를 받는다.** 임의로 추가 금지.
+- 화면은 라벨과 컴포넌트만으로 읽히게 만든다. 설명을 덧붙여야 이해되는 UI라면 **문구를 붙이지 말고 구조를 고친다.**
+- 기존 화면을 수정할 때 이미 있던 보조 설명을 새로 늘리지 않는다. 지우는 것은 자유.
+
 ## 아이콘
 - **Lucide** 라이브러리만 사용. CDN: `<script src="https://unpkg.com/lucide@latest"></script>`
 - 사용법: `<i data-lucide="icon-name"></i>` 삽입 후 `lucide.createIcons()` 호출
@@ -54,3 +60,5 @@
 - ✅ `<button class="btn btn-md btn-fill-primary">`
 - ❌ `style="color:#767985; font-size:12px"`
 - ✅ `class="text-caption"` (또는 `style="color:var(--color-text-muted)"`)
+- ❌ `<span class="label">대표자</span><span class="field-desc">팀원 중 한 명을 대표자로 체크해요 · 안내는 대표자에게 먼저 가요</span>` — 허가 없이 붙인 설명 문구
+- ✅ `<span class="label">대표자</span>` — 라벨만. 설명이 꼭 필요하면 먼저 사용자에게 확인한다
