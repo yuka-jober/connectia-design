@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Connectia — 페이지 용도 선택</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="../components.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  i[data-lucide]{display:inline-block;width:1em;height:1em;vertical-align:middle;}
+  html,body{height:100%;height:100dvh;overflow:hidden;}
+  body{
+    font-family:var(--font-base);
+    background:var(--color-border);
+    display:flex;align-items:center;justify-content:center;
+  }
+
+  /* ── 폰 프레임 ── */
+  .frame{
+    width:390px;
+    height:100dvh;
+    max-height:844px;
+    background:var(--color-bg);
+    position:relative;
+    overflow:hidden;
+    box-shadow:var(--shadow-4);
+    transform:translateZ(0);           /* 프레임 내부 position:fixed 컨테이닝 블록 */
+  }
+  @media(max-width:439px){.frame{width:100vw;box-shadow:none;}}
+  @media(min-width:440px){.frame{border-radius:44px;height:calc(100dvh - 32px);}}
+
+  .screen{
+    position:absolute;inset:0;
+    display:none;
+    flex-direction:column;
+  }
+  .screen.on{display:flex;}
+
+  /* ── 헤더 ── */
+  .head{
+    padding:40px 24px 0;
+    display:flex;flex-direction:column;align-items:center;gap:20px;
+    flex:none;
+  }
+  .logo{height:20px;width:auto;display:block;}
+  .headline{text-align:center;word-break:keep-all;}
+
+  /* ── 캐러셀 ── */
+  .carousel-area{
+    flex:1;min-height:0;
+    display:flex;flex-direction:column;
+    padding:24px 0 0;
+  }
+  .carousel{
+    flex:1;min-height:0;
+    display:flex;
+    align-items:stretch;
+    gap:16px;
+    padding:8px 64px;
+    overflow-x:auto;
+    overflow-y:hidden;
+    scroll-snap-type:x mandatory;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+  }
+  .carousel::-webkit-scrollbar{display:none;}
+
+  .card{
+    position:relative;                 /* 미리보기 버튼 기준점 */
+    flex:0 0 100%;                     /* 컨테이너 content-box = 프레임폭 - 좌우 여백 */
+    scroll-snap-align:center;
+    border:none;
+    padding:0;
+    background:var(--color-surface-sub);
+    border-radius:var(--r-lg);
+    overflow:hidden;
+    box-shadow:var(--shadow-3);
+    cursor:pointer;
+    transform:scale(0.9);
+    opacity:0.45;
+    transition:transform var(--motion-standard) var(--ease-standard),
+               opacity var(--motion-standard) var(--ease-standard);
+  }
+  .card.is-active{transform:scale(1);opacity:1;}
+
+  .card img{
+    width:100%;height:100%;display:block;
+    object-fit:cover;
+    object-position:center top;        /* 긴 세로 페이지는 윗부분만 */
+  }
+
+  /* ── 미리보기 버튼 ── */
+  .preview-btn{
+    position:absolute;
+    right:12px;bottom:12px;
+    display:inline-flex;align-items:center;gap:4px;
+  }
+
+  /* ── 미리보기 오버레이 ── */
+  .preview{
+    position:absolute;inset:0;
+    display:none;flex-direction:column;
+    background:var(--color-bg);
+    z-index:20;
+  }
+  .preview.on{display:flex;}
+  .preview-bar{
+    flex:none;
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding:12px 16px;
+    background:var(--color-surface);
+    border-bottom:1px solid var(--color-border);
+  }
+  .preview-scroll{flex:1;min-height:0;overflow-y:auto;}
+  .preview-scroll img{width:100%;display:block;}
+
+  /* ── 도트 ── */
+  .dots{
+    display:flex;justify-content:center;align-items:center;gap:8px;
+    padding:20px 0 0;
+    flex:none;
+  }
+  .dot{
+    width:8px;height:8px;
+    border:none;padding:0;
+    border-radius:var(--r-full);
+    background:var(--color-border);
+    cursor:pointer;
+    transition:width var(--motion-standard) var(--ease-standard),
+               background var(--motion-standard) var(--ease-standard);
+  }
+  .dot.is-active{width:24px;background:var(--color-primary);}
+
+  /* ── 용도 이름 ── */
+  .purpose-name{
+    text-align:center;
+    padding:16px 24px 0;
+    flex:none;
+  }
+
+  /* ── 하단 CTA ── */
+  .foot{
+    padding:20px 24px calc(24px + env(safe-area-inset-bottom));
+    flex:none;
+  }
+</style>
+</head>
+<body>
+<div class="frame">
+
+  <section class="screen on" id="s-purpose">
+
+    <div class="head">
+      <img class="logo" src="../assets/logo-start.svg" alt="Connectia">
+      <h1 class="text-display headline">어떤 페이지를<br>만들까요?</h1>
+    </div>
+
+    <div class="carousel-area">
+      <div class="carousel" id="carousel">
+        <div class="card" role="button" tabindex="0" data-name="명함" data-index="0">
+          <img src="../assets/sample-namecard.png" alt="명함 예시">
+          <button type="button" class="btn btn-xs btn-pill btn-fill-dark preview-btn" data-preview="0"><i data-lucide="maximize-2" style="width:12px;height:12px;"></i>미리보기</button>
+        </div>
+        <div class="card is-active" role="button" tabindex="0" data-name="프로필 페이지" data-index="1">
+          <img src="../assets/sample-profile.png" alt="프로필 페이지 예시">
+          <button type="button" class="btn btn-xs btn-pill btn-fill-dark preview-btn" data-preview="1"><i data-lucide="maximize-2" style="width:12px;height:12px;"></i>미리보기</button>
+        </div>
+        <div class="card" role="button" tabindex="0" data-name="세일즈" data-index="2">
+          <img src="../assets/sample-sales.png" alt="세일즈 페이지 예시">
+          <button type="button" class="btn btn-xs btn-pill btn-fill-dark preview-btn" data-preview="2"><i data-lucide="maximize-2" style="width:12px;height:12px;"></i>미리보기</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="dots" id="dots">
+      <button type="button" class="dot" data-index="0" aria-label="명함"></button>
+      <button type="button" class="dot is-active" data-index="1" aria-label="프로필 페이지"></button>
+      <button type="button" class="dot" data-index="2" aria-label="세일즈"></button>
+    </div>
+
+    <p class="text-title purpose-name" id="purposeName">프로필 페이지</p>
+
+    <div class="foot">
+      <button type="button" class="btn btn-lg btn-block btn-fill-primary" id="ctaCreate">이걸로 만들기</button>
+    </div>
+
+  </section>
+
+  <div class="preview" id="preview">
+    <div class="preview-bar">
+      <span class="text-label" id="previewTitle">명함</span>
+      <button type="button" class="icon-btn icon-btn-clear" id="previewClose" aria-label="닫기"><i data-lucide="x"></i></button>
+    </div>
+    <div class="preview-scroll" id="previewScroll">
+      <img id="previewImg" src="" alt="">
+    </div>
+  </div>
+
+  <div class="toast-container" id="toastArea"></div>
+</div>
+
+<script>
+  var carousel   = document.getElementById('carousel');
+  var cards      = Array.prototype.slice.call(carousel.querySelectorAll('.card'));
+  var dots       = Array.prototype.slice.call(document.querySelectorAll('.dot'));
+  var nameEl     = document.getElementById('purposeName');
+  var current    = 1;   /* 진입 시 가운데(프로필 페이지) */
+
+  function centerOffset(card){
+    return card.offsetLeft - (carousel.clientWidth - card.clientWidth) / 2;
+  }
+
+  function goTo(index, smooth){
+    carousel.scrollTo({ left: centerOffset(cards[index]), behavior: smooth ? 'smooth' : 'auto' });
+  }
+
+  function setActive(index){
+    if (index === current) return;
+    current = index;
+    cards.forEach(function(c, i){ c.classList.toggle('is-active', i === index); });
+    dots.forEach(function(d, i){ d.classList.toggle('is-active', i === index); });
+    nameEl.textContent = cards[index].dataset.name;
+  }
+
+  function nearestIndex(){
+    var mid = carousel.scrollLeft + carousel.clientWidth / 2;
+    var best = 0, bestDist = Infinity;
+    cards.forEach(function(c, i){
+      var d = Math.abs((c.offsetLeft + c.clientWidth / 2) - mid);
+      if (d < bestDist){ bestDist = d; best = i; }
+    });
+    return best;
+  }
+
+  carousel.addEventListener('scroll', function(){
+    setActive(nearestIndex());
+  }, { passive: true });
+
+  cards.forEach(function(c){
+    c.addEventListener('click', function(){ goTo(Number(c.dataset.index), true); });
+    c.addEventListener('keydown', function(e){
+      if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); goTo(Number(c.dataset.index), true); }
+    });
+  });
+  dots.forEach(function(d){
+    d.addEventListener('click', function(){ goTo(Number(d.dataset.index), true); });
+  });
+
+  /* 진입 시 가운데 카드부터 */
+  function initPosition(){ goTo(1, false); }
+  window.addEventListener('load', initPosition);
+  window.addEventListener('resize', function(){ goTo(current, false); });
+  initPosition();
+
+  /* ── 미리보기 ── */
+  var preview       = document.getElementById('preview');
+  var previewImg    = document.getElementById('previewImg');
+  var previewTitle  = document.getElementById('previewTitle');
+  var previewScroll = document.getElementById('previewScroll');
+
+  function openPreview(index){
+    var card = cards[index];
+    var img  = card.querySelector('img');
+    previewImg.src = img.getAttribute('src');
+    previewImg.alt = img.getAttribute('alt');
+    previewTitle.textContent = card.dataset.name;
+    previewScroll.scrollTop = 0;
+    preview.classList.add('on');
+  }
+  function closePreview(){ preview.classList.remove('on'); }
+
+  Array.prototype.slice.call(document.querySelectorAll('.preview-btn')).forEach(function(b){
+    b.addEventListener('click', function(e){
+      e.stopPropagation();
+      var i = Number(b.dataset.preview);
+      goTo(i, false);          /* 미리보기를 연 카드가 곧 선택된 카드 */
+      setActive(i);
+      openPreview(i);
+    });
+  });
+  document.getElementById('previewClose').addEventListener('click', closePreview);
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape') closePreview();
+  });
+
+  /* ── 토스트 ── */
+  function toast(msg){
+    var area = document.getElementById('toastArea');
+    area.innerHTML = '';
+    var t = document.createElement('div');
+    t.className = 'toast';
+    t.textContent = msg;
+    area.appendChild(t);
+    setTimeout(function(){ if (t.parentNode) t.parentNode.removeChild(t); }, 2400);
+  }
+
+  lucide.createIcons();
+
+  document.getElementById('ctaCreate').addEventListener('click', function(){
+    toast(cards[current].dataset.name + ' 만들기를 시작해요');
+  });
+</script>
+</body>
+</html>
