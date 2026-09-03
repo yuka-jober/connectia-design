@@ -1046,6 +1046,9 @@
     margin-bottom: 16px;
   }
   .export-types { display: flex; flex-wrap: wrap; gap: 8px; }
+  .export-type-btn { display: inline-flex; align-items: center; gap: 4px; }
+  .export-type-btn i[data-lucide],
+  .export-type-btn svg.lucide { width: 14px; height: 14px; }
   .export-types[hidden] { display: none; }
   .export-unit { position: relative; margin-left: auto; }
   .export-unit[hidden] { display: none; }
@@ -4711,8 +4714,12 @@
     typeBox.hidden = !ptypesActive() || PTYPES.length < 2;
     typeBox.innerHTML = typeBox.hidden ? '' : PTYPES.map(function(t){
       var sel = !exportTypeOff[t.id];
-      return '<button type="button" class="btn btn-sm btn-pill ' + (sel ? 'btn-fill-primary' : 'btn-line-dark') + '" '
-        + 'onclick="toggleExportType(\'' + t.id + '\')">' + escapeHTML(t.name) + '</button>';
+      /* 처음부터 둘 다 켜져 있어서, 체크가 없으면 고르는 버튼인 줄 모른다 */
+      return '<button type="button" class="btn btn-sm btn-pill export-type-btn ' + (sel ? 'btn-fill-primary' : 'btn-line-dark') + '" '
+        + 'aria-pressed="' + sel + '" onclick="toggleExportType(\'' + t.id + '\')">'
+        +   (sel ? '<i data-lucide="check"></i>' : '')
+        +   '<span>' + escapeHTML(t.name) + '</span>'
+        + '</button>';
     }).join('');
 
     var unit = document.getElementById('export-unit');
