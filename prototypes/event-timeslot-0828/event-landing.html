@@ -1036,6 +1036,23 @@
   .desc.is-rich { white-space: pre-wrap; }
   .desc.is-rich .rt-carousel { white-space: normal; }
 
+  /* 신청 취소 — 드물고 되돌리기 어려운 동작이라 주 버튼 아래 조용히 둔다 */
+  .done-cancel {
+    display: block;
+    width: fit-content;
+    margin: 12px auto 0;
+    background: none; border: 0; padding: 4px;
+    cursor: pointer;
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    color: var(--color-text-muted);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .done-cancel:hover { color: var(--color-destructive); }
+  .done-cancel[hidden] { display: none; }
+  .done-icon[hidden] { display: none; }
+
   /* 엑셀 내보내기 — 항목 고르기 */
   /* 무엇을 · 어떤 단위로 뽑을지 — 한 줄에 둔다 */
   .export-filters {
@@ -1953,6 +1970,7 @@
       <button class="btn btn-lg btn-block btn-fill-primary" type="button" onclick="closeDone()">
         확인
       </button>
+      <button type="button" class="done-cancel" id="done-cancel" onclick="openCancelDialog()">신청 취소</button>
     </div>
   </div>
 
@@ -2317,9 +2335,12 @@
   }
   /* 프로토타입 전용 — 발급 단위까지 한 줄에서 바꾼다 */
   function setCheckin(v) {
+    /* 체크인이 꺼지면 QR이 없어져 버튼 문구가 달라진다 */
     CHECKIN.enabled = (v !== 'off');
     if (v !== 'off') CHECKIN.issueUnit = v;
     syncCheckinUI();
+    syncPtypeUI();
+    renderCtaTypes();
   }
   function openCheckin() { window.location.href = 'event-checkin.html'; }
 
@@ -2406,11 +2427,22 @@
   function myPending() {
     return (pendingRec && pendingRec.booking && pendingRec.booking.status === 'pending') ? pendingRec : null;
   }
-  /* 신청 완료 버튼을 눌렀을 때 — 대기 중이면 현황, 확정됐으면 취소 */
+  /* 신청 완료 버튼을 눌렀을 때 — 대기 중이면 현황, 확정됐으면 QR(없으면 취소) */
   function onAppliedCta() {
     var rec = myPending();
     if (rec) { openPending(rec); return; }
+    if (CHECKIN.enabled && myRec) { reopenDone(); return; }
     openCancelDialog();
+  }
+  function reopenDone() {
+    doneReopened = true;
+    renderDone(ptypeById(myRec.typeId), null, myRec);
+    navigate('screen-done');
+  }
+  /* 신청을 마친 사람이 다시 들어온 화면에서만 취소를 보여준다 */
+  function syncDoneCancel(justSubmitted) {
+    var el = document.getElementById('done-cancel');
+    if (el) el.hidden = !!justSubmitted;
   }
   function openCancelDialog()  { document.getElementById('cancel-overlay').hidden = false; }
   function closeCancelDialog() { document.getElementById('cancel-overlay').hidden = true; }
@@ -2902,6 +2934,7 @@
       return;
     }
 
+    doneReopened = false;
     renderDone(t, teamData, rec);
     navigate('screen-done');
   }
@@ -3006,12 +3039,17 @@
     };
   }
 
+  var myRec = null;                  /* 방금 신청한 건 — QR을 다시 볼 때 쓴다 */
+  var doneReopened = false;          /* 방금 낸 건지, 다시 열어 본 건지 */
   function renderDone(t, teamData, rec) {
+    myRec = rec || myRec;
     /* 확정 화면 — 완료 화면을 그대로 쓰고 배정된 자리를 맨 위에 얹는다 */
     var assigned = rec && rec.booking && rec.booking.assignedSlot;
-    document.getElementById('done-title').textContent = assigned
-      ? (slotName(assigned) + ' 확정되었어요')
-      : '신청이 완료되었어요';
+    document.getElementById('done-title').textContent = doneReopened
+      ? '내 신청'
+      : (assigned ? (slotName(assigned) + ' 확정되었어요') : '신청이 완료되었어요');
+    /* 다시 열어 본 화면에는 완료 표시가 아니라 신청 내역이 필요하다 */
+    document.querySelector('#screen-done .done-icon').hidden = doneReopened;
     document.getElementById('done-sub').textContent = t
       ? (t.name + '으로 신청했어요')
       : '신청이 접수되었어요';
@@ -3052,6 +3090,7 @@
     document.getElementById('done-qr-card').hidden = !issued;
     document.getElementById('done-alim').hidden = !issued;
     if (issued) renderQR(APPLICANTS.length + 7);
+    syncDoneCancel(!doneReopened);
     renderDonePeople(t, teamData, issued);
     if (window.lucide) lucide.createIcons();
   }
@@ -3150,6 +3189,7 @@
     renderApplicants();
     syncAttendeeUI();
     if (!confirmed) return false;
+    doneReopened = false;
     renderDone(ptypeById(rec.typeId), null, rec);
     navigate('screen-done');
     return true;
@@ -3301,7 +3341,7 @@
         +   ' onclick="onTypeCta(\'' + t.id + '\')">'
         +   '<span class="cta-type-name">' + escapeHTML(
               waiting ? ('동의 대기 ' + consentDone(waiting) + '/' + waiting.team.members.length)
-                      : (mine ? '신청 완료 · 취소' : t.name))
+                      : (mine ? (CHECKIN.enabled ? 'QR 확인' : '신청 완료 · 취소') : t.name))
         +     (ext ? ' <i data-lucide="external-link" style="width:14px;height:14px"></i>' : '') + '</span>'
         +   (mine ? '<span class="cta-type-sub">' + escapeHTML(t.name) + '</span>' : '')
         + '</button>';
@@ -3335,7 +3375,7 @@
     if (applied) {
       applied.textContent = waiting
         ? ('동의 대기 ' + consentDone(waiting) + '/' + waiting.team.members.length + ' · 현황 보기')
-        : '신청 완료 · 취소하기';
+        : (CHECKIN.enabled ? 'QR 확인' : '신청 완료 · 취소하기');
     }
 
     if (mode === 'off') {
