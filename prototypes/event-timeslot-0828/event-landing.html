@@ -3780,7 +3780,10 @@
         questions:[
           { id:'q1', type:'short', text:'학과 · 학번', desc:'', placeholder:'예) 경영학부 04학번', required:true, multi:false, options:[] },
           { id:'q2', type:'short', text:'소속', desc:'', placeholder:'예) 삼성전자', required:false, multi:false, options:[] },
-          { id:'q3', type:'short', text:'후배에게 한마디', desc:'이벤트 페이지의 참석자 카드에 그대로 보여요', placeholder:'예) 궁금한 건 뭐든 물어보세요', required:true, multi:false, options:[] }
+          { id:'q3', type:'short', text:'후배에게 한마디', desc:'이벤트 페이지의 참석자 카드에 그대로 보여요', placeholder:'예) 궁금한 건 뭐든 물어보세요', required:true, multi:false, options:[] },
+          /* 객관식으로 동의를 받고, 동의한 분께 카드뉴스에 쓸 사진을 받는다 */
+          { id:'q4', type:'mc', text:'카드뉴스에 소개되는 것에 동의하시나요?', desc:'', placeholder:'', required:true, multi:false, options:['동의합니다','동의하지 않습니다'] },
+          { id:'q5', type:'file', text:'카드뉴스에 쓸 프로필 사진', desc:'정면 얼굴이 나온 사진이면 좋아요', placeholder:'', required:false, multi:false, options:[] }
         ]
       }
     },
