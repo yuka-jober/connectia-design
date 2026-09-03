@@ -1222,12 +1222,13 @@
   }
   .member-card-head .icon-btn i[data-lucide],
   .member-card-head .icon-btn svg.lucide { width: 16px; height: 16px; }
+  /* 팀원 카드도 신청 화면과 같이 한 줄에 한 항목 —
+     주관식·객관식·파일 업로드가 섞여도 폭이 부족하지 않게 */
   .member-card-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
   }
-  .member-card-grid .apply-field-wide { grid-column: 1 / -1; }
   .team-add {
     align-self: flex-start;
     margin-top: 4px;
@@ -2407,7 +2408,6 @@
         + '</div>';
     }
     if (q.type === 'file') {
-      var ACCEPT = { image: 'image/*', doc: '.pdf,.doc,.docx,.hwp', any: '' };
       var picked = String(value || '');
       return ''
         + '<div class="apply-field apply-field-wide">'
@@ -2417,7 +2417,7 @@
         +     '<i data-lucide="' + (picked ? 'file-check-2' : 'upload') + '"></i>'
         +     '<span class="apply-file-name" id="' + id + '-name">' + escapeHTML(picked || '파일 선택') + '</span>'
         +   '</label>'
-        +   '<input type="file" class="apply-file-input" id="' + id + '" accept="' + (ACCEPT[q.accept] || '') + '" '
+        +   '<input type="file" class="apply-file-input" id="' + id + '" '
         +     'onchange="onFilePick(this); ' + handler + '">'
         + '</div>';
     }
@@ -2618,8 +2618,16 @@
     var label = el.previousElementSibling;
     var span = document.getElementById(el.id + '-name');
     if (span) span.textContent = name || '파일 선택';
-    if (label) label.classList.toggle('is-picked', !!name);
-    if (window.lucide) lucide.createIcons();
+    if (!label) return;
+    label.classList.toggle('is-picked', !!name);
+    /* 이미 그려진 아이콘은 다시 그려주지 않으므로 자리를 비우고 새로 꽂는다 */
+    var icon = label.querySelector('svg.lucide, i[data-lucide]');
+    if (icon) {
+      var fresh = document.createElement('i');
+      fresh.setAttribute('data-lucide', name ? 'file-check-2' : 'upload');
+      icon.replaceWith(fresh);
+      if (window.lucide) lucide.createIcons();
+    }
   }
   function readAnswer(q, id) {
     if (q.type === 'file') return fileNameOf(id);

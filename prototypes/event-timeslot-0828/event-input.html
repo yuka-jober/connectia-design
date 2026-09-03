@@ -3302,14 +3302,6 @@
       <span class="pv-sheet-field-label">입력 예시</span>
       <input type="text" class="pv-sheet-input pv-sheet-input-sub" id="addq-ph" placeholder="예) 평일 오후 2~6시">
     </div>
-    <div class="pv-sheet-field" id="addq-file-field" hidden>
-      <span class="pv-sheet-field-label">받을 파일</span>
-      <div class="pv-qtype-row">
-        <button type="button" class="pv-chip is-selected" data-accept="image" onclick="setQAccept('image')">이미지</button>
-        <button type="button" class="pv-chip" data-accept="doc" onclick="setQAccept('doc')">문서</button>
-        <button type="button" class="pv-chip" data-accept="any" onclick="setQAccept('any')">제한 없음</button>
-      </div>
-    </div>
     <div class="pv-mc-editor" id="addq-mc-editor" hidden>
       <div class="pv-mc-editor-row">
         <input type="text" placeholder="보기 1">
@@ -3810,8 +3802,7 @@
       placeholder: o.placeholder || '',
       required: !!o.required,
       multi: !!o.multi,
-      options: o.options || [],
-      accept: o.accept || ''          /* 파일 업로드일 때 받을 종류 — image · doc · any */
+      options: o.options || []
     };
   }
   var SCOPE_TITLE = { main: '질문', team: '팀 정보 질문', member: '팀원 질문' };
@@ -4013,7 +4004,6 @@
     editingIdx = -1;
     editingScope = scope || 'main';
     setQType('short');
-    setQAccept('image');
     document.getElementById('addq-text').value = '';
     setQuestionDesc('');
     document.getElementById('addq-ph').value = '';
@@ -4038,7 +4028,6 @@
     document.getElementById('addq-ph').value = q.placeholder || '';
     addqRequired = !!q.required;
     document.getElementById('addq-multi').checked = !!q.multi;
-    setQAccept(q.accept || 'image');
     resetMcEditor(q.type === 'mc' ? q.options : null);
     document.getElementById('addq-title').textContent = SCOPE_TITLE[editingScope] + ' 편집';
     document.getElementById('addq-submit').textContent = '저장';
@@ -4068,11 +4057,6 @@
     document.getElementById('addq-desc').focus();
   }
 
-  function setQAccept(kind) {
-    document.querySelectorAll('#addq-file-field .pv-chip').forEach(function(c){
-      c.classList.toggle('is-selected', c.dataset.accept === kind);
-    });
-  }
   function setQType(type) {
     document.querySelectorAll('#addq-qtype .pv-chip').forEach(function(c){
       c.classList.toggle('is-selected', c.dataset.qtype === type);
@@ -4080,7 +4064,6 @@
     document.getElementById('addq-mc-editor').hidden = type !== 'mc';
     document.getElementById('addq-multi-row').hidden = type !== 'mc';
     document.getElementById('addq-ph-field').hidden = type !== 'short';
-    document.getElementById('addq-file-field').hidden = type !== 'file';
     document.getElementById('addq-text').placeholder =
       type === 'mc'   ? '객관식 질문을 입력하세요' :
       type === 'file' ? '무엇을 올려달라고 할지 적어주세요' :
@@ -4114,8 +4097,6 @@
     if (!text) { document.getElementById('addq-text').focus(); return; }
     var desc = document.getElementById('addq-desc').value.trim();
     var placeholder = type === 'short' ? document.getElementById('addq-ph').value.trim() : '';
-    var acceptEl = document.querySelector('#addq-file-field .pv-chip.is-selected');
-    var accept = type === 'file' ? (acceptEl ? acceptEl.dataset.accept : 'any') : '';
     var required = addqRequired;
     var multi = document.getElementById('addq-multi').checked;
     var options = [];
@@ -4126,7 +4107,7 @@
       });
       if (options.length < 2) return;
     }
-    var q = newQuestion({ type: type, text: text, desc: desc, placeholder: placeholder, required: required, multi: multi, options: options, accept: accept });
+    var q = newQuestion({ type: type, text: text, desc: desc, placeholder: placeholder, required: required, multi: multi, options: options });
     var list = questionsOf(editingScope);
     if (editingIdx >= 0) {
       q.id = list[editingIdx].id;      /* 편집은 id를 유지한다 */
@@ -4146,9 +4127,8 @@
     questionsOf(scope).forEach(function(q, idx){
       var row = document.createElement('div');
       row.className = 'pv-field-row pv-field-row-q';
-      var ACCEPT_LABEL = { image: '이미지', doc: '문서', any: '파일' };
       var typeLabel = q.type === 'mc'   ? (q.multi ? '객관식 · 복수' : '객관식')
-                    : q.type === 'file' ? ('파일 업로드 · ' + (ACCEPT_LABEL[q.accept] || '파일'))
+                    : q.type === 'file' ? '파일 업로드'
                     : '주관식';
       row.innerHTML =
         '<span class="pv-field-label"><span class="pv-q-text">' + escapeHTML(q.text) + '</span>' +
