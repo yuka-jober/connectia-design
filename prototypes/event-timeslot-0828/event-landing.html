@@ -1255,7 +1255,7 @@
   body[data-ptypes="multi"][data-state="preset"] .scroll-body { padding-bottom: 144px; }
 
   /* ============================================
-     참석 가능한 타임 — 복수 선택
+     참석 가능한 자리 — 복수 선택
      ============================================ */
   .slot-list { display: flex; flex-direction: column; gap: 8px; }
   .slot-item {
@@ -1269,7 +1269,7 @@
     transition: border-color var(--motion-fast) var(--ease-standard);
   }
   .slot-item:hover { border-color: var(--color-primary); }
-  .slot-time {
+  .slot-name {
     flex: 1; min-width: 0;
     font-size: var(--fs-body-lg); font-weight: var(--fw-semibold);
     color: var(--color-text);
@@ -1280,7 +1280,7 @@
   }
   .slot-item.is-full { background: var(--color-surface-sub); cursor: not-allowed; }
   .slot-item.is-full:hover { border-color: var(--color-border); }
-  .slot-item.is-full .slot-time { color: var(--color-text-muted); }
+  .slot-item.is-full .slot-name { color: var(--color-text-muted); }
   .slot-item.is-full .slot-left { color: var(--color-text-sub); font-weight: var(--fw-semibold); }
 
   /* ============================================
@@ -1326,6 +1326,14 @@
   /* ============================================
      팀원 동의 화면
      ============================================ */
+  .consent-pledge {
+    width: 100%;
+    display: flex; flex-direction: column; gap: 8px;
+    background: var(--color-primary-subtle);
+    border-radius: var(--r-md);
+    padding: 16px 20px;
+  }
+  .consent-pledge[hidden] { display: none; }
   .consent-footer { display: flex; flex-direction: column; gap: 4px; }
   .consent-decline {
     width: 100%;
@@ -1393,11 +1401,11 @@
       </div>
     </div>
     <div class="viewer-bar-row">
-      <span class="viewer-bar-label">타임</span>
+      <span class="viewer-bar-label">자리</span>
       <div class="viewer-bar-tabs">
-        <button class="viewer-bar-tab" type="button" data-axis="timeslot" data-value="off" onclick="setTimeslot('off')">끔</button>
-        <button class="viewer-bar-tab" type="button" data-axis="timeslot" data-value="on" onclick="setTimeslot('on')">켬</button>
-        <button class="viewer-bar-tab" type="button" data-axis="timeslot" data-value="consent" onclick="setTimeslot('consent')">동의받기</button>
+        <button class="viewer-bar-tab" type="button" data-axis="assign" data-value="off" onclick="setAssign('off')">끔</button>
+        <button class="viewer-bar-tab" type="button" data-axis="assign" data-value="on" onclick="setAssign('on')">켬</button>
+        <button class="viewer-bar-tab" type="button" data-axis="assign" data-value="consent" onclick="setAssign('consent')">동의받기</button>
         <button class="viewer-bar-tab" type="button" data-axis="link" onclick="openConsent()">동의 화면</button>
       </div>
     </div>
@@ -1800,6 +1808,11 @@
         <p class="text-body apply-event-owner" id="consent-event"></p>
       </div>
 
+      <div class="consent-pledge" id="consent-pledge" hidden>
+        <span class="label">동의 내용</span>
+        <p class="text-body-lg" id="consent-pledge-text"></p>
+      </div>
+
       <div class="done-summary" id="consent-summary"></div>
     </div>
 
@@ -2027,8 +2040,8 @@
       if (axis === 'role') val = role;
       else if (axis === 'checkin') val = (window.CHECKIN && CHECKIN.enabled) ? CHECKIN.issueUnit : 'off';
       else if (axis === 'showcase') val = showcaseOn() ? 'on' : 'off';
-      else if (axis === 'timeslot') val = !(window.TIMESLOT && TIMESLOT.enabled) ? 'off'
-        : (TIMESLOT.consent.enabled ? 'consent' : 'on');
+      else if (axis === 'assign') val = !(window.ASSIGN && ASSIGN.enabled) ? 'off'
+        : (ASSIGN.consent.enabled ? 'consent' : 'on');
       else if (axis === 'link') val = null;
       else val = state;
       t.classList.toggle('active', t.dataset.value === val);
@@ -2046,10 +2059,10 @@
   }
   function setRole(role)  { document.body.dataset.role  = role;  syncViewerBar(); renderCtaTypes(); }
   function setState(state){ document.body.dataset.state = state; syncViewerBar(); renderCtaTypes(); }
-  /* 프로토타입 전용 — 타임 배정 끔 / 켬 / 켬+팀원 동의받기 */
-  function setTimeslot(mode) {
-    TIMESLOT.enabled = (mode !== 'off');
-    TIMESLOT.consent.enabled = (mode === 'consent');
+  /* 프로토타입 전용 — 자리 배정 끔 / 켬 / 켬+팀원 동의받기 */
+  function setAssign(mode) {
+    ASSIGN.enabled = (mode !== 'off');
+    ASSIGN.consent.enabled = (mode === 'consent');
     renderApplicants();
     syncViewerBar();
   }
@@ -2185,7 +2198,7 @@
   var applyTypeId = null;
   var teamMembers = [];        /* [{ name, phone, email, values:{ 질문id: 답변 } }] */
   var teamLeaderIndex = 0;     /* 팀원 중 대표자 — 정확히 한 명 */
-  var slotChoices = [];        /* 참석 가능한 타임 — 복수 선택 */
+  var slotChoices = [];        /* 참석 가능한 자리 — 복수 선택 */
 
   function teamFormOf(t)   { return (t && t.form && t.form.team)   || { fields:{}, questions:[] }; }
   function memberFormOf(t) { return (t && t.form && t.form.member) || { fields:{}, questions:[] }; }
@@ -2222,15 +2235,15 @@
       + '</div>';
   }
 
-  /* 참석 가능한 타임 — 복수 선택. 남은 자리가 없는 타임은 고를 수 없다. */
+  /* 참석 가능한 자리 — 복수 선택. 남은 자리가 없는 자리는 고를 수 없다. */
   function slotFieldHTML(t) {
-    var ts = timeslotOf(t);
-    if (!ts) return '';
+    var asg = assignOf(t);
+    if (!asg) return '';
     return ''
       + '<div class="apply-field apply-field-wide">'
-      +   '<span class="label label-required">참석 가능한 타임</span>'
+      +   '<span class="label label-required">참석 가능한 자리</span>'
       +   '<div class="slot-list">'
-      +     ts.slots.map(function(s){
+      +     asg.slots.map(function(s){
               var left = slotLeft(s);
               var full = left <= 0;
               return '<label class="slot-item' + (full ? ' is-full' : '') + '">'
@@ -2238,7 +2251,7 @@
                 +   (full ? ' disabled' : '')
                 +   (slotChoices.indexOf(s.id) > -1 ? ' checked' : '')
                 +   ' onchange="onSlotToggle(\'' + s.id + '\', this.checked)">'
-                + '<span class="slot-time">' + escapeHTML(s.time) + '</span>'
+                + '<span class="slot-name">' + escapeHTML(s.name) + '</span>'
                 + '<span class="slot-left">' + (full ? '마감' : left + '자리 남음') + '</span>'
                 + '</label>';
             }).join('')
@@ -2473,8 +2486,8 @@
     var ok = !!(agree && agree.checked);
     var t = currentApplyType();
 
-    /* 참석 가능한 타임 — 최소 1개 */
-    if (ok && timeslotOf(t) && slotChoices.length === 0) ok = false;
+    /* 참석 가능한 자리 — 최소 1개 */
+    if (ok && assignOf(t) && slotChoices.length === 0) ok = false;
 
     if (ok && t && t.unit === 'team') {
       var tf = teamFormOf(t);
@@ -2579,7 +2592,7 @@
     var isTeam = t.unit === 'team';
     var teamData = isTeam ? collectTeam(t) : null;
     var values = isTeam ? teamData.values : collectAnswers(t);
-    var ts = timeslotOf(t);
+    var asg = assignOf(t);
 
     var rec = {
       name: isTeam ? teamData.title : (val('apply-name') || '나'),
@@ -2592,8 +2605,8 @@
       booking: null
     };
 
-    /* 타임을 고른 신청은 제출 → (동의 대기) → 확정 3단계를 거친다 */
-    if (ts) {
+    /* 자리를 고른 신청은 제출 → (동의 대기) → 확정 3단계를 거친다 */
+    if (asg) {
       var members = (rec.team && rec.team.members) || [];
       var wait = isTeam && consentOn(t);
       members.forEach(function(m, i){
@@ -2603,7 +2616,7 @@
         slotChoices: slotChoices.slice(),
         status: 'pending',
         assignedSlot: null,
-        deadlineAt: Date.now() + ((ts.consent && ts.consent.deadlineHours) || 24) * 3600000
+        deadlineAt: Date.now() + ((asg.consent && asg.consent.deadlineHours) || 24) * 3600000
       };
       /* 팀이 아니면(개인) 기다릴 사람이 없으니 그 자리에서 확정된다 */
       if (!isTeam) {
@@ -2725,10 +2738,10 @@
   }
 
   function renderDone(t, teamData, rec) {
-    /* 확정 화면 — 완료 화면을 그대로 쓰고 배정된 타임을 맨 위에 얹는다 */
+    /* 확정 화면 — 완료 화면을 그대로 쓰고 배정된 자리를 맨 위에 얹는다 */
     var assigned = rec && rec.booking && rec.booking.assignedSlot;
     document.getElementById('done-title').textContent = assigned
-      ? (slotTime(assigned) + ' 확정되었어요')
+      ? (slotName(assigned) + ' 확정되었어요')
       : '신청이 완료되었어요';
     document.getElementById('done-sub').textContent = t
       ? (t.name + '으로 신청했어요')
@@ -2743,7 +2756,7 @@
     var rows = [];
     rows.push(['이벤트', meta.title]);
     if (t) rows.push(['참가 유형', t.name]);
-    if (assigned) rows.push(['배정 타임', slotTime(assigned)]);
+    if (assigned) rows.push(['배정된 자리', slotName(assigned)]);
     if (t && t.unit === 'team') {
       var mem = (teamData && teamData.members) || [];
       var leader = mem[(teamData && teamData.leaderIndex) || 0];
@@ -2840,8 +2853,8 @@
 
     document.getElementById('pending-summary').innerHTML = ''
       + '<div class="done-summary-row">'
-      +   '<span class="done-summary-label">고른 타임</span>'
-      +   '<span class="done-summary-value">' + escapeHTML(slotTimes(rec.booking.slotChoices)) + '</span>'
+      +   '<span class="done-summary-label">고른 자리</span>'
+      +   '<span class="done-summary-value">' + escapeHTML(slotNames(rec.booking.slotChoices)) + '</span>'
       + '</div>';
   }
 
@@ -2882,7 +2895,7 @@
   }
 
   function openConsent() {
-    if (!TIMESLOT.enabled) { showToast('타임 배정을 켜야 동의를 받아요.'); return; }
+    if (!ASSIGN.enabled) { showToast('자리 배정을 켜야 동의를 받아요.'); return; }
     var teams = pendingTeams();
     if (!teams.length) { showToast('동의를 기다리는 팀이 없어요.'); return; }
     consentRec = teams[0];
@@ -2917,8 +2930,13 @@
     document.getElementById('consent-event').textContent =
       [meta.title, meta.when].filter(Boolean).join(' · ');
 
+    var pledge = (assignOf(t) || {}).consent;
+    var pledgeText = (pledge && pledge.text) || '';
+    document.getElementById('consent-pledge').hidden = !pledgeText;
+    document.getElementById('consent-pledge-text').textContent = pledgeText;
+
     document.getElementById('consent-summary').innerHTML = [
-      ['고른 타임', slotTimes(rec.booking.slotChoices)],
+      ['고른 자리', slotNames(rec.booking.slotChoices)],
       ['팀원', rec.team.members.length + '명'],
       ['내 정보', consentMemberLine(t, m)]
     ].map(function(r){
@@ -3402,14 +3420,14 @@
     if (pt && pt.enabled && Array.isArray(pt.types) && pt.types.length) {
       PT_ENABLED = true;
       SHOW_ATTENDEE_LIST = pt.showAttendeeList !== false;
-      TIMESLOT.enabled = false;   /* 유형에 실려 온 계약만 타임을 켠다 */
+      ASSIGN.enabled = false;   /* 유형에 실려 온 계약만 자리를 켠다 */
       PTYPES = pt.types.map(function(t){
         return {
           id: t.id, name: t.name, unit: t.unit || 'individual',
           guide: t.guide || '',
           reveal: t.reveal || { enabled:false, fields:{}, questions:[] },
           cta: t.cta || (t.name + ' 신청'),
-          timeslot: applyTimeslotContract(t.timeslot),
+          assign: applyAssignContract(t.assign),
           form: t.form || { unit: t.unit || 'individual', fields:{}, questions:[] }
         };
       });
@@ -3445,7 +3463,7 @@
     } else {
       PT_ENABLED = false;
       PTYPES = [];
-      TIMESLOT.enabled = false;   /* 유형이 없으면 타임도 없다 — 기존 화면 그대로 */
+      ASSIGN.enabled = false;   /* 유형이 없으면 자리도 없다 — 기존 화면 그대로 */
       // 참석자 — 입력폼에서 호스트가 미리 등록한 사람들
       if (Array.isArray(d.attendees)) {
         APPLICANTS = d.attendees.map(function(a){
@@ -3509,16 +3527,16 @@
   /* 현장 체크인 — issueUnit: 'registration' | 'person' */
   var CHECKIN = { enabled: true, issueUnit: 'registration' };
 
-  /* 타임 배정 — 유형에 실려 오는 계약. enabled:false면 아래 화면이 통째로 빠진다.
+  /* 자리 배정 — 유형에 실려 오는 계약. enabled:false면 아래 화면이 통째로 빠진다.
      자리는 이벤트 전체에서 공유하므로 유형들이 같은 객체를 참조한다. */
-  var TIMESLOT = {
+  var ASSIGN = {
     enabled: true,
     slots: [
-      { id:'ts1', time:'18:00', capacity:3 },
-      { id:'ts2', time:'19:00', capacity:3 },
-      { id:'ts3', time:'20:00', capacity:3 }
+      { id:'as1', name:'18:00', capacity:3 },
+      { id:'as2', name:'19:00', capacity:3 },
+      { id:'as3', name:'20:00', capacity:3 }
     ],
-    consent: { enabled: true, deadlineHours: 24 }
+    consent: { enabled: true, deadlineHours: 24, text: '행사 당일 끝까지 함께합니다' }
   };
 
   var PTYPES = [
@@ -3536,7 +3554,7 @@
         ]
       },
       cta:'졸업생 신청',
-      timeslot: TIMESLOT,
+      assign: ASSIGN,
       teamSize: null,
       form:{
         unit:'individual',
@@ -3553,7 +3571,7 @@
       guide:'팀을 꾸려 함께 신청해 주세요. 팀 사연을 함께 적어주시면 선정된 팀에 장학금을 드립니다.',
       reveal:{ enabled:false, showcase:false, fields:{ phone:false, email:false }, questions:[] },
       cta:'재학생 팀 신청',
-      timeslot: TIMESLOT,
+      assign: ASSIGN,
       /* 한 팀 인원 범위 — 대표자를 포함한 팀원 카드 수 */
       teamSize: { min:2, max:8 },
       form:{
@@ -3609,11 +3627,11 @@
   function tm(name, phone, no, dept) {
     return { name:name, phone:phone, email:'', values:{ m1:no, m2:dept } };
   }
-  /* slotChoices: 대표자가 고른 타임 · assignedSlot: 확정된 타임(없으면 동의 대기)
+  /* slotChoices: 대표자가 고른 자리 · assignedSlot: 확정된 자리(없으면 동의 대기)
      consent: 팀원별 동의 상태 — 대표자는 항상 'done' */
   var TEAM_SEED = [
     { title:'건축 다섯', story:'설계 스튜디오에서 밤새운 다섯 명이 선배 이야기를 듣고 싶어 신청했어요.', date:'2026.08.22 21:14', leaderIndex:0,
-      slotChoices:['ts1','ts2'], assignedSlot:null,
+      slotChoices:['as1','as2'], assignedSlot:null,
       consent:['done','done','done','pending','pending'],
       members:[
         tm('정윤재','010-3382-7714','19학번','건축학부'),
@@ -3623,27 +3641,27 @@
         tm('이서준','','22학번','건축학부')
       ] },
     { title:'경영 삼총사', story:'창업 동아리에서 만난 셋이 함께 갑니다. 실무 이야기가 궁금해요.', date:'2026.08.24 16:02', leaderIndex:0,
-      slotChoices:['ts1','ts2'], assignedSlot:'ts1',
+      slotChoices:['as1','as2'], assignedSlot:'as1',
       members:[
         tm('한지우','010-8120-4436','20학번','경영학부'),
         tm('문채원','010-9931-2074','21학번','경영학부'),
         tm('류시원','','21학번','세무학과')
       ] },
     { title:'전컴 듀오', story:'개발자 선배들께 첫 회사 고르는 기준을 여쭤보고 싶습니다.', date:'2026.08.26 07:38', leaderIndex:1,
-      slotChoices:['ts3'], assignedSlot:'ts3',
+      slotChoices:['as3'], assignedSlot:'as3',
       members:[
         tm('오세진','010-2249-6607','21학번','전자전기컴퓨터공학부'),
         tm('강민재','010-5573-8840','20학번','전자전기컴퓨터공학부')
       ] },
     { title:'조경 트리오', story:'캠퍼스 조경을 설계해보고 싶어 선배님들 이야기를 들으러 갑니다.', date:'2026.08.25 13:20', leaderIndex:0,
-      slotChoices:['ts3'], assignedSlot:'ts3',
+      slotChoices:['as3'], assignedSlot:'as3',
       members:[
         tm('윤소라','010-3391-2244','20학번','조경학과'),
         tm('배준혁','010-7781-3390','21학번','조경학과'),
         tm('김하람','','22학번','조경학과')
       ] },
     { title:'세무 듀오', story:'세무사 준비 중인 두 명입니다. 실무 이야기가 궁금해요.', date:'2026.08.26 09:10', leaderIndex:1,
-      slotChoices:['ts2','ts3'], assignedSlot:'ts3',
+      slotChoices:['as2','as3'], assignedSlot:'as3',
       members:[
         tm('장예린','010-2204-5578','21학번','세무학과'),
         tm('신동우','010-6640-1123','20학번','세무학과')
@@ -3699,9 +3717,9 @@
   function qKey(q, i) { return (q && q.id) || ('q' + i); }
 
   // ══════════════════════════════════════════════
-  // 타임 배정 헬퍼
+  // 자리 배정 헬퍼
   // ══════════════════════════════════════════════
-  /* 유형에 실려 온 타임 계약. 꺼져 있으면 null — 타임 UI가 통째로 빠진다 */
+  /* 유형에 실려 온 자리 계약. 꺼져 있으면 null — 자리 UI가 통째로 빠진다 */
   /* 유형에 실려 온 인원 범위. 없으면 null — 인원 제한이 통째로 빠진다.
      카드 1장 = 1명이고 대표자도 카드 1장이라 카드 수가 곧 전체 인원이다. */
   function teamSizeOf(t) {
@@ -3714,33 +3732,33 @@
   function teamMin(t) { var s = teamSizeOf(t); return s ? s.min : 1; }
   function teamMax(t) { var s = teamSizeOf(t); return s ? s.max : 0; }
 
-  function timeslotOf(t) {
-    var ts = t && t.timeslot;
-    return (ts && ts.enabled && (ts.slots || []).length) ? ts : null;
+  function assignOf(t) {
+    var asg = t && t.assign;
+    return (asg && asg.enabled && (asg.slots || []).length) ? asg : null;
   }
   function consentOn(t) {
-    var ts = timeslotOf(t);
-    return !!(ts && ts.consent && ts.consent.enabled);
+    var asg = assignOf(t);
+    return !!(asg && asg.consent && asg.consent.enabled);
   }
   function slotById(id) {
-    var slots = TIMESLOT.slots;
+    var slots = ASSIGN.slots;
     for (var i = 0; i < slots.length; i++) if (slots[i].id === id) return slots[i];
     return null;
   }
-  function slotTime(id) { var s = slotById(id); return s ? s.time : ''; }
-  function slotTimes(ids) {
-    return (ids || []).map(slotTime).filter(Boolean).join(' · ');
+  function slotName(id) { var s = slotById(id); return s ? s.name : ''; }
+  function slotNames(ids) {
+    return (ids || []).map(slotName).filter(Boolean).join(' · ');
   }
-  /* 남은 자리 = 자리 수 − 그 타임으로 확정된 신청 건 */
+  /* 남은 자리 = 자리 수 − 그 자리로 확정된 신청 건 */
   function slotLeft(s) {
     var used = APPLICANTS.filter(function(a){
       return a.booking && a.booking.assignedSlot === s.id;
     }).length;
     return Math.max(0, s.capacity - used);
   }
-  /* 배정 규칙 — 고른 타임 중 남은 자리가 있는 가장 이른 타임 */
+  /* 배정 규칙 — 고른 것 중 남은 자리가 있는 첫 번째 */
   function pickSlot(choices) {
-    var slots = TIMESLOT.slots;
+    var slots = ASSIGN.slots;
     for (var i = 0; i < slots.length; i++) {
       if (choices.indexOf(slots[i].id) > -1 && slotLeft(slots[i]) > 0) return slots[i].id;
     }
@@ -3750,7 +3768,7 @@
     var members = (rec.team && rec.team.members) || [];
     return members.filter(function(m){ return m.consent === 'done'; }).length;
   }
-  /* 남은 전원이 동의를 마쳤으면 그 자리에서 타임을 배정한다 */
+  /* 남은 전원이 동의를 마쳤으면 그 자리에서 배정한다 */
   function tryConfirm(rec) {
     if (!rec.booking || rec.booking.status === 'confirmed') return false;
     var members = (rec.team && rec.team.members) || [];
@@ -3760,18 +3778,19 @@
     rec.booking.status = 'confirmed';
     return true;
   }
-  /* 유형에 실려 온 타임 계약을 받는다 — 자리는 이벤트 전체가 공유하므로 한 객체로 모은다 */
-  function applyTimeslotContract(ts) {
-    if (!ts || !ts.enabled || !(ts.slots || []).length) return null;
-    TIMESLOT.enabled = true;
-    TIMESLOT.slots = ts.slots.map(function(s){
-      return { id: s.id, time: s.time, capacity: s.capacity };
+  /* 유형에 실려 온 자리 계약을 받는다 — 자리는 이벤트 전체가 공유하므로 한 객체로 모은다 */
+  function applyAssignContract(asg) {
+    if (!asg || !asg.enabled || !(asg.slots || []).length) return null;
+    ASSIGN.enabled = true;
+    ASSIGN.slots = asg.slots.map(function(s){
+      return { id: s.id, name: s.name, capacity: s.capacity };
     });
-    TIMESLOT.consent = {
-      enabled: !!(ts.consent && ts.consent.enabled),
-      deadlineHours: (ts.consent && ts.consent.deadlineHours) || 24
+    ASSIGN.consent = {
+      enabled: !!(asg.consent && asg.consent.enabled),
+      deadlineHours: (asg.consent && asg.consent.deadlineHours) || 24,
+      text: (asg.consent && asg.consent.text) || ''
     };
-    return TIMESLOT;
+    return ASSIGN;
   }
   function remainText(at) {
     var ms = Math.max(0, at - Date.now());
@@ -3911,11 +3930,11 @@
       }).join('');
 
       var badges = '';
-      /* 타임 배정 — 확정된 타임 또는 동의 진행 상황 */
-      if (a.booking && timeslotOf(t)) {
+      /* 자리 배정 — 확정된 자리 또는 동의 진행 상황 */
+      if (a.booking && assignOf(t)) {
         if (a.booking.status === 'confirmed') {
           badges += '<span class="badge badge-sm badge-weak-success">'
-            + escapeHTML(slotTime(a.booking.assignedSlot)) + ' 확정</span>';
+            + escapeHTML(slotName(a.booking.assignedSlot)) + ' 확정</span>';
         } else {
           badges += '<span class="badge badge-sm badge-weak-warning">동의 대기 '
             + consentDone(a) + '/' + ((a.team && a.team.members.length) || 0) + '</span>';

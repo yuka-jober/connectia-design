@@ -2370,7 +2370,7 @@
   }
   .pv-ptype-note[hidden] { display: none !important; }
 
-  /* ── 타임 배정 · 팀원 동의받기 (유형 카드 안 서브 블록) ── */
+  /* ── 자리 배정 · 팀원 동의받기 (유형 카드 안 서브 블록) ── */
   .pv-ts-list {
     display: flex;
     flex-direction: column;
@@ -2381,15 +2381,15 @@
     align-items: center;
     gap: 8px;
   }
-  /* 시각은 로케일에 따라 '오후 06:00'까지 늘어난다 — 여백·글자를 줄여 잘리지 않게.
-     !important는 맨 위 iOS 확대 방지 규칙(input 16px)을 넘기 위한 것으로, .pv-time-input과 같은 방식이다. */
   /* 삭제 버튼 — 지정이 없으면 Lucide 기본 24px이라 블록의 다른 아이콘보다 커진다 */
   .pv-ts-row .icon-btn i[data-lucide],
   .pv-ts-row .icon-btn svg.lucide {
     width: 16px; height: 16px;
     color: var(--color-text-muted);
   }
-  .pv-ts-row .pv-ts-time {
+  /* 자리 이름은 좁은 3열 행에 들어간다 — 예시가 잘리지 않게 여백·글자를 줄인다.
+     !important는 맨 위 iOS 확대 방지 규칙(input 16px)을 넘기 위한 것이다. */
+  .pv-ts-row .pv-ts-name {
     flex: 1;
     min-width: 0;
     padding: 0 12px;
@@ -2400,6 +2400,8 @@
     min-width: 0;                 /* 숫자 인풋의 기본 최소폭이 flex-basis를 밀어내지 않게 */
     text-align: center;
   }
+  /* 자리 행에서는 이름 칸에 폭을 더 준다 */
+  .pv-ts-row .pv-ts-cap { flex: 0 0 64px; }
   .pv-ts-cap::-webkit-outer-spin-button,
   .pv-ts-cap::-webkit-inner-spin-button {
     -webkit-appearance: none;
@@ -2507,7 +2509,7 @@
     font-size: var(--fs-body);
     color: var(--color-text-muted);
   }
-  /* 미리보기: 참석 가능한 타임 선택 */
+  /* 미리보기: 참석 가능한 자리 선택 */
   .pv-prev-field[hidden] { display: none !important; }
   .pv-prev-slot-list {
     display: flex;
@@ -2515,7 +2517,7 @@
     gap: 8px;
   }
   .pv-prev-slot { gap: 12px; }
-  .pv-prev-slot-time {
+  .pv-prev-slot-name {
     font-weight: var(--fw-medium);
     color: var(--color-text);
   }
@@ -3122,12 +3124,7 @@
   <div class="pv-sheet" id="sheet-ptype-name">
     <div class="pv-sheet-handle"></div>
     <div class="pv-sheet-title">유형 이름</div>
-    <input type="text" class="pv-sheet-input pv-sheet-input-lead" id="ptype-name-input" placeholder="예) 졸업생" onkeydown="onPtypeNameKey(event)">
-    <div class="pv-sheet-suggestions">
-      <button type="button" class="pv-sheet-suggestion" onclick="pickPtypeName('졸업생')">졸업생</button>
-      <button type="button" class="pv-sheet-suggestion" onclick="pickPtypeName('재학생 팀')">재학생 팀</button>
-      <button type="button" class="pv-sheet-suggestion" onclick="pickPtypeName('일반 참가자')">일반 참가자</button>
-    </div>
+    <input type="text" class="pv-sheet-input pv-sheet-input-lead" id="ptype-name-input" onkeydown="onPtypeNameKey(event)">
     <div class="pv-sheet-actions">
       <button class="btn btn-lg btn-weak-dark" type="button" onclick="closeSheet()">취소</button>
       <button class="btn btn-lg btn-fill-primary" type="button" onclick="submitPtypeName()">저장</button>
@@ -3222,7 +3219,7 @@
         <div class="pv-type-tabs" id="pv-prev-type-tabs" hidden></div>
         <div class="pv-prev-desc" id="pv-prev-type-guide"></div>
         <div class="pv-prev-field" id="pv-prev-slots" hidden>
-          <span class="pv-prev-field-label">참석 가능한 타임</span>
+          <span class="pv-prev-field-label">참석 가능한 자리</span>
           <div class="pv-prev-slot-list" id="pv-prev-slot-list"></div>
         </div>
       </div>
@@ -3863,12 +3860,12 @@
   function defaultRevealFields() {
     return { phone: false, email: false };
   }
-  /* 타임은 지우거나 순서가 바뀌어도 신청 건의 선택이 밀리면 안 된다 —
+  /* 자리는 지우거나 순서가 바뀌어도 신청 건의 선택이 밀리면 안 된다 —
      질문 id와 같이 한 번 준 id를 끝까지 들고 간다. */
   var slotSeq = 0;
-  function nextSlotId() { slotSeq += 1; return 'ts' + slotSeq; }
-  function defaultTimeslot() {
-    return { on: false, slots: [], consent: { on: false, deadlineHours: 24 } };
+  function nextSlotId() { slotSeq += 1; return 'as' + slotSeq; }
+  function defaultAssign() {
+    return { on: false, slots: [], consent: { on: false, deadlineHours: 24, text: '' } };
   }
   function newPtype(name) {
     ptypeSeq += 1;
@@ -3878,7 +3875,7 @@
       unit: 'individual',
       teamSize: { min: 2, max: 8 },
       guide: '',
-      timeslot: defaultTimeslot(),
+      assign: defaultAssign(),
       reveal: { on: false, showcase: false, fields: defaultRevealFields(), questions: {} },
       people: []
     };
@@ -3942,8 +3939,8 @@
       +     '</div>'
       +   '</div>'
 
-      /* 타임 배정 · 팀원 동의받기 */
-      +   timeslotBlockHTML(t)
+      /* 자리 배정 · 팀원 동의받기 */
+      +   assignBlockHTML(t)
       +   (team ? consentBlockHTML(t) : '')
 
       /* 참석자 공개 */
@@ -3968,7 +3965,7 @@
       + '</div>';
   }
 
-  /* ── 타임 배정 · 팀원 동의받기 ──
+  /* ── 자리 배정 · 팀원 동의받기 ──
      자리 수의 단위는 그 유형의 신청 단위를 그대로 따른다(팀이면 '팀', 개인이면 '명').
      팀원 동의받기는 팀 신청일 때만 그린다 — 개인 유형에는 동의받을 팀원이 없다. */
   function capacityUnit(t) {
@@ -3977,12 +3974,12 @@
   function slotRowHTML(t, s) {
     return ''
       + '<div class="pv-ts-row" data-slot="' + s.id + '">'
-      +   '<input type="time" class="input pv-ts-time" value="' + escapeHTML(s.time) + '" aria-label="타임 시각" '
-      +     'oninput="setSlotTime(\'' + t.id + '\', \'' + s.id + '\', this.value)">'
+      +   '<input type="text" class="input pv-ts-name" value="' + escapeHTML(s.name) + '" aria-label="자리 이름" placeholder="예) 18:00, A 테이블" '
+      +     'oninput="setSlotName(\'' + t.id + '\', \'' + s.id + '\', this.value)">'
       +   '<input type="number" class="input pv-ts-cap" min="1" inputmode="numeric" value="' + s.capacity + '" aria-label="자리 수" '
       +     'oninput="setSlotCapacity(\'' + t.id + '\', \'' + s.id + '\', this.value)">'
       +   '<span class="pv-ts-unit">' + capacityUnit(t) + '</span>'
-      +   '<button type="button" class="icon-btn icon-btn-sm icon-btn-clear" aria-label="' + escapeHTML(s.time) + ' 타임 삭제" '
+      +   '<button type="button" class="icon-btn icon-btn-sm icon-btn-clear" aria-label="' + escapeHTML(s.name || '이름 없는 자리') + ' 삭제" '
       +     'onclick="removeSlot(\'' + t.id + '\', \'' + s.id + '\')"><i data-lucide="trash-2"></i></button>'
       + '</div>';
   }
@@ -4027,26 +4024,26 @@
     syncPreviewLive();
   }
 
-  function timeslotBlockHTML(t) {
-    var ts = t.timeslot;
+  function assignBlockHTML(t) {
+    var ts = t.assign;
     return ''
-      + '<div class="pv-ptype-sub pv-ptype-timeslot">'
+      + '<div class="pv-ptype-sub pv-ptype-assign">'
       +   '<label class="pv-ptype-sub-head">'
-      +     '<i data-lucide="clock"></i>'
-      +     '<span class="pv-ptype-sub-title">타임 배정</span>'
-      +     '<input type="checkbox" class="toggle toggle-sm" ' + (ts.on ? 'checked' : '') + ' onchange="setPtypeTimeslot(\'' + t.id + '\', this.checked)">'
+      +     '<i data-lucide="layout-grid"></i>'
+      +     '<span class="pv-ptype-sub-title">자리 배정</span>'
+      +     '<input type="checkbox" class="toggle toggle-sm" ' + (ts.on ? 'checked' : '') + ' onchange="setPtypeAssign(\'' + t.id + '\', this.checked)">'
       +   '</label>'
       +   '<div class="pv-ptype-sub-body"' + (ts.on ? '' : ' hidden') + '>'
       +     '<div class="pv-ts-list">' + ts.slots.map(function(s){ return slotRowHTML(t, s); }).join('') + '</div>'
       +     '<button type="button" class="pv-field-add" onclick="addSlot(\'' + t.id + '\')">'
-      +       '<i data-lucide="plus"></i><span>타임 추가</span>'
+      +       '<i data-lucide="plus"></i><span>자리 추가</span>'
       +     '</button>'
-      +     '<p class="pv-ptype-note"><i data-lucide="info"></i><span>여러 타임을 고르면 남은 자리에 자동으로 배정돼요</span></p>'
+      +     '<p class="pv-ptype-note"><i data-lucide="info"></i><span>여러 자리를 고르면 남은 자리에 자동으로 배정돼요</span></p>'
       +   '</div>'
       + '</div>';
   }
   function consentBlockHTML(t) {
-    var c = t.timeslot.consent;
+    var c = t.assign.consent;
     return ''
       + '<div class="pv-ptype-sub pv-ptype-consent">'
       +   '<label class="pv-ptype-sub-head">'
@@ -4055,6 +4052,11 @@
       +     '<input type="checkbox" class="toggle toggle-sm" ' + (c.on ? 'checked' : '') + ' onchange="setPtypeConsent(\'' + t.id + '\', this.checked)">'
       +   '</label>'
       +   '<div class="pv-ptype-sub-body"' + (c.on ? '' : ' hidden') + '>'
+      +     '<div class="pv-ptype-field">'
+      +       '<span class="pv-ptype-field-label">동의 내용</span>'
+      +       '<textarea class="textarea" aria-label="동의 내용" placeholder="팀원이 무엇에 동의하는지 적어주세요" '
+      +         'oninput="setConsentText(\'' + t.id + '\', this.value)">' + escapeHTML(c.text || '') + '</textarea>'
+      +     '</div>'
       +     '<div class="pv-ptype-field pv-ptype-field-inline">'
       +       '<span class="pv-ptype-field-label">동의 마감</span>'
       +       '<div class="pv-ts-inline">'
@@ -4063,36 +4065,31 @@
       +         '<span class="pv-ts-unit">시간</span>'
       +       '</div>'
       +     '</div>'
+      +     '<p class="pv-ptype-note"><i data-lucide="info"></i><span>팀원에게 알림톡으로 동의 요청을 보내드려요</span></p>'
       +   '</div>'
       + '</div>';
   }
 
-  /* 새 타임은 마지막 타임에서 한 시간 뒤, 자리 수는 마지막 타임과 같게 시작한다 */
-  function nextSlotTime(slots) {
-    if (!slots.length) return '18:00';
-    var parts = String(slots[slots.length - 1].time || '18:00').split(':');
-    var h = (parseInt(parts[0], 10) + 1) % 24;
-    return String(h).padStart(2, '0') + ':' + (parts[1] || '00');
-  }
   function slotById(t, sid) {
-    for (var i = 0; i < t.timeslot.slots.length; i++) {
-      if (t.timeslot.slots[i].id === sid) return t.timeslot.slots[i];
+    for (var i = 0; i < t.assign.slots.length; i++) {
+      if (t.assign.slots[i].id === sid) return t.assign.slots[i];
     }
     return null;
   }
-  function setPtypeTimeslot(id, on) {
+  function setPtypeAssign(id, on) {
     var t = ptypeById(id);
     if (!t) return;
-    t.timeslot.on = on;
-    if (on && t.timeslot.slots.length === 0) addSlotTo(t);
+    t.assign.on = on;
+    if (on && t.assign.slots.length === 0) addSlotTo(t);
     renderPtypes();
     syncPreviewLive();
   }
+  /* 새 자리는 이름만 비워두고, 자리 수는 마지막 자리와 같게 시작한다 */
   function addSlotTo(t) {
-    t.timeslot.slots.push({
+    t.assign.slots.push({
       id: nextSlotId(),
-      time: nextSlotTime(t.timeslot.slots),
-      capacity: t.timeslot.slots.length ? t.timeslot.slots[t.timeslot.slots.length - 1].capacity : 1
+      name: '',
+      capacity: t.assign.slots.length ? t.assign.slots[t.assign.slots.length - 1].capacity : 1
     });
   }
   function addSlot(id) {
@@ -4105,16 +4102,16 @@
   function removeSlot(id, sid) {
     var t = ptypeById(id);
     if (!t) return;
-    t.timeslot.slots = t.timeslot.slots.filter(function(s){ return s.id !== sid; });
+    t.assign.slots = t.assign.slots.filter(function(s){ return s.id !== sid; });
     renderPtypes();
     syncPreviewLive();
   }
   /* 값만 바뀌는 조작은 다시 그리지 않는다 — 입력 중 포커스가 튀지 않게 */
-  function setSlotTime(id, sid, v) {
+  function setSlotName(id, sid, v) {
     var t = ptypeById(id);
     var s = t && slotById(t, sid);
     if (!s) return;
-    s.time = v;
+    s.name = v;
     syncPreviewLive();
   }
   function setSlotCapacity(id, sid, v) {
@@ -4127,26 +4124,32 @@
   function setPtypeConsent(id, on) {
     var t = ptypeById(id);
     if (!t) return;
-    t.timeslot.consent.on = on;
+    t.assign.consent.on = on;
     renderPtypes();
   }
   function setConsentDeadline(id, v) {
     var t = ptypeById(id);
     if (!t) return;
-    t.timeslot.consent.deadlineHours = Math.max(1, parseInt(v, 10) || 1);
+    t.assign.consent.deadlineHours = Math.max(1, parseInt(v, 10) || 1);
   }
-  /* 타임을 켠 유형만 payload에 목록을 싣는다. 꺼도 적어둔 타임은 상태에 남아 다시 켜면 돌아온다.
+  function setConsentText(id, v) {
+    var t = ptypeById(id);
+    if (!t) return;
+    t.assign.consent.text = v;
+  }
+  /* 자리 배정을 켠 유형만 payload에 목록을 싣는다. 꺼도 적어둔 자리는 상태에 남아 다시 켜면 돌아온다.
      동의받기는 팀 신청일 때만 물었으므로 개인 유형은 항상 꺼진 값으로 나간다. */
-  function timeslotPayload(t) {
-    var ts = t.timeslot;
+  function assignPayload(t) {
+    var ts = t.assign;
     return {
       enabled: !!ts.on,
       slots: ts.on ? ts.slots.map(function(s){
-        return { id: s.id, time: s.time, capacity: s.capacity };
+        return { id: s.id, name: s.name, capacity: s.capacity };
       }) : [],
       consent: {
         enabled: t.unit === 'team' && !!ts.consent.on,
-        deadlineHours: ts.consent.deadlineHours
+        deadlineHours: ts.consent.deadlineHours,
+        text: ts.consent.text || ''
       }
     };
   }
@@ -4254,6 +4257,9 @@
     var t = ptypeById(id);
     if (!t) return;
     t.reveal.on = on;
+    /* 유형 설정이 이벤트 설정보다 위에 있어, 공개를 켜면 상위 설정도 같이 켜준다.
+       끄는 쪽은 그대로 둔다 — 나중에 마스터를 끄면 잠금 안내가 다시 뜨도록. */
+    if (on) document.getElementById('opt-show-applicant-list').checked = true;
     renderPtypes();
     renderAttendees();
     syncPreviewLive();
@@ -4299,9 +4305,6 @@
     input.value = t.name;
     openSheet('ptype-name');
     setTimeout(function(){ input.focus(); input.select(); }, 120);
-  }
-  function pickPtypeName(name) {
-    document.getElementById('ptype-name-input').value = name;
   }
   function onPtypeNameKey(e) {
     if (e.key === 'Enter') { e.preventDefault(); submitPtypeName(); }
@@ -4372,14 +4375,16 @@
     syncPreviewLive();
   }
 
-  /* 마스터(이벤트 설정 > 신청자 목록 노출)가 꺼지면 유형별 참석자 공개를 잠근다 */
+  /* 마스터(이벤트 설정 > 신청자 목록 노출)가 꺼지면 이미 켜 둔 유형별 참석자 공개를 잠근다.
+     아직 끄고 있는 유형은 잠그지 않는다 — 여기서 켜면 마스터도 같이 켜지기 때문이다. */
   function syncPtypeMaster() {
     var master = document.getElementById('opt-show-applicant-list').checked;
-    document.querySelectorAll('.pv-ptype-reveal').forEach(function(el){
-      el.classList.toggle('is-disabled', !master);
-    });
-    document.querySelectorAll('.pv-ptype-reveal-lock').forEach(function(el){
-      el.hidden = master;
+    var reveals = document.querySelectorAll('.pv-ptype-reveal');
+    var locks = document.querySelectorAll('.pv-ptype-reveal-lock');
+    ptypes.forEach(function(t, i){
+      var locked = !master && t.reveal.on;
+      if (reveals[i]) reveals[i].classList.toggle('is-disabled', locked);
+      if (locks[i]) locks[i].hidden = !locked;
     });
     document.getElementById('opt-list-note').hidden = !ptypesOn();
   }
@@ -5129,7 +5134,7 @@
               ? { min: t.teamSize.min, max: t.teamSize.max }
               : null,
             guide: t.guide,                                /* 유형별 안내 (리치텍스트 HTML) */
-            timeslot: timeslotPayload(t),                  /* 참석 타임 후보와 자리 수 · 팀원 동의 */
+            assign: assignPayload(t),                      /* 배정할 자리 후보와 자리 수 · 팀원 동의 */
             reveal: {
               enabled: t.reveal.on,
               showcase: !!t.reveal.showcase,
@@ -5323,17 +5328,17 @@
     renderPreviewSlots(t);
   }
 
-  /* 타임을 켜면 참가자가 무엇을 고르게 되는지 그대로 보여준다 — 여러 개 고르는 목록 */
+  /* 자리 배정을 켜면 참가자가 무엇을 고르게 되는지 그대로 보여준다 — 여러 개 고르는 목록 */
   function renderPreviewSlots(t) {
     var box = document.getElementById('pv-prev-slots');
     var list = document.getElementById('pv-prev-slot-list');
-    var slots = (t.timeslot.on ? t.timeslot.slots : []);
+    var slots = (t.assign.on ? t.assign.slots : []);
     box.hidden = slots.length === 0;
     if (box.hidden) { list.innerHTML = ''; return; }
     list.innerHTML = slots.map(function(s){
       return '<label class="pv-prev-field-box pv-prev-slot">'
         + '<input type="checkbox" class="checkbox">'
-        + '<span class="pv-prev-slot-time">' + escapeHTML(s.time) + '</span>'
+        + '<span class="pv-prev-slot-name">' + escapeHTML(s.name) + '</span>'
         + '<span class="pv-prev-slot-cap">' + s.capacity + capacityUnit(t) + '</span>'
         + '</label>';
     }).join('');
@@ -5526,15 +5531,15 @@
     team.teamSize = { min: 2, max: 8 };
     team.guide = '팀을 꾸려 함께 신청해 주세요. 팀 사연을 함께 적어주시면 선정된 팀에 장학금을 드립니다.';
     team.reveal = { on: false, showcase: false, fields: defaultRevealFields(), questions: {} };
-    /* 세 타임에 3팀씩 나눠 받고, 팀원 전원이 24시간 안에 동의해야 자리가 잡힌다 */
-    team.timeslot = {
+    /* 세 자리에 3팀씩 나눠 받고, 팀원 전원이 24시간 안에 동의해야 자리가 잡힌다 */
+    team.assign = {
       on: true,
       slots: [
-        { id: nextSlotId(), time: '18:00', capacity: 3 },
-        { id: nextSlotId(), time: '19:00', capacity: 3 },
-        { id: nextSlotId(), time: '20:00', capacity: 3 }
+        { id: nextSlotId(), name: '18:00', capacity: 3 },
+        { id: nextSlotId(), name: '19:00', capacity: 3 },
+        { id: nextSlotId(), name: '20:00', capacity: 3 }
       ],
-      consent: { on: true, deadlineHours: 24 }
+      consent: { on: true, deadlineHours: 24, text: '팀 대표가 신청한 내용대로 함께 참석하는 데 동의합니다.' }
     };
 
     ptypes = [grad, team];

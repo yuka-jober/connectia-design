@@ -239,9 +239,27 @@
   .ci-search .input { padding-left: 36px; }
 
   .ci-filter-row { display: flex; align-items: center; gap: 8px; }
-  /* 타임이 켜진 유형이 없으면 타임 필터 줄을 통째로 감춘다 */
+  /* 배정이 켜진 유형이 없으면 자리 필터 줄을 통째로 감춘다 */
   .ci-filter-row[hidden] { display: none; }
   .ci-chips { display: flex; gap: 8px; }
+
+  /* 자리 이름은 자유 문자열이라 길어질 수 있다 —
+     줄은 가로로 밀고, 칩 하나가 줄을 다 먹지 않게 폭을 묶는다 */
+  .ci-chips-scroll {
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .ci-chips-scroll::-webkit-scrollbar { display: none; }
+  .ci-chips-scroll .btn { flex-shrink: 0; }
+  .ci-slot-label {
+    display: block;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
   .ci-summary {
     margin-left: auto;
     font-size: var(--fs-badge);
@@ -280,6 +298,14 @@
     font-size: var(--fs-caption);
     color: var(--color-text-muted);
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  /* 배정 자리 배지 — 이름이 길어도 이름·입장 버튼을 밀어내지 않는다 */
+  .ci-row-slot {
+    display: block;
+    flex-shrink: 0;
+    max-width: 112px;
     overflow: hidden;
     text-overflow: ellipsis;
   }
@@ -545,7 +571,7 @@
           <div class="ci-summary" id="ci-summary"></div>
         </div>
         <div class="ci-filter-row" id="ci-slot-row" hidden>
-          <div class="ci-chips" id="ci-slot-chips"></div>
+          <div class="ci-chips ci-chips-scroll" id="ci-slot-chips"></div>
         </div>
       </div>
       <div class="ci-rows" id="ci-rows"></div>
@@ -639,11 +665,12 @@
     },
     {
       id:'pt2', name:'재학생 팀', unit:'team',
-      timeslot:{
+      /* 배정 단위는 자유 이름 — '18:00'일 수도, 'A 테이블'·'1부'·'루프탑'일 수도 있다 */
+      assign:{
         enabled:true,
-        slots:[ { id:'ts1', time:'18:00', capacity:3 },
-                { id:'ts2', time:'19:00', capacity:3 },
-                { id:'ts3', time:'20:00', capacity:3 } ],
+        slots:[ { id:'as1', name:'18:00', capacity:3 },
+                { id:'as2', name:'19:00', capacity:3 },
+                { id:'as3', name:'20:00', capacity:3 } ],
         consent:{ enabled:true, deadlineHours:24 }
       },
       form:{
@@ -692,7 +719,7 @@
   }
   var TEAM_SEED = [
     { title:'건축 다섯', story:'설계 스튜디오에서 밤새운 다섯 명이 선배 이야기를 듣고 싶어 신청했어요.', date:'2026.08.22 21:14', leaderIndex:0,
-      slotChoices:['ts1','ts2'], status:'confirmed', assignedSlot:'ts1',
+      slotChoices:['as1','as2'], status:'confirmed', assignedSlot:'as1',
       members:[
         tm('정윤재','010-3382-7714','19학번','건축학부'),
         tm('서하늘','010-4471-2298','20학번','건축학부'),
@@ -701,21 +728,21 @@
         tm('이서준','','22학번','건축학부')
       ] },
     { title:'경영 삼총사', story:'창업 동아리에서 만난 셋이 함께 갑니다. 실무 이야기가 궁금해요.', date:'2026.08.24 16:02', leaderIndex:0,
-      slotChoices:['ts2','ts3'], status:'confirmed', assignedSlot:'ts2',
+      slotChoices:['as2','as3'], status:'confirmed', assignedSlot:'as2',
       members:[
         tm('한지우','010-8120-4436','20학번','경영학부'),
         tm('문채원','010-9931-2074','21학번','경영학부'),
         tm('류시원','','21학번','세무학과')
       ] },
     { title:'전컴 듀오', story:'개발자 선배들께 첫 회사 고르는 기준을 여쭤보고 싶습니다.', date:'2026.08.26 07:38', leaderIndex:1,
-      slotChoices:['ts3'], status:'confirmed', assignedSlot:'ts3',
+      slotChoices:['as3'], status:'confirmed', assignedSlot:'as3',
       members:[
         tm('오세진','010-2249-6607','21학번','전자전기컴퓨터공학부'),
         tm('강민재','010-5573-8840','20학번','전자전기컴퓨터공학부')
       ] },
     /* 동의 대기 — 확정 전이라 체크인 명단에 오르지 않는다 */
     { title:'통계 사총사', story:'데이터 직군 선배들 이야기를 들으러 갑니다.', date:'2026.08.26 12:47', leaderIndex:0,
-      slotChoices:['ts1','ts2'], status:'pending', assignedSlot:null,
+      slotChoices:['as1','as2'], status:'pending', assignedSlot:null,
       members:[
         tm('차예린','010-7781-2240','20학번','통계학과'),
         tm('권도윤','010-3306-9915','21학번','통계학과'),
@@ -772,28 +799,30 @@
   }
   function isTeam(a) { return !!(a.team && a.team.members && a.team.members.length); }
 
-  // ── 타임 배정 ──
+  // ── 자리 배정 ──
   /* 확정된 건만 현장 명단에 오른다 — 동의 대기는 아직 자리가 없다 */
   function isConfirmed(a) { return !(a.team && a.team.status && a.team.status !== 'confirmed'); }
   function roster() { return APPS.filter(isConfirmed); }
 
   function slotsOf(t) {
-    return (t && t.timeslot && t.timeslot.enabled && t.timeslot.slots) ? t.timeslot.slots : [];
+    return (t && t.assign && t.assign.enabled && t.assign.slots) ? t.assign.slots : [];
   }
-  /* 유형을 가로질러 타임을 모은다 — 켜진 유형이 없으면 빈 배열 */
+  /* 유형을 가로질러 자리를 모은다 — 켜진 유형이 없으면 빈 배열.
+     이름이 자유 문자열이라 정렬하지 않고 주최자가 적은 순서를 그대로 쓴다 */
   function allSlots() {
     var seen = {}, out = [];
     PTYPES.forEach(function(t){
       slotsOf(t).forEach(function(s){ if (!seen[s.id]) { seen[s.id] = 1; out.push(s); } });
     });
-    return out.sort(function(x, y){ return x.time < y.time ? -1 : 1; });
+    return out;
   }
   function slotIdOf(a) { return (a.team && a.team.assignedSlot) || null; }
-  function slotTimeOf(a) {
+  /* 자리 이름은 주최자가 적은 그대로 — 어떤 포맷팅도 하지 않는다 */
+  function slotNameOf(a) {
     var id = slotIdOf(a);
     if (!id) return '';
     var found = slotsOf(ptypeById(a.typeId)).filter(function(s){ return s.id === id; })[0];
-    return found ? found.time : '';
+    return found ? found.name : '';
   }
   function memberIn(a) { return a.team.members.filter(function(m){ return m.checkedIn; }).length; }
   function isIn(a) { return isTeam(a) ? memberIn(a) === a.team.members.length : a.checkedIn; }
@@ -909,10 +938,12 @@
     var slots = allSlots();
     if (!slots.length) { row.hidden = true; return; }
     row.hidden = false;
-    var defs = [['all', '전체 타임']].concat(slots.map(function(s){ return [s.id, s.time]; }));
+    var defs = [['all', '전체 자리']].concat(slots.map(function(s){ return [s.id, s.name]; }));
     document.getElementById('ci-slot-chips').innerHTML = defs.map(function(d){
       var cls = slotFilter === d[0] ? 'btn-fill-primary' : 'btn-line-dark';
-      return '<button type="button" class="btn btn-xs btn-pill ' + cls + '" onclick="setSlotFilter(\'' + d[0] + '\')">' + d[1] + '</button>';
+      return '<button type="button" class="btn btn-xs btn-pill ' + cls + '" onclick="setSlotFilter(\'' + d[0] + '\')" title="' + d[1] + '">'
+           +   '<span class="ci-slot-label">' + d[1] + '</span>'
+           + '</button>';
     }).join('');
   }
 
@@ -934,11 +965,11 @@
       if (!inSlotFilter(a)) return;
       if (listFilter === 'todo' && isIn(a)) return;
       if (!matches(a, q)) return;
-      var slot = slotTimeOf(a);
+      var slot = slotNameOf(a);
       rows.push(
         '<div class="ci-row' + (isIn(a) ? ' is-done' : '') + '" onclick="openDetail(' + i + ')">'
         + '<span class="ci-row-name">' + a.name + '</span>'
-        + (slot ? '<span class="badge badge-sm badge-weak-primary">' + slot + '</span>' : '')
+        + (slot ? '<span class="badge badge-sm badge-weak-primary ci-row-slot" title="' + slot + '">' + slot + '</span>' : '')
         + (a.onsite ? '<span class="badge badge-sm badge-weak-neutral">현장 등록</span>' : '')
         + '<span class="ci-row-sub">' + rowSub(a) + '</span>'
         + rowAction(a, i)
@@ -990,7 +1021,7 @@
 
     html += '<div class="dt-card">';
     html += dtRow('참가 유형', t.name + (a.onsite ? ' <span class="badge badge-sm badge-weak-neutral">현장 등록</span>' : ''));
-    if (slotTimeOf(a)) html += dtRow('배정 타임', slotTimeOf(a));
+    if (slotNameOf(a)) html += dtRow('배정 자리', slotNameOf(a));
 
     if (team) {
       html += dtRow(t.form.team.questions[0].text, a.values.q1 || '-');
@@ -1056,7 +1087,7 @@
     simScan(kind);
   }
 
-  /* 확정 건만, 그리고 스태프가 보고 있는 타임 안에서 고른다 */
+  /* 확정 건만, 그리고 스태프가 보고 있는 자리 안에서 고른다 */
   function pickApp(fn) {
     for (var i = 0; i < APPS.length; i++) {
       var a = APPS[i];
@@ -1077,7 +1108,7 @@
     if (kind === 'ok') {
       var a = APPS[idx], t = ptypeById(a.typeId);
       var meta = [];
-      if (slotTimeOf(a)) meta.push(slotTimeOf(a));
+      if (slotNameOf(a)) meta.push(slotNameOf(a));
       meta.push(t.name);
       if (isTeam(a)) meta.push(a.team.members.length + '명');
       else if (a.values.q2) meta.push(a.values.q2);
