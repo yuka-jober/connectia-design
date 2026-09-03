@@ -1036,6 +1036,44 @@
   .desc.is-rich { white-space: pre-wrap; }
   .desc.is-rich .rt-carousel { white-space: normal; }
 
+  /* 엑셀 내보내기 — 항목 고르기 */
+  .export-unit { display: flex; gap: 8px; margin-bottom: 16px; }
+  .export-unit .btn { flex: 1; }
+  .export-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .export-count {
+    font-size: var(--fs-label);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text-sub);
+  }
+  .export-all {
+    background: none; border: 0; padding: 0; cursor: pointer;
+    font-family: var(--font-base);
+    font-size: var(--fs-caption);
+    font-weight: var(--fw-medium);
+    color: var(--color-text-muted);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .export-all:hover { color: var(--color-primary); }
+  .export-list {
+    display: flex; flex-direction: column;
+    max-height: 44vh;
+    overflow-y: auto;
+    margin-bottom: 16px;
+  }
+  .export-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--color-border);
+    cursor: pointer;
+  }
+  .export-row:last-child { border-bottom: 0; }
+  .export-row-label { font-size: var(--fs-body); color: var(--color-text); }
+
   /* 자리별 현황 — 정원 대비 얼마나 찼는지 한눈에 */
   .slot-status {
     display: flex;
@@ -1800,7 +1838,7 @@
             <i data-lucide="user-plus" style="width:14px;height:14px"></i>
             참석자
           </button>
-          <button class="btn btn-sm btn-line-dark btn-pill" onclick="downloadExcel()">
+          <button class="btn btn-sm btn-line-dark btn-pill" onclick="openExportSheet()">
             <i data-lucide="download" style="width:14px;height:14px"></i>
             엑셀 다운로드
           </button>
@@ -2024,6 +2062,20 @@
   <!-- 유형 바꾸기 — Bottom sheet (신청 화면)          -->
   <!-- ════════════════════════════════════════════ -->
   <div class="bottom-sheet-overlay" id="typepick-overlay" onclick="closeTypePicker()"></div>
+  <!-- 엑셀 내보내기 — 항목 고르기 (운영자) -->
+  <div class="bottom-sheet-overlay" id="export-overlay" onclick="closeExportSheet()"></div>
+  <div class="bottom-sheet" id="export-sheet" role="dialog" aria-label="엑셀 내보내기">
+    <div class="bottom-sheet-handle"></div>
+    <div class="text-title" style="margin-bottom:16px">내보낼 항목</div>
+    <div class="export-unit" id="export-unit"></div>
+    <div class="export-head">
+      <span class="export-count" id="export-count"></span>
+      <button type="button" class="export-all" id="export-all" onclick="toggleAllExportCols()">전체 해제</button>
+    </div>
+    <div class="export-list" id="export-list"></div>
+    <button class="btn btn-lg btn-block btn-fill-primary" type="button" id="export-submit" onclick="submitExport()">내보내기</button>
+  </div>
+
   <!-- 자리 바꾸기 — Bottom sheet (운영자) -->
   <div class="bottom-sheet-overlay" id="slotmove-overlay" onclick="closeSlotMove()"></div>
   <div class="bottom-sheet" id="slotmove-sheet" role="dialog" aria-label="자리 바꾸기">
@@ -4482,6 +4534,155 @@
       return '<span class="answer-text">' + escapeHTML(t.name) + ' — ' + escapeHTML(labels.join(' · ')) + '</span>';
     }).join('');
   }
+
+  /* ── 엑셀 내보내기 — 명찰·좌석표처럼 다른 도구에서 쓰려면 항목이 열로 나뉘어야 한다 ── */
+  var exportUnit = 'person';        /* 'person' 한 사람씩 · 'entry' 신청 건별 */
+  var exportOff = {};               /* 꺼 둔 항목 */
+
+  function answerOf(a, m, label) {
+    var t = ptypeById(a.typeId);
+    var f = (t && t.form) || {};
+    var v;
+    if (m) {
+      if (label === '전화번호' && m.phone) return m.phone;
+      if (label === '이메일' && m.email) return m.email;
+      ((f.member && f.member.questions) || []).forEach(function(q, i){
+        if (q.text === label && v === undefined) v = m.values[qKey(q, i)];
+      });
+    }
+    if (v === undefined) {
+      if (label === '전화번호') v = a.values.phone;
+      else if (label === '이메일') v = a.values.email;
+    }
+    if (v === undefined) {
+      var list = f.unit === 'team' ? ((f.team && f.team.questions) || []) : (f.questions || []);
+      list.forEach(function(q, i){ if (q.text === label && v === undefined) v = a.values[qKey(q, i)]; });
+    }
+    if (Array.isArray(v)) v = v.join(', ');
+    return v == null ? '' : String(v);
+  }
+
+  /* 지금 화면의 유형들을 훑어 내보낼 수 있는 항목을 모은다 */
+  function exportColumns() {
+    var types = ptypesActive() ? PTYPES : [];
+    var anyTeam = types.some(function(t){ return t.unit === 'team'; });
+    var byPerson = exportUnit === 'person';
+    var cols = [];
+    var seen = {};
+    function add(id, label, get) {
+      if (seen[label]) return;
+      seen[label] = 1;
+      cols.push({ id: id, label: label, get: get });
+    }
+
+    if (types.length > 1) add('type', '참가 유형', function(a){ var t = ptypeById(a.typeId); return t ? t.name : ''; });
+    add('name', '이름', function(a, m){ return m ? m.name : a.name; });
+    if (anyTeam) {
+      add('teamName', '팀명', function(a){ return a.team ? a.name : ''; });
+      if (byPerson) add('leader', '대표 여부', function(a, m){
+        return (a.team && m && a.team.members.indexOf(m) === (a.team.leaderIndex || 0)) ? '대표' : '';
+      });
+      if (!byPerson) add('members', '팀원', function(a){
+        return a.team ? a.team.members.map(function(m){ return m.name; }).join(', ') : '';
+      });
+    }
+
+    /* 유형마다 받는 항목이 달라서 라벨로 합친다 */
+    if (types.length) {
+      types.forEach(function(t){
+        var f = t.form || {};
+        if (t.unit === 'team') {
+          ((f.team && f.team.questions) || []).forEach(function(q){
+            add('q', q.text, function(a, m){ return answerOf(a, m, q.text); });
+          });
+          memberFields(t).forEach(function(x){
+            add('m', x.label, function(a, m){ return answerOf(a, m, x.label); });
+          });
+        } else {
+          var ff = f.fields || {};
+          if (ff.phone && ff.phone.enabled) add('phone', '전화번호', function(a, m){ return answerOf(a, m, '전화번호'); });
+          if (ff.email && ff.email.enabled) add('email', '이메일', function(a, m){ return answerOf(a, m, '이메일'); });
+          (f.questions || []).forEach(function(q){
+            add('q', q.text, function(a, m){ return answerOf(a, m, q.text); });
+          });
+        }
+        if (assignOf(t)) add('slot', '배정 자리', function(a){
+          return (a.booking && a.booking.assignedSlot) ? slotName(a.booking.assignedSlot) : '';
+        });
+      });
+    } else {
+      FIELDS.forEach(function(f){
+        add(f.key, f.label, function(a){
+          var v = a.values[f.key];
+          return Array.isArray(v) ? v.join(', ') : (v == null ? '' : v);
+        });
+      });
+    }
+    add('date', '신청일', function(a){ return a.date; });
+    return cols;
+  }
+
+  function openExportSheet() {
+    renderExportSheet();
+    document.getElementById('export-overlay').classList.add('is-open');
+    document.getElementById('export-sheet').classList.add('is-open');
+  }
+  function closeExportSheet() {
+    document.getElementById('export-overlay').classList.remove('is-open');
+    document.getElementById('export-sheet').classList.remove('is-open');
+  }
+  function setExportUnit(unit) { exportUnit = unit; renderExportSheet(); }
+  function toggleExportCol(label) {
+    exportOff[label] = !exportOff[label];
+    renderExportSheet();
+  }
+  function toggleAllExportCols() {
+    var cols = exportColumns();
+    var allOn = cols.every(function(c){ return !exportOff[c.label]; });
+    cols.forEach(function(c){ exportOff[c.label] = allOn; });
+    renderExportSheet();
+  }
+  function renderExportSheet() {
+    var cols = exportColumns();
+    var on = cols.filter(function(c){ return !exportOff[c.label]; });
+    var anyTeam = ptypesActive() && PTYPES.some(function(t){ return t.unit === 'team'; });
+
+    var unit = document.getElementById('export-unit');
+    unit.hidden = !anyTeam;          /* 팀이 없으면 한 줄이 곧 한 사람이다 */
+    unit.innerHTML = !anyTeam ? '' : ''
+      + '<button type="button" class="btn btn-sm ' + (exportUnit === 'person' ? 'btn-fill-primary' : 'btn-line-dark') + '" onclick="setExportUnit(\'person\')">한 사람씩</button>'
+      + '<button type="button" class="btn btn-sm ' + (exportUnit === 'entry' ? 'btn-fill-primary' : 'btn-line-dark') + '" onclick="setExportUnit(\'entry\')">신청 건별</button>';
+
+    document.getElementById('export-count').textContent = on.length + ' / ' + cols.length + '개 항목';
+    document.getElementById('export-all').textContent = on.length === cols.length ? '전체 해제' : '전체 선택';
+    document.getElementById('export-list').innerHTML = cols.map(function(c){
+      var checked = !exportOff[c.label];
+      return '<label class="export-row">'
+        + '<input type="checkbox" class="checkbox"' + (checked ? ' checked' : '')
+        +   ' onchange="toggleExportCol(' + JSON.stringify(c.label).replace(/"/g, '&quot;') + ')">'
+        + '<span class="export-row-label">' + escapeHTML(c.label) + '</span>'
+        + '</label>';
+    }).join('');
+    document.getElementById('export-submit').disabled = on.length === 0;
+  }
+
+  function submitExport() {
+    var cols = exportColumns().filter(function(c){ return !exportOff[c.label]; });
+    if (!cols.length) return;
+    closeExportSheet();
+    var rows = [];
+    filteredApplicantsAll().forEach(function(a){
+      var members = (exportUnit === 'person' && a.team) ? a.team.members : [null];
+      members.forEach(function(m){
+        rows.push(cols.map(function(c){ return c.get(a, m); }));
+      });
+    });
+    writeCsv(cols.map(function(c){ return c.label; }), rows);
+    showToast(rows.length + '줄을 내려받았어요');
+  }
+
+  /* 내보내기는 지금 걸린 유형 필터와 무관하게 전체를 담는다 */
+  function filteredApplicantsAll() { return APPLICANTS; }
 
   function downloadExcel() {
     if (!ptypesActive()) {
