@@ -1017,8 +1017,13 @@
   .desc .rt-carousel-dots {
     display: flex;
     justify-content: center;
+    align-items: center;
     gap: 6px;
-    margin: 10px 0 16px;
+    width: fit-content;
+    margin: 10px auto 16px;
+    padding: 6px 10px;
+    border-radius: var(--r-full);
+    background: var(--color-surface-sub);
   }
   .desc .rt-carousel-dot {
     width: 6px; height: 6px;
@@ -1026,7 +1031,7 @@
     background: var(--color-border);
     transition: background var(--motion-fast) var(--ease-standard);
   }
-  .desc .rt-carousel-dot.is-on { background: var(--color-text-muted); }
+  .desc .rt-carousel-dot.is-on { background: var(--color-text-sub); }
   .desc img { max-width: 100%; border-radius: var(--r-md); }
   .desc.is-rich { white-space: pre-wrap; }
   .desc.is-rich .rt-carousel { white-space: normal; }

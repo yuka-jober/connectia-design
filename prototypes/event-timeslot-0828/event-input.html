@@ -1337,8 +1337,13 @@
   .rt-carousel-dots {
     display: flex;
     justify-content: center;
+    align-items: center;
     gap: 6px;
-    margin: 8px 0 12px;
+    width: fit-content;
+    margin: 8px auto 12px;
+    padding: 6px 10px;
+    border-radius: var(--r-full);
+    background: var(--color-surface-sub);
   }
   .rt-carousel-dot {
     width: 6px; height: 6px;
@@ -1346,7 +1351,7 @@
     background: var(--color-border);
     transition: background var(--motion-fast) var(--ease-standard);
   }
-  .rt-carousel-dot.is-on { background: var(--color-text-muted); }
+  .rt-carousel-dot.is-on { background: var(--color-text-sub); }
   .rt-editor-btn {
     width: 28px;
     height: 28px;
