@@ -1040,7 +1040,7 @@
   .done-cancel {
     display: block;
     width: fit-content;
-    margin: 12px auto 0;
+    margin: 32px auto 0;
     background: none; border: 0; padding: 4px;
     cursor: pointer;
     font-family: var(--font-base);
@@ -1940,6 +1940,13 @@
   <!-- SCREEN — DONE (신청 완료 · 현장 체크인 QR)      -->
   <!-- ════════════════════════════════════════════ -->
   <div class="screen" id="screen-done">
+    <div class="topbar-solid">
+      <button class="icon-btn icon-btn-clear" aria-label="뒤로" onclick="closeDone()">
+        <i data-lucide="chevron-left" style="width:22px;height:22px;color:var(--color-text);"></i>
+      </button>
+      <span class="topbar-title">내 신청</span>
+    </div>
+
     <div class="done-body">
       <div class="done-icon"><i data-lucide="check"></i></div>
       <div class="done-head">
@@ -1964,14 +1971,10 @@
         <i data-lucide="message-square"></i>
         <span>신청 내용과 QR을 알림톡으로도 보내드렸어요</span>
       </p>
-    </div>
 
-    <div class="apply-footer">
-      <button class="btn btn-lg btn-block btn-fill-primary" type="button" onclick="closeDone()">
-        확인
-      </button>
       <button type="button" class="done-cancel" id="done-cancel" onclick="openCancelDialog()">신청 취소</button>
     </div>
+
   </div>
 
   <!-- ════════════════════════════════════════════ -->
@@ -3065,11 +3068,14 @@
     myRec = rec || myRec;
     /* 확정 화면 — 완료 화면을 그대로 쓰고 배정된 자리를 맨 위에 얹는다 */
     var assigned = rec && rec.booking && rec.booking.assignedSlot;
-    document.getElementById('done-title').textContent = doneReopened
-      ? '내 신청'
-      : (assigned ? (slotName(assigned) + ' 확정되었어요') : '신청이 완료되었어요');
-    /* 다시 열어 본 화면에는 완료 표시가 아니라 신청 내역이 필요하다 */
+    /* 다시 열어 본 화면은 상단바 제목이 대신한다 — 완료 축하는 방금 낸 때만 */
+    var head = document.querySelector('#screen-done .done-head');
+    document.getElementById('done-title').textContent = assigned
+      ? (slotName(assigned) + ' 확정되었어요')
+      : '신청이 완료되었어요';
+    document.getElementById('done-title').hidden = doneReopened;
     document.querySelector('#screen-done .done-icon').hidden = doneReopened;
+    if (head) head.style.marginTop = doneReopened ? '0' : '';
     document.getElementById('done-sub').textContent = t
       ? (t.name + '으로 신청했어요')
       : '신청이 접수되었어요';
