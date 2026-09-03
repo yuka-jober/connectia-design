@@ -70,7 +70,10 @@
     font-size: 16px;
     line-height: 1.75;
     -webkit-font-smoothing: antialiased;
+    /* 한글은 기본값이면 글자 단위로 끊겨서 '동의합니 / 다'처럼 나뉜다 */
+    word-break: keep-all;
   }
+  p, li { text-wrap: pretty; }
   img { max-width: 100%; display: block; }
   a { color: var(--cobalt); }
   :focus-visible { outline: 2px solid var(--cobalt); outline-offset: 3px; border-radius: 4px; }
@@ -104,7 +107,7 @@
   }
   .key-title {
     font-family: var(--display); font-weight: 700; font-size: 18px; line-height: 1.4;
-    margin: 0 0 6px; letter-spacing: -.01em;
+    margin: 0 0 6px; letter-spacing: -.01em; text-wrap: balance;
   }
   .key-body { font-size: 14.5px; color: var(--ink-sub); margin: 0; line-height: 1.7; }
   .key.is-lead { background: var(--flame-dim); }
@@ -139,7 +142,7 @@
   }
   .step-body h3 {
     font-family: var(--display); font-weight: 700; font-size: 21px; line-height: 1.4;
-    margin: 0 0 10px; letter-spacing: -.01em;
+    margin: 0 0 10px; letter-spacing: -.01em; text-wrap: balance;
   }
   .step-body p { margin: 0 0 12px; color: var(--ink-sub); max-width: 56ch; }
   .step-body p:last-child { margin-bottom: 0; }
@@ -157,7 +160,7 @@
     font-family: var(--mono); font-size: 11px; letter-spacing: .04em;
     color: var(--cobalt); display: block; margin-bottom: 10px;
   }
-  .flow-title { font-family: var(--display); font-weight: 700; font-size: 16px; line-height: 1.45; margin: 0 0 6px; }
+  .flow-title { font-family: var(--display); font-weight: 700; font-size: 16px; line-height: 1.45; margin: 0 0 6px; text-wrap: balance; }
   .flow-body { font-size: 14px; line-height: 1.65; color: var(--ink-sub); margin: 0; }
 
   /* 강조 한 줄 */
