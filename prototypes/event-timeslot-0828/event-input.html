@@ -1272,8 +1272,8 @@
     width: 22px; height: 22px;
     display: grid; place-items: center;
     border-radius: var(--r-full);
-    /* 어떤 사진 위에서도 읽히도록 — 빼기 버튼과 같은 스크림 */
-    background: var(--color-scrim);
+    /* 어떤 사진 위에서도 읽히도록 — 진한 스크림 */
+    background: var(--color-scrim-strong);
     color: var(--color-on-primary);
     font-size: var(--fs-caption);
     font-weight: var(--fw-semibold);
@@ -1286,7 +1286,7 @@
     display: grid; place-items: center;
     border: 0;
     border-radius: var(--r-full);
-    background: var(--color-scrim);
+    background: var(--color-scrim-strong);
     color: var(--color-on-primary);
     cursor: pointer;
     padding: 0;
@@ -1328,8 +1328,7 @@
   .rt-carousel img {
     width: 68%;
     flex-shrink: 0;
-    aspect-ratio: 1 / 1;
-    object-fit: cover;
+    height: auto;              /* 카드뉴스처럼 세로로 긴 이미지도 잘리지 않게 */
     border-radius: var(--r-sm);
     scroll-snap-align: start;
   }
@@ -6057,12 +6056,9 @@
   /* 프로토타입: 파일을 고르지 않아도 눌러보면 바로 한 장씩 올라간다.
      실서비스에서는 여기서 파일 선택창이 열린다. */
   var CAROUSEL_SAMPLES = [
-    '../../assets/studiogloss-gallery1.png',
-    '../../assets/studiogloss-gallery2.png',
-    '../../assets/studiogloss-gallery3.png',
-    '../../assets/studiogloss-gallery4.png',
-    '../../assets/studiogloss-gallery5.png',
-    '../../assets/studiogloss-gallery6.png'
+    '../../assets/카드뉴스1.png',
+    '../../assets/카드뉴스2.png',
+    '../../assets/카드뉴스3.png'
   ];
   var carouselSeq = 0;
   function pickCarouselFiles() {

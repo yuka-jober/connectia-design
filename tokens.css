@@ -178,6 +178,7 @@
   --color-on-primary-sub:   rgba(255,255,255,0.75);  /* 브랜드 배경 위 보조 텍스트 */
   --color-on-primary-faint: rgba(255,255,255,0.2);   /* 어두운 배경 위 장식 아이콘 */
   --color-scrim:            rgba(0,0,0,0.4);         /* 이미지 위 삭제 버튼 등 어두운 스크림 */
+  --color-scrim-strong:     rgba(0,0,0,0.6);         /* 사진 위 글자가 묻힐 때 쓰는 진한 스크림 */
   --color-surface-glass:    rgba(255,255,255,0.92);  /* 이미지·영상 위에 얹는 반투명 흰 배경 (play 버튼 등) */
   --color-surface-veil:     rgba(255,255,255,0.7);   /* 페이지 배경 위에 얹는 반투명 흰 면 — 배경 색조가 비쳐 어떤 테마에도 어울린다 */
 
