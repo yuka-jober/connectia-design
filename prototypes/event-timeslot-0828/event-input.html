@@ -1706,7 +1706,16 @@
   .pv-qtype-row {
     display: flex; gap: 8px;
   }
-  .pv-qtype-row .pv-chip { flex: 1; justify-content: center; display: flex; }
+  /* 세 칩이 폭을 나눠 갖는다 — '파일 업로드'가 두 줄로 접히지 않게 여백을 줄인다 */
+  .pv-qtype-row .pv-chip {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    justify-content: center;
+    white-space: nowrap;
+    padding-left: 12px;
+    padding-right: 12px;
+  }
   .pv-mc-editor {
     display: flex; flex-direction: column;
     gap: 8px;
