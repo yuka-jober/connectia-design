@@ -1553,7 +1553,7 @@
 
         <!-- Slot: 설명 -->
         <div class="section">
-          <div class="section-title">이벤트 안내</div>
+          <div class="section-title" id="desc-section-title">이벤트 안내</div>
           <div>
             <div class="desc" id="desc-block">
               <p>서울시립대학교 총동문회가 여는 동문·재학생 교류의 밤입니다.</p>
@@ -3580,6 +3580,14 @@
       }
     }
 
+    /* 신청 방식 — 참석여부는 신청폼 없이 참석/불참만 받는다 */
+    if (d.formMode === 'attend') applyAttendCta();
+
+    /* 주최자가 정한 안내 제목 — 기본은 '이벤트 안내' */
+    if (d.descTitle) {
+      var dt = document.getElementById('desc-section-title');
+      if (dt) dt.textContent = d.descTitle;
+    }
     if (d.checkin) {
       CHECKIN = {
         enabled: !!d.checkin.enabled,
@@ -3597,6 +3605,21 @@
   }
 
   /* 외부 링크 이벤트 — sticky CTA가 외부 폼을 새 탭으로 연다 */
+  /* 참석여부로 받는 이벤트 — 폼 없이 참석/불참만 답한다 */
+  function applyAttendCta() {
+    document.querySelectorAll('.sticky-actions .cta-guest').forEach(function(b){
+      b.textContent = '참석해요';   /* 누르면 로그인부터 — 동작은 그대로 */
+    });
+    document.querySelectorAll('.sticky-actions .cta-member').forEach(function(b){
+      b.textContent = '참석해요';
+      b.onclick = function(){ setState('applied'); showToast('참석으로 답했어요'); };
+    });
+    document.querySelectorAll('.sticky-actions .cta-applied').forEach(function(b){
+      b.textContent = '참석 · 바꾸기';
+      b.onclick = function(){ setState('member'); showToast('참석 답변을 취소했어요'); };
+    });
+  }
+
   function applyExternalCta(url) {
     document.querySelectorAll('.sticky-actions .cta-guest, .sticky-actions .cta-member, .sticky-actions .cta-applied')
       .forEach(function(b){

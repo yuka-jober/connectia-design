@@ -1133,6 +1133,25 @@
     justify-content: space-between;
     gap: 8px;
   }
+  /* 제목을 눌러 이벤트 페이지에 실릴 이름을 바꾼다 */
+  .pv-desc-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+    font: inherit;
+    color: inherit;
+  }
+  .pv-desc-title i[data-lucide],
+  .pv-desc-title svg.lucide {
+    width: 14px; height: 14px;
+    color: var(--color-text-muted);
+  }
+  .pv-desc-title:hover .pv-desc-label,
+  .pv-desc-title:hover svg.lucide { color: var(--color-primary); }
   .pv-desc-mode-link {
     background: none;
     border: 0;
@@ -1359,10 +1378,12 @@
     cursor: pointer;
     transition: background var(--motion-fast) var(--ease-standard), color var(--motion-fast) var(--ease-standard), border-color var(--motion-fast) var(--ease-standard);
   }
+  /* 필수/선택은 항목마다 반복되는 값이라 primary로 채우면 화면이 시끄럽다.
+     회색으로 채우고 글자 색·굵기로 고른 쪽을 구분한다. */
   .pv-req-seg-btn.is-selected {
-    background: var(--color-primary);
-    color: var(--color-on-primary);
-    border-color: var(--color-primary);
+    background: var(--color-input);
+    color: var(--color-text);
+    border-color: var(--color-input);
   }
   .pv-req-seg.is-disabled .pv-req-seg-btn { opacity: 0.4; pointer-events: none; }
   .pv-field-add {
@@ -2180,6 +2201,9 @@
     padding-bottom: 0;
   }
 
+  /* 참석여부로 받기 — 커뮤니티에서, 유형을 나누지 않을 때만 고를 수 있다 */
+  #formtype-attend[hidden] { display: none !important; }
+
   /* ── 커뮤니티 회원만 신청 가능 — 커뮤니티 맥락에서만 ── */
   #opt-members-row { display: none; }
   body[data-context="community"] #opt-members-row { display: flex; }
@@ -2794,7 +2818,10 @@
     <!-- 이벤트 설명 -->
     <div class="pv-section">
       <div class="pv-desc-head">
-        <div class="pv-desc-label">이벤트 설명</div>
+        <button type="button" class="pv-desc-title" onclick="openDescTitle()">
+          <span class="pv-desc-label" id="desc-title">이벤트 안내</span>
+          <i data-lucide="pencil"></i>
+        </button>
         <button type="button" class="pv-desc-mode-link" id="desc-mode-btn" onclick="toggleDescMode(event)">PDF로 등록</button>
       </div>
       <div class="pv-luma-card" id="desc-card" data-desc-mode="text" onclick="onDescCardClick(event)">
@@ -2857,6 +2884,7 @@
         <div class="pv-formtype pv-formtype-modes" role="radiogroup" aria-label="신청 방식">
           <button type="button" class="pv-desc-mode-link pv-formtype-card is-selected" data-mode="self" role="radio" aria-checked="true" onclick="selectFormType('self')">자체 신청폼</button>
           <button type="button" class="pv-desc-mode-link pv-formtype-card" data-mode="external" role="radio" aria-checked="false" onclick="selectFormType('external')">외부 링크 등록</button>
+          <button type="button" class="pv-desc-mode-link pv-formtype-card" id="formtype-attend" data-mode="attend" role="radio" aria-checked="false" onclick="selectFormType('attend')" hidden>참석여부</button>
         </div>
       </div>
       <div class="pv-extform-link" id="extform-link-block" hidden>
@@ -3230,6 +3258,17 @@
   </div>
 
   <!-- 참가 유형 이름 -->
+  <!-- 이벤트 안내 제목 -->
+  <div class="pv-sheet" id="sheet-desc-title">
+    <div class="pv-sheet-handle"></div>
+    <div class="pv-sheet-title">안내 제목</div>
+    <input type="text" class="pv-sheet-input pv-sheet-input-lead" id="desc-title-input" onkeydown="onDescTitleKey(event)">
+    <div class="pv-sheet-actions">
+      <button class="btn btn-lg btn-weak-dark" type="button" onclick="closeSheet()">취소</button>
+      <button class="btn btn-lg btn-fill-primary" type="button" onclick="submitDescTitle()">저장</button>
+    </div>
+  </div>
+
   <div class="pv-sheet" id="sheet-ptype-name">
     <div class="pv-sheet-handle"></div>
     <div class="pv-sheet-title">유형 이름</div>
@@ -3342,7 +3381,7 @@
 
       <div class="pv-prev-divider" id="pv-prev-desc-divider" hidden></div>
       <div class="pv-prev-section" id="pv-prev-desc-section" hidden>
-        <div class="pv-prev-section-title">이벤트 안내</div>
+        <div class="pv-prev-section-title" id="pv-prev-desc-title">이벤트 안내</div>
         <div class="pv-prev-desc" id="pv-prev-desc"></div>
       </div>
 
@@ -3723,6 +3762,7 @@
       c.setAttribute('aria-checked', on ? 'true' : 'false');
     });
     var external = mode === 'external';
+    var noForm = mode !== 'self';        /* 외부 링크·참석여부는 우리가 폼을 그리지 않는다 */
     syncFormVisibility();
     document.getElementById('extform-link-block').hidden = !external;
     if (ptypesOn()) {
@@ -3730,14 +3770,33 @@
       saveActiveForm();
       renderPtypes();
     } else {
-      /* 외부 링크로 받으면 신청폼을 우리가 그리지 않으므로 참가 유형도 의미가 없다 */
-      document.getElementById('ptype-section').hidden = external;
-      syncApplicantsOption(external);
+      /* 우리 폼으로 받지 않으면 유형을 나눌 근거가 없다 */
+      document.getElementById('ptype-section').hidden = noForm;
+      syncApplicantsOption(noForm);
     }
     syncFormPlacement();
     if (external) setTimeout(function(){ document.getElementById('f-extform-url').focus(); }, 100);
     if (window.lucide) lucide.createIcons();
     onInput();
+  }
+
+  /* ── 이벤트 안내 제목 — 이벤트 페이지의 섹션 제목이 된다 ── */
+  function openDescTitle() {
+    var input = document.getElementById('desc-title-input');
+    input.value = document.getElementById('desc-title').textContent.trim();
+    openSheet('desc-title');
+    setTimeout(function(){ input.focus(); input.select(); }, 120);
+  }
+  function onDescTitleKey(e) {
+    if (e.key === 'Enter') { e.preventDefault(); submitDescTitle(); }
+  }
+  function submitDescTitle() {
+    var name = document.getElementById('desc-title-input').value.trim();
+    closeSheet();
+    if (!name) return;
+    document.getElementById('desc-title').textContent = name;
+    document.getElementById('pv-prev-desc-title').textContent = name;
+    syncPreviewLive();
   }
 
   /* ── 이벤트 설명 모드 (직접 입력 / PDF 등록) ── */
@@ -3786,14 +3845,18 @@
   }
 
   /* 지금 화면에 떠 있는(=활성 유형의) 신청 방식 */
-  function externalFormState() {
+  function formModeNow() {
     var sel = document.querySelector('.pv-formtype-card[data-mode].is-selected');
-    var external = !!(sel && sel.dataset.mode === 'external');
+    return sel ? sel.dataset.mode : 'self';
+  }
+  function externalFormState() {
     return {
-      enabled: external,
+      enabled: formModeNow() === 'external',
       url: document.getElementById('f-extform-url').value.trim()
     };
   }
+  /* 참석여부로 받는 이벤트 — 커뮤니티 · 유형 없음일 때만 나온다 */
+  function attendModeOn() { return formModeNow() === 'attend'; }
   /* 화면에 떠 있지 않은 유형은 저장된 상태에서 읽는다 */
   function externalOf(t) {
     var st = formStates[t.id];
@@ -4827,6 +4890,18 @@
   }
 
   /* 신청 방식(자체/외부)과 신청 단위(개인/팀)를 함께 보고 어느 카드를 띄울지 정한다 */
+  /* 참석여부는 커뮤니티에서, 유형을 나누지 않을 때만 성립한다 */
+  function attendAllowed() {
+    return document.body.dataset.context === 'community' && !ptypesOn();
+  }
+  function syncAttendOption() {
+    var btn = document.getElementById('formtype-attend');
+    if (!btn) return;
+    var allowed = attendAllowed();
+    btn.hidden = !allowed;
+    /* 조건이 사라졌는데 참석여부로 받고 있었다면 자체 신청폼으로 되돌린다 */
+    if (!allowed && btn.classList.contains('is-selected')) applyFormType('self');
+  }
   function syncFormVisibility() {
     var sel = document.querySelector('.pv-formtype-card[data-mode].is-selected');
     var mode = sel ? sel.dataset.mode : 'self';
@@ -4838,6 +4913,7 @@
 
   /* 유형별 폼은 유형 상세에서 고치고, 유형을 안 나누면 폼이 하나뿐이다 — 폼이 있어야 할 자리만 맞춘다 */
   function syncFormPlacement() {
+    syncAttendOption();
     if (detailPtypeId) mountFormFields(); else parkFormFields();
     /* 유형을 나눠 받으면 신청폼도 신청 방식도 전부 유형 상세로 간다 — 섹션이 통째로 빈다 */
     document.querySelector('[data-block="form"]').hidden = ptypesOn();
@@ -5400,6 +5476,7 @@
     };
     var data = {
       title: titleEl.textContent.trim(),
+      descTitle: document.getElementById('desc-title').textContent.trim(),
       description: document.getElementById('f-desc').textContent.trim(),
       images: images,
       applyPeriod: applyPeriod,
@@ -5413,6 +5490,8 @@
         return { name: a.name, phone: a.phone, typeId: t ? t.id : '', typeName: t ? t.name : '' };
       }),
       externalForm: ptypesOn() && ptypes.length ? externalOf(ptypes[0]) : externalFormState(),
+      /* 신청 방식 — 'self' 자체 신청폼 · 'external' 외부 링크 · 'attend' 참석여부 */
+      formMode: ptypesOn() ? 'self' : formModeNow(),
       reviews:  document.getElementById('opt-reviews').checked,
       comments: document.getElementById('opt-comments').checked,
       /* 참가 유형 — event-landing이 유형 탭·유형별 CTA·참석자 카드를 그리는 데 쓴다 */
@@ -5884,7 +5963,9 @@
   renderImages();
   onInput();
   renderAttendees();
-  setContext('general');
+  /* 전환 바는 지웠지만 커뮤니티 전용 설정을 확인할 길은 남긴다 — ?context=community */
+  setContext(/[?&]context=community/.test(location.search) ? 'community' : 'general');
+  syncAttendOption();                /* 맥락이 정해진 뒤에야 참석여부를 보일지 알 수 있다 */
   /* ?blank=1 — 데모 없이 빈 화면에서 시작한다. 직접 구성해보고 발행까지 해보는 용도 */
   if (!/[?&]blank=1/.test(location.search)) {
     seedDemoEvent();
