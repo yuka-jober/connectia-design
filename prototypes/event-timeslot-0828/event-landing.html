@@ -1675,7 +1675,7 @@
             신청하기
           </button>
           <!-- 신청완료 -->
-          <button class="btn btn-lg btn-block btn-weak-primary cta-applied" type="button" onclick="openCancelDialog()">
+          <button class="btn btn-lg btn-block btn-weak-primary cta-applied" id="cta-applied" type="button" onclick="onAppliedCta()">
             신청 완료 · 취소하기
           </button>
           <button class="sticky-chat" type="button" aria-label="AI 상담">
@@ -2239,6 +2239,16 @@
     showToast(a.name + '님을 명단에서 뺐어요.');
   }
 
+  /* 아직 자리가 확정되지 않은 내 신청 — 동의 대기 화면으로 다시 들어갈 수 있어야 한다 */
+  function myPending() {
+    return (pendingRec && pendingRec.booking && pendingRec.booking.status === 'pending') ? pendingRec : null;
+  }
+  /* 신청 완료 버튼을 눌렀을 때 — 대기 중이면 현황, 확정됐으면 취소 */
+  function onAppliedCta() {
+    var rec = myPending();
+    if (rec) { openPending(rec); return; }
+    openCancelDialog();
+  }
   function openCancelDialog()  { document.getElementById('cancel-overlay').hidden = false; }
   function closeCancelDialog() { document.getElementById('cancel-overlay').hidden = true; }
   function confirmCancel() {
@@ -2880,8 +2890,12 @@
   // ══════════════════════════════════════════════
   var pendingRec = null;
 
+  /* 대표가 알림톡으로 들어오는 화면 — 신청 직후, 팀원이 동의할 때마다 다시 열린다 */
   function openPending(rec) {
     pendingRec = rec;
+    /* 이 신청이 내 것임을 화면 전체가 알아야 나갔다 들어와도 현황으로 돌아올 수 있다 */
+    appliedTypeId = rec.typeId;
+    if (document.body.dataset.state !== 'applied') setState('applied');
     renderPending();
     navigate('screen-pending');
   }
@@ -3078,13 +3092,16 @@
     var owner = document.body.dataset.role === 'owner';
     box.innerHTML = PTYPES.map(function(t){
       var mine = !owner && (state === 'applied' || state === 'preset') && appliedTypeId === t.id;
+      var waiting = mine ? myPending() : null;
       var active = t.id === activeTypeId;
       var style = mine ? 'btn-weak-primary' : (active ? 'btn-fill-primary' : 'btn-weak-primary');
       var ext = t.external && t.external.enabled;
       return ''
         + '<button type="button" class="btn btn-lg ' + style + ' cta-type-btn"'
         +   ' onclick="onTypeCta(\'' + t.id + '\')">'
-        +   '<span class="cta-type-name">' + escapeHTML(mine ? '신청 완료 · 취소' : t.name)
+        +   '<span class="cta-type-name">' + escapeHTML(
+              waiting ? ('동의 대기 ' + consentDone(waiting) + '/' + waiting.team.members.length)
+                      : (mine ? '신청 완료 · 취소' : t.name))
         +     (ext ? ' <i data-lucide="external-link" style="width:14px;height:14px"></i>' : '') + '</span>'
         +   (mine ? '<span class="cta-type-sub">' + escapeHTML(t.name) + '</span>' : '')
         + '</button>';
@@ -3102,7 +3119,7 @@
     var state = document.body.dataset.state;
     var owner = document.body.dataset.role === 'owner';
     if (!owner && (state === 'applied' || state === 'preset') && appliedTypeId === id) {
-      openCancelDialog();
+      onAppliedCta();
       return;
     }
     if (!owner && state === 'guest') { openLoginDialog(); return; }
@@ -3113,6 +3130,13 @@
   function syncPtypeUI() {
     var mode = !ptypesActive() ? 'off' : (PTYPES.length > 1 ? 'multi' : 'single');
     document.body.dataset.ptypes = mode;
+    var applied = document.getElementById('cta-applied');
+    var waiting = myPending();
+    if (applied) {
+      applied.textContent = waiting
+        ? ('동의 대기 ' + consentDone(waiting) + '/' + waiting.team.members.length + ' · 현황 보기')
+        : '신청 완료 · 취소하기';
+    }
 
     if (mode === 'off') {
       var tabs = document.getElementById('ptype-tabs');
