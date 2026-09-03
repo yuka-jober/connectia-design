@@ -86,6 +86,11 @@
   /* 화면·오버레이 영역을 viewer-bar 아래로 밀기 */
   .frame .screen,
   .frame .bottom-sheet-overlay { top: 64px; }
+
+  /* 공유 링크(?share=1) — 프로토타입 전환 바 없이 화면만 본다 */
+  body.is-share .viewer-bar { display: none; }
+  body.is-share .frame .screen,
+  body.is-share .frame .bottom-sheet-overlay { top: 0; }
   .frame .bottom-sheet-overlay,
   .frame .bottom-sheet { position: absolute; }
   /* 하단 액션 영역(81px) 위로 띄운다 — 스캔 중에 '이름으로 찾기'가 가려지면 안 된다 */
@@ -301,6 +306,13 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
+  /* 자리 칩의 배정 현황 — 정원 대비 몇 건이 그 자리로 잡혔는지 */
+  .ci-slot-count {
+    margin-left: 6px;
+    font-weight: var(--fw-regular);
+    opacity: 0.75;
+  }
+
   /* 배정 자리 배지 — 이름이 길어도 이름·입장 버튼을 밀어내지 않는다 */
   .ci-row-slot {
     display: block;
@@ -507,6 +519,13 @@
       </div>
     </div>
     <div class="viewer-bar-row">
+      <span class="viewer-bar-label">발급 단위</span>
+      <div class="viewer-bar-tabs">
+        <button class="viewer-bar-tab" type="button" data-axis="issue" data-value="registration" onclick="setIssueUnit('registration')">신청 건당</button>
+        <button class="viewer-bar-tab" type="button" data-axis="issue" data-value="person" onclick="setIssueUnit('person')">1인당</button>
+      </div>
+    </div>
+    <div class="viewer-bar-row">
       <span class="viewer-bar-label">스캔</span>
       <div class="viewer-bar-tabs">
         <button class="viewer-bar-tab" type="button" onclick="simScan('ok')">정상</button>
@@ -575,7 +594,7 @@
         </div>
       </div>
       <div class="ci-rows" id="ci-rows"></div>
-      <div class="ci-list-foot">
+      <div class="ci-list-foot" id="ci-list-foot">
         <button class="btn btn-sm btn-block btn-weak-primary" type="button" onclick="openOnsiteSheet()">
           <i data-lucide="plus" style="width:16px;height:16px"></i>
           현장 신청 등록
@@ -631,8 +650,8 @@
         <span class="label label-required">이름</span>
         <input class="input" type="text" id="onsite-name">
       </div>
-      <div class="onsite-field">
-        <span class="label label-required">전화번호</span>
+      <div class="onsite-field" id="onsite-phone-field">
+        <span class="label" id="onsite-phone-label">전화번호</span>
         <input class="input" type="tel" id="onsite-phone" placeholder="010-0000-0000">
       </div>
     </div>
@@ -774,6 +793,11 @@
 
   var APPS = buildApplicants();
 
+  /* 작성 화면의 '발급 단위'. 'registration'이면 신청 1건이 QR 한 장이라
+     팀은 통째로 들어온다 — 팀원을 따로 입장 처리할 방법이 없다. */
+  var ISSUE_UNIT = 'registration';
+  function perPerson() { return ISSUE_UNIT === 'person'; }
+
   // ── 현장 시계 (프로토타입: 18:14부터 흐른다) ──
   var CLOCK = 18 * 60 + 14;
   function stamp() {
@@ -825,23 +849,33 @@
     return found ? found.name : '';
   }
   function memberIn(a) { return a.team.members.filter(function(m){ return m.checkedIn; }).length; }
-  function isIn(a) { return isTeam(a) ? memberIn(a) === a.team.members.length : a.checkedIn; }
+  function isIn(a) {
+    if (!isTeam(a)) return a.checkedIn;
+    return perPerson() ? memberIn(a) === a.team.members.length : !!a.checkedIn;
+  }
   function enteredAt(a) {
-    if (!isTeam(a)) return a.checkedInAt;
+    if (!isTeam(a) || !perPerson()) return a.checkedInAt;
     var times = a.team.members.map(function(m){ return m.checkedInAt; }).filter(Boolean).sort();
     return times.length ? times[times.length - 1] : null;
   }
   function tail(phone) { return phone ? phone.replace(/[^0-9]/g, '').slice(-4) : ''; }
 
+  /* 문 앞에서 동명이인을 가리는 용도라 전화번호 뒷자리만 쓴다.
+     신청폼이 전화번호를 받지 않는 유형이면 붙일 게 없다. */
+  function phoneOn(t) {
+    var f = t && t.form;
+    if (!f) return false;
+    return f.unit === 'team' ? !!(f.member.fields.phone && f.member.fields.phone.enabled)
+                             : !!(f.fields.phone && f.fields.phone.enabled);
+  }
   function rowSub(a) {
     if (isTeam(a)) {
-      var n = a.team.members.length, done = memberIn(a);
+      var n = a.team.members.length;
+      if (!perPerson()) return n + '명';
+      var done = memberIn(a);
       return n + '명' + (done > 0 && done < n ? ' · ' + done + '명 입장' : '');
     }
-    var bits = [];
-    if (a.values.q1) bits.push(a.values.q1);
-    if (tail(a.values.phone)) bits.push(tail(a.values.phone));
-    return bits.join(' · ');
+    return phoneOn(ptypeById(a.typeId)) ? tail(a.values.phone) : '';
   }
 
   // ══════════════════════════════════════════════
@@ -850,20 +884,18 @@
   function checkIn(idx, silent) {
     var a = APPS[idx];
     var t = stamp();
+    a.checkedIn = true; a.checkedInAt = t;
     if (isTeam(a)) {
       a.team.members.forEach(function(m){ if (!m.checkedIn) { m.checkedIn = true; m.checkedInAt = t; } });
-    } else {
-      a.checkedIn = true; a.checkedInAt = t;
     }
     renderAll();
-    if (!silent) showToast(a.name + (isTeam(a) ? ' 팀 전체를 입장 처리했어요' : ' 님 입장 처리했어요'));
+    if (!silent) showToast(a.name + (isTeam(a) ? ' 모두 입장 처리했어요' : ' 님 입장 처리했어요'));
   }
   function undoCheckIn(idx) {
     var a = APPS[idx];
+    a.checkedIn = false; a.checkedInAt = null;
     if (isTeam(a)) {
       a.team.members.forEach(function(m){ m.checkedIn = false; m.checkedInAt = null; });
-    } else {
-      a.checkedIn = false; a.checkedInAt = null;
     }
     renderAll();
     showToast(a.name + ' 입장을 취소했어요');
@@ -938,11 +970,18 @@
     var slots = allSlots();
     if (!slots.length) { row.hidden = true; return; }
     row.hidden = false;
-    var defs = [['all', '전체 자리']].concat(slots.map(function(s){ return [s.id, s.name]; }));
+    /* 자리마다 몇 건이 배정됐는지 — 운영 화면과 같은 기준(확정된 신청 건) */
+    function used(id) {
+      return roster().filter(function(a){ return slotIdOf(a) === id; }).length;
+    }
+    var defs = [['all', '전체 자리', '']].concat(slots.map(function(s){
+      return [s.id, s.name, used(s.id) + '/' + s.capacity];
+    }));
     document.getElementById('ci-slot-chips').innerHTML = defs.map(function(d){
       var cls = slotFilter === d[0] ? 'btn-fill-primary' : 'btn-line-dark';
       return '<button type="button" class="btn btn-xs btn-pill ' + cls + '" onclick="setSlotFilter(\'' + d[0] + '\')" title="' + d[1] + '">'
            +   '<span class="ci-slot-label">' + d[1] + '</span>'
+           +   (d[2] ? '<span class="ci-slot-count">' + d[2] + '</span>' : '')
            + '</button>';
     }).join('');
   }
@@ -954,7 +993,12 @@
     return '<button type="button" class="btn btn-xs btn-fill-primary" onclick="event.stopPropagation();checkIn(' + i + ')">입장</button>';
   }
 
+  function syncOnsiteEntry() {
+    var foot = document.getElementById('ci-list-foot');
+    if (foot) foot.hidden = onsiteTypes().length === 0;
+  }
   function renderList() {
+    syncOnsiteEntry();
     renderSlotChips();
     renderChips();
     renderSummary();
@@ -1006,7 +1050,9 @@
 
     var inNow = isIn(a);
     var statusMain = team
-      ? (inNow ? '팀 전체 입장 완료' : memberIn(a) + ' / ' + a.team.members.length + '명 입장')
+      ? (inNow ? '모두 입장 완료'
+               : (perPerson() ? memberIn(a) + ' / ' + a.team.members.length + '명 입장'
+                              : '아직 입장하지 않았어요'))
       : (inNow ? '입장 완료' : '아직 입장하지 않았어요');
     var statusSub = inNow ? enteredAt(a) : '';
 
@@ -1024,9 +1070,14 @@
     if (slotNameOf(a)) html += dtRow('배정 자리', slotNameOf(a));
 
     if (team) {
-      html += dtRow(t.form.team.questions[0].text, a.values.q1 || '-');
+      /* 팀 질문은 하나로 정해져 있지 않다 — 신청폼에 있는 만큼 보여준다 */
+      t.form.team.questions.forEach(function(q){
+        html += dtRow(q.text, a.values[q.id] || '-');
+      });
     } else {
-      html += '<div class="dt-row owner-only"><div class="dt-key">연락처</div><div class="dt-val">' + (a.values.phone || '-') + '</div></div>';
+      if (phoneOn(t)) {
+        html += '<div class="dt-row owner-only"><div class="dt-key">연락처</div><div class="dt-val">' + (a.values.phone || '-') + '</div></div>';
+      }
       t.form.questions.forEach(function(q){
         html += dtRow(q.text, a.values[q.id] || '-');
       });
@@ -1039,10 +1090,10 @@
       html += '<div class="dt-members">';
       a.team.members.forEach(function(m, mi){
         var lead = mi === (a.team.leaderIndex || 0);
-        var sub = [m.values.m2, m.values.m1].filter(Boolean).join(' ');
-        var phoneTail = tail(m.phone);
-        if (phoneTail) sub += (sub ? ' · ' : '') + phoneTail;
-        var act = m.checkedIn
+        var sub = phoneOn(t) ? tail(m.phone) : '';
+        /* QR이 신청 1건에 한 장이면 팀원을 따로 입장 처리할 수 없다 */
+        var act = !perPerson() ? ''
+          : m.checkedIn
           ? '<span class="ci-row-time">입장 ' + m.checkedInAt + '</span>'
             + '<button type="button" class="btn btn-xs btn-line-dark" onclick="undoCheckInMember(' + detailIdx + ',' + mi + ')">취소</button>'
           : '<button type="button" class="btn btn-xs btn-fill-primary" onclick="checkInMember(' + detailIdx + ',' + mi + ')">입장</button>';
@@ -1062,12 +1113,12 @@
     var foot = '';
     if (inNow) {
       foot = '<button type="button" class="btn btn-lg btn-block btn-weak-danger" onclick="undoCheckIn(' + detailIdx + ')">'
-           + (team ? '팀 전체 입장 취소' : '입장 취소') + '</button>';
+           + (team ? '모두 입장 취소' : '입장 취소') + '</button>';
     } else {
       foot = '<button type="button" class="btn btn-lg btn-block btn-fill-success" onclick="checkIn(' + detailIdx + ')">'
-           + (team ? '팀 전체 입장 처리' : '입장 처리') + '</button>';
-      if (team && memberIn(a) > 0) {
-        foot += '<button type="button" class="btn btn-lg btn-block btn-weak-danger" onclick="undoCheckIn(' + detailIdx + ')">팀 전체 입장 취소</button>';
+           + (team ? '모두 입장' : '입장 처리') + '</button>';
+      if (team && perPerson() && memberIn(a) > 0) {
+        foot += '<button type="button" class="btn btn-lg btn-block btn-weak-danger" onclick="undoCheckIn(' + detailIdx + ')">모두 입장 취소</button>';
       }
     }
     document.getElementById('dt-foot').innerHTML = foot;
@@ -1111,7 +1162,6 @@
       if (slotNameOf(a)) meta.push(slotNameOf(a));
       meta.push(t.name);
       if (isTeam(a)) meta.push(a.team.members.length + '명');
-      else if (a.values.q2) meta.push(a.values.q2);
       checkIn(idx, true);
       showScanToast('success', a.name + ' <span class="toast-sub">' + meta.join(' · ') + '</span>',
         '<button type="button" class="toast-action" onclick="undoScan(' + idx + ')">취소</button>');
@@ -1131,10 +1181,14 @@
   // ══════════════════════════════════════════════
   // 현장 신청 등록
   // ══════════════════════════════════════════════
-  var onsiteTypeId = PTYPES[0].id;
+  /* 현장 등록은 개인 유형만 — 팀은 대표·팀원 구성이 필요해 문 앞에서 만들 수 없다 */
+  function onsiteTypes() {
+    return PTYPES.filter(function(t){ return t.unit !== 'team'; });
+  }
+  var onsiteTypeId = (onsiteTypes()[0] || PTYPES[0]).id;
 
   function renderOnsiteTypes() {
-    document.getElementById('onsite-types').innerHTML = PTYPES.map(function(t){
+    document.getElementById('onsite-types').innerHTML = onsiteTypes().map(function(t){
       return '<label class="onsite-type">'
            +   '<input type="radio" class="radio" name="onsite-type" value="' + t.id + '"'
            +     (t.id === onsiteTypeId ? ' checked' : '') + ' onchange="pickOnsiteType(\'' + t.id + '\')">'
@@ -1142,10 +1196,18 @@
            + '</label>';
     }).join('');
   }
-  function pickOnsiteType(id) { onsiteTypeId = id; }
+  function pickOnsiteType(id) { onsiteTypeId = id; syncOnsiteFields(); }
 
+  function syncOnsiteFields() {
+    var t = ptypeById(onsiteTypeId);
+    var on = phoneOn(t);
+    var required = !!(on && t.form.fields.phone.required);
+    document.getElementById('onsite-phone-field').hidden = !on;
+    document.getElementById('onsite-phone-label').className = required ? 'label label-required' : 'label';
+  }
   function openOnsiteSheet() {
     renderOnsiteTypes();
+    syncOnsiteFields();
     document.getElementById('onsite-name').value = '';
     document.getElementById('onsite-phone').value = '';
     document.getElementById('onsite-overlay').classList.add('is-open');
@@ -1159,8 +1221,10 @@
   function submitOnsite() {
     var name = (document.getElementById('onsite-name').value || '').trim();
     var phone = (document.getElementById('onsite-phone').value || '').trim();
-    if (!name || !phone) { showToast('이름과 전화번호를 입력해 주세요'); return; }
     var t = ptypeById(onsiteTypeId);
+    var phoneRequired = phoneOn(t) && t.form.fields.phone.required;
+    if (!name) { showToast('이름을 입력해 주세요'); return; }
+    if (phoneRequired && !phone) { showToast('전화번호를 입력해 주세요'); return; }
     var app = {
       name: name, typeId: t.id, preset: false, date: '2026.08.27 ' + peekClock(),
       checkedIn: true, checkedInAt: stamp(), onsite: true,
@@ -1222,8 +1286,19 @@
   function syncViewerBar() {
     var role = document.body.dataset.role;
     document.querySelectorAll('.viewer-bar-tab[data-value]').forEach(function(t){
-      t.classList.toggle('active', t.dataset.value === role);
+      var want = t.dataset.axis === 'issue' ? ISSUE_UNIT : role;
+      t.classList.toggle('active', t.dataset.value === want);
     });
+  }
+  /* 작성 화면의 '발급 단위'를 바꿔가며 확인한다 */
+  function setIssueUnit(unit) {
+    ISSUE_UNIT = unit;
+    APPS.forEach(function(a){
+      a.checkedIn = false; a.checkedInAt = null;
+      if (a.team) a.team.members.forEach(function(m){ m.checkedIn = false; m.checkedInAt = null; });
+    });
+    syncViewerBar();
+    renderAll();
   }
   function setRole(role) {
     document.body.dataset.role = role;
@@ -1273,6 +1348,16 @@
     renderList();
     if (detailIdx !== null) renderDetail();
   }
+
+  /* 링크로 시점·발급 단위·탭을 바로 열 수 있게 한다 — 팀에 공유할 때 쓴다.
+     예) ?role=staff · ?issue=person&tab=list */
+  (function applyUrlState() {
+    var q = new URLSearchParams(location.search);
+    if (q.get('share') === '1') document.body.classList.add('is-share');
+    if (q.get('staff') || q.get('role') === 'staff') setRole('staff');
+    if (q.get('issue')) ISSUE_UNIT = q.get('issue');
+    if (q.get('tab')) switchTab(q.get('tab'));
+  })();
 
   syncViewerBar();
   renderAll();

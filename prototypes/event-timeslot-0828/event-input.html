@@ -2086,54 +2086,6 @@
   .pv-title.pv-required:not(:empty)::after { display: none; }
 
   /* ════════════════════════════════════════════
-     프로토타입 전용 — 맥락 전환 바 (실서비스엔 없음)
-     ════════════════════════════════════════════ */
-  .viewer-bar {
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    background: var(--color-surface-sub);
-    border-bottom: 1px solid var(--color-border);
-    z-index: 1000;
-    font-family: var(--font-base);
-  }
-  .viewer-bar-row {
-    height: 32px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 0 12px;
-  }
-  .viewer-bar-label {
-    font-size: var(--fs-nav);
-    font-weight: var(--fw-semibold);
-    letter-spacing: var(--ls-nav);
-    color: var(--color-text-muted);
-  }
-  .viewer-bar-tabs { display: flex; gap: 4px; margin-left: auto; }
-  .viewer-bar-tab {
-    background: none;
-    border: none;
-    border-radius: var(--r-full);
-    padding: 4px 8px;
-    font-family: var(--font-base);
-    font-size: var(--fs-badge);
-    font-weight: var(--fw-medium);
-    color: var(--color-text-muted);
-    white-space: nowrap;
-    cursor: pointer;
-    transition: background var(--motion-fast) var(--ease-standard),
-                color var(--motion-fast) var(--ease-standard);
-  }
-  .viewer-bar-tab:hover { color: var(--color-text-sub); }
-  .viewer-bar-tab.active { background: var(--color-primary); color: var(--color-on-primary); }
-
-  /* 프레임·오버레이를 viewer-bar 높이(32px)만큼 아래로 밀기 */
-  .frame { padding-top: 32px; }
-  .frame .pv-preview,
-  .frame .pv-sheet-overlay { top: 32px; }
-  .frame .pv-sheet.sheet-template { top: 56px; }
-
-  /* ════════════════════════════════════════════
      맥락별 섹션 순서 (DOM 재배치 없이 CSS order로만)
      ════════════════════════════════════════════ */
   .edit-body {
@@ -2146,8 +2098,8 @@
   body[data-context="general"] .edit-body > [data-block="schedule"]  { order: 1; }
   body[data-context="general"] .edit-body > [data-block="ptypes"]    { order: 2; }
   body[data-context="general"] .edit-body > [data-block="form"]      { order: 3; }
-  body[data-context="general"] .edit-body > [data-block="attendees"] { order: 4; }
-  body[data-context="general"] .edit-body > [data-block="checkin"]   { order: 5; }
+  body[data-context="general"] .edit-body > [data-block="checkin"]   { order: 4; }
+  body[data-context="general"] .edit-body > [data-block="attendees"] { order: 5; }
   body[data-context="general"] .edit-body > [data-block="settings"]  { order: 6; }
 
   body[data-context="community"] .edit-body > [data-block="schedule"]  { order: 1; }
@@ -2192,13 +2144,25 @@
     gap: 12px;
   }
   .pv-att-block[hidden] { display: none !important; }
-  /* 펼치면 헤더와 본문이 한 카드로 붙는다 — .pv-opt-list 패턴과 동일 */
-  #att-section-header.is-open { border-radius: var(--r-md) var(--r-md) 0 0; }
-  #att-section-header.is-open + .pv-att-block { margin-top: -12px; }
-  #att-section-header.is-open + .pv-att-block .pv-form-card {
-    border-radius: 0 0 var(--r-md) var(--r-md);
+  /* 자주 쓰는 기능이 아니라 카드 없이 텍스트 버튼 하나로 접어둔다 */
+  .pv-att-link {
+    align-self: flex-start;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+    font-family: var(--font-base);
+    font-size: var(--fs-caption);
+    font-weight: var(--fw-medium);
+    color: var(--color-text-muted);
+    text-decoration: underline;
+    text-underline-offset: 2px;
   }
-  /* 두 맥락이 같은 접기 헤더를 쓴다 — 다른 건 기본 펼침 여부뿐 */
+  .pv-att-link:hover { color: var(--color-text-sub); }
+  .pv-att-link .pv-att-count { margin-left: 0; text-decoration: none; }
 
 
   /* ── 현장 체크인 ── */
@@ -2208,7 +2172,6 @@
     flex-direction: column;
     gap: 12px;
     padding-top: 4px;
-    border-top: 1px solid var(--color-border);
   }
   .pv-checkin-body[hidden] { display: none !important; }
   /* 껐을 때는 행의 여백만으로 충분하다 — 접힌 참석자·이벤트 설정 헤더와 같은 높이가 된다 */
@@ -2236,6 +2199,109 @@
   }
   .pv-ptype-list[hidden] { display: none !important; }
 
+  /* 목록에서는 이름·켠 설정만 보여주고, 상세는 별도 화면에서 고친다 */
+  .pv-ptype-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    box-sizing: border-box;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-md);
+    padding: 16px;
+    text-align: left;
+    font-family: var(--font-base);
+    cursor: pointer;
+  }
+  .pv-ptype-row-body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .pv-ptype-row-name {
+    font-size: var(--fs-heading);
+    font-weight: var(--fw-bold);
+    letter-spacing: var(--ls-heading);
+    color: var(--color-text);
+    word-break: break-word;
+  }
+  .pv-ptype-row-tags {
+    font-size: var(--fs-label);
+    font-weight: var(--fw-regular);
+    color: var(--color-text-muted);
+  }
+  .pv-ptype-row i[data-lucide],
+  .pv-ptype-row svg.lucide {
+    width: 20px; height: 20px;
+    color: var(--color-text-muted);
+  }
+
+  /* 유형 상세 — 미리보기와 같은 frame 안 오버레이 */
+  .pv-ptype-detail {
+    position: absolute; inset: 0;
+    /* 시트(50)·다이얼로그(200)보다 아래여야 상세 안에서 연 시트가 가려지지 않는다 */
+    z-index: 40;
+    background: var(--color-surface-sub);
+    display: none;
+    flex-direction: column;
+  }
+  .pv-ptype-detail.is-open { display: flex; }
+  .pv-ptype-detail-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 20px 96px;
+  }
+  /* 화면 전체가 이미 카드 바탕이라 카드 껍데기는 뺀다 */
+  .pv-ptype-detail .pv-ptype-card {
+    background: transparent;
+    border-radius: 0;
+    padding: 0;
+  }
+  /* 신청폼 카드도 자리 배정·참석자 공개와 같은 아웃라인 카드로 */
+  .pv-ptype-detail .pv-form-card {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+  }
+  /* '신청폼' 아래에 '팀 정보 / 팀원 정보'가 오므로 한 단계 낮춘다 */
+  .pv-ptype-detail .pv-form-block-title {
+    font-weight: var(--fw-regular);
+    color: var(--color-text-muted);
+  }
+  .pv-ptype-form-block[hidden] { display: none !important; }
+  /* 프레임 안에서만 덮는다 — 컴포넌트 기본값은 fixed다 */
+  .frame .dialog-overlay { position: absolute; z-index: 200; }
+  .dialog-overlay[hidden] { display: none !important; }
+  /* 상단바 제목이 유형 이름이라 길어질 수 있다 */
+  .pv-ptype-detail .topbar-title {
+    max-width: calc(100% - 120px);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  /* 신청 단위와 한 팀 인원 범위가 한 줄을 쓴다 */
+  .pv-ptype-unitrow {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .pv-ptype-teamsize {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-left: auto;
+  }
+  [data-block="form"][hidden] { display: none !important; }
+  #form-fields { display: flex; flex-direction: column; gap: 12px; }
+  #form-fields[hidden] { display: none !important; }
+  /* 유형 상세에서는 '신청폼'이 섹션 제목이 아니라 필드 라벨 크기다 */
+  .pv-ptype-detail #form-section-title {
+    font-size: var(--fs-label);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text-sub);
+    letter-spacing: normal;
+  }
+
   .pv-ptype-card {
     position: relative;
     background: var(--color-surface-sub);
@@ -2261,6 +2327,13 @@
   }
   .pv-ptype-head .icon-btn i[data-lucide],
   .pv-ptype-head .icon-btn svg.lucide { width: 18px; height: 18px; }
+  /* 신청 단위 — 이름과 메뉴 버튼 사이 한 줄에 둔다 */
+  .pv-ptype-unit {
+    align-self: center;
+    flex-shrink: 0;
+    flex-wrap: nowrap;
+    gap: 4px;
+  }
 
   .pv-ptype-menu {
     position: absolute;
@@ -2287,8 +2360,30 @@
     color: var(--color-text-sub);
   }
 
+  /* 값은 한 덩어리 텍스트로 두고, 누르면 선택 메뉴가 열린다 (동의 마감·노출 방식) */
+  .pv-ptype-pick { position: relative; }
+  .pv-pick-btn {
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-medium);
+    color: var(--color-text);
+  }
+  .pv-pick-btn:hover { color: var(--color-primary); }
+  .pv-pick-menu {
+    position: absolute;
+    top: 24px; right: 0;
+    z-index: 30;
+  }
+  .pv-pick-menu[hidden] { display: none !important; }
+  /* 값이 짧으니 메뉴 기본폭(180px)까지 벌릴 이유가 없다 */
+  .pv-pick-menu .menu { min-width: 96px; }
+
   /* 유형별 안내 — 이벤트 설명(#desc-card)과 같은 .pv-luma-card + .pv-desc 조합 */
-  .pv-ptype-card .pv-luma-card { background: var(--color-surface); }
+  .pv-ptype-card .pv-luma-card { background: var(--color-input); }
   .pv-ptype-guide {
     padding: 12px 16px;
     gap: 12px;
@@ -2297,9 +2392,11 @@
   }
   .pv-ptype-guide .pv-desc { flex: 1; }
 
-  /* 카드 안 흰색 서브 블록 (참석자 공개) */
+  /* 카드 안 서브 블록 (참석자 공개·자리 배정·팀원 동의)
+     — 토글·체크박스가 들어가므로 채우지 않고, 아웃라인 + 카드보다 연한 바탕으로 구분한다 */
   .pv-ptype-sub {
-    background: var(--color-surface);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
     border-radius: var(--r-sm);
     padding: 12px 16px;
     display: flex;
@@ -2330,14 +2427,12 @@
     flex-direction: column;
     gap: 12px;
     padding-top: 4px;
-    border-top: 1px solid var(--color-border);
   }
   .pv-ptype-sub-body[hidden] { display: none !important; }
 
   /* 공개할 항목과 그 하위 옵션을 가르는 선 */
   .pv-ptype-field-sep,
   .pv-ptype-checks-sep {
-    border-top: 1px solid var(--color-border);
     padding-top: 12px;
   }
   .pv-ptype-checks {
@@ -2366,7 +2461,7 @@
   .pv-ptype-note svg.lucide {
     width: 14px; height: 14px;
     flex-shrink: 0;
-    margin-top: 4px;
+    margin-top: 2px;
   }
   .pv-ptype-note[hidden] { display: none !important; }
 
@@ -2417,8 +2512,35 @@
     align-items: center;
     gap: 8px;
   }
-  /* 서브 블록 안에서는 목록과의 간격을 sub-body의 gap이 맡는다 */
-  .pv-ptype-sub-body .pv-field-add { margin-top: 0; }
+  /* 자리 추가는 목록 안의 작은 동작이다 — 점선 박스 없이 텍스트 버튼으로 */
+  .pv-ptype-sub-body .pv-field-add {
+    margin-top: 0;
+    align-self: flex-start;
+    border: none;
+    padding: 0;
+    gap: 4px;
+    font-size: var(--fs-caption);
+    color: var(--color-primary);
+  }
+  .pv-ptype-sub-body .pv-field-add:hover { color: var(--color-primary-dark); }
+  .pv-ptype-sub-body .pv-field-add i[data-lucide],
+  .pv-ptype-sub-body .pv-field-add svg.lucide { width: 12px; height: 12px; }
+
+  /* 유형 카드의 인풋은 밑줄만 — 채워진 인풋 상자가 겹겹이 쌓여 보이지 않게 한다.
+     .pv-ts-name의 좌우 여백까지 되돌려야 밑줄이 글자와 붙는다. */
+  .pv-ptype-card .input,
+  .pv-ptype-card .textarea {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--color-border);
+    border-radius: 0;
+    padding-left: 0;
+    padding-right: 0;
+  }
+  .pv-ptype-card .input:focus,
+  .pv-ptype-card .textarea:focus {
+    border-bottom-color: var(--color-primary);
+  }
 
   /* 참석자 카드 본문 — 미리보기 패널의 참석자 카드에서 사용 */
   .pv-reveal-preview-body {
@@ -2635,19 +2757,6 @@
 
 <div class="frame">
 
-  <!-- ════════════════════════════════════════════ -->
-  <!-- 프로토타입 전용: 맥락 전환 바 (실서비스엔 없음) -->
-  <!-- ════════════════════════════════════════════ -->
-  <div class="viewer-bar">
-    <div class="viewer-bar-row">
-      <span class="viewer-bar-label">맥락</span>
-      <div class="viewer-bar-tabs">
-        <button class="viewer-bar-tab" type="button" data-axis="context" data-value="general" onclick="setContext('general')">일반 페이지</button>
-        <button class="viewer-bar-tab" type="button" data-axis="context" data-value="community" onclick="setContext('community')">커뮤니티</button>
-      </div>
-    </div>
-  </div>
-
   <!-- Topbar -->
   <div class="topbar">
     <button class="icon-btn icon-btn-clear" aria-label="뒤로">
@@ -2741,8 +2850,10 @@
 
     <!-- 신청폼 구성 -->
     <div class="pv-section" data-block="form">
+      <div id="form-fields-home">
+      <div id="form-fields">
       <div class="pv-desc-head">
-        <div class="pv-section-title">신청폼 구성</div>
+        <div class="pv-section-title" id="form-section-title">신청폼 구성</div>
         <div class="pv-formtype pv-formtype-modes" role="radiogroup" aria-label="신청 방식">
           <button type="button" class="pv-desc-mode-link pv-formtype-card is-selected" data-mode="self" role="radio" aria-checked="true" onclick="selectFormType('self')">자체 신청폼</button>
           <button type="button" class="pv-desc-mode-link pv-formtype-card" data-mode="external" role="radio" aria-checked="false" onclick="selectFormType('external')">외부 링크 등록</button>
@@ -2752,7 +2863,6 @@
         <input type="url" class="input" id="f-extform-url" placeholder="https://forms.google.com/..." inputmode="url" oninput="onInput()">
         <span class="pv-extform-hint"><i data-lucide="external-link"></i><span>신청 버튼을 누르면 이 링크로 이동해요</span></span>
       </div>
-      <div class="pv-type-tabs" id="pv-form-type-tabs" hidden></div>
       <div class="pv-form-card" id="f-form-card">
         <div class="pv-field-row">
           <input type="checkbox" class="checkbox" id="field-name-enabled" checked onchange="onFormFieldToggle('name')">
@@ -2839,6 +2949,8 @@
             </button>
           </div>
         </div>
+      </div>
+      </div>
       </div>
     </div>
 
@@ -2943,12 +3055,9 @@
 
     <!-- 참석자 (사전 등록) -->
     <div class="pv-section" data-block="attendees">
-      <button type="button" class="pv-section-header" id="att-section-header" onclick="toggleAttendees()">
-        <span class="pv-section-header-text">
-          <span class="pv-section-title">참석자</span>
-          <span class="pv-att-count" id="att-count" hidden></span>
-        </span>
-        <i data-lucide="chevron-down" class="pv-section-chevron"></i>
+      <button type="button" class="pv-att-link" id="att-section-header" onclick="toggleAttendees()">
+        <span>미리 등록할 참석자가 있나요?</span>
+        <span class="pv-att-count" id="att-count" hidden></span>
       </button>
       <div class="pv-att-block" id="att-block">
         <div class="pv-form-card">
@@ -3156,6 +3265,30 @@
   </div>
 
   <!-- 미리보기 -->
+  <!-- 외부 링크로 바꾸기 전 안내 -->
+  <div class="dialog-overlay" id="ext-confirm" hidden>
+    <div class="dialog">
+      <div class="dialog-title">외부 링크로 신청받을까요?</div>
+      <div class="dialog-desc">신청을 외부 폼에서 받으면 이 유형의 자리 배정, 팀원 동의받기, 참석자 공개는 쓸 수 없어요.</div>
+      <div class="dialog-actions">
+        <button type="button" class="btn btn-md btn-weak-dark" onclick="closeExtConfirm()">취소</button>
+        <button type="button" class="btn btn-md btn-fill-primary" onclick="confirmExternal()">외부 링크로 받기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 참가 유형 상세 -->
+  <div class="pv-ptype-detail" id="ptype-detail">
+    <div class="topbar">
+      <button class="icon-btn icon-btn-clear" type="button" aria-label="뒤로" onclick="closePtypeDetail()">
+        <i data-lucide="chevron-left" style="width:22px;height:22px;color:var(--color-text);"></i>
+      </button>
+      <span class="topbar-title" id="ptype-detail-title"></span>
+      <div class="topbar-actions" id="ptype-detail-actions"></div>
+    </div>
+    <div class="pv-ptype-detail-body" id="ptype-detail-body"></div>
+  </div>
+
   <div class="pv-preview" id="pv-preview">
     <div class="pv-preview-topbar">
       <span class="pv-preview-topbar-title">미리보기</span>
@@ -3568,7 +3701,22 @@
   }
 
   /* ── 외부 신청폼 연결 ── */
+  /* 유형별로 받는 동안 외부 링크로 바꾸면 이 유형의 후속 기능이 사라진다 — 먼저 확인받는다 */
   function selectFormType(mode) {
+    if (mode === 'external' && ptypesOn() && !externalFormState().enabled) {
+      document.getElementById('ext-confirm').hidden = false;
+      return;
+    }
+    applyFormType(mode);
+  }
+  function closeExtConfirm() {
+    document.getElementById('ext-confirm').hidden = true;
+  }
+  function confirmExternal() {
+    closeExtConfirm();
+    applyFormType('external');
+  }
+  function applyFormType(mode) {
     document.querySelectorAll('.pv-formtype-card[data-mode]').forEach(function(c){
       var on = c.dataset.mode === mode;
       c.classList.toggle('is-selected', on);
@@ -3577,10 +3725,16 @@
     var external = mode === 'external';
     syncFormVisibility();
     document.getElementById('extform-link-block').hidden = !external;
-    /* 외부 링크로 받으면 신청폼을 우리가 그리지 않으므로 참가 유형도 의미가 없다 */
-    document.getElementById('ptype-section').hidden = external;
-    renderFormTabs();
-    syncApplicantsOption(external);
+    if (ptypesOn()) {
+      /* 유형별 설정이라 이벤트 전체를 건드리지 않는다 */
+      saveActiveForm();
+      renderPtypes();
+    } else {
+      /* 외부 링크로 받으면 신청폼을 우리가 그리지 않으므로 참가 유형도 의미가 없다 */
+      document.getElementById('ptype-section').hidden = external;
+      syncApplicantsOption(external);
+    }
+    syncFormPlacement();
     if (external) setTimeout(function(){ document.getElementById('f-extform-url').focus(); }, 100);
     if (window.lucide) lucide.createIcons();
     onInput();
@@ -3631,6 +3785,7 @@
     document.getElementById('opt-applicants-note').hidden = !external;
   }
 
+  /* 지금 화면에 떠 있는(=활성 유형의) 신청 방식 */
   function externalFormState() {
     var sel = document.querySelector('.pv-formtype-card[data-mode].is-selected');
     var external = !!(sel && sel.dataset.mode === 'external');
@@ -3638,6 +3793,22 @@
       enabled: external,
       url: document.getElementById('f-extform-url').value.trim()
     };
+  }
+  /* 화면에 떠 있지 않은 유형은 저장된 상태에서 읽는다 */
+  function externalOf(t) {
+    var st = formStates[t.id];
+    var ext = st && st.external;
+    return ext || { enabled: false, url: '' };
+  }
+  function applyExternal(ext) {
+    var mode = ext && ext.enabled ? 'external' : 'self';
+    document.querySelectorAll('.pv-formtype-card[data-mode]').forEach(function(c){
+      var on = c.dataset.mode === mode;
+      c.classList.toggle('is-selected', on);
+      c.setAttribute('aria-checked', on ? 'true' : 'false');
+    });
+    document.getElementById('f-extform-url').value = (ext && ext.url) || '';
+    document.getElementById('extform-link-block').hidden = mode !== 'external';
   }
 
   /* 사용자가 신청폼 기본 필드를 켜고 끌 때 — 공개할 항목이 신청폼을 그대로 따라간다.
@@ -3893,33 +4064,100 @@
      구조가 바뀌는 조작(단위 변경·공개 토글·추가·삭제·이름 변경)만 전체 렌더. */
   function renderPtypes() {
     var list = document.getElementById('ptype-list');
-    list.innerHTML = ptypes.map(ptypeCardHTML).join('');
+    list.innerHTML = ptypes.map(ptypeRowHTML).join('');
+    /* 보고 있던 유형이 사라졌으면 목록으로 돌아온다 */
+    if (detailPtypeId && !ptypeById(detailPtypeId)) {
+      detailPtypeId = null;
+      document.getElementById('ptype-detail').classList.remove('is-open');
+    }
+    renderPtypeDetail();
     syncPtypeMaster();
     syncCheckin();                     /* 신청 단위가 바뀌면 체크인 하위 항목도 따라간다 */
     if (window.lucide) lucide.createIcons();
   }
 
+  /* 목록 카드 — 이름과 켜 둔 설정만 */
+  function ptypeRowHTML(t) {
+    var team = t.unit === 'team';
+    var tags = [team ? ('팀 ' + t.teamSize.min + '~' + t.teamSize.max + '명') : '개인'];
+    if (t.assign.on) tags.push('자리 배정');
+    if (team && t.assign.consent.on) tags.push('팀원 동의');
+    if (t.reveal.on) tags.push('참석자 공개');
+    return ''
+      + '<button type="button" class="pv-ptype-row" data-ptype-row="' + t.id + '" onclick="openPtypeDetail(\'' + t.id + '\')">'
+      +   '<span class="pv-ptype-row-body">'
+      +     '<span class="pv-ptype-row-name">' + escapeHTML(t.name) + '</span>'
+      +     '<span class="pv-ptype-row-tags">' + tags.map(escapeHTML).join(' | ') + '</span>'
+      +   '</span>'
+      +   '<i data-lucide="chevron-right"></i>'
+      + '</button>';
+  }
+
+  /* ── 유형 상세 화면 ── */
+  var detailPtypeId = null;
+  function openPtypeDetail(id) {
+    if (!ptypeById(id)) return;
+    saveActiveForm();
+    loadForm(id);                    /* 이 유형의 폼을 상세에서 이어서 고친다 */
+    detailPtypeId = id;
+    renderPtypeDetail();
+    document.getElementById('ptype-detail').classList.add('is-open');
+    document.getElementById('ptype-detail-body').scrollTop = 0;
+    if (window.lucide) lucide.createIcons();
+  }
+  function closePtypeDetail() {
+    closePtypeMenus();
+    closePickMenus();
+    saveActiveForm();
+    detailPtypeId = null;
+    parkFormFields();
+    document.getElementById('ptype-detail').classList.remove('is-open');
+  }
+  function renderPtypeDetail() {
+    var body = document.getElementById('ptype-detail-body');
+    var t = detailPtypeId ? ptypeById(detailPtypeId) : null;
+    parkFormFields();                /* innerHTML을 갈아엎기 전에 폼을 빼 둔다 */
+    body.innerHTML = t ? ptypeCardHTML(t) : '';
+    document.getElementById('ptype-detail-title').textContent = t ? t.name : '';
+    document.getElementById('ptype-detail-actions').innerHTML = t ? ''
+      + '<button type="button" class="icon-btn icon-btn-sm icon-btn-clear" aria-label="' + escapeHTML(t.name) + ' 메뉴" onclick="togglePtypeMenu(\'' + t.id + '\', event)"><i data-lucide="more-vertical"></i></button>'
+      + '<div class="pv-ptype-menu" id="ptype-menu-' + t.id + '" hidden>'
+      +   '<div class="menu">'
+      +     '<button type="button" class="menu-item" onclick="openPtypeRename(\'' + t.id + '\')">이름 수정</button>'
+      +     '<button type="button" class="menu-item is-danger" onclick="removePtype(\'' + t.id + '\')">삭제</button>'
+      +   '</div>'
+      + '</div>'
+      : '';
+    if (t) mountFormFields();
+  }
+
+  /* 신청폼 필드 묶음은 DOM이 하나뿐이다 — 유형을 나눠 받으면 열린 상세로, 아니면 제자리로. */
+  function parkFormFields() {
+    var fields = document.getElementById('form-fields');
+    var home = document.getElementById('form-fields-home');
+    if (!fields || !home) return;
+    if (fields.parentElement !== home) home.appendChild(fields);
+    fields.hidden = ptypesOn();      /* 유형별로 받는 동안 섹션에서는 감춘다 */
+  }
+  function mountFormFields() {
+    var fields = document.getElementById('form-fields');
+    var block = document.querySelector('#ptype-detail-body .pv-ptype-form-block');
+    var slot = block && block.querySelector('.pv-ptype-form-slot');
+    if (!fields || !slot) return;
+    block.hidden = false;
+    fields.hidden = false;
+    slot.appendChild(fields);
+  }
+
   function ptypeCardHTML(t) {
     var team = t.unit === 'team';
+    var ext = externalOf(t).enabled;   /* 외부 폼으로 받으면 우리 쪽 후속 기능이 설 자리가 없다 */
     return ''
       + '<div class="pv-ptype-card" data-ptype="' + t.id + '">'
-      +   '<div class="pv-ptype-head">'
-      +     '<span class="pv-ptype-name">' + escapeHTML(t.name) + '</span>'
-      +     '<button type="button" class="icon-btn icon-btn-sm icon-btn-clear" aria-label="' + escapeHTML(t.name) + ' 메뉴" onclick="togglePtypeMenu(\'' + t.id + '\', event)"><i data-lucide="more-vertical"></i></button>'
-      +   '</div>'
-      +   '<div class="pv-ptype-menu" id="ptype-menu-' + t.id + '" hidden>'
-      +     '<div class="menu">'
-      +       '<button type="button" class="menu-item" onclick="openPtypeRename(\'' + t.id + '\')">이름 수정</button>'
-      +       '<button type="button" class="menu-item is-danger" onclick="removePtype(\'' + t.id + '\')">삭제</button>'
-      +     '</div>'
-      +   '</div>'
-
-      /* 신청 단위 */
-      +   '<div class="pv-ptype-field">'
-      +     '<span class="pv-ptype-field-label">신청 단위</span>'
-      +     '<div class="pv-formtype" role="radiogroup" aria-label="신청 단위">'
-      +       '<button type="button" class="btn btn-sm ' + (team ? 'btn-line-dark' : 'btn-fill-primary') + ' pv-formtype-card" role="radio" aria-checked="' + (!team) + '" onclick="setPtypeUnit(\'' + t.id + '\', \'individual\')"><span class="pv-formtype-title">개인</span></button>'
-      +       '<button type="button" class="btn btn-sm ' + (team ? 'btn-fill-primary' : 'btn-line-dark') + ' pv-formtype-card" role="radio" aria-checked="' + team + '" onclick="setPtypeUnit(\'' + t.id + '\', \'team\')"><span class="pv-formtype-title">팀</span></button>'
+      +   '<div class="pv-ptype-unitrow">'
+      +     '<div class="pv-formtype pv-ptype-unit" role="radiogroup" aria-label="신청 단위">'
+      +       '<button type="button" class="btn btn-xs ' + (team ? 'btn-line-dark' : 'btn-fill-primary') + ' pv-formtype-card" role="radio" aria-checked="' + (!team) + '" onclick="setPtypeUnit(\'' + t.id + '\', \'individual\')"><span class="pv-formtype-title">개인</span></button>'
+      +       '<button type="button" class="btn btn-xs ' + (team ? 'btn-fill-primary' : 'btn-line-dark') + ' pv-formtype-card" role="radio" aria-checked="' + team + '" onclick="setPtypeUnit(\'' + t.id + '\', \'team\')"><span class="pv-formtype-title">팀</span></button>'
       +     '</div>'
       +     (team ? teamSizeRowHTML(t) : '')
       +   '</div>'
@@ -3939,12 +4177,25 @@
       +     '</div>'
       +   '</div>'
 
-      /* 자리 배정 · 팀원 동의받기 */
-      +   assignBlockHTML(t)
-      +   (team ? consentBlockHTML(t) : '')
+      /* 신청폼 — 유형을 나눠 받을 때는 이 유형의 폼을 여기서 채운다.
+         DOM은 하나뿐이라 열려 있는 유형 상세로 옮겨 붙인다(아래 mountFormFields). */
+      +   '<div class="pv-ptype-field pv-ptype-form-block">'
+      +     '<div class="pv-ptype-form-slot"></div>'
+      +   '</div>'
+
+      /* 자리 배정 · 팀원 동의받기 — 신청 정보를 우리가 받는 유형에만 */
+      +   (ext ? '' : assignBlockHTML(t))
+      +   (ext || !team ? '' : consentBlockHTML(t))
 
       /* 참석자 공개 */
-      +   '<div class="pv-ptype-sub pv-ptype-reveal">'
+      +   (ext ? '' : revealBlockHTML(t))
+      + '</div>';
+  }
+
+  /* 참석자 공개 — 신청 정보를 우리가 받는 유형에만 그린다 */
+  function revealBlockHTML(t) {
+    return ''
+      + '<div class="pv-ptype-sub pv-ptype-reveal">'
       +     '<label class="pv-ptype-sub-head">'
       +       '<i data-lucide="users"></i>'
       +       '<span class="pv-ptype-sub-title">참석자 공개</span>'
@@ -3952,17 +4203,19 @@
       +     '</label>'
       +     '<div class="pv-ptype-sub-body"' + (t.reveal.on ? '' : ' hidden') + '>'
       +       revealRowsHTML(t)
-      +       '<div class="pv-ptype-field pv-ptype-field-inline pv-ptype-field-sep">'
+      +       '<div class="pv-ptype-field pv-ptype-field-inline pv-ptype-field-sep pv-ptype-pick">'
       +         '<span class="pv-ptype-field-label">노출 방식</span>'
-      +         '<div class="pv-formtype" role="radiogroup" aria-label="노출 방식">'
-      +           '<button type="button" class="btn btn-sm ' + (t.reveal.showcase ? 'btn-line-dark' : 'btn-fill-primary') + ' pv-formtype-card" role="radio" aria-checked="' + (!t.reveal.showcase) + '" onclick="setPtypeShowcase(\'' + t.id + '\', false)"><span class="pv-formtype-title">기본</span></button>'
-      +           '<button type="button" class="btn btn-sm ' + (t.reveal.showcase ? 'btn-fill-primary' : 'btn-line-dark') + ' pv-formtype-card" role="radio" aria-checked="' + t.reveal.showcase + '" onclick="setPtypeShowcase(\'' + t.id + '\', true)"><span class="pv-formtype-title">크게</span></button>'
+      +         '<button type="button" class="pv-pick-btn" aria-haspopup="true" onclick="togglePickMenu(\'showcase\', \'' + t.id + '\', event)">' + (t.reveal.showcase ? '크게' : '기본') + '</button>'
+      +         '<div class="pv-pick-menu" id="showcase-menu-' + t.id + '" hidden>'
+      +           '<div class="menu">'
+      +             '<button type="button" class="menu-item' + (t.reveal.showcase ? '' : ' is-selected') + '" onclick="pickShowcase(\'' + t.id + '\', false)">기본</button>'
+      +             '<button type="button" class="menu-item' + (t.reveal.showcase ? ' is-selected' : '') + '" onclick="pickShowcase(\'' + t.id + '\', true)">크게</button>'
+      +           '</div>'
       +         '</div>'
       +       '</div>'
       +     '</div>'
       +   '</div>'
-      +   '<p class="pv-ptype-note pv-ptype-reveal-lock" hidden><i data-lucide="lock"></i><span>이벤트 설정의 ‘신청자 목록 노출’이 꺼져 있어 참석자를 공개할 수 없어요</span></p>'
-      + '</div>';
+      + '<p class="pv-ptype-note pv-ptype-reveal-lock" hidden><i data-lucide="lock"></i><span>이벤트 설정의 ‘신청자 목록 노출’이 꺼져 있어 참석자를 공개할 수 없어요</span></p>'
   }
 
   /* ── 자리 배정 · 팀원 동의받기 ──
@@ -3987,7 +4240,7 @@
      입력 중에는 값을 건드리지 않고, 입력을 마칠 때(change) 최소>최대를 서로 밀어 맞춘다. */
   function teamSizeRowHTML(t) {
     return ''
-      + '<div class="pv-ptype-field pv-ptype-field-inline">'
+      + '<div class="pv-ptype-teamsize">'
       +   '<span class="pv-ptype-field-label">한 팀에</span>'
       +   '<div class="pv-ts-inline">'
       +     '<input type="number" class="input pv-ts-cap" id="team-min-' + t.id + '" min="1" inputmode="numeric" value="' + t.teamSize.min + '" aria-label="한 팀 최소 인원" '
@@ -4057,12 +4310,16 @@
       +       '<textarea class="textarea" aria-label="동의 내용" placeholder="팀원이 무엇에 동의하는지 적어주세요" '
       +         'oninput="setConsentText(\'' + t.id + '\', this.value)">' + escapeHTML(c.text || '') + '</textarea>'
       +     '</div>'
-      +     '<div class="pv-ptype-field pv-ptype-field-inline">'
+      +     '<div class="pv-ptype-field pv-ptype-field-inline pv-ptype-pick">'
       +       '<span class="pv-ptype-field-label">동의 마감</span>'
-      +       '<div class="pv-ts-inline">'
-      +         '<input type="number" class="input pv-ts-cap" min="1" inputmode="numeric" value="' + c.deadlineHours + '" aria-label="동의 마감 시간" '
-      +           'oninput="setConsentDeadline(\'' + t.id + '\', this.value)">'
-      +         '<span class="pv-ts-unit">시간</span>'
+      +       '<button type="button" class="pv-pick-btn" aria-haspopup="true" onclick="togglePickMenu(\'deadline\', \'' + t.id + '\', event)">' + c.deadlineHours + '시간</button>'
+      +       '<div class="pv-pick-menu" id="deadline-menu-' + t.id + '" hidden>'
+      +         '<div class="menu">'
+      +           DEADLINE_HOURS.map(function(h){
+                    return '<button type="button" class="menu-item' + (h === c.deadlineHours ? ' is-selected' : '') + '" '
+                      + 'onclick="pickConsentDeadline(\'' + t.id + '\', ' + h + ')">' + h + '시간</button>';
+                  }).join('')
+      +         '</div>'
       +       '</div>'
       +     '</div>'
       +     '<p class="pv-ptype-note"><i data-lucide="info"></i><span>팀원에게 알림톡으로 동의 요청을 보내드려요</span></p>'
@@ -4126,11 +4383,33 @@
     if (!t) return;
     t.assign.consent.on = on;
     renderPtypes();
+    syncMemberPhoneLock();
+    saveActiveForm();
   }
-  function setConsentDeadline(id, v) {
+  /* 동의 마감 — 자유 입력 대신 프리셋에서 고른다 */
+  var DEADLINE_HOURS = [6, 12, 24, 48, 72];
+  function togglePickMenu(name, id, e) {
+    if (e) e.stopPropagation();
+    var menu = document.getElementById(name + '-menu-' + id);
+    var open = menu && menu.hidden;
+    closePickMenus();
+    closePtypeMenus();
+    if (open) menu.hidden = false;
+  }
+  function closePickMenus() {
+    document.querySelectorAll('.pv-pick-menu').forEach(function(m){ m.hidden = true; });
+  }
+  function pickConsentDeadline(id, h) {
     var t = ptypeById(id);
     if (!t) return;
-    t.assign.consent.deadlineHours = Math.max(1, parseInt(v, 10) || 1);
+    t.assign.consent.deadlineHours = h;
+    closePickMenus();
+    renderPtypes();
+  }
+  function pickShowcase(id, on) {
+    closePickMenus();
+    setPtypeShowcase(id, on);
+    renderPtypes();               /* 값이 그대로여도 메뉴가 닫힌 모습으로 다시 그린다 */
   }
   function setConsentText(id, v) {
     var t = ptypeById(id);
@@ -4238,7 +4517,7 @@
     saveActiveForm();          /* 바뀌기 전 레이아웃 기준으로 먼저 저장 */
     t.unit = unit;
     renderPtypes();
-    renderFormTabs();
+    syncFormPlacement();
     if (activeFormKey === id) loadForm(id);
     syncPreviewLive();
   }
@@ -4309,17 +4588,22 @@
   function onPtypeNameKey(e) {
     if (e.key === 'Enter') { e.preventDefault(); submitPtypeName(); }
   }
+  var renamingIsNew = false;
   function submitPtypeName() {
     var t = ptypeById(renamingPtypeId);
     var name = document.getElementById('ptype-name-input').value.trim();
+    var isNew = renamingIsNew;
+    renamingIsNew = false;
     if (!t || !name) { closeSheet(); return; }
     t.name = name;
     closeSheet();
     renderPtypes();
-    renderFormTabs();
+    syncFormPlacement();
     syncAttendeeTypeUI();
     renderAttendees();
     syncPreviewLive();
+    /* 방금 만든 유형은 이어서 상세를 채우게 된다 */
+    if (isNew) openPtypeDetail(t.id);
   }
   function removePtype(id) {
     closePtypeMenus();
@@ -4336,7 +4620,7 @@
     }
     if (activeFormKey === id) loadForm(ptypes[0].id);
     renderPtypes();
-    renderFormTabs();
+    syncFormPlacement();
     syncAttendeeTypeUI();
     renderAttendees();
     syncPreviewLive();
@@ -4346,9 +4630,10 @@
     ptypes.push(t);
     formStates[t.id] = newFormState();
     renderPtypes();
-    renderFormTabs();
+    syncFormPlacement();
     syncAttendeeTypeUI();
     syncPreviewLive();
+    renamingIsNew = true;
     openPtypeRename(t.id);
   }
 
@@ -4360,6 +4645,8 @@
       ptypes.push(newPtype('참가 유형 1'));
       ptypes.push(newPtype('참가 유형 2'));
       ptypes.forEach(function(t){ formStates[t.id] = newFormState(); });
+      /* 유형을 나누기 전에 짜 둔 신청폼은 버리지 않고 첫 유형이 이어받는다 */
+      formStates[ptypes[0].id] = JSON.parse(JSON.stringify(formStates._default));
     }
     var listEl = document.getElementById('ptype-list');
     var addEl = document.getElementById('ptype-add');
@@ -4367,7 +4654,7 @@
     addEl.hidden = !on;
     if (on) { renderPtypes(); loadForm(ptypes[0].id); }
     else    { listEl.innerHTML = ''; loadForm('_default'); }
-    renderFormTabs();
+    syncFormPlacement();
     syncAttendeeTypeUI();
     renderAttendees();
     syncPtypeMaster();
@@ -4379,12 +4666,14 @@
      아직 끄고 있는 유형은 잠그지 않는다 — 여기서 켜면 마스터도 같이 켜지기 때문이다. */
   function syncPtypeMaster() {
     var master = document.getElementById('opt-show-applicant-list').checked;
-    var reveals = document.querySelectorAll('.pv-ptype-reveal');
-    var locks = document.querySelectorAll('.pv-ptype-reveal-lock');
-    ptypes.forEach(function(t, i){
+    ptypes.forEach(function(t){
+      var scope = document.querySelector('.pv-ptype-card[data-ptype="' + t.id + '"]');
+      if (!scope) return;             /* 지금 열려 있는 유형만 DOM에 있다 */
       var locked = !master && t.reveal.on;
-      if (reveals[i]) reveals[i].classList.toggle('is-disabled', locked);
-      if (locks[i]) locks[i].hidden = !locked;
+      var reveal = scope.querySelector('.pv-ptype-reveal');
+      var lock = scope.querySelector('.pv-ptype-reveal-lock');
+      if (reveal) reveal.classList.toggle('is-disabled', locked);
+      if (lock) lock.hidden = !locked;
     });
     document.getElementById('opt-list-note').hidden = !ptypesOn();
   }
@@ -4463,7 +4752,9 @@
           email: { enabled: true, required: false }
         },
         questions: []
-      }
+      },
+      /* 신청 방식도 유형마다 다를 수 있다 — 한 유형만 외부 링크로 받는 경우 */
+      external: { enabled: false, url: '' }
     };
   }
   var formStates = { _default: newFormState() };
@@ -4492,6 +4783,7 @@
     } else {
       ['name', 'phone', 'email'].forEach(function(f){ st.fields[f] = readField(f); });
     }
+    st.external = externalFormState();
   }
 
   function loadForm(key) {
@@ -4508,8 +4800,30 @@
     } else {
       ['name', 'phone', 'email'].forEach(function(f){ applyField(f, st.fields[f]); });
     }
+    applyExternal(st.external);
     syncFormVisibility();
+    syncMemberPhoneLock();
     renderQuestions();
+  }
+
+  /* 동의 요청을 알림톡으로 보내야 하므로, 팀원 동의받기를 켠 유형은 전화번호가 필수로 고정된다 */
+  function syncMemberPhoneLock() {
+    var cb  = document.getElementById('field-member-phone-enabled');
+    var seg = document.querySelector('.pv-req-seg[data-field="member-phone"]');
+    if (!cb || !seg) return;
+    var t = ptypesOn() ? ptypeById(activeFormKey) : null;
+    var lock = !!(t && t.unit === 'team' && t.assign && t.assign.consent && t.assign.consent.on);
+    if (lock) {
+      cb.checked = true;
+      setFieldRequired('member-phone', true);
+      toggleFieldEnabled('member-phone');
+    }
+    cb.disabled = lock;
+    /* 잠겼을 때는 팀원 '이름'과 같은 모양으로 — '선택'을 감춰 필수 하나만 남긴다 */
+    seg.querySelectorAll('.pv-req-seg-btn').forEach(function(btn, i){
+      btn.disabled = lock;
+      if (i === 1) btn.hidden = lock;
+    });
   }
 
   /* 신청 방식(자체/외부)과 신청 단위(개인/팀)를 함께 보고 어느 카드를 띄울지 정한다 */
@@ -4522,24 +4836,12 @@
     document.getElementById('f-form-team').hidden = !showForm || !team;
   }
 
-  function renderFormTabs() {
-    var tabs = document.getElementById('pv-form-type-tabs');
-    var ext = externalFormState();
-    if (!ptypesOn() || ptypes.length < 2 || ext.enabled) {
-      tabs.hidden = true;
-      tabs.innerHTML = '';
-      return;
-    }
-    tabs.hidden = false;
-    tabs.innerHTML = ptypes.map(function(t){
-      return '<button type="button" class="pv-type-tab' + (t.id === activeFormKey ? ' is-selected' : '') + '" onclick="selectFormTab(\'' + t.id + '\')">' + escapeHTML(t.name) + '</button>';
-    }).join('');
-  }
-  function selectFormTab(id) {
-    if (id === activeFormKey) return;
-    saveActiveForm();
-    loadForm(id);
-    renderFormTabs();
+  /* 유형별 폼은 유형 상세에서 고치고, 유형을 안 나누면 폼이 하나뿐이다 — 폼이 있어야 할 자리만 맞춘다 */
+  function syncFormPlacement() {
+    if (detailPtypeId) mountFormFields(); else parkFormFields();
+    /* 유형을 나눠 받으면 신청폼도 신청 방식도 전부 유형 상세로 간다 — 섹션이 통째로 빈다 */
+    document.querySelector('[data-block="form"]').hidden = ptypesOn();
+    document.getElementById('form-section-title').textContent = ptypesOn() ? '신청폼' : '신청폼 구성';
   }
 
   /* ── 참석자 (사전 등록) ── */
@@ -4734,7 +5036,6 @@
   function setContext(ctx) {
     document.body.dataset.context = ctx;
     seedAttendees(ctx);
-    syncViewerBar();
     applyContextLayout(ctx);
     applyContextDefaults(ctx);
     /* 참석자를 공개하는 유형이 있으면 상위 설정(신청자 목록 노출)은 켜져 있어야 한다 */
@@ -4743,13 +5044,6 @@
     renderAttendees();
     syncPtypeMaster();
     if (window.lucide) lucide.createIcons();
-  }
-
-  function syncViewerBar() {
-    var ctx = document.body.dataset.context;
-    document.querySelectorAll('.viewer-bar-tab').forEach(function(t){
-      t.classList.toggle('active', t.dataset.value === ctx);
-    });
   }
 
   /* 순서는 CSS order가 담당 — 여기서는 펼침 상태만 맞춘다 */
@@ -5020,6 +5314,7 @@
   document.addEventListener('click', function(e) {
     if (!e.target.closest('.pv-calendar')) closeCalendar();
     if (!e.target.closest('.pv-ptype-menu')) closePtypeMenus();
+    if (!e.target.closest('.pv-pick-menu')) closePickMenus();
   });
 
   /* ── Validation + D-Day ── */
@@ -5117,7 +5412,7 @@
         var t = attendeeType(a);
         return { name: a.name, phone: a.phone, typeId: t ? t.id : '', typeName: t ? t.name : '' };
       }),
-      externalForm: externalFormState(),
+      externalForm: ptypesOn() && ptypes.length ? externalOf(ptypes[0]) : externalFormState(),
       reviews:  document.getElementById('opt-reviews').checked,
       comments: document.getElementById('opt-comments').checked,
       /* 참가 유형 — event-landing이 유형 탭·유형별 CTA·참석자 카드를 그리는 데 쓴다 */
@@ -5133,6 +5428,7 @@
             teamSize: t.unit === 'team'                     /* 한 팀 인원 범위 — 개인 유형은 null */
               ? { min: t.teamSize.min, max: t.teamSize.max }
               : null,
+            external: externalOf(t),                       /* 유형마다 자체 폼 / 외부 링크가 갈린다 */
             guide: t.guide,                                /* 유형별 안내 (리치텍스트 HTML) */
             assign: assignPayload(t),                      /* 배정할 자리 후보와 자리 수 · 팀원 동의 */
             reveal: {
@@ -5308,7 +5604,7 @@
   function renderPreviewTypes() {
     var sec = document.getElementById('pv-prev-type-section');
     var div = document.getElementById('pv-prev-type-divider');
-    var show = ptypesOn() && !externalFormState().enabled;
+    var show = ptypesOn();
     sec.hidden = !show;
     div.hidden = !show;
     if (!show) return;
@@ -5413,17 +5709,20 @@
     var list = document.getElementById('pv-prev-cta-list');
     var body = document.getElementById('pv-preview-body');
     var ctaText = document.getElementById('disp-cta').textContent.trim() || '신청하기';
-    var ext = externalFormState();
+    var ext = ptypesOn() && ptypes.length ? externalOf(ptypes[0]) : externalFormState();
 
-    if (ptypesOn() && ptypes.length > 1 && !ext.enabled) {
+    if (ptypesOn() && ptypes.length > 1) {
       single.hidden = true;
       list.hidden = false;
       body.classList.add('is-multi-cta');
       list.innerHTML = ptypes.map(function(t, i){
+        var e = externalOf(t);
         return '<button type="button" class="btn btn-xl btn-block ' + (i === 0 ? 'btn-fill-primary' : 'btn-weak-primary') + '">'
           + '<span>' + escapeHTML(t.name) + ' 신청</span>'
+          + (e.enabled ? '<i data-lucide="external-link"></i>' : '')
           + '</button>';
       }).join('');
+      if (window.lucide) lucide.createIcons();
       return;
     }
 

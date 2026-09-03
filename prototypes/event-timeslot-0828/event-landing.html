@@ -717,6 +717,12 @@
   .frame .bottom-sheet-overlay,
   .frame .dialog-overlay { top: 192px; }
 
+  /* 공유 링크(?share=1) — 프로토타입 전환 바 없이 화면만 본다 */
+  body.is-share .viewer-bar { display: none; }
+  body.is-share .frame .screen,
+  body.is-share .frame .bottom-sheet-overlay,
+  body.is-share .frame .dialog-overlay { top: 0; }
+
   /* ============================================
      시점·상태별 노출 규칙 (CSS 분기)
      ============================================ */
@@ -957,6 +963,46 @@
     background: var(--color-primary);
     border-color: var(--color-primary);
     color: var(--color-on-primary);
+  }
+
+  /* 자리별 현황 — 정원 대비 얼마나 찼는지 한눈에 */
+  .slot-status {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .slot-status[hidden] { display: none; }
+  .slot-status-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-full);
+    background: var(--color-surface);
+  }
+  .slot-status-name {
+    font-size: var(--fs-label);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text);
+  }
+  .slot-status-count {
+    font-size: var(--fs-label);
+    font-weight: var(--fw-medium);
+    color: var(--color-text-muted);
+  }
+  .slot-status-item.is-full { border-color: var(--color-text-muted); }
+  .slot-status-item.is-full .slot-status-count { color: var(--color-text-sub); }
+  .slot-status-item.is-over { border-color: var(--color-warning-dark); }
+  .slot-status-item.is-over .slot-status-count { color: var(--color-warning-dark); }
+
+  /* 신청자 행의 자리 배지 — 눌러서 옮긴다 */
+  .slot-move-btn {
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+    font: inherit;
   }
 
   /* 유형별 안내 — 텍스트 + 밑줄 탭 */
@@ -1665,6 +1711,9 @@
       <!-- 유형 필터 칩 — 유형이 2개 이상일 때만 (JS 렌더) -->
       <div class="ptype-tabs-line" id="filter-chips" hidden></div>
 
+      <!-- 자리별 현황 — 자리 배정을 켠 유형에서만 (JS 렌더) -->
+      <div class="slot-status" id="slot-status" hidden></div>
+
       <div class="list-actions">
         <div class="list-count"><strong id="list-count-total">총 12명</strong> 신청</div>
         <div class="list-actions-btns">
@@ -1896,6 +1945,14 @@
   <!-- 유형 바꾸기 — Bottom sheet (신청 화면)          -->
   <!-- ════════════════════════════════════════════ -->
   <div class="bottom-sheet-overlay" id="typepick-overlay" onclick="closeTypePicker()"></div>
+  <!-- 자리 바꾸기 — Bottom sheet (운영자) -->
+  <div class="bottom-sheet-overlay" id="slotmove-overlay" onclick="closeSlotMove()"></div>
+  <div class="bottom-sheet" id="slotmove-sheet" role="dialog" aria-label="자리 바꾸기">
+    <div class="bottom-sheet-handle"></div>
+    <div class="text-title" id="slotmove-title" style="margin-bottom:16px">자리 바꾸기</div>
+    <div class="more-menu-list" id="slotmove-list"></div>
+  </div>
+
   <div class="bottom-sheet" id="typepick-sheet" role="dialog" aria-label="참가 유형 선택">
     <div class="bottom-sheet-handle"></div>
     <div class="text-title" style="margin-bottom:16px">어떤 유형으로 신청할까요?</div>
@@ -2057,13 +2114,14 @@
     syncAttendeeUI();
     syncViewerBar();
   }
-  function setRole(role)  { document.body.dataset.role  = role;  syncViewerBar(); renderCtaTypes(); }
+  function setRole(role)  { document.body.dataset.role  = role;  syncViewerBar(); renderCtaTypes(); renderSlotStatus(); }
   function setState(state){ document.body.dataset.state = state; syncViewerBar(); renderCtaTypes(); }
   /* 프로토타입 전용 — 자리 배정 끔 / 켬 / 켬+팀원 동의받기 */
   function setAssign(mode) {
     ASSIGN.enabled = (mode !== 'off');
     ASSIGN.consent.enabled = (mode === 'consent');
     renderApplicants();
+    renderSlotStatus();
     syncViewerBar();
   }
   function setShowCount(chk) { document.body.dataset.showCount = chk.checked ? 'on' : 'off'; }
@@ -2643,6 +2701,7 @@
     setState('applied');
     renderApplicants();
     renderFilterChips();
+    renderSlotStatus();
     renderFieldsSummary();
     syncAttendeeUI();
     syncPtypeUI();
@@ -3014,16 +3073,19 @@
     var box = document.getElementById('cta-types');
     if (!box) return;
     if (!ptypesActive() || PTYPES.length < 2) { box.innerHTML = ''; return; }
+
     var state = document.body.dataset.state;
     var owner = document.body.dataset.role === 'owner';
     box.innerHTML = PTYPES.map(function(t){
       var mine = !owner && (state === 'applied' || state === 'preset') && appliedTypeId === t.id;
       var active = t.id === activeTypeId;
       var style = mine ? 'btn-weak-primary' : (active ? 'btn-fill-primary' : 'btn-weak-primary');
+      var ext = t.external && t.external.enabled;
       return ''
         + '<button type="button" class="btn btn-lg ' + style + ' cta-type-btn"'
         +   ' onclick="onTypeCta(\'' + t.id + '\')">'
-        +   '<span class="cta-type-name">' + escapeHTML(mine ? '신청 완료 · 취소' : t.name) + '</span>'
+        +   '<span class="cta-type-name">' + escapeHTML(mine ? '신청 완료 · 취소' : t.name)
+        +     (ext ? ' <i data-lucide="external-link" style="width:14px;height:14px"></i>' : '') + '</span>'
         +   (mine ? '<span class="cta-type-sub">' + escapeHTML(t.name) + '</span>' : '')
         + '</button>';
     }).join('');
@@ -3031,6 +3093,12 @@
 
   function onTypeCta(id) {
     selectPtype(id);
+    var t = ptypeById(id);
+    /* 외부 폼으로 받는 유형은 우리 신청 화면을 거치지 않는다 */
+    if (t && t.external && t.external.enabled) {
+      if (t.external.url) window.open(t.external.url, '_blank', 'noopener');
+      return;
+    }
     var state = document.body.dataset.state;
     var owner = document.body.dataset.role === 'owner';
     if (!owner && (state === 'applied' || state === 'preset') && appliedTypeId === id) {
@@ -3065,6 +3133,10 @@
       document.querySelectorAll('.sticky-actions .cta-guest, .sticky-actions .cta-member')
         .forEach(function(b){ b.textContent = t.cta || '신청하기'; });
     }
+    if (mode === 'single' && PTYPES[0].external && PTYPES[0].external.enabled) {
+      applyExternalCta(PTYPES[0].external.url);
+    }
+    if (window.lucide) lucide.createIcons();
   }
 
   // ══════════════════════════════════════════════
@@ -3427,6 +3499,7 @@
           guide: t.guide || '',
           reveal: t.reveal || { enabled:false, fields:{}, questions:[] },
           cta: t.cta || (t.name + ' 신청'),
+          external: t.external || { enabled:false, url:'' },   /* 유형마다 자체 폼 / 외부 링크가 갈린다 */
           assign: applyAssignContract(t.assign),
           form: t.form || { unit: t.unit || 'individual', fields:{}, questions:[] }
         };
@@ -3490,8 +3563,8 @@
       };
     }
 
-    /* 외부 신청폼이면 유형 UI를 전부 숨기고 링크로 보낸다 */
-    if (d.externalForm && d.externalForm.enabled) {
+    /* 유형을 나누면 신청 방식도 유형마다 갈린다 — 최상위 값은 유형이 없을 때만 이벤트 전체를 대신한다 */
+    if (d.externalForm && d.externalForm.enabled && !PT_ENABLED) {
       PT_ENABLED = false;
       PTYPES = [];
       document.body.dataset.showCount = 'off';
@@ -3554,7 +3627,8 @@
         ]
       },
       cta:'졸업생 신청',
-      assign: ASSIGN,
+      /* 개인 유형은 자리 배정을 쓰지 않는다 — 작성 화면 데모와 같게 */
+      assign: { enabled:false, slots:[], consent:{ enabled:false, deadlineHours:24, text:'' } },
       teamSize: null,
       form:{
         unit:'individual',
@@ -3881,11 +3955,90 @@
   function setListFilter(key) {
     listFilter = key;
     renderFilterChips();
+    renderSlotStatus();
     renderApplicants();
   }
   function filteredApplicants() {
     if (!ptypesActive() || listFilter === 'all') return APPLICANTS;
     return APPLICANTS.filter(function(a){ return a.typeId === listFilter; });
+  }
+
+  /* 지금 목록에서 보고 있는 유형 — 자리는 유형에 딸린 설정이다 */
+  function listType() {
+    if (!ptypesActive()) return null;
+    return ptypeById(listFilter) || PTYPES[0] || null;
+  }
+  /* 그 자리로 확정된 신청 건 수 */
+  function slotUsed(id) {
+    return APPLICANTS.filter(function(a){
+      return a.booking && a.booking.status === 'confirmed' && a.booking.assignedSlot === id;
+    }).length;
+  }
+  function renderSlotStatus() {
+    var box = document.getElementById('slot-status');
+    if (!box) return;
+    var t = listType();
+    var asg = assignOf(t);
+    if (!asg || document.body.dataset.role !== 'owner') {
+      box.hidden = true; box.innerHTML = ''; return;
+    }
+    box.hidden = false;
+    box.innerHTML = asg.slots.map(function(s){
+      var used = slotUsed(s.id);
+      var cls = used > s.capacity ? ' is-over' : (used === s.capacity ? ' is-full' : '');
+      return '<div class="slot-status-item' + cls + '">'
+           +   '<span class="slot-status-name">' + escapeHTML(s.name) + '</span>'
+           +   '<span class="slot-status-count">' + used + '/' + s.capacity + '</span>'
+           + '</div>';
+    }).join('');
+  }
+
+  /* ── 자리 바꾸기 (운영자) ── */
+  var slotMoveIdx = null;
+  function openSlotMove(idx) {
+    var a = APPLICANTS[idx];
+    if (!a || !a.booking || a.booking.status !== 'confirmed') return;
+    slotMoveIdx = idx;
+    document.getElementById('slotmove-title').textContent = a.name + ' 자리 바꾸기';
+    renderSlotMoveList();
+    document.getElementById('slotmove-overlay').classList.add('is-open');
+    document.getElementById('slotmove-sheet').classList.add('is-open');
+    if (window.lucide) lucide.createIcons();
+  }
+  function closeSlotMove() {
+    slotMoveIdx = null;
+    document.getElementById('slotmove-overlay').classList.remove('is-open');
+    document.getElementById('slotmove-sheet').classList.remove('is-open');
+  }
+  function renderSlotMoveList() {
+    var a = APPLICANTS[slotMoveIdx];
+    var asg = assignOf(ptypeById(a.typeId));
+    if (!asg) return;
+    var now = a.booking.assignedSlot;
+    document.getElementById('slotmove-list').innerHTML = asg.slots.map(function(s){
+      var used = slotUsed(s.id);
+      /* 정원이 찬 자리도 고를 수 있다 — 운영자가 예외를 만들 수 있어야 한다 */
+      var note = used + '/' + s.capacity + (used >= s.capacity ? ' · 정원 참' : '');
+      return ''
+        + '<button type="button" class="more-menu-item" onclick="moveSlot(\'' + s.id + '\')">'
+        +   '<span class="more-menu-item-text">'
+        +     '<span>' + escapeHTML(s.name) + '</span>'
+        +     '<span class="applicant-sub">' + note + '</span>'
+        +   '</span>'
+        +   (s.id === now ? '<i data-lucide="check" style="width:18px;height:18px;color:var(--color-primary)"></i>' : '')
+        + '</button>';
+    }).join('');
+  }
+  function moveSlot(slotId) {
+    var a = APPLICANTS[slotMoveIdx];
+    if (!a) { closeSlotMove(); return; }
+    var before = a.booking.assignedSlot;
+    closeSlotMove();
+    if (before === slotId) return;
+    a.booking.assignedSlot = slotId;
+    renderApplicants();
+    renderSlotStatus();
+    showToast(a.name + ' · ' + slotName(slotId) + '으로 옮겼어요');
   }
 
   function renderFilterChips() {
@@ -3933,8 +4086,9 @@
       /* 자리 배정 — 확정된 자리 또는 동의 진행 상황 */
       if (a.booking && assignOf(t)) {
         if (a.booking.status === 'confirmed') {
-          badges += '<span class="badge badge-sm badge-weak-success">'
-            + escapeHTML(slotName(a.booking.assignedSlot)) + ' 확정</span>';
+          badges += '<button type="button" class="slot-move-btn badge badge-sm badge-weak-success"'
+            + ' onclick="event.stopPropagation();openSlotMove(' + idx + ')">'
+            + escapeHTML(slotName(a.booking.assignedSlot)) + ' 확정</button>';
         } else {
           badges += '<span class="badge badge-sm badge-weak-warning">동의 대기 '
             + consentDone(a) + '/' + ((a.team && a.team.members.length) || 0) + '</span>';
@@ -4074,9 +4228,24 @@
     } catch(e) {}
   })();
 
+  /* 링크 하나로 특정 시점·상태를 바로 열 수 있게 한다 — 팀에 공유할 때 쓴다.
+     예) ?role=owner&screen=list · ?state=applied · ?assign=consent */
+  (function applyUrlState() {
+    var q = new URLSearchParams(location.search);
+    if (q.get('share') === '1') document.body.classList.add('is-share');
+    if (q.get('role'))   setRole(q.get('role'));
+    if (q.get('state'))  setState(q.get('state'));
+    if (q.get('assign')) setAssign(q.get('assign'));
+    if (q.get('checkin'))setCheckin(q.get('checkin'));
+    if (q.get('showcase')) setShowcase(q.get('showcase') === 'on');
+    var screen = q.get('screen');
+    if (screen) navigate(screen.indexOf('screen-') === 0 ? screen : 'screen-' + screen);
+  })();
+
   syncCheckinUI();
   syncPtypeUI();
   renderFilterChips();
+  renderSlotStatus();
   renderFieldsSummary();
   renderApplicants();
   syncAttendeeUI();
