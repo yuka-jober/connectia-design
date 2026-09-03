@@ -3320,7 +3320,6 @@
     <div class="pv-sheet-handle"></div>
     <div class="pv-sheet-title">넘겨볼 이미지</div>
     <div class="pv-carousel-grid" id="carousel-grid"></div>
-    <input type="file" class="pv-upload-input" id="carousel-upload" accept="image/*" multiple onchange="onCarouselFiles(this)">
     <div class="pv-sheet-actions">
       <button class="btn btn-lg btn-weak-dark" type="button" onclick="closeSheet()">취소</button>
       <button class="btn btn-lg btn-fill-primary" id="carousel-submit" type="button" onclick="submitCarousel()">이미지를 올려주세요</button>
@@ -6042,16 +6041,25 @@
     if (!ed) return;
     carouselEditorId = ed.id;
     carouselImages = [];
+    carouselSeq = 0;
     renderCarousel();
     openSheet('carousel');
   }
-  function pickCarouselFiles() { document.getElementById('carousel-upload').click(); }
-  function onCarouselFiles(input) {
-    Array.prototype.forEach.call(input.files || [], function(file){
-      if (file.type.indexOf('image/') !== 0) return;
-      carouselImages.push({ src: URL.createObjectURL(file), name: file.name });
-    });
-    input.value = '';
+  /* 프로토타입: 파일을 고르지 않아도 눌러보면 바로 한 장씩 올라간다.
+     실서비스에서는 여기서 파일 선택창이 열린다. */
+  var CAROUSEL_SAMPLES = [
+    '../../assets/studiogloss-gallery1.png',
+    '../../assets/studiogloss-gallery2.png',
+    '../../assets/studiogloss-gallery3.png',
+    '../../assets/studiogloss-gallery4.png',
+    '../../assets/studiogloss-gallery5.png',
+    '../../assets/studiogloss-gallery6.png'
+  ];
+  var carouselSeq = 0;
+  function pickCarouselFiles() {
+    var src = CAROUSEL_SAMPLES[carouselSeq % CAROUSEL_SAMPLES.length];
+    carouselSeq += 1;
+    carouselImages.push({ src: src, name: '이미지 ' + carouselSeq });
     renderCarousel();
   }
   function removeCarouselImage(i) {
