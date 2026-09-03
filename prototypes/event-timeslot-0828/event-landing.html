@@ -1037,10 +1037,34 @@
   .desc.is-rich .rt-carousel { white-space: normal; }
 
   /* 엑셀 내보내기 — 항목 고르기 */
-  .export-types { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+  /* 무엇을 · 어떤 단위로 뽑을지 — 한 줄에 둔다 */
+  .export-filters {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .export-types { display: flex; flex-wrap: wrap; gap: 8px; }
   .export-types[hidden] { display: none; }
-  .export-unit { display: flex; gap: 8px; margin-bottom: 16px; }
-  .export-unit .btn { flex: 1; }
+  .export-unit { position: relative; margin-left: auto; }
+  .export-unit[hidden] { display: none; }
+  .export-unit-btn { display: inline-flex; align-items: center; gap: 4px; }
+  .export-unit-btn i[data-lucide],
+  .export-unit-btn svg.lucide { width: 14px; height: 14px; }
+  .export-unit-menu {
+    position: absolute;
+    top: calc(100% + 4px); right: 0;
+    z-index: 30;
+  }
+  .export-unit-menu[hidden] { display: none; }
+  /* 시트 안 메뉴는 테두리·그림자가 제거된다 — 떠 있는 드롭다운이라 되살린다 */
+  .export-unit-menu .menu {
+    min-width: 132px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-md);
+    box-shadow: var(--shadow-3);
+  }
   .export-head {
     display: flex; align-items: center; justify-content: space-between;
     padding-bottom: 8px;
@@ -2069,8 +2093,10 @@
   <div class="bottom-sheet" id="export-sheet" role="dialog" aria-label="엑셀 내보내기">
     <div class="bottom-sheet-handle"></div>
     <div class="text-title" style="margin-bottom:16px">엑셀 내보내기</div>
-    <div class="export-types" id="export-types"></div>
-    <div class="export-unit" id="export-unit"></div>
+    <div class="export-filters">
+      <div class="export-types" id="export-types"></div>
+      <div class="export-unit" id="export-unit"></div>
+    </div>
     <div class="export-head">
       <span class="export-count" id="export-count"></span>
       <button type="button" class="export-all" id="export-all" onclick="toggleAllExportCols()">전체 해제</button>
@@ -4642,7 +4668,24 @@
     document.getElementById('export-overlay').classList.remove('is-open');
     document.getElementById('export-sheet').classList.remove('is-open');
   }
-  function setExportUnit(unit) { exportUnit = unit; renderExportSheet(); }
+  var UNIT_LABEL = { person: '한 사람씩', entry: '신청 건별' };
+  function setExportUnit(unit) {
+    exportUnit = unit;
+    closeUnitMenu();
+    renderExportSheet();
+  }
+  function toggleUnitMenu(e) {
+    if (e) e.stopPropagation();
+    var m = document.getElementById('export-unit-menu');
+    if (m) m.hidden = !m.hidden;
+  }
+  function closeUnitMenu() {
+    var m = document.getElementById('export-unit-menu');
+    if (m) m.hidden = true;
+  }
+  document.addEventListener('click', function(e){
+    if (!e.target.closest('.export-unit')) closeUnitMenu();
+  });
   function toggleExportType(id) {
     exportTypeOff[id] = !exportTypeOff[id];
     renderExportSheet();
@@ -4675,8 +4718,18 @@
     var unit = document.getElementById('export-unit');
     unit.hidden = !anyTeam;          /* 팀이 없으면 한 줄이 곧 한 사람이다 */
     unit.innerHTML = !anyTeam ? '' : ''
-      + '<button type="button" class="btn btn-sm ' + (exportUnit === 'person' ? 'btn-fill-primary' : 'btn-line-dark') + '" onclick="setExportUnit(\'person\')">한 사람씩</button>'
-      + '<button type="button" class="btn btn-sm ' + (exportUnit === 'entry' ? 'btn-fill-primary' : 'btn-line-dark') + '" onclick="setExportUnit(\'entry\')">신청 건별</button>';
+      + '<button type="button" class="btn btn-sm btn-line-dark btn-pill export-unit-btn" onclick="toggleUnitMenu(event)">'
+      +   '<span>' + UNIT_LABEL[exportUnit] + '</span><i data-lucide="chevron-down"></i>'
+      + '</button>'
+      + '<div class="export-unit-menu" id="export-unit-menu" hidden>'
+      +   '<div class="menu">'
+      +     Object.keys(UNIT_LABEL).map(function(k){
+              return '<button type="button" class="menu-item' + (exportUnit === k ? ' is-selected' : '') + '" '
+                + 'onclick="setExportUnit(\'' + k + '\')">' + UNIT_LABEL[k] + '</button>';
+            }).join('')
+      +   '</div>'
+      + '</div>';
+    if (window.lucide) lucide.createIcons();
 
     document.getElementById('export-count').textContent = on.length + ' / ' + cols.length + '개 항목';
     document.getElementById('export-all').textContent = on.length === cols.length ? '전체 해제' : '전체 선택';
