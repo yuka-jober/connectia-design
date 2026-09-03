@@ -1228,7 +1228,6 @@
   .pv-checklist[hidden] { display: none !important; }
 
   /* ── 이벤트 설명 서식 툴바 (rt-editor, profile-edit 재사용) ── */
-  /* 실제 화면의 에디터 툴바 — 버튼이 많아 줄바꿈되고, 본문 위에 붙는다 */
   .rt-editor-toolbar {
     display: flex;
     flex-wrap: wrap;
@@ -2471,8 +2470,17 @@
   /* 값이 짧으니 메뉴 기본폭(180px)까지 벌릴 이유가 없다 */
   .pv-pick-menu .menu { min-width: 96px; }
 
-  /* 유형별 안내 — 이벤트 설명(#desc-card)과 같은 .pv-luma-card + .pv-desc 조합 */
-  .pv-ptype-card .pv-luma-card { background: var(--color-input); }
+  /* 유형별 안내 — 이벤트 안내(#desc-card)와 같은 .pv-luma-card + .pv-desc 조합 */
+  /* 실제 화면의 에디터 — 흰 바탕에 테두리, 툴바가 본문 위에 늘 붙어 있다.
+     두 에디터(이벤트 안내·유형별 안내)가 같은 모양을 쓴다. */
+  .pv-luma-card:has(.rt-editor-toolbar) {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    padding: 0;
+    overflow: hidden;
+  }
+  .pv-luma-card:has(.rt-editor-toolbar) .pv-desc { padding: 16px; }
+  .pv-ptype-guide.pv-luma-card:has(.rt-editor-toolbar) { min-height: 0; }
   .pv-ptype-guide {
     padding: 12px 16px;
     gap: 12px;
@@ -2892,7 +2900,7 @@
       <div class="pv-luma-card" id="desc-card" data-desc-mode="text" onclick="onDescCardClick(event)">
         <!-- 직접 입력 -->
         <div class="desc-mode-text" id="desc-mode-text">
-          <div class="rt-editor-toolbar" id="desc-toolbar" data-rt-for="f-desc" onmousedown="event.preventDefault()" hidden>
+          <div class="rt-editor-toolbar" id="desc-toolbar" data-rt-for="f-desc" onmousedown="event.preventDefault()">
             <button type="button" class="rt-editor-btn" onclick="rtCmd(event, 'undo')" aria-label="실행 취소"><i data-lucide="undo-2"></i></button>
             <button type="button" class="rt-editor-btn" onclick="rtCmd(event, 'redo')" aria-label="다시 실행"><i data-lucide="redo-2"></i></button>
             <span class="rt-editor-sep"></span>
@@ -2904,7 +2912,6 @@
             <button type="button" class="rt-editor-btn" onclick="rtBlock(event, 'blockquote')" aria-label="인용"><i data-lucide="text-quote"></i></button>
             <button type="button" class="rt-editor-btn" onclick="rtBlock(event, 'pre')" aria-label="코드"><i data-lucide="code-xml"></i></button>
             <button type="button" class="rt-editor-btn" onclick="rtCmd(event, 'insertHorizontalRule')" aria-label="구분선"><i data-lucide="minus"></i></button>
-            <span class="rt-editor-sep"></span>
             <button type="button" class="rt-editor-btn" onclick="rtInsertImage(event)" aria-label="이미지"><i data-lucide="image-plus"></i></button>
             <button type="button" class="rt-editor-btn" onclick="rtInsertCarousel(event)" aria-label="이미지 여러 장 (캐러셀)"><i data-lucide="gallery-horizontal-end"></i></button>
             <button type="button" class="rt-editor-btn" onclick="rtInsertVideo(event)" aria-label="동영상"><i data-lucide="video"></i></button>
@@ -4324,12 +4331,7 @@
       +   '<div class="pv-ptype-field">'
       +     '<span class="pv-ptype-field-label">유형별 안내</span>'
       +     '<div class="pv-luma-card pv-ptype-guide" onclick="focusPtypeGuide(\'' + t.id + '\')">'
-      +       '<div class="rt-editor-toolbar" data-rt-for="ptype-guide-' + t.id + '" onmousedown="event.preventDefault()" hidden>'
-      +         '<button type="button" class="rt-editor-btn" onclick="rtCmd(event, \'bold\')" aria-label="굵게"><b>B</b></button>'
-      +         '<button type="button" class="rt-editor-btn" onclick="rtCmd(event, \'italic\')" aria-label="기울임"><i>I</i></button>'
-      +         '<button type="button" class="rt-editor-btn" onclick="rtCmd(event, \'underline\')" aria-label="밑줄"><u>U</u></button>'
-      +         '<button type="button" class="rt-editor-btn" onclick="rtCmd(event, \'strikeThrough\')" aria-label="취소선"><s>S</s></button>'
-      +       '</div>'
+      +       rtToolbarHTML('ptype-guide-' + t.id)
       +       '<div class="editable pv-desc" id="ptype-guide-' + t.id + '" contenteditable="true" data-placeholder="이 유형을 고른 참가자에게만 보이는 안내예요" oninput="onPtypeGuideInput(\'' + t.id + '\')" onkeyup="rtSyncState()" onmouseup="rtSyncState()">' + (t.guide || '') + '</div>'
       +     '</div>'
       +   '</div>'
@@ -5932,6 +5934,28 @@
   /* ── 본문에 얹는 것들 ──
      캐러셀은 이번에 새로 넣은 기능이라 실제로 동작하고,
      나머지는 실제 화면의 툴바를 그대로 옮겨 온 자리 표시다. */
+  /* 이벤트 안내와 유형별 안내가 같은 툴바를 쓴다 */
+  function rtToolbarHTML(forId) {
+    return ''
+      + '<div class="rt-editor-toolbar" data-rt-for="' + forId + '" onmousedown="event.preventDefault()">'
+      +   '<button type="button" class="rt-editor-btn" onclick="rtCmd(event, \'undo\')" aria-label="실행 취소"><i data-lucide="undo-2"></i></button>'
+      +   '<button type="button" class="rt-editor-btn" onclick="rtCmd(event, \'redo\')" aria-label="다시 실행"><i data-lucide="redo-2"></i></button>'
+      +   '<span class="rt-editor-sep"></span>'
+      +   '<button type="button" class="rt-editor-btn rt-editor-btn-text" onclick="rtBlock(event, \'h1\')" aria-label="제목 1">H<sub>1</sub></button>'
+      +   '<button type="button" class="rt-editor-btn rt-editor-btn-text" onclick="rtBlock(event, \'h2\')" aria-label="제목 2">H<sub>2</sub></button>'
+      +   '<button type="button" class="rt-editor-btn rt-editor-btn-text" onclick="rtBlock(event, \'h3\')" aria-label="제목 3">H<sub>3</sub></button>'
+      +   '<button type="button" class="rt-editor-btn" onclick="rtCmd(event, \'insertUnorderedList\')" aria-label="글머리 목록"><i data-lucide="list"></i></button>'
+      +   '<button type="button" class="rt-editor-btn" onclick="rtCmd(event, \'insertOrderedList\')" aria-label="번호 목록"><i data-lucide="list-ordered"></i></button>'
+      +   '<button type="button" class="rt-editor-btn" onclick="rtBlock(event, \'blockquote\')" aria-label="인용"><i data-lucide="text-quote"></i></button>'
+      +   '<button type="button" class="rt-editor-btn" onclick="rtBlock(event, \'pre\')" aria-label="코드"><i data-lucide="code-xml"></i></button>'
+      +   '<button type="button" class="rt-editor-btn" onclick="rtCmd(event, \'insertHorizontalRule\')" aria-label="구분선"><i data-lucide="minus"></i></button>'
+      +   '<button type="button" class="rt-editor-btn" onclick="rtInsertImage(event)" aria-label="이미지"><i data-lucide="image-plus"></i></button>'
+      +   '<button type="button" class="rt-editor-btn" onclick="rtInsertCarousel(event)" aria-label="이미지 여러 장 (캐러셀)"><i data-lucide="gallery-horizontal-end"></i></button>'
+      +   '<button type="button" class="rt-editor-btn" onclick="rtInsertVideo(event)" aria-label="동영상"><i data-lucide="video"></i></button>'
+      +   '<button type="button" class="rt-editor-btn" onclick="rtInsertEmbed(event)" aria-label="유튜브"><i data-lucide="monitor-play"></i></button>'
+      +   '<button type="button" class="rt-editor-btn" onclick="rtInsertLink(event)" aria-label="링크"><i data-lucide="link-2"></i></button>'
+      + '</div>';
+  }
   function rtEditorOf(e) {
     var tb = e.currentTarget.closest('.rt-editor-toolbar');
     return tb ? document.getElementById(tb.dataset.rtFor) : null;
@@ -6031,17 +6055,6 @@
       btn.classList.toggle('is-active', document.queryCommandState(cmd));
     });
   }
-  // 서식 툴바: 입력창 포커스 시에만 노출 (툴바 버튼 클릭은 onmousedown preventDefault로 blur 방지)
-  document.addEventListener('focusin', function(e){
-    if (!e.target.isContentEditable) return;
-    var tb = rtToolbarFor(e.target.id);
-    if (tb) tb.hidden = false;
-  });
-  document.addEventListener('focusout', function(e){
-    if (!e.target.isContentEditable) return;
-    var tb = rtToolbarFor(e.target.id);
-    if (tb) tb.hidden = true;
-  });
 
   /* ════════════════════════════════════════════
      데모 데이터 — 26년 청춘건배 (서울시립대학교 총동문회)
