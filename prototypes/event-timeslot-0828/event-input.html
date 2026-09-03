@@ -1250,27 +1250,25 @@
   }
   .rt-editor-btn-text sub { font-size: 0.7em; }
 
-  /* 캐러셀에 넣을 이미지 고르기 — 고른 순서가 넘어가는 순서다 */
+  /* 캐러셀에 넣을 이미지 — 올린 뒤 끌어서 순서를 바꾼다 */
   .pv-carousel-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 8px;
   }
-  .pv-carousel-pick {
+  .pv-carousel-tile {
     position: relative;
-    padding: 0;
-    border: 2px solid transparent;
     border-radius: var(--r-sm);
-    background: none;
-    cursor: pointer;
     overflow: hidden;
     line-height: 0;
+    touch-action: none;          /* 끌 때 화면이 같이 스크롤되지 않게 */
+    cursor: grab;
   }
-  .pv-carousel-pick img { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; }
-  .pv-carousel-pick.is-picked { border-color: var(--color-primary); }
+  .pv-carousel-tile img { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; display: block; }
+  .pv-carousel-tile.is-dragging { opacity: 0.4; cursor: grabbing; }
   .pv-carousel-order {
     position: absolute;
-    top: 6px; right: 6px;
+    top: 6px; left: 6px;
     width: 22px; height: 22px;
     display: grid; place-items: center;
     border-radius: var(--r-full);
@@ -1280,6 +1278,41 @@
     font-weight: var(--fw-semibold);
     line-height: 1;
   }
+  .pv-carousel-del {
+    position: absolute;
+    top: 4px; right: 4px;
+    width: 24px; height: 24px;
+    display: grid; place-items: center;
+    border: 0;
+    border-radius: var(--r-full);
+    background: var(--color-scrim);
+    color: var(--color-on-primary);
+    cursor: pointer;
+    padding: 0;
+  }
+  .pv-carousel-del i[data-lucide],
+  .pv-carousel-del svg.lucide { width: 14px; height: 14px; }
+  /* 올리기 — 비어 있을 땐 넓게, 이미 있으면 타일 하나 크기로 */
+  .pv-carousel-add {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    aspect-ratio: 1 / 1;
+    border: 1px dashed var(--color-border);
+    border-radius: var(--r-sm);
+    background: none;
+    color: var(--color-text-muted);
+    font-family: var(--font-base);
+    font-size: var(--fs-caption);
+    cursor: pointer;
+  }
+  .pv-carousel-add:hover { border-color: var(--color-primary); color: var(--color-primary); }
+  .pv-carousel-add i[data-lucide],
+  .pv-carousel-add svg.lucide { width: 20px; height: 20px; }
+  .pv-carousel-grid:empty + .pv-carousel-add,
+  .pv-carousel-add.is-empty { grid-column: 1 / -1; aspect-ratio: 16 / 7; }
 
   /* 본문에 얹히는 캐러셀 — 인스타처럼 옆으로 넘긴다 */
   .rt-carousel {
@@ -3281,14 +3314,15 @@
     <button class="btn btn-lg btn-block btn-fill-primary" onclick="closeSheet()">완료</button>
   </div>
 
-  <!-- 캐러셀에 넣을 이미지 고르기 -->
+  <!-- 캐러셀에 넣을 이미지 등록 -->
   <div class="pv-sheet" id="sheet-carousel">
     <div class="pv-sheet-handle"></div>
-    <div class="pv-sheet-title">넘겨볼 이미지 고르기</div>
+    <div class="pv-sheet-title">넘겨볼 이미지</div>
     <div class="pv-carousel-grid" id="carousel-grid"></div>
+    <input type="file" class="pv-upload-input" id="carousel-upload" accept="image/*" multiple onchange="onCarouselFiles(this)">
     <div class="pv-sheet-actions">
       <button class="btn btn-lg btn-weak-dark" type="button" onclick="closeSheet()">취소</button>
-      <button class="btn btn-lg btn-fill-primary" id="carousel-submit" type="button" onclick="submitCarousel()">2장 이상 골라주세요</button>
+      <button class="btn btn-lg btn-fill-primary" id="carousel-submit" type="button" onclick="submitCarousel()">이미지를 올려주세요</button>
     </div>
   </div>
 
@@ -5996,51 +6030,95 @@
     onInput();
   }
 
-  /* ── 캐러셀 — 카드뉴스처럼 여러 장을 옆으로 넘긴다 ── */
+  /* ── 캐러셀 — 카드뉴스처럼 여러 장을 옆으로 넘긴다.
+     빈 화면에서 이미지를 올리고, 타일을 끌어 순서를 바꾼다. ── */
   var carouselEditorId = null;
-  var CAROUSEL_POOL = [
-    '../../assets/studiogloss-gallery1.png',
-    '../../assets/studiogloss-gallery2.png',
-    '../../assets/studiogloss-gallery3.png',
-    '../../assets/studiogloss-gallery4.png',
-    '../../assets/studiogloss-gallery5.png',
-    '../../assets/studiogloss-gallery6.png'
-  ];
-  var carouselPicked = [];
+  var carouselImages = [];
+
   function rtInsertCarousel(e) {
     e.preventDefault();
     var ed = rtEditorOf(e);
     if (!ed) return;
     carouselEditorId = ed.id;
-    carouselPicked = [];
-    renderCarouselPicker();
+    carouselImages = [];
+    renderCarousel();
     openSheet('carousel');
   }
-  function toggleCarouselPick(src) {
-    var i = carouselPicked.indexOf(src);
-    if (i > -1) carouselPicked.splice(i, 1); else carouselPicked.push(src);
-    renderCarouselPicker();
+  function pickCarouselFiles() { document.getElementById('carousel-upload').click(); }
+  function onCarouselFiles(input) {
+    Array.prototype.forEach.call(input.files || [], function(file){
+      if (file.type.indexOf('image/') !== 0) return;
+      carouselImages.push({ src: URL.createObjectURL(file), name: file.name });
+    });
+    input.value = '';
+    renderCarousel();
   }
-  function renderCarouselPicker() {
-    document.getElementById('carousel-grid').innerHTML = CAROUSEL_POOL.map(function(src){
-      var n = carouselPicked.indexOf(src) + 1;
-      return '<button type="button" class="pv-carousel-pick' + (n ? ' is-picked' : '') + '" '
-           +   'onclick="toggleCarouselPick(\'' + src + '\')">'
-           +   '<img src="' + src + '" alt="">'
-           +   (n ? '<span class="pv-carousel-order">' + n + '</span>' : '')
-           + '</button>';
-    }).join('');
+  function removeCarouselImage(i) {
+    carouselImages.splice(i, 1);
+    renderCarousel();
+  }
+  function renderCarousel() {
+    var grid = document.getElementById('carousel-grid');
+    var empty = carouselImages.length === 0;
+    grid.innerHTML = carouselImages.map(function(img, i){
+      return '<div class="pv-carousel-tile" data-idx="' + i + '" onpointerdown="startCarouselDrag(event, ' + i + ')">'
+           +   '<img src="' + img.src + '" alt="' + escapeHTML(img.name) + '" draggable="false">'
+           +   '<span class="pv-carousel-order">' + (i + 1) + '</span>'
+           +   '<button type="button" class="pv-carousel-del" aria-label="' + escapeHTML(img.name) + ' 빼기" '
+           +     'onpointerdown="event.stopPropagation()" onclick="removeCarouselImage(' + i + ')"><i data-lucide="x"></i></button>'
+           + '</div>';
+    }).join('')
+      + '<button type="button" class="pv-carousel-add' + (empty ? ' is-empty' : '') + '" onclick="pickCarouselFiles()">'
+      +   '<i data-lucide="image-plus"></i><span>' + (empty ? '이미지 올리기' : '추가') + '</span>'
+      + '</button>';
     var btn = document.getElementById('carousel-submit');
-    btn.disabled = carouselPicked.length < 2;
-    btn.textContent = carouselPicked.length < 2 ? '2장 이상 골라주세요' : (carouselPicked.length + '장 넣기');
+    btn.disabled = carouselImages.length < 2;
+    btn.textContent = empty ? '이미지를 올려주세요'
+      : carouselImages.length < 2 ? '2장부터 넘길 수 있어요'
+      : (carouselImages.length + '장 넣기');
+    if (window.lucide) lucide.createIcons();
   }
+
+  /* 끌어서 순서 바꾸기 — 손가락과 마우스를 같은 방식으로 다룬다 */
+  var dragFrom = -1;
+  function startCarouselDrag(e, i) {
+    dragFrom = i;
+    var tile = e.currentTarget;
+    tile.classList.add('is-dragging');
+    tile.setPointerCapture(e.pointerId);
+    function move(ev) {
+      var el = document.elementFromPoint(ev.clientX, ev.clientY);
+      var over = el && el.closest ? el.closest('.pv-carousel-tile') : null;
+      if (!over) return;
+      var to = parseInt(over.dataset.idx, 10);
+      if (isNaN(to) || to === dragFrom) return;
+      carouselImages.splice(to, 0, carouselImages.splice(dragFrom, 1)[0]);
+      dragFrom = to;
+      renderCarousel();
+      /* 다시 그렸으니 같은 자리의 타일로 캡처를 옮긴다 */
+      var next = document.querySelector('.pv-carousel-tile[data-idx="' + to + '"]');
+      if (next) { next.classList.add('is-dragging'); next.setPointerCapture(ev.pointerId); }
+    }
+    function end(ev) {
+      document.removeEventListener('pointermove', move);
+      document.removeEventListener('pointerup', end);
+      document.removeEventListener('pointercancel', end);
+      dragFrom = -1;
+      document.querySelectorAll('.pv-carousel-tile.is-dragging')
+        .forEach(function(t){ t.classList.remove('is-dragging'); });
+    }
+    document.addEventListener('pointermove', move);
+    document.addEventListener('pointerup', end);
+    document.addEventListener('pointercancel', end);
+  }
+
   function submitCarousel() {
     var ed = document.getElementById(carouselEditorId);
-    var picked = carouselPicked.slice();
+    var picked = carouselImages.slice();
     closeSheet();
     if (!ed || picked.length < 2) return;
     rtInsertHTML(ed, '<div class="rt-carousel" contenteditable="false">'
-      + picked.map(function(src){ return '<img src="' + src + '" alt="">'; }).join('')
+      + picked.map(function(img){ return '<img src="' + img.src + '" alt="">'; }).join('')
       + '</div>');
   }
 
