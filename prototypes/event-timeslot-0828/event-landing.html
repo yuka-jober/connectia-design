@@ -965,6 +965,60 @@
     color: var(--color-on-primary);
   }
 
+  /* 파일 업로드 질문 — 실제 input은 감추고 라벨을 버튼처럼 쓴다 */
+  .apply-file-input {
+    position: absolute;
+    width: 1px; height: 1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .apply-file {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 var(--input-px);
+    height: var(--input-h);
+    border: 1px dashed var(--color-border);
+    border-radius: var(--r-sm);
+    background: var(--color-surface);
+    color: var(--color-text-muted);
+    font-size: var(--fs-body);
+    cursor: pointer;
+  }
+  .apply-file i[data-lucide],
+  .apply-file svg.lucide { width: 18px; height: 18px; flex-shrink: 0; }
+  .apply-file-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .apply-file:hover { border-color: var(--color-primary); color: var(--color-primary); }
+  .apply-file.is-picked {
+    border-style: solid;
+    border-color: var(--color-primary);
+    color: var(--color-text);
+  }
+
+  /* 본문 캐러셀 — 카드뉴스처럼 옆으로 넘긴다 */
+  .desc .rt-carousel {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    margin: 16px 0;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .desc .rt-carousel::-webkit-scrollbar { display: none; }
+  .desc .rt-carousel img {
+    width: 78%;
+    flex-shrink: 0;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    border-radius: var(--r-md);
+    scroll-snap-align: center;
+  }
+  .desc img { max-width: 100%; border-radius: var(--r-md); }
+  .desc.is-rich { white-space: pre-wrap; }
+  .desc.is-rich .rt-carousel { white-space: normal; }
+
   /* 자리별 현황 — 정원 대비 얼마나 찼는지 한눈에 */
   .slot-status {
     display: flex;
@@ -2352,6 +2406,21 @@
         +   '</div>'
         + '</div>';
     }
+    if (q.type === 'file') {
+      var ACCEPT = { image: 'image/*', doc: '.pdf,.doc,.docx,.hwp', any: '' };
+      var picked = String(value || '');
+      return ''
+        + '<div class="apply-field apply-field-wide">'
+        +   '<span class="label' + (q.required ? ' label-required' : '') + '">' + escapeHTML(q.text) + '</span>'
+        +   (q.desc ? '<span class="apply-field-desc">' + escapeHTML(q.desc) + '</span>' : '')
+        +   '<label class="apply-file' + (picked ? ' is-picked' : '') + '" for="' + id + '">'
+        +     '<i data-lucide="' + (picked ? 'file-check-2' : 'upload') + '"></i>'
+        +     '<span class="apply-file-name" id="' + id + '-name">' + escapeHTML(picked || '파일 선택') + '</span>'
+        +   '</label>'
+        +   '<input type="file" class="apply-file-input" id="' + id + '" accept="' + (ACCEPT[q.accept] || '') + '" '
+        +     'onchange="onFilePick(this); ' + handler + '">'
+        + '</div>';
+    }
     return ''
       + '<div class="apply-field">'
       +   '<label class="label' + (q.required ? ' label-required' : '') + '" for="' + id + '">' + escapeHTML(q.text) + '</label>'
@@ -2536,9 +2605,24 @@
 
   function answered(q, id) {
     if (q.type === 'mc') return !!document.querySelector('[name="' + id + '"]:checked');
+    if (q.type === 'file') return !!fileNameOf(id);
     return !!val(id);
   }
+  /* 파일 이름만 답변으로 들고 간다 — 실제 업로드는 서버가 할 일이다 */
+  function fileNameOf(id) {
+    var el = document.getElementById(id);
+    return (el && el.files && el.files[0]) ? el.files[0].name : '';
+  }
+  function onFilePick(el) {
+    var name = (el.files && el.files[0]) ? el.files[0].name : '';
+    var label = el.previousElementSibling;
+    var span = document.getElementById(el.id + '-name');
+    if (span) span.textContent = name || '파일 선택';
+    if (label) label.classList.toggle('is-picked', !!name);
+    if (window.lucide) lucide.createIcons();
+  }
   function readAnswer(q, id) {
+    if (q.type === 'file') return fileNameOf(id);
     if (q.type === 'mc') {
       var picked = Array.prototype.slice.call(document.querySelectorAll('[name="' + id + '"]:checked'))
         .map(function(el){ return el.value; });
@@ -3447,7 +3531,12 @@
     // 설명
     var descBlock = document.getElementById('desc-block');
     var descSection = descBlock.closest('.section');
-    if (d.description) {
+    if (d.descriptionHtml && /<(img|div|h[123]|ul|ol|blockquote|pre|hr)\b/i.test(d.descriptionHtml)) {
+      /* 캐러셀·이미지·제목이 들어간 본문은 서식 그대로 싣는다.
+         에디터의 줄바꿈은 문자 그대로라 pre-wrap이 있어야 작성 화면과 같아 보인다 */
+      descBlock.innerHTML = d.descriptionHtml;
+      descBlock.classList.add('is-rich');
+    } else if (d.description) {
       descBlock.innerHTML = '';
       var lines = d.description.split(/\n+/).filter(function(l){ return l.trim(); });
       lines.forEach(function(line, i){
