@@ -1037,6 +1037,8 @@
   .desc.is-rich .rt-carousel { white-space: normal; }
 
   /* 엑셀 내보내기 — 항목 고르기 */
+  .export-types { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+  .export-types[hidden] { display: none; }
   .export-unit { display: flex; gap: 8px; margin-bottom: 16px; }
   .export-unit .btn { flex: 1; }
   .export-head {
@@ -2066,7 +2068,8 @@
   <div class="bottom-sheet-overlay" id="export-overlay" onclick="closeExportSheet()"></div>
   <div class="bottom-sheet" id="export-sheet" role="dialog" aria-label="엑셀 내보내기">
     <div class="bottom-sheet-handle"></div>
-    <div class="text-title" style="margin-bottom:16px">내보낼 항목</div>
+    <div class="text-title" style="margin-bottom:16px">엑셀 내보내기</div>
+    <div class="export-types" id="export-types"></div>
     <div class="export-unit" id="export-unit"></div>
     <div class="export-head">
       <span class="export-count" id="export-count"></span>
@@ -4538,6 +4541,13 @@
   /* ── 엑셀 내보내기 — 명찰·좌석표처럼 다른 도구에서 쓰려면 항목이 열로 나뉘어야 한다 ── */
   var exportUnit = 'person';        /* 'person' 한 사람씩 · 'entry' 신청 건별 */
   var exportOff = {};               /* 꺼 둔 항목 */
+  var exportTypeOff = {};           /* 빼 둔 참가 유형 */
+
+  function exportTypes() {
+    if (!ptypesActive()) return [];
+    var on = PTYPES.filter(function(t){ return !exportTypeOff[t.id]; });
+    return on.length ? on : PTYPES;   /* 하나도 안 고르면 전체로 본다 */
+  }
 
   function answerOf(a, m, label) {
     var t = ptypeById(a.typeId);
@@ -4564,7 +4574,7 @@
 
   /* 지금 화면의 유형들을 훑어 내보낼 수 있는 항목을 모은다 */
   function exportColumns() {
-    var types = ptypesActive() ? PTYPES : [];
+    var types = exportTypes();
     var anyTeam = types.some(function(t){ return t.unit === 'team'; });
     var byPerson = exportUnit === 'person';
     var cols = [];
@@ -4576,6 +4586,7 @@
     }
 
     if (types.length > 1) add('type', '참가 유형', function(a){ var t = ptypeById(a.typeId); return t ? t.name : ''; });
+    /* 유형을 하나만 뽑으면 유형 열은 모두 같은 값이라 넣지 않는다 */
     add('name', '이름', function(a, m){ return m ? m.name : a.name; });
     if (anyTeam) {
       add('teamName', '팀명', function(a){ return a.team ? a.name : ''; });
@@ -4632,6 +4643,10 @@
     document.getElementById('export-sheet').classList.remove('is-open');
   }
   function setExportUnit(unit) { exportUnit = unit; renderExportSheet(); }
+  function toggleExportType(id) {
+    exportTypeOff[id] = !exportTypeOff[id];
+    renderExportSheet();
+  }
   function toggleExportCol(label) {
     exportOff[label] = !exportOff[label];
     renderExportSheet();
@@ -4643,9 +4658,19 @@
     renderExportSheet();
   }
   function renderExportSheet() {
+    var picked = exportTypes();
     var cols = exportColumns();
     var on = cols.filter(function(c){ return !exportOff[c.label]; });
-    var anyTeam = ptypesActive() && PTYPES.some(function(t){ return t.unit === 'team'; });
+    var anyTeam = picked.some(function(t){ return t.unit === 'team'; });
+
+    /* 어떤 유형을 뽑을지 — 유형이 2개 이상일 때만 물을 이유가 있다 */
+    var typeBox = document.getElementById('export-types');
+    typeBox.hidden = !ptypesActive() || PTYPES.length < 2;
+    typeBox.innerHTML = typeBox.hidden ? '' : PTYPES.map(function(t){
+      var sel = !exportTypeOff[t.id];
+      return '<button type="button" class="btn btn-sm btn-pill ' + (sel ? 'btn-fill-primary' : 'btn-line-dark') + '" '
+        + 'onclick="toggleExportType(\'' + t.id + '\')">' + escapeHTML(t.name) + '</button>';
+    }).join('');
 
     var unit = document.getElementById('export-unit');
     unit.hidden = !anyTeam;          /* 팀이 없으면 한 줄이 곧 한 사람이다 */
@@ -4678,11 +4703,18 @@
       });
     });
     writeCsv(cols.map(function(c){ return c.label; }), rows);
-    showToast(rows.length + '줄을 내려받았어요');
+    var names = ptypesActive() && PTYPES.length > 1
+      ? exportTypes().map(function(t){ return t.name; }).join(' · ') + ' · ' : '';
+    showToast(names + rows.length + '줄을 내려받았어요');
   }
 
-  /* 내보내기는 지금 걸린 유형 필터와 무관하게 전체를 담는다 */
-  function filteredApplicantsAll() { return APPLICANTS; }
+  /* 고른 유형의 신청 건만 담는다 */
+  function filteredApplicantsAll() {
+    if (!ptypesActive()) return APPLICANTS;
+    var ids = {};
+    exportTypes().forEach(function(t){ ids[t.id] = 1; });
+    return APPLICANTS.filter(function(a){ return ids[a.typeId]; });
+  }
 
   function downloadExcel() {
     if (!ptypesActive()) {
