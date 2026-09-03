@@ -1318,20 +1318,35 @@
   /* 본문에 얹히는 캐러셀 — 인스타처럼 옆으로 넘긴다 */
   .rt-carousel {
     display: flex;
-    gap: 8px;
+    gap: 0;                    /* 한 장이 폭을 꽉 채운다 */
     overflow-x: auto;
     scroll-snap-type: x mandatory;
-    margin: 12px 0;
-    padding-bottom: 4px;
+    margin: 12px 0 0;
     -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
   }
+  .rt-carousel::-webkit-scrollbar { display: none; }
   .rt-carousel img {
-    width: 68%;
+    width: 100%;
     flex-shrink: 0;
     height: auto;              /* 카드뉴스처럼 세로로 긴 이미지도 잘리지 않게 */
     border-radius: var(--r-sm);
-    scroll-snap-align: start;
+    scroll-snap-align: center;
   }
+  /* 지금 몇 번째인지 — 여러 장일 때만 붙는다 */
+  .rt-carousel-dots {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin: 8px 0 12px;
+  }
+  .rt-carousel-dot {
+    width: 6px; height: 6px;
+    border-radius: var(--r-full);
+    background: var(--color-border);
+    transition: background var(--motion-fast) var(--ease-standard);
+  }
+  .rt-carousel-dot.is-on { background: var(--color-text-muted); }
   .rt-editor-btn {
     width: 28px;
     height: 28px;
@@ -6013,8 +6028,34 @@
   function rtInsertHTML(ed, html) {
     ed.focus();
     document.execCommand('insertHTML', false, html + '<p><br></p>');
+    initCarousels(ed);
     onInput();
     syncPreviewLive();
+  }
+
+  /* 캐러셀마다 아래에 점을 달고, 넘길 때 지금 장을 표시한다 */
+  function initCarousels(scope) {
+    (scope || document).querySelectorAll('.rt-carousel').forEach(function(track){
+      if (track.dataset.dots) return;
+      var n = track.querySelectorAll('img').length;
+      if (n < 2) return;
+      track.dataset.dots = '1';
+      var dots = document.createElement('div');
+      dots.className = 'rt-carousel-dots';
+      dots.setAttribute('contenteditable', 'false');
+      for (var i = 0; i < n; i++) {
+        var d = document.createElement('span');
+        d.className = 'rt-carousel-dot' + (i === 0 ? ' is-on' : '');
+        dots.appendChild(d);
+      }
+      track.insertAdjacentElement('afterend', dots);
+      track.addEventListener('scroll', function(){
+        var at = Math.round(track.scrollLeft / track.clientWidth);
+        dots.querySelectorAll('.rt-carousel-dot').forEach(function(d, i){
+          d.classList.toggle('is-on', i === at);
+        });
+      }, { passive: true });
+    });
   }
   function rtInsertImage(e) {
     e.preventDefault();

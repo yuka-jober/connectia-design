@@ -998,22 +998,35 @@
   /* 본문 캐러셀 — 카드뉴스처럼 옆으로 넘긴다 */
   .desc .rt-carousel {
     display: flex;
-    gap: 8px;
+    gap: 0;                    /* 한 장이 폭을 꽉 채운다 */
     overflow-x: auto;
     scroll-snap-type: x mandatory;
-    margin: 16px 0;
-    padding-bottom: 4px;
+    margin: 16px 0 0;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
   }
   .desc .rt-carousel::-webkit-scrollbar { display: none; }
   .desc .rt-carousel img {
-    width: 78%;
+    width: 100%;
     flex-shrink: 0;
     height: auto;              /* 카드뉴스처럼 세로로 긴 이미지도 잘리지 않게 */
     border-radius: var(--r-md);
     scroll-snap-align: center;
   }
+  /* 지금 몇 번째인지 — 여러 장일 때만 붙는다 */
+  .desc .rt-carousel-dots {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin: 10px 0 16px;
+  }
+  .desc .rt-carousel-dot {
+    width: 6px; height: 6px;
+    border-radius: var(--r-full);
+    background: var(--color-border);
+    transition: background var(--motion-fast) var(--ease-standard);
+  }
+  .desc .rt-carousel-dot.is-on { background: var(--color-text-muted); }
   .desc img { max-width: 100%; border-radius: var(--r-md); }
   .desc.is-rich { white-space: pre-wrap; }
   .desc.is-rich .rt-carousel { white-space: normal; }
@@ -3550,6 +3563,7 @@
          에디터의 줄바꿈은 문자 그대로라 pre-wrap이 있어야 작성 화면과 같아 보인다 */
       descBlock.innerHTML = d.descriptionHtml;
       descBlock.classList.add('is-rich');
+      initCarousels(descBlock);
     } else if (d.description) {
       descBlock.innerHTML = '';
       var lines = d.description.split(/\n+/).filter(function(l){ return l.trim(); });
@@ -3709,6 +3723,30 @@
 
   /* 외부 링크 이벤트 — sticky CTA가 외부 폼을 새 탭으로 연다 */
   /* 참석여부로 받는 이벤트 — 폼 없이 참석/불참만 답한다 */
+  /* 캐러셀마다 아래에 점을 달고, 넘길 때 지금 장을 표시한다 */
+  function initCarousels(scope) {
+    (scope || document).querySelectorAll('.rt-carousel').forEach(function(track){
+      if (track.dataset.dots) return;
+      var n = track.querySelectorAll('img').length;
+      if (n < 2) return;
+      track.dataset.dots = '1';
+      var dots = document.createElement('div');
+      dots.className = 'rt-carousel-dots';
+      for (var i = 0; i < n; i++) {
+        var d = document.createElement('span');
+        d.className = 'rt-carousel-dot' + (i === 0 ? ' is-on' : '');
+        dots.appendChild(d);
+      }
+      track.insertAdjacentElement('afterend', dots);
+      track.addEventListener('scroll', function(){
+        var at = Math.round(track.scrollLeft / track.clientWidth);
+        dots.querySelectorAll('.rt-carousel-dot').forEach(function(d, i){
+          d.classList.toggle('is-on', i === at);
+        });
+      }, { passive: true });
+    });
+  }
+
   function applyAttendCta() {
     document.querySelectorAll('.sticky-actions .cta-guest').forEach(function(b){
       b.textContent = '참석해요';   /* 누르면 로그인부터 — 동작은 그대로 */
@@ -4402,6 +4440,7 @@
     if (screen) navigate('screen-' + screen);
   })();
 
+  initCarousels();                   /* 데모 본문에 이미 들어 있는 캐러셀 */
   syncCheckinUI();
   syncPtypeUI();
   renderFilterChips();
