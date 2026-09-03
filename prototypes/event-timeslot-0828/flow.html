@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="description" content="26년 청춘건배를 예시로 이벤트 프로토타입의 다섯 단계 화면을 순서대로 묶은 팀 공유용 안내">
+<title>청춘건배 화면 흐름</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
+<style>
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; }
+  img { max-width: 100%; }
+  [hidden] { display: none !important; }
+</style>
+
+<style>
+  :root {
+    --paper:      #f5f6fa;
+    --surface:    #ffffff;
+    --ink:        #1a1c2b;
+    --ink-sub:    #4a4d63;
+    --ink-muted:  #797d94;
+    --rule:       #d8d9e7;
+    --rule-soft:  #e7e8f1;
+    --accent:     #5a58e0;
+    --accent-dim: #ecebfb;
+    --clay:       #a4713f;
+    --forest:     #3f6a52;
+
+    --serif: "Gowun Batang", "Nanum Myeongjo", ui-serif, Georgia, serif;
+    --sans:  "IBM Plex Sans KR", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", sans-serif;
+    --mono:  "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:      #14161f;
+      --surface:    #1c1f2b;
+      --ink:        #eceef5;
+      --ink-sub:    #b6bacb;
+      --ink-muted:  #868b9f;
+      --rule:       #333748;
+      --rule-soft:  #282c3a;
+      --accent:     #9d9bf5;
+      --accent-dim: #262740;
+      --clay:       #d8a068;
+      --forest:     #79b294;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:      #14161f;
+    --surface:    #1c1f2b;
+    --ink:        #eceef5;
+    --ink-sub:    #b6bacb;
+    --ink-muted:  #868b9f;
+    --rule:       #333748;
+    --rule-soft:  #282c3a;
+    --accent:     #9d9bf5;
+    --accent-dim: #262740;
+    --clay:       #d8a068;
+    --forest:     #79b294;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 56px 24px 96px;
+  }
+
+  /* ── 머리말 ── */
+  .masthead { margin-bottom: 56px; }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin: 0 0 14px;
+  }
+  h1 {
+    font-family: var(--serif);
+    font-size: clamp(34px, 6vw, 46px);
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+    margin: 0 0 18px;
+  }
+  .lede {
+    max-width: 60ch;
+    color: var(--ink-sub);
+    margin: 0;
+  }
+  .lede strong { font-weight: 600; color: var(--ink); }
+
+  /* ── 단계 ── */
+  .stages {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .stage {
+    display: grid;
+    grid-template-columns: 56px 1fr;
+    gap: 0 20px;
+  }
+  /* 번호 + 이어지는 선 — 실제로 시간 순서가 있는 흐름이라 쓴다 */
+  .rail {
+    grid-row: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+  .marker {
+    width: 34px; height: 34px;
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    border: 1px solid var(--rule);
+    background: var(--surface);
+    font-family: var(--mono);
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-sub);
+  }
+  .thread {
+    flex: 1;
+    width: 1px;
+    background: var(--rule-soft);
+  }
+  .stage:last-child .thread { display: none; }
+
+  .stage-body { padding-bottom: 4px; min-width: 0; }
+  .stage-when {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    color: var(--ink-muted);
+    margin: 6px 0 2px;
+  }
+  h2 {
+    font-family: var(--serif);
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1.35;
+    margin: 0 0 10px;
+  }
+  .stage-note {
+    color: var(--ink-sub);
+    max-width: 58ch;
+    margin: 0 0 18px;
+  }
+
+  /* ── 링크 ── */
+  .links {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    background: var(--surface);
+    overflow: hidden;
+  }
+  .link {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    padding: 13px 16px;
+    border-top: 1px solid var(--rule-soft);
+    color: inherit;
+    text-decoration: none;
+  }
+  .link:first-child { border-top: 0; }
+  .link:hover,
+  .link:focus-visible { background: var(--accent-dim); }
+  .link:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .link-name {
+    font-weight: 500;
+    flex: 1;
+    min-width: 0;
+  }
+  .link:hover .link-name { color: var(--accent); }
+  .link-who {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    letter-spacing: 0.04em;
+    color: var(--ink-muted);
+    white-space: nowrap;
+  }
+  .arrow { color: var(--ink-muted); font-size: 13px; }
+  .link:hover .arrow { color: var(--accent); }
+
+  /* 단계별 강조 — 준비·모집·확정은 제품색, 당일 현장은 흙색 */
+  .stage[data-tone="onsite"] .marker { border-color: var(--clay); color: var(--clay); }
+  .stage[data-tone="onsite"] .link:hover .link-name,
+  .stage[data-tone="onsite"] .link:hover .arrow { color: var(--clay); }
+  .stage[data-tone="onsite"] .link:hover,
+  .stage[data-tone="onsite"] .link:focus-visible { background: color-mix(in srgb, var(--clay) 9%, transparent); }
+  .stage[data-tone="onsite"] .link:focus-visible { outline-color: var(--clay); }
+  .stage[data-tone="confirm"] .marker { border-color: var(--forest); color: var(--forest); }
+
+  /* ── 맺음말 ── */
+  .footnote {
+    margin-top: 64px;
+    padding-top: 28px;
+    border-top: 1px solid var(--rule);
+  }
+  h3 {
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin: 0 0 14px;
+  }
+  .footnote dl {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 10px 24px;
+    margin: 0;
+    color: var(--ink-sub);
+  }
+  .footnote dt { font-weight: 600; color: var(--ink); }
+  .footnote dd { margin: 0; }
+  .footnote dd + dt { margin-top: 0; }
+  code {
+    font-family: var(--mono);
+    font-size: 0.88em;
+    background: var(--accent-dim);
+    color: var(--accent);
+    padding: 1px 5px;
+    border-radius: 4px;
+  }
+  .footnote a { color: var(--accent); }
+
+  @media (max-width: 560px) {
+    .wrap { padding: 40px 18px 72px; }
+    .stage { grid-template-columns: 40px 1fr; gap: 0 14px; }
+    .marker { width: 30px; height: 30px; font-size: 12px; }
+    .link { flex-wrap: wrap; gap: 4px 10px; }
+    .link-who { flex-basis: 100%; }
+    .footnote dl { grid-template-columns: 1fr; gap: 4px; }
+    .footnote dd { margin-bottom: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <p class="eyebrow">Connectia · 이벤트 프로토타입</p>
+    <h1>26년 청춘건배<br>화면 흐름</h1>
+    <p class="lede">
+      서울시립대 총동문회가 여는 동문·재학생 교류의 밤을 예시로, 이벤트를 <strong>만들고 · 모집하고 · 확정하고 · 현장에서 받는</strong> 순서대로 화면을 묶었습니다.
+      각 줄이 실제로 열리는 화면입니다. 위에서부터 눌러보면 한 행사가 굴러가는 과정이 그대로 이어집니다.
+    </p>
+  </header>
+
+  <ol class="stages">
+
+    <li class="stage">
+      <div class="rail"><div class="marker">1</div><div class="thread"></div></div>
+      <div class="stage-body">
+        <p class="stage-when">모집 전 · 주최자</p>
+        <h2>이벤트를 만든다</h2>
+        <p class="stage-note">
+          참가자를 <strong>졸업생</strong>과 <strong>재학생 팀</strong>으로 나누고, 유형마다 신청폼·자리 배정·팀원 동의를 따로 정합니다.
+          목록에서 유형 카드를 누르면 그 유형만 다루는 상세 화면으로 들어갑니다.
+        </p>
+        <div class="links">
+          <a class="link" target="_blank" rel="noopener" href="https://connectia-design.vercel.app/prototypes/event-timeslot-0828/event-input.html">
+            <span class="link-name">이벤트 만들기 — 청춘건배가 구성된 상태</span>
+            <span class="link-who">완성본</span><span class="arrow">↗</span>
+          </a>
+          <a class="link" target="_blank" rel="noopener" href="https://connectia-design.vercel.app/prototypes/event-timeslot-0828/event-input.html?blank=1">
+            <span class="link-name">빈 화면에서 직접 만들어보기</span>
+            <span class="link-who">발행까지 연결됨</span><span class="arrow">↗</span>
+          </a>
+        </div>
+      </div>
+    </li>
+
+    <li class="stage">
+      <div class="rail"><div class="marker">2</div><div class="thread"></div></div>
+      <div class="stage-body">
+        <p class="stage-when">모집 중 · 신청자</p>
+        <h2>이벤트 페이지에서 신청한다</h2>
+        <p class="stage-note">
+          같은 페이지가 보는 사람의 상태에 따라 다르게 보입니다. 로그인 여부와 신청 여부에 따라 하단 버튼이 바뀝니다.
+        </p>
+        <div class="links">
+          <a class="link" target="_blank" rel="noopener" href="https://connectia-design.vercel.app/prototypes/event-timeslot-0828/event-landing.html?share=1&amp;state=guest">
+            <span class="link-name">처음 들어온 사람</span>
+            <span class="link-who">비로그인</span><span class="arrow">↗</span>
+          </a>
+          <a class="link" target="_blank" rel="noopener" href="https://connectia-design.vercel.app/prototypes/event-timeslot-0828/event-landing.html?share=1&amp;state=member">
+            <span class="link-name">로그인은 했지만 아직 신청 전</span>
+            <span class="link-who">로그인 · 미신청</span><span class="arrow">↗</span>
+          </a>
+          <a class="link" target="_blank" rel="noopener" href="https://connectia-design.vercel.app/prototypes/event-timeslot-0828/event-landing.html?share=1&amp;state=applied">
+            <span class="link-name">신청을 마친 사람</span>
+            <span class="link-who">신청 완료</span><span class="arrow">↗</span>
+          </a>
+        </div>
+      </div>
+    </li>
+
+    <li class="stage" data-tone="confirm">
+      <div class="rail"><div class="marker">3</div><div class="thread"></div></div>
+      <div class="stage-body">
+        <p class="stage-when">신청 직후 · 팀 대표와 팀원</p>
+        <h2>팀원이 동의하면 자리가 잡힌다</h2>
+        <p class="stage-note">
+          재학생 팀은 대표가 참석 가능한 시간을 여러 개 고릅니다. 팀원 전원이 동의를 마치는 순간, 고른 것 중 자리가 남은 곳으로 자동 배정되고 신청이 확정됩니다.
+          <strong>알림톡은 양쪽으로 나갑니다</strong> — 팀원에게는 동의 요청이, 대표에게는 지금 몇 명이 동의했는지 보여주는 현황이 갑니다.
+          응답이 없는 팀원은 대표가 제외할 수 있고, 그러면 남은 인원만으로 확정됩니다.
+        </p>
+        <div class="links">
+          <a class="link" target="_blank" rel="noopener" href="https://connectia-design.vercel.app/prototypes/event-timeslot-0828/event-landing.html?share=1&amp;assign=consent&amp;screen=pending">
+            <span class="link-name">신청 현황 — 대표가 알림톡으로 들어오는 화면</span>
+            <span class="link-who">팀 대표</span><span class="arrow">↗</span>
+          </a>
+          <a class="link" target="_blank" rel="noopener" href="https://connectia-design.vercel.app/prototypes/event-timeslot-0828/event-landing.html?share=1&amp;assign=consent&amp;screen=consent">
+            <span class="link-name">참석 동의 — 팀원이 알림톡으로 들어오는 화면</span>
+            <span class="link-who">팀원</span><span class="arrow">↗</span>
+          </a>
+        </div>
+      </div>
+    </li>
+
+    <li class="stage">
+      <div class="rail"><div class="marker">4</div><div class="thread"></div></div>
+      <div class="stage-body">
+        <p class="stage-when">모집 기간 내내 · 운영자</p>
+        <h2>신청 현황을 확인하고 손본다</h2>
+        <p class="stage-note">
+          신청자 리스트에서 유형별로 받은 답변을 보고, 시간대마다 정원 대비 얼마나 찼는지 확인합니다.
+          자리 배지를 누르면 다른 시간대로 옮길 수 있습니다 — 정원이 찬 자리도 예외로 넣을 수 있고, 그때는 현황이 경고색으로 표시됩니다.
+        </p>
+        <div class="links">
+          <a class="link" target="_blank" rel="noopener" href="https://connectia-design.vercel.app/prototypes/event-timeslot-0828/event-landing.html?share=1&amp;role=owner">
+            <span class="link-name">운영자가 보는 이벤트 페이지</span>
+            <span class="link-who">운영자</span><span class="arrow">↗</span>
+          </a>
+          <a class="link" target="_blank" rel="noopener" href="https://connectia-design.vercel.app/prototypes/event-timeslot-0828/event-landing.html?share=1&amp;role=owner&amp;screen=list">
+            <span class="link-name">신청자 리스트 — 자리 현황과 재배정</span>
+            <span class="link-who">운영자</span><span class="arrow">↗</span>
+          </a>
+        </div>
+      </div>
+    </li>
+
+    <li class="stage" data-tone="onsite">
+      <div class="rail"><div class="marker">5</div><div class="thread"></div></div>
+      <div class="stage-body">
+        <p class="stage-when">행사 당일 · 문 앞</p>
+        <h2>현장에서 입장 처리한다</h2>
+        <p class="stage-note">
+          QR을 찍으면 확인 없이 바로 입장 처리되고 결과만 토스트로 알립니다.
+          QR을 못 챙긴 사람은 명단에서 찾습니다. 발급 단위를 <strong>신청 건당</strong>으로 두면 팀은 QR 한 장으로 한 번에 들어오고, <strong>1인당</strong>이면 팀원을 따로 처리합니다.
+        </p>
+        <div class="links">
+          <a class="link" target="_blank" rel="noopener" href="https://connectia-design.vercel.app/prototypes/event-timeslot-0828/event-checkin.html?share=1&amp;tab=scan">
+            <span class="link-name">QR 스캔 — 정상 · 중복 · 오류</span>
+            <span class="link-who">주최자</span><span class="arrow">↗</span>
+          </a>
+          <a class="link" target="_blank" rel="noopener" href="https://connectia-design.vercel.app/prototypes/event-timeslot-0828/event-checkin.html?share=1&amp;tab=list">
+            <span class="link-name">명단에서 찾아 입장 — 팀은 “모두 입장”</span>
+            <span class="link-who">신청 건당</span><span class="arrow">↗</span>
+          </a>
+          <a class="link" target="_blank" rel="noopener" href="https://connectia-design.vercel.app/prototypes/event-timeslot-0828/event-checkin.html?share=1&amp;issue=person&amp;tab=list">
+            <span class="link-name">팀원을 한 명씩 입장 처리</span>
+            <span class="link-who">1인당</span><span class="arrow">↗</span>
+          </a>
+          <a class="link" target="_blank" rel="noopener" href="https://connectia-design.vercel.app/prototypes/event-timeslot-0828/event-checkin.html?share=1&amp;role=staff&amp;tab=list">
+            <span class="link-name">도와주러 온 스태프가 보는 화면</span>
+            <span class="link-who">연락처 비공개</span><span class="arrow">↗</span>
+          </a>
+        </div>
+      </div>
+    </li>
+
+  </ol>
+
+  <section class="footnote">
+    <h3>참고</h3>
+    <dl>
+      <dt>상태를 직접 바꿔보려면</dt>
+      <dd>주소에서 <code>?share=1</code>을 빼고 열면 상단에 상태 전환 바가 나옵니다. 시점·상태·자리·체크인을 그 자리에서 바꿔가며 볼 수 있어요. 개발과 QA는 이쪽을 씁니다.</dd>
+      <dt>코드</dt>
+      <dd><a href="https://github.com/yuka-jober/connectia-design/tree/page-purpose-select-0901/prototypes/event-timeslot-0828" target="_blank" rel="noopener">github.com/yuka-jober/connectia-design</a> — 브랜치 <code>page-purpose-select-0901</code>, 폴더 <code>prototypes/event-timeslot-0828</code></dd>
+      <dt>화면 세 개</dt>
+      <dd><code>event-input.html</code> 이벤트 만들기 · <code>event-landing.html</code> 이벤트 페이지와 신청 · <code>event-checkin.html</code> 현장 체크인</dd>
+    </dl>
+  </section>
+
+</div>
+
+</body>
+</html>
