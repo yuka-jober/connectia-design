@@ -1394,7 +1394,7 @@
     line-height: 1.5;
   }
   .done-alim[hidden] { display: none; }
-  .done-alim i[data-lucide], .done-alim svg.lucide { width: 14px; height: 14px; margin-top: 4px; }
+  .done-alim i[data-lucide], .done-alim svg.lucide { width: 14px; height: 14px; margin-top: 2px; }
 
   /* 1인당 발급 — 팀원별로 QR이 어디로 갔는지 목록 */
   .done-people { width: 100%; display: flex; flex-direction: column; }
@@ -2296,7 +2296,16 @@
     syncViewerBar();
   }
   function setRole(role)  { document.body.dataset.role  = role;  syncViewerBar(); renderCtaTypes(); renderSlotStatus(); }
-  function setState(state){ document.body.dataset.state = state; syncViewerBar(); renderCtaTypes(); }
+  function setState(state){
+    document.body.dataset.state = state;
+    /* 전환 바로 '신청완료'만 켠 경우엔 신청한 유형이 없다 — 첫 유형으로 본다 */
+    if ((state === 'applied' || state === 'preset') && !appliedTypeId && PTYPES.length) {
+      appliedTypeId = PTYPES[0].id;
+    }
+    syncViewerBar();
+    renderCtaTypes();
+    syncPtypeUI();
+  }
   /* 프로토타입 전용 — 자리 배정 끔 / 켬 / 켬+팀원 동의받기 */
   function setAssign(mode) {
     ASSIGN.enabled = (mode !== 'off');
@@ -2431,12 +2440,23 @@
   function onAppliedCta() {
     var rec = myPending();
     if (rec) { openPending(rec); return; }
-    if (CHECKIN.enabled && myRec) { reopenDone(); return; }
+    if (CHECKIN.enabled && myApplication()) { reopenDone(); return; }
     openCancelDialog();
   }
+  /* 직접 신청한 건이 있으면 그것, 없으면(전환 바로 상태만 바꾼 경우) 데모 신청 건 */
+  function myApplication() {
+    if (myRec) return myRec;
+    var wanted = appliedTypeId;
+    var pool = APPLICANTS.filter(function(a){
+      return (!wanted || a.typeId === wanted) && (!a.booking || a.booking.status === 'confirmed');
+    });
+    return pool[0] || APPLICANTS[0] || null;
+  }
   function reopenDone() {
+    var rec = myApplication();
+    if (!rec) return;
     doneReopened = true;
-    renderDone(ptypeById(myRec.typeId), null, myRec);
+    renderDone(ptypeById(rec.typeId), null, rec);
     navigate('screen-done');
   }
   /* 신청을 마친 사람이 다시 들어온 화면에서만 취소를 보여준다 */
