@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>현장 체크인 — 26년 청춘건배</title>
+<link rel="stylesheet" href="../../tokens.css">
+<link rel="stylesheet" href="../../components.css">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-base);
+    background: #e0e0e0;
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ── Frame (mobile) ── */
+  .frame {
+    width: 390px;
+    height: 844px;
+    max-height: 100dvh;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 32px 80px -20px rgba(0,0,0,0.28);
+    background: var(--color-surface);
+    border-radius: 44px;
+  }
+  @media (max-width: 439px) {
+    .frame { width: 100vw; height: 100dvh; max-height: none; border-radius: 0; }
+  }
+
+  /* ── 화면 전환 ── */
+  .screen { position: absolute; inset: 0; display: none; flex-direction: column; background: var(--color-surface); }
+  .screen.on { display: flex; }
+
+  /* ── 공통 ── */
+  i[data-lucide] { display: inline-flex; flex-shrink: 0; }
+  svg.lucide { flex-shrink: 0; }
+
+  /* ============================================
+     프로토타입 전용 — 상태 전환 바 (실서비스엔 없음)
+     ============================================ */
+  .viewer-bar {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    background: var(--color-surface-sub);
+    border-bottom: 1px solid var(--color-border);
+    z-index: 1000;
+    font-family: var(--font-base);
+  }
+  .viewer-bar-row {
+    height: 32px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 12px;
+  }
+  .viewer-bar-label {
+    font-size: var(--fs-nav);
+    font-weight: var(--fw-semibold);
+    letter-spacing: var(--ls-nav);
+    color: var(--color-text-muted);
+  }
+  .viewer-bar-tabs { display: flex; gap: 4px; margin-left: auto; }
+  .viewer-bar-tab {
+    background: none;
+    border: none;
+    border-radius: var(--r-full);
+    padding: 4px 8px;
+    font-family: var(--font-base);
+    font-size: var(--fs-badge);
+    font-weight: var(--fw-medium);
+    color: var(--color-text-muted);
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background var(--motion-fast) var(--ease-standard),
+                color var(--motion-fast) var(--ease-standard);
+  }
+  .viewer-bar-tab:hover { color: var(--color-text-sub); }
+  .viewer-bar-tab.active { background: var(--color-primary); color: var(--color-on-primary); }
+
+  /* 화면·오버레이 영역을 viewer-bar 아래로 밀기 */
+  .frame .screen,
+  .frame .bottom-sheet-overlay { top: 64px; }
+  .frame .bottom-sheet-overlay,
+  .frame .bottom-sheet { position: absolute; }
+  /* 하단 액션 영역(81px) 위로 띄운다 — 스캔 중에 '이름으로 찾기'가 가려지면 안 된다 */
+  .frame .toast-container { position: absolute; bottom: 96px; }
+
+  /* 시점별 노출 — 스태프는 주최자 전용 정보를 볼 수 없다 */
+  body[data-role="staff"] .owner-only { display: none !important; }
+  /* 가운데 카운트를 맞추는 자리 채움 — 더보기가 빠지는 스태프 시점에서만 쓴다 */
+  .ci-head-spacer { visibility: hidden; }
+  body[data-role="owner"] .ci-head-spacer { display: none; }
+
+  /* ============================================
+     체크인 헤더 · 탭
+     ============================================ */
+  .ci-header {
+    flex-shrink: 0;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0 8px;
+    background: var(--color-surface);
+  }
+  .ci-count {
+    flex: 1;
+    min-width: 0;
+    text-align: center;
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-medium);
+    color: var(--color-text-muted);
+    letter-spacing: var(--ls-body-lg);
+    white-space: nowrap;
+  }
+  .ci-count b {
+    font-size: var(--fs-title);
+    font-weight: var(--fw-bold);
+    letter-spacing: var(--ls-title);
+    color: var(--color-text);
+  }
+  .ci-header .icon-btn i[data-lucide],
+  .ci-header .icon-btn svg.lucide { width: 20px; height: 20px; color: var(--color-text); }
+
+  .ci-tabs { flex-shrink: 0; padding: 0 16px; background: var(--color-surface); }
+
+  /* 유형·화면 전환 — 텍스트 + 밑줄 탭 */
+  .ptype-tabs-line {
+    display: flex;
+    gap: 4px;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .ptype-tab-line {
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    padding: 8px 12px;
+    font-family: var(--font-base);
+    font-size: var(--fs-body);
+    font-weight: var(--fw-medium);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: color var(--motion-fast) var(--ease-standard);
+  }
+  .ptype-tab-line.is-active {
+    color: var(--color-text);
+    border-bottom-color: var(--color-text);
+    font-weight: var(--fw-bold);
+  }
+
+  .ci-panel { flex: 1; min-height: 0; display: none; flex-direction: column; }
+  .ci-panel.on { display: flex; }
+
+  /* ============================================
+     스캔 탭 — 카메라 뷰
+     ============================================ */
+  .scan-cam {
+    flex: 1;
+    min-height: 0;
+    position: relative;
+    overflow: hidden;
+    background: var(--color-surface-dark);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .scan-cam::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 40%, var(--color-on-primary-faint), transparent 62%);
+  }
+  .scan-stage {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+  }
+  .scan-reticle {
+    position: relative;
+    width: 224px;
+    height: 224px;
+  }
+  .scan-corner {
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    border: 4px solid var(--color-on-primary);
+  }
+  .scan-corner.tl { top: 0; left: 0;  border-right: none; border-bottom: none; border-radius: var(--r-sm) 0 0 0; }
+  .scan-corner.tr { top: 0; right: 0; border-left: none;  border-bottom: none; border-radius: 0 var(--r-sm) 0 0; }
+  .scan-corner.bl { bottom: 0; left: 0;  border-right: none; border-top: none; border-radius: 0 0 0 var(--r-sm); }
+  .scan-corner.br { bottom: 0; right: 0; border-left: none;  border-top: none; border-radius: 0 0 var(--r-sm) 0; }
+  .scan-hint {
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-medium);
+    letter-spacing: var(--ls-body-lg);
+    color: var(--color-on-primary);
+  }
+  .scan-foot {
+    flex-shrink: 0;
+    padding: 12px 20px calc(20px + env(safe-area-inset-bottom));
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+  }
+
+  /* ============================================
+     명단 탭
+     ============================================ */
+  .ci-list-top {
+    flex-shrink: 0;
+    padding: 8px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-surface);
+  }
+  .ci-search { position: relative; }
+  .ci-search i[data-lucide],
+  .ci-search svg.lucide {
+    position: absolute;
+    left: 12px; top: 50%;
+    transform: translateY(-50%);
+    width: 16px; height: 16px;
+    color: var(--color-text-muted);
+    pointer-events: none;
+  }
+  .ci-search .input { padding-left: 36px; }
+
+  .ci-filter-row { display: flex; align-items: center; gap: 8px; }
+  /* 타임이 켜진 유형이 없으면 타임 필터 줄을 통째로 감춘다 */
+  .ci-filter-row[hidden] { display: none; }
+  .ci-chips { display: flex; gap: 8px; }
+  .ci-summary {
+    margin-left: auto;
+    font-size: var(--fs-badge);
+    letter-spacing: var(--ls-badge);
+    color: var(--color-text-muted);
+    white-space: nowrap;
+  }
+
+  .ci-rows { flex: 1; min-height: 0; overflow-y: auto; }
+  .ci-empty {
+    padding: 48px 20px;
+    text-align: center;
+    color: var(--color-text-muted);
+  }
+
+  .ci-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 16px;
+    min-height: 36px;
+    border-bottom: 1px solid var(--color-border);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .ci-row:hover { background: var(--color-bg); }
+  .ci-row-name {
+    font-size: var(--fs-body);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text);
+    white-space: nowrap;
+  }
+  .ci-row-sub {
+    flex: 1;
+    min-width: 0;
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .ci-row-time {
+    font-size: var(--fs-caption);
+    font-weight: var(--fw-medium);
+    color: var(--color-success-dark);
+    white-space: nowrap;
+  }
+  .ci-row.is-done .ci-row-name { color: var(--color-text-muted); font-weight: var(--fw-medium); }
+
+  .ci-list-foot {
+    flex-shrink: 0;
+    padding: 8px 16px calc(8px + env(safe-area-inset-bottom));
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+  }
+
+  /* ============================================
+     상세 화면
+     ============================================ */
+  .dt-header {
+    flex-shrink: 0;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0 4px;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .dt-header .icon-btn i[data-lucide],
+  .dt-header .icon-btn svg.lucide { width: 22px; height: 22px; color: var(--color-text); }
+  .dt-header-title {
+    flex: 1;
+    min-width: 0;
+    font-size: var(--fs-title-sm);
+    font-weight: var(--fw-bold);
+    line-height: var(--lh-title-sm);
+    letter-spacing: var(--ls-title-sm);
+    color: var(--color-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .dt-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    background: var(--color-bg);
+    padding: 16px 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .dt-status {
+    background: var(--color-surface);
+    border-radius: var(--r-md);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .dt-status-icon {
+    width: 40px; height: 40px;
+    border-radius: var(--r-full);
+    display: flex; align-items: center; justify-content: center;
+    background: var(--color-surface-sub);
+    color: var(--color-text-muted);
+  }
+  .dt-status.is-in .dt-status-icon { background: var(--color-success-subtle); color: var(--color-success-dark); }
+  .dt-status-icon i[data-lucide],
+  .dt-status-icon svg.lucide { width: 20px; height: 20px; }
+  .dt-status-text { display: flex; flex-direction: column; gap: 2px; }
+  .dt-status-main {
+    font-size: var(--fs-heading);
+    font-weight: var(--fw-semibold);
+    letter-spacing: var(--ls-heading);
+    color: var(--color-text);
+  }
+
+  .dt-card {
+    background: var(--color-surface);
+    border-radius: var(--r-md);
+    padding: 4px 20px;
+  }
+  .dt-row {
+    display: flex;
+    gap: 16px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .dt-row:last-child { border-bottom: none; }
+  .dt-key {
+    width: 80px;
+    flex-shrink: 0;
+    font-size: var(--fs-label);
+    font-weight: var(--fw-medium);
+    color: var(--color-text-muted);
+  }
+  .dt-val {
+    flex: 1;
+    min-width: 0;
+    font-size: var(--fs-body);
+    line-height: var(--lh-body);
+    color: var(--color-text);
+    word-break: break-word;
+  }
+
+  .dt-section-title {
+    font-size: var(--fs-heading);
+    font-weight: var(--fw-semibold);
+    letter-spacing: var(--ls-heading);
+    color: var(--color-text);
+    padding: 0 4px;
+  }
+  .dt-members {
+    background: var(--color-surface);
+    border-radius: var(--r-md);
+    overflow: hidden;
+  }
+  .dt-members .ci-row { cursor: default; min-height: 48px; padding: 8px 16px; }
+  .dt-members .ci-row:last-child { border-bottom: none; }
+  .dt-members .ci-row:hover { background: var(--color-surface); }
+
+  .dt-foot {
+    flex-shrink: 0;
+    padding: 12px 20px calc(20px + env(safe-area-inset-bottom));
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  /* ============================================
+     더보기 메뉴 · 현장 등록 시트
+     ============================================ */
+  .more-menu-list { display: flex; flex-direction: column; gap: 4px; }
+  .more-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+    padding: 16px 4px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: var(--font-base);
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-medium);
+    color: var(--color-text);
+    text-align: left;
+  }
+  .more-menu-item i[data-lucide],
+  .more-menu-item svg.lucide { width: 20px; height: 20px; color: var(--color-text-muted); }
+
+  .sheet-title {
+    font-size: var(--fs-title);
+    font-weight: var(--fw-bold);
+    line-height: var(--lh-title);
+    letter-spacing: var(--ls-title);
+    color: var(--color-text);
+    margin-bottom: 20px;
+  }
+  .onsite-form { display: flex; flex-direction: column; gap: 20px; margin-bottom: 24px; }
+  .onsite-field { display: flex; flex-direction: column; gap: 8px; }
+  .onsite-types { display: flex; flex-direction: column; gap: 8px; }
+  .onsite-type {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-sm);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .onsite-type:has(.radio:checked) { border-color: var(--color-primary); background: var(--color-primary-light); }
+  .onsite-type-name {
+    font-size: var(--fs-body);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text);
+  }
+</style>
+</head>
+<body data-role="owner">
+
+<div class="frame">
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- 프로토타입 전용: 상태 전환 바                  -->
+  <!-- ════════════════════════════════════════════ -->
+  <div class="viewer-bar">
+    <div class="viewer-bar-row">
+      <span class="viewer-bar-label">시점</span>
+      <div class="viewer-bar-tabs">
+        <button class="viewer-bar-tab" type="button" data-value="owner" onclick="setRole('owner')">주최자</button>
+        <button class="viewer-bar-tab" type="button" data-value="staff" onclick="setRole('staff')">스태프</button>
+      </div>
+    </div>
+    <div class="viewer-bar-row">
+      <span class="viewer-bar-label">스캔</span>
+      <div class="viewer-bar-tabs">
+        <button class="viewer-bar-tab" type="button" onclick="simScan('ok')">정상</button>
+        <button class="viewer-bar-tab" type="button" onclick="simScan('dup')">중복</button>
+        <button class="viewer-bar-tab" type="button" onclick="simScan('err')">오류</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- SCREEN 1 — 체크인 (스캔 · 명단)                -->
+  <!-- ════════════════════════════════════════════ -->
+  <div class="screen on" id="screen-checkin">
+
+    <div class="ci-header">
+      <button class="icon-btn icon-btn-clear" type="button" aria-label="나가기" onclick="showToast('이벤트 페이지로 돌아가요')">
+        <i data-lucide="x"></i>
+      </button>
+      <div class="ci-count" id="ci-count"></div>
+      <button class="icon-btn icon-btn-clear owner-only" type="button" aria-label="더보기" onclick="openMoreMenu()">
+        <i data-lucide="more-horizontal"></i>
+      </button>
+      <span class="icon-btn ci-head-spacer" aria-hidden="true"></span>
+    </div>
+
+    <div class="ci-tabs">
+      <div class="ptype-tabs-line">
+        <button class="ptype-tab-line is-active" type="button" data-tab="scan" onclick="switchTab('scan')">스캔</button>
+        <button class="ptype-tab-line" type="button" data-tab="list" onclick="switchTab('list')">명단</button>
+      </div>
+    </div>
+
+    <!-- ── 스캔 탭 ── -->
+    <div class="ci-panel on" id="panel-scan">
+      <div class="scan-cam" onclick="simNext()">
+        <div class="scan-stage">
+          <div class="scan-reticle">
+            <span class="scan-corner tl"></span>
+            <span class="scan-corner tr"></span>
+            <span class="scan-corner bl"></span>
+            <span class="scan-corner br"></span>
+          </div>
+          <div class="scan-hint">QR을 화면 안에 맞춰주세요</div>
+        </div>
+      </div>
+      <div class="scan-foot">
+        <button class="btn btn-lg btn-block btn-line-dark" type="button" onclick="switchTab('list')">
+          QR이 없어요 · 이름으로 찾기
+        </button>
+      </div>
+    </div>
+
+    <!-- ── 명단 탭 ── -->
+    <div class="ci-panel" id="panel-list">
+      <div class="ci-list-top">
+        <div class="ci-search">
+          <i data-lucide="search"></i>
+          <input class="input" type="search" id="ci-query" aria-label="이름 또는 전화번호 뒷자리 검색" oninput="renderList()">
+        </div>
+        <div class="ci-filter-row">
+          <div class="ci-chips" id="ci-chips"></div>
+          <div class="ci-summary" id="ci-summary"></div>
+        </div>
+        <div class="ci-filter-row" id="ci-slot-row" hidden>
+          <div class="ci-chips" id="ci-slot-chips"></div>
+        </div>
+      </div>
+      <div class="ci-rows" id="ci-rows"></div>
+      <div class="ci-list-foot">
+        <button class="btn btn-sm btn-block btn-weak-primary" type="button" onclick="openOnsiteSheet()">
+          <i data-lucide="plus" style="width:16px;height:16px"></i>
+          현장 신청 등록
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- SCREEN 2 — 상세                               -->
+  <!-- ════════════════════════════════════════════ -->
+  <div class="screen" id="screen-detail">
+    <div class="dt-header">
+      <button class="icon-btn icon-btn-clear" type="button" aria-label="뒤로" onclick="closeDetail()">
+        <i data-lucide="chevron-left"></i>
+      </button>
+      <div class="dt-header-title" id="dt-title"></div>
+      <span class="icon-btn" aria-hidden="true" style="visibility:hidden"></span>
+    </div>
+    <div class="dt-body" id="dt-body"></div>
+    <div class="dt-foot" id="dt-foot"></div>
+  </div>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- 더보기 — 체크인 링크 (주최자 전용)              -->
+  <!-- ════════════════════════════════════════════ -->
+  <div class="bottom-sheet-overlay" id="more-menu-overlay" onclick="closeMoreMenu()"></div>
+  <div class="bottom-sheet" id="more-menu-sheet" role="dialog" aria-label="더보기 메뉴">
+    <div class="bottom-sheet-handle"></div>
+    <div class="more-menu-list">
+      <button type="button" class="more-menu-item" onclick="copyStaffLink()">
+        <i data-lucide="link"></i>체크인 링크 복사
+      </button>
+      <button type="button" class="more-menu-item" onclick="reissueStaffLink()">
+        <i data-lucide="refresh-cw"></i>링크 재발급
+      </button>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- 현장 신청 등록 — Bottom sheet                  -->
+  <!-- ════════════════════════════════════════════ -->
+  <div class="bottom-sheet-overlay" id="onsite-overlay" onclick="closeOnsiteSheet()"></div>
+  <div class="bottom-sheet" id="onsite-sheet" role="dialog" aria-label="현장 신청 등록">
+    <div class="bottom-sheet-handle"></div>
+    <div class="sheet-title">현장 신청 등록</div>
+    <div class="onsite-form">
+      <div class="onsite-field">
+        <span class="label label-required">참가 유형</span>
+        <div class="onsite-types" id="onsite-types"></div>
+      </div>
+      <div class="onsite-field">
+        <span class="label label-required">이름</span>
+        <input class="input" type="text" id="onsite-name">
+      </div>
+      <div class="onsite-field">
+        <span class="label label-required">전화번호</span>
+        <input class="input" type="tel" id="onsite-phone" placeholder="010-0000-0000">
+      </div>
+    </div>
+    <button class="btn btn-lg btn-block btn-fill-success" type="button" onclick="submitOnsite()">등록하고 입장 처리</button>
+  </div>
+
+  <div class="toast-container" id="toast-container"></div>
+
+</div>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+  lucide.createIcons();
+
+  // ══════════════════════════════════════════════
+  // 참가 유형 — event-input의 participantTypes와 같은 모양
+  // ══════════════════════════════════════════════
+  var PTYPES = [
+    {
+      id:'pt1', name:'졸업생', unit:'individual',
+      form:{
+        unit:'individual',
+        fields:{ name:{enabled:true,required:true}, phone:{enabled:true,required:true}, email:{enabled:true,required:false} },
+        questions:[
+          { id:'q1', type:'short', text:'학과 · 학번', required:true },
+          { id:'q2', type:'short', text:'소속', required:false },
+          { id:'q3', type:'short', text:'후배에게 한마디', required:true }
+        ]
+      }
+    },
+    {
+      id:'pt2', name:'재학생 팀', unit:'team',
+      timeslot:{
+        enabled:true,
+        slots:[ { id:'ts1', time:'18:00', capacity:3 },
+                { id:'ts2', time:'19:00', capacity:3 },
+                { id:'ts3', time:'20:00', capacity:3 } ],
+        consent:{ enabled:true, deadlineHours:24 }
+      },
+      form:{
+        unit:'team',
+        team:{
+          fields:{ title:{ enabled:true, required:true } },
+          questions:[ { id:'q1', type:'short', text:'팀 사연', required:true } ]
+        },
+        member:{
+          fields:{ name:{enabled:true,required:true}, phone:{enabled:true,required:false}, email:{enabled:false,required:false} },
+          questions:[
+            { id:'m1', type:'short', text:'학번', required:true },
+            { id:'m2', type:'short', text:'학과', required:false }
+          ],
+          repeat:true, leaderPick:true
+        }
+      }
+    }
+  ];
+
+  // [이름, 학과·학번, 소속, 후배에게 한마디, 전화번호, 신청일]
+  var GRAD_SEED = [
+    ['김도현','경영학부 04학번','삼성전자','궁금한 건 뭐든 물어보세요','010-2841-9032','2026.08.21 10:12'],
+    ['박서연','도시공학과 07학번','서울시청','진로 고민 들고 오세요','010-3391-5527','2026.08.21 11:04'],
+    ['이준호','전자전기컴퓨터공학부 09학번','네이버','첫 회사 고르는 법 알려드릴게요','010-7712-0384','2026.08.21 14:36'],
+    ['최유진','국제관계학과 06학번','외교부','유학 준비 이야기 해드릴게요','010-4820-6613','2026.08.22 09:41'],
+    ['정민수','건축학부 03학번','희림종합건축','포트폴리오 봐드립니다','010-2255-7788','2026.08.22 18:22'],
+    ['한지영','세무학과 08학번','삼일회계법인','자격증 루트 정리해 왔어요','010-6612-3390','2026.08.23 08:57'],
+    ['오세훈','환경공학부 05학번','환경공단','공기업 준비 물어보세요','010-3348-1129','2026.08.23 13:15'],
+    ['배소연','행정학과 10학번','서울시','행정고시 이야기 나눠요','010-9930-4471','2026.08.24 10:03'],
+    ['신재현','물리학과 02학번','LG전자','대학원 진학 상담 가능해요','010-5580-2214','2026.08.24 15:48'],
+    ['윤하늘','디자인학부 11학번','카카오','포트폴리오 리뷰해 드려요','010-7043-8891','2026.08.24 20:31'],
+    ['강태오','기계정보공학과 06학번','현대자동차','제조업 취업 이야기해요','010-2170-5563','2026.08.25 09:12'],
+    ['서지안','경제학부 09학번','한국은행','금융권 준비 도와드릴게요','010-8846-2205','2026.08.25 12:40'],
+    ['문가영','조경학과 07학번','조경설계 서안','현장 이야기 많이 해드려요','010-3327-9014','2026.08.25 17:26'],
+    ['임도현','통계학과 12학번','쿠팡','데이터 직군 로드맵 있어요','010-6693-3378','2026.08.25 21:09'],
+    ['조하린','영어영문학과 08학번','대한항공','승무원 준비 물어보세요','010-4419-7752','2026.08.26 08:44'],
+    ['남기훈','컴퓨터과학부 13학번','토스','이직 이야기도 환영이에요','010-2903-6640','2026.08.26 09:58'],
+    ['황수민','도시행정학과 09학번','국토연구원','연구직 진로 이야기해요','010-7758-1136','2026.08.26 10:22'],
+    ['백준영','재료공학과 04학번','포스코','현장직 궁금한 거 물어보세요','010-5502-8823','2026.08.26 11:05']
+  ];
+
+  /* 팀원 값 — member.questions의 id가 키 (m1 학번 · m2 학과) */
+  function tm(name, phone, no, dept) {
+    return { name:name, phone:phone, email:'', values:{ m1:no, m2:dept }, checkedIn:false, checkedInAt:null };
+  }
+  var TEAM_SEED = [
+    { title:'건축 다섯', story:'설계 스튜디오에서 밤새운 다섯 명이 선배 이야기를 듣고 싶어 신청했어요.', date:'2026.08.22 21:14', leaderIndex:0,
+      slotChoices:['ts1','ts2'], status:'confirmed', assignedSlot:'ts1',
+      members:[
+        tm('정윤재','010-3382-7714','19학번','건축학부'),
+        tm('서하늘','010-4471-2298','20학번','건축학부'),
+        tm('김태윤','','21학번','건축학부'),
+        tm('노지민','010-6620-5583','20학번','도시공학과'),
+        tm('이서준','','22학번','건축학부')
+      ] },
+    { title:'경영 삼총사', story:'창업 동아리에서 만난 셋이 함께 갑니다. 실무 이야기가 궁금해요.', date:'2026.08.24 16:02', leaderIndex:0,
+      slotChoices:['ts2','ts3'], status:'confirmed', assignedSlot:'ts2',
+      members:[
+        tm('한지우','010-8120-4436','20학번','경영학부'),
+        tm('문채원','010-9931-2074','21학번','경영학부'),
+        tm('류시원','','21학번','세무학과')
+      ] },
+    { title:'전컴 듀오', story:'개발자 선배들께 첫 회사 고르는 기준을 여쭤보고 싶습니다.', date:'2026.08.26 07:38', leaderIndex:1,
+      slotChoices:['ts3'], status:'confirmed', assignedSlot:'ts3',
+      members:[
+        tm('오세진','010-2249-6607','21학번','전자전기컴퓨터공학부'),
+        tm('강민재','010-5573-8840','20학번','전자전기컴퓨터공학부')
+      ] },
+    /* 동의 대기 — 확정 전이라 체크인 명단에 오르지 않는다 */
+    { title:'통계 사총사', story:'데이터 직군 선배들 이야기를 들으러 갑니다.', date:'2026.08.26 12:47', leaderIndex:0,
+      slotChoices:['ts1','ts2'], status:'pending', assignedSlot:null,
+      members:[
+        tm('차예린','010-7781-2240','20학번','통계학과'),
+        tm('권도윤','010-3306-9915','21학번','통계학과'),
+        tm('유하준','','21학번','컴퓨터과학부'),
+        tm('나은별','','22학번','통계학과')
+      ] }
+  ];
+
+  function buildApplicants() {
+    var rows = GRAD_SEED.map(function(g){
+      return {
+        name: g[0], typeId: 'pt1', preset: false, date: g[5],
+        checkedIn: false, checkedInAt: null, onsite: false,
+        values: { phone: g[4], email: '', q1: g[1], q2: g[2], q3: g[3] },
+        team: null
+      };
+    });
+    var teams = TEAM_SEED.map(function(t){
+      return {
+        name: t.title, typeId: 'pt2', preset: false, date: t.date,
+        checkedIn: false, checkedInAt: null, onsite: false,
+        values: { q1: t.story },
+        team: { leaderIndex: t.leaderIndex, members: t.members,
+                slotChoices: t.slotChoices, status: t.status, assignedSlot: t.assignedSlot }
+      };
+    });
+    return rows.concat(teams);
+  }
+
+  var APPS = buildApplicants();
+
+  // ── 현장 시계 (프로토타입: 18:14부터 흐른다) ──
+  var CLOCK = 18 * 60 + 14;
+  function stamp() {
+    var h = Math.floor(CLOCK / 60), m = CLOCK % 60;
+    CLOCK += 1;
+    return (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m;
+  }
+
+  /* 행사 시작 직후 이미 들어온 사람들 */
+  (function seedEntered() {
+    [[1,'18:04'],[2,'18:09'],[3,'18:12']].forEach(function(p){
+      APPS[p[0]].checkedIn = true;
+      APPS[p[0]].checkedInAt = p[1];
+    });
+  })();
+
+  // ══════════════════════════════════════════════
+  // 조회 헬퍼
+  // ══════════════════════════════════════════════
+  function ptypeById(id) {
+    for (var i = 0; i < PTYPES.length; i++) if (PTYPES[i].id === id) return PTYPES[i];
+    return null;
+  }
+  function isTeam(a) { return !!(a.team && a.team.members && a.team.members.length); }
+
+  // ── 타임 배정 ──
+  /* 확정된 건만 현장 명단에 오른다 — 동의 대기는 아직 자리가 없다 */
+  function isConfirmed(a) { return !(a.team && a.team.status && a.team.status !== 'confirmed'); }
+  function roster() { return APPS.filter(isConfirmed); }
+
+  function slotsOf(t) {
+    return (t && t.timeslot && t.timeslot.enabled && t.timeslot.slots) ? t.timeslot.slots : [];
+  }
+  /* 유형을 가로질러 타임을 모은다 — 켜진 유형이 없으면 빈 배열 */
+  function allSlots() {
+    var seen = {}, out = [];
+    PTYPES.forEach(function(t){
+      slotsOf(t).forEach(function(s){ if (!seen[s.id]) { seen[s.id] = 1; out.push(s); } });
+    });
+    return out.sort(function(x, y){ return x.time < y.time ? -1 : 1; });
+  }
+  function slotIdOf(a) { return (a.team && a.team.assignedSlot) || null; }
+  function slotTimeOf(a) {
+    var id = slotIdOf(a);
+    if (!id) return '';
+    var found = slotsOf(ptypeById(a.typeId)).filter(function(s){ return s.id === id; })[0];
+    return found ? found.time : '';
+  }
+  function memberIn(a) { return a.team.members.filter(function(m){ return m.checkedIn; }).length; }
+  function isIn(a) { return isTeam(a) ? memberIn(a) === a.team.members.length : a.checkedIn; }
+  function enteredAt(a) {
+    if (!isTeam(a)) return a.checkedInAt;
+    var times = a.team.members.map(function(m){ return m.checkedInAt; }).filter(Boolean).sort();
+    return times.length ? times[times.length - 1] : null;
+  }
+  function tail(phone) { return phone ? phone.replace(/[^0-9]/g, '').slice(-4) : ''; }
+
+  function rowSub(a) {
+    if (isTeam(a)) {
+      var n = a.team.members.length, done = memberIn(a);
+      return n + '명' + (done > 0 && done < n ? ' · ' + done + '명 입장' : '');
+    }
+    var bits = [];
+    if (a.values.q1) bits.push(a.values.q1);
+    if (tail(a.values.phone)) bits.push(tail(a.values.phone));
+    return bits.join(' · ');
+  }
+
+  // ══════════════════════════════════════════════
+  // 입장 처리
+  // ══════════════════════════════════════════════
+  function checkIn(idx, silent) {
+    var a = APPS[idx];
+    var t = stamp();
+    if (isTeam(a)) {
+      a.team.members.forEach(function(m){ if (!m.checkedIn) { m.checkedIn = true; m.checkedInAt = t; } });
+    } else {
+      a.checkedIn = true; a.checkedInAt = t;
+    }
+    renderAll();
+    if (!silent) showToast(a.name + (isTeam(a) ? ' 팀 전체를 입장 처리했어요' : ' 님 입장 처리했어요'));
+  }
+  function undoCheckIn(idx) {
+    var a = APPS[idx];
+    if (isTeam(a)) {
+      a.team.members.forEach(function(m){ m.checkedIn = false; m.checkedInAt = null; });
+    } else {
+      a.checkedIn = false; a.checkedInAt = null;
+    }
+    renderAll();
+    showToast(a.name + ' 입장을 취소했어요');
+  }
+  function checkInMember(idx, mi) {
+    var m = APPS[idx].team.members[mi];
+    m.checkedIn = true; m.checkedInAt = stamp();
+    renderAll();
+    showToast(m.name + ' 님 입장 처리했어요');
+  }
+  function undoCheckInMember(idx, mi) {
+    var m = APPS[idx].team.members[mi];
+    m.checkedIn = false; m.checkedInAt = null;
+    renderAll();
+    showToast(m.name + ' 입장을 취소했어요');
+  }
+
+  // ══════════════════════════════════════════════
+  // 헤더 · 집계
+  // ══════════════════════════════════════════════
+  function renderHeader() {
+    var list = roster();
+    var done = list.filter(isIn).length;
+    document.getElementById('ci-count').innerHTML =
+      '입장 <b>' + done + '</b> / 신청 ' + list.length;
+  }
+  function renderSummary() {
+    var parts = PTYPES.map(function(t){
+      var rows = roster().filter(function(a){ return a.typeId === t.id; });
+      var done = rows.filter(isIn).length;
+      var u = t.unit === 'team' ? '팀' : '';
+      return t.name + ' ' + done + u + '/' + rows.length + u;
+    });
+    document.getElementById('ci-summary').textContent = parts.join(' · ');
+  }
+
+  // ══════════════════════════════════════════════
+  // 명단
+  // ══════════════════════════════════════════════
+  var listFilter = 'todo';   // todo | all
+  var slotFilter = 'all';    // all | <slot id>  — 상태 필터와 AND로 겹친다
+
+  function setFilter(f) { listFilter = f; renderList(); }
+  function setSlotFilter(id) { slotFilter = id; renderList(); }
+  function inSlotFilter(a) { return slotFilter === 'all' || slotIdOf(a) === slotFilter; }
+
+  function matches(a, q) {
+    if (!q) return true;
+    var digits = q.replace(/[^0-9]/g, '');
+    if (a.name.indexOf(q) > -1) return true;
+    if (isTeam(a)) {
+      return a.team.members.some(function(m){
+        return m.name.indexOf(q) > -1 || (digits && m.phone && m.phone.replace(/[^0-9]/g,'').indexOf(digits) > -1);
+      });
+    }
+    if (digits && a.values.phone && a.values.phone.replace(/[^0-9]/g,'').indexOf(digits) > -1) return true;
+    return false;
+  }
+
+  function renderChips() {
+    var scope = roster().filter(inSlotFilter);
+    var todo = scope.filter(function(a){ return !isIn(a); }).length;
+    var defs = [ ['todo', '미입장 ' + todo], ['all', '전체 ' + scope.length] ];
+    document.getElementById('ci-chips').innerHTML = defs.map(function(d){
+      var cls = listFilter === d[0] ? 'btn-fill-dark' : 'btn-line-dark';
+      return '<button type="button" class="btn btn-xs btn-pill ' + cls + '" onclick="setFilter(\'' + d[0] + '\')">' + d[1] + '</button>';
+    }).join('');
+  }
+
+  function renderSlotChips() {
+    var row = document.getElementById('ci-slot-row');
+    var slots = allSlots();
+    if (!slots.length) { row.hidden = true; return; }
+    row.hidden = false;
+    var defs = [['all', '전체 타임']].concat(slots.map(function(s){ return [s.id, s.time]; }));
+    document.getElementById('ci-slot-chips').innerHTML = defs.map(function(d){
+      var cls = slotFilter === d[0] ? 'btn-fill-primary' : 'btn-line-dark';
+      return '<button type="button" class="btn btn-xs btn-pill ' + cls + '" onclick="setSlotFilter(\'' + d[0] + '\')">' + d[1] + '</button>';
+    }).join('');
+  }
+
+  function rowAction(a, i) {
+    if (isIn(a)) {
+      return '<span class="ci-row-time">입장 ' + enteredAt(a) + '</span>';
+    }
+    return '<button type="button" class="btn btn-xs btn-fill-primary" onclick="event.stopPropagation();checkIn(' + i + ')">입장</button>';
+  }
+
+  function renderList() {
+    renderSlotChips();
+    renderChips();
+    renderSummary();
+    var q = (document.getElementById('ci-query').value || '').trim();
+    var rows = [];
+    APPS.forEach(function(a, i){
+      if (!isConfirmed(a)) return;
+      if (!inSlotFilter(a)) return;
+      if (listFilter === 'todo' && isIn(a)) return;
+      if (!matches(a, q)) return;
+      var slot = slotTimeOf(a);
+      rows.push(
+        '<div class="ci-row' + (isIn(a) ? ' is-done' : '') + '" onclick="openDetail(' + i + ')">'
+        + '<span class="ci-row-name">' + a.name + '</span>'
+        + (slot ? '<span class="badge badge-sm badge-weak-primary">' + slot + '</span>' : '')
+        + (a.onsite ? '<span class="badge badge-sm badge-weak-neutral">현장 등록</span>' : '')
+        + '<span class="ci-row-sub">' + rowSub(a) + '</span>'
+        + rowAction(a, i)
+        + '</div>'
+      );
+    });
+    document.getElementById('ci-rows').innerHTML =
+      rows.length ? rows.join('') : '<div class="ci-empty text-body">찾는 사람이 없어요</div>';
+  }
+
+  // ══════════════════════════════════════════════
+  // 상세
+  // ══════════════════════════════════════════════
+  var detailIdx = null;
+
+  function openDetail(i) {
+    detailIdx = i;
+    renderDetail();
+    navigate('screen-detail');
+  }
+  function closeDetail() {
+    detailIdx = null;
+    navigate('screen-checkin');
+  }
+
+  function dtRow(k, v) {
+    return '<div class="dt-row"><div class="dt-key">' + k + '</div><div class="dt-val">' + v + '</div></div>';
+  }
+
+  function renderDetail() {
+    if (detailIdx === null) return;
+    var a = APPS[detailIdx], t = ptypeById(a.typeId), team = isTeam(a);
+    document.getElementById('dt-title').textContent = a.name;
+
+    var inNow = isIn(a);
+    var statusMain = team
+      ? (inNow ? '팀 전체 입장 완료' : memberIn(a) + ' / ' + a.team.members.length + '명 입장')
+      : (inNow ? '입장 완료' : '아직 입장하지 않았어요');
+    var statusSub = inNow ? enteredAt(a) : '';
+
+    var html = ''
+      + '<div class="dt-status' + (inNow ? ' is-in' : '') + '">'
+      +   '<div class="dt-status-icon"><i data-lucide="' + (inNow ? 'check' : 'clock') + '"></i></div>'
+      +   '<div class="dt-status-text">'
+      +     '<span class="dt-status-main">' + statusMain + '</span>'
+      +     (statusSub ? '<span class="text-caption" style="color:var(--color-text-muted)">' + statusSub + '</span>' : '')
+      +   '</div>'
+      + '</div>';
+
+    html += '<div class="dt-card">';
+    html += dtRow('참가 유형', t.name + (a.onsite ? ' <span class="badge badge-sm badge-weak-neutral">현장 등록</span>' : ''));
+    if (slotTimeOf(a)) html += dtRow('배정 타임', slotTimeOf(a));
+
+    if (team) {
+      html += dtRow(t.form.team.questions[0].text, a.values.q1 || '-');
+    } else {
+      html += '<div class="dt-row owner-only"><div class="dt-key">연락처</div><div class="dt-val">' + (a.values.phone || '-') + '</div></div>';
+      t.form.questions.forEach(function(q){
+        html += dtRow(q.text, a.values[q.id] || '-');
+      });
+    }
+    html += dtRow('신청 일시', a.date);
+    html += '</div>';
+
+    if (team) {
+      html += '<div class="dt-section-title">팀원 ' + a.team.members.length + '명</div>';
+      html += '<div class="dt-members">';
+      a.team.members.forEach(function(m, mi){
+        var lead = mi === (a.team.leaderIndex || 0);
+        var sub = [m.values.m2, m.values.m1].filter(Boolean).join(' ');
+        var phoneTail = tail(m.phone);
+        if (phoneTail) sub += (sub ? ' · ' : '') + phoneTail;
+        var act = m.checkedIn
+          ? '<span class="ci-row-time">입장 ' + m.checkedInAt + '</span>'
+            + '<button type="button" class="btn btn-xs btn-line-dark" onclick="undoCheckInMember(' + detailIdx + ',' + mi + ')">취소</button>'
+          : '<button type="button" class="btn btn-xs btn-fill-primary" onclick="checkInMember(' + detailIdx + ',' + mi + ')">입장</button>';
+        html += '<div class="ci-row">'
+              +   '<span class="ci-row-name">' + m.name + '</span>'
+              +   (lead ? '<span class="badge badge-sm badge-weak-primary">대표</span>' : '')
+              +   '<span class="ci-row-sub">' + sub + '</span>'
+              +   act
+              + '</div>';
+      });
+      html += '</div>';
+    }
+
+    document.getElementById('dt-body').innerHTML = html;
+
+    // ── 하단 액션 ──
+    var foot = '';
+    if (inNow) {
+      foot = '<button type="button" class="btn btn-lg btn-block btn-weak-danger" onclick="undoCheckIn(' + detailIdx + ')">'
+           + (team ? '팀 전체 입장 취소' : '입장 취소') + '</button>';
+    } else {
+      foot = '<button type="button" class="btn btn-lg btn-block btn-fill-success" onclick="checkIn(' + detailIdx + ')">'
+           + (team ? '팀 전체 입장 처리' : '입장 처리') + '</button>';
+      if (team && memberIn(a) > 0) {
+        foot += '<button type="button" class="btn btn-lg btn-block btn-weak-danger" onclick="undoCheckIn(' + detailIdx + ')">팀 전체 입장 취소</button>';
+      }
+    }
+    document.getElementById('dt-foot').innerHTML = foot;
+
+    if (window.lucide) lucide.createIcons();
+  }
+
+  // ══════════════════════════════════════════════
+  // 스캔
+  // ══════════════════════════════════════════════
+  var SCAN_ORDER = ['ok', 'dup', 'err'];
+  var scanCursor = 0;
+
+  function simNext() {
+    var kind = SCAN_ORDER[scanCursor % SCAN_ORDER.length];
+    scanCursor++;
+    simScan(kind);
+  }
+
+  /* 확정 건만, 그리고 스태프가 보고 있는 타임 안에서 고른다 */
+  function pickApp(fn) {
+    for (var i = 0; i < APPS.length; i++) {
+      var a = APPS[i];
+      if (!isConfirmed(a) || !inSlotFilter(a)) continue;
+      if (fn(a)) return i;
+    }
+    return -1;
+  }
+
+  /* 스캔되면 확인 없이 바로 처리하고, 결과는 토스트로만 알린다 */
+  function simScan(kind) {
+    switchTab('scan');
+    var idx = -1;
+    if (kind === 'ok')  idx = pickApp(function(a){ return !isIn(a); });
+    if (kind === 'dup') idx = pickApp(function(a){ return isIn(a); });
+    if (idx === -1 && kind !== 'err') { showToast('해당 케이스에 맞는 신청 건이 없어요'); return; }
+
+    if (kind === 'ok') {
+      var a = APPS[idx], t = ptypeById(a.typeId);
+      var meta = [];
+      if (slotTimeOf(a)) meta.push(slotTimeOf(a));
+      meta.push(t.name);
+      if (isTeam(a)) meta.push(a.team.members.length + '명');
+      else if (a.values.q2) meta.push(a.values.q2);
+      checkIn(idx, true);
+      showScanToast('success', a.name + ' <span class="toast-sub">' + meta.join(' · ') + '</span>',
+        '<button type="button" class="toast-action" onclick="undoScan(' + idx + ')">취소</button>');
+    } else if (kind === 'dup') {
+      var d = APPS[idx];
+      showScanToast('warning', d.name + ' <span class="toast-sub">이미 입장 ' + enteredAt(d) + '</span>');
+    } else {
+      showScanToast('neutral', '이 행사의 QR이 아니에요');
+    }
+  }
+
+  function undoScan(idx) {
+    clearScanToast();
+    undoCheckIn(idx);
+  }
+
+  // ══════════════════════════════════════════════
+  // 현장 신청 등록
+  // ══════════════════════════════════════════════
+  var onsiteTypeId = PTYPES[0].id;
+
+  function renderOnsiteTypes() {
+    document.getElementById('onsite-types').innerHTML = PTYPES.map(function(t){
+      return '<label class="onsite-type">'
+           +   '<input type="radio" class="radio" name="onsite-type" value="' + t.id + '"'
+           +     (t.id === onsiteTypeId ? ' checked' : '') + ' onchange="pickOnsiteType(\'' + t.id + '\')">'
+           +   '<span class="onsite-type-name">' + t.name + '</span>'
+           + '</label>';
+    }).join('');
+  }
+  function pickOnsiteType(id) { onsiteTypeId = id; }
+
+  function openOnsiteSheet() {
+    renderOnsiteTypes();
+    document.getElementById('onsite-name').value = '';
+    document.getElementById('onsite-phone').value = '';
+    document.getElementById('onsite-overlay').classList.add('is-open');
+    document.getElementById('onsite-sheet').classList.add('is-open');
+  }
+  function closeOnsiteSheet() {
+    document.getElementById('onsite-overlay').classList.remove('is-open');
+    document.getElementById('onsite-sheet').classList.remove('is-open');
+  }
+
+  function submitOnsite() {
+    var name = (document.getElementById('onsite-name').value || '').trim();
+    var phone = (document.getElementById('onsite-phone').value || '').trim();
+    if (!name || !phone) { showToast('이름과 전화번호를 입력해 주세요'); return; }
+    var t = ptypeById(onsiteTypeId);
+    var app = {
+      name: name, typeId: t.id, preset: false, date: '2026.08.27 ' + peekClock(),
+      checkedIn: true, checkedInAt: stamp(), onsite: true,
+      values: { phone: phone, email: '' },
+      team: null
+    };
+    APPS.push(app);
+    closeOnsiteSheet();
+    listFilter = 'all';
+    slotFilter = 'all';
+    renderAll();
+    showToast(name + ' 님 등록하고 입장 처리했어요');
+  }
+  function peekClock() {
+    var h = Math.floor(CLOCK / 60), m = CLOCK % 60;
+    return (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m;
+  }
+
+  // ══════════════════════════════════════════════
+  // 스태프 링크
+  // ══════════════════════════════════════════════
+  function copyStaffLink()   { closeMoreMenu(); showToast('체크인 링크를 복사했어요'); }
+  function reissueStaffLink(){ closeMoreMenu(); showToast('링크를 새로 발급했어요'); }
+
+  function openMoreMenu() {
+    document.getElementById('more-menu-overlay').classList.add('is-open');
+    document.getElementById('more-menu-sheet').classList.add('is-open');
+  }
+  function closeMoreMenu() {
+    document.getElementById('more-menu-overlay').classList.remove('is-open');
+    document.getElementById('more-menu-sheet').classList.remove('is-open');
+  }
+
+  // ══════════════════════════════════════════════
+  // 탭 · 화면 전환
+  // ══════════════════════════════════════════════
+  function switchTab(tab) {
+    navigate('screen-checkin');
+    document.querySelectorAll('.ptype-tab-line').forEach(function(b){
+      b.classList.toggle('is-active', b.dataset.tab === tab);
+    });
+    document.getElementById('panel-scan').classList.toggle('on', tab === 'scan');
+    document.getElementById('panel-list').classList.toggle('on', tab === 'list');
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function navigate(id) {
+    document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('on'); });
+    var target = document.getElementById(id);
+    if (target) {
+      target.classList.add('on');
+      if (window.lucide) lucide.createIcons();
+    }
+  }
+
+  // ══════════════════════════════════════════════
+  // 프로토타입 전용 — 시점 전환
+  // ══════════════════════════════════════════════
+  function syncViewerBar() {
+    var role = document.body.dataset.role;
+    document.querySelectorAll('.viewer-bar-tab[data-value]').forEach(function(t){
+      t.classList.toggle('active', t.dataset.value === role);
+    });
+  }
+  function setRole(role) {
+    document.body.dataset.role = role;
+    syncViewerBar();
+    if (detailIdx !== null) renderDetail();
+  }
+
+  // ══════════════════════════════════════════════
+  // Toast
+  // ══════════════════════════════════════════════
+  var SCAN_TOAST_MS = 4000;
+  var scanToastTimer = null;
+
+  function showToast(message) {
+    var wrap = document.getElementById('toast-container');
+    if (!wrap) return;
+    var el = document.createElement('div');
+    el.className = 'toast';
+    el.textContent = message;
+    wrap.appendChild(el);
+    setTimeout(function(){ el.remove(); }, 2000);
+  }
+
+  function clearScanToast() {
+    clearTimeout(scanToastTimer);
+    var wrap = document.getElementById('toast-container');
+    if (wrap) wrap.innerHTML = '';
+  }
+
+  /* 연속 스캔 시 쌓이지 않고 최신 것으로 교체된다 */
+  function showScanToast(tone, body, action) {
+    var wrap = document.getElementById('toast-container');
+    if (!wrap) return;
+    clearScanToast();
+    var el = document.createElement('div');
+    el.className = 'toast toast-lg toast-' + tone + (action ? ' toast-with-action' : '');
+    el.innerHTML = '<span>' + body + '</span>' + (action || '');
+    wrap.appendChild(el);
+    scanToastTimer = setTimeout(function(){ el.remove(); }, SCAN_TOAST_MS);
+  }
+
+  // ══════════════════════════════════════════════
+  // Render all
+  // ══════════════════════════════════════════════
+  function renderAll() {
+    renderHeader();
+    renderList();
+    if (detailIdx !== null) renderDetail();
+  }
+
+  syncViewerBar();
+  renderAll();
+  lucide.createIcons();
+</script>
+</body>
+</html>
