@@ -3300,8 +3300,7 @@
   lucide.createIcons();
 
   /* ── Image uploader ── */
-  /* ?blank=1 이면 대표 이미지도 비운다 */
-  var images = /[?&]blank=1/.test(location.search) ? [] : [{ src: '../../assets/event_thumbnail.png' }];
+  var images = [{ src: '../../assets/event_thumbnail.png' }];
   var stockColors = [
     'linear-gradient(135deg,#a9a9ee,#5555cc)',
     'linear-gradient(135deg,#fcd34d,#f59e0b)',
