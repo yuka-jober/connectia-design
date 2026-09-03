@@ -4238,8 +4238,15 @@
     if (q.get('assign')) setAssign(q.get('assign'));
     if (q.get('checkin'))setCheckin(q.get('checkin'));
     if (q.get('showcase')) setShowcase(q.get('showcase') === 'on');
-    var screen = q.get('screen');
-    if (screen) navigate(screen.indexOf('screen-') === 0 ? screen : 'screen-' + screen);
+    /* 동의·현황 화면은 신청 건이 있어야 채워진다 — 그냥 navigate하면 빈 화면이 뜬다.
+       실제 진입 경로와 같은 함수를 태워 동의 대기 중인 팀을 물려준다. */
+    var screen = (q.get('screen') || '').replace(/^screen-/, '');
+    if (screen === 'consent') { openConsent(); return; }
+    if (screen === 'pending') {
+      var waiting = pendingTeams()[0];
+      if (waiting) { openPending(waiting); return; }
+    }
+    if (screen) navigate('screen-' + screen);
   })();
 
   syncCheckinUI();
