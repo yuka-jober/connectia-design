@@ -6083,7 +6083,7 @@
     var btn = document.getElementById('carousel-submit');
     btn.disabled = carouselImages.length < 2;
     btn.textContent = empty ? '이미지를 올려주세요'
-      : carouselImages.length < 2 ? '2장부터 넘길 수 있어요'
+      : carouselImages.length < 2 ? '최소 2장 필요'
       : (carouselImages.length + '장 넣기');
     if (window.lucide) lucide.createIcons();
   }
