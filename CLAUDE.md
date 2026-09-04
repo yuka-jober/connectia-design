@@ -42,7 +42,7 @@
 ## 사용 가능한 컴포넌트 (components.css)
 모두 클래스 조합 방식. **새로 만들기 전에 여기 있는지 먼저 확인한다.**
 - **Button:** `.btn` + 크기 `.btn-xs/sm/md/lg/xl` + `.btn-block .btn-pill` + 스타일 `.btn-fill-primary/dark/danger/success/gradient/kakao`, `.btn-weak-primary/dark/danger`, `.btn-line-dark` + 로딩 `.is-loading`
-- **IconButton:** `.icon-btn` + `.icon-btn-sm/lg` + `.icon-btn-clear/fill/border`
+- **IconButton:** `.icon-btn` + `.icon-btn-sm/lg` + 원형 `.icon-btn-pill` + `.icon-btn-clear/fill/border`
 - **Label:** `.label`, 필수표시 `.label-required`
 - **Input:** `.input` (+ `.is-error`), 에러문구 `.input-error-msg`
 - **TextArea:** `.textarea` (+ `.textarea-auto` 자동높이, `.is-error`)
@@ -52,8 +52,9 @@
 - **Badge:** `.badge` + `.badge-sm/md/lg` + `.badge-fill-*` (primary/dark/danger/neutral) / `.badge-weak-*` (primary/dark/danger/neutral/success/warning)
 - **Bottom Sheet:** `.bottom-sheet-overlay .bottom-sheet .bottom-sheet-handle` (+ `.is-open`)
 - **Toast:** `.toast-container .toast` (+ 액션 붙일 때 `.toast-with-action` + `.toast-action`) + 크게 `.toast-lg` + 결과 색 `.toast-success` / `.toast-warning` / `.toast-neutral` + 안쪽 보조 텍스트 `.toast-sub`
-- **Dialog/Modal:** `.dialog-overlay .dialog .dialog-title .dialog-desc .dialog-actions`
+- **Dialog/Modal:** `.dialog-overlay .dialog .dialog-title .dialog-desc .dialog-actions` (닫을 땐 `.dialog-overlay`에 `hidden` 속성)
 - **Avatar:** `.avatar` + `.avatar-xs/sm/md/lg/xl` + `.avatar-rounded`
+- **Divider:** `.divider-text` — 가운데 텍스트가 들어가는 구분선(좌우 가로선 자동)
 
 ## ✅ 좋은 예 / ❌ 나쁜 예
 - ❌ `<button style="background:#6b6be1; height:40px">` — 하드코딩

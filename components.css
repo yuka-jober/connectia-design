@@ -145,6 +145,9 @@
 .icon-btn-sm { width: 32px; height: 32px; border-radius: var(--r-xs); }
 .icon-btn-lg { width: 48px; height: 48px; border-radius: var(--r-md); }
 
+/* 원형 (소셜 로그인 아이콘 등) */
+.icon-btn-pill { border-radius: var(--r-full); }
+
 /* clear (기본) */
 .icon-btn-clear:hover,
 .icon-btn-clear:active       { background: rgba(107,107,225,0.08); }
@@ -576,6 +579,9 @@
   padding: 20px;
 }
 
+/* 닫힘 — hidden 속성으로 토글 */
+.dialog-overlay[hidden] { display: none; }
+
 .dialog {
   background: var(--color-surface);
   border-radius: var(--r-lg);
@@ -646,3 +652,23 @@
 
 /* 정방형 라운드 (카드·그리드용) */
 .avatar-rounded { border-radius: var(--r-lg); }
+
+
+/* ==========================================
+   DIVIDER
+   ========================================== */
+
+/* 가운데 텍스트가 들어가는 구분선 — 좌우 가로선 자동 */
+.divider-text {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.divider-text::before,
+.divider-text::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--color-border);
+}

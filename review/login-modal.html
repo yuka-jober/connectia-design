@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>컨텍스트형 로그인 모달</title>
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="../components.css">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-base);
+    background: var(--color-surface-sub);
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .frame {
+    width: 390px;
+    height: 844px;
+    max-height: 100dvh;
+    position: relative;
+    overflow: hidden;
+    background: var(--color-bg);
+    box-shadow: var(--shadow-4);
+    /* 오버레이(position:fixed)의 컨테이닝 블록으로 만들기 */
+    transform: translateZ(0);
+  }
+  @media (max-width: 439px) { .frame { width: 100vw; height: 100dvh; max-height: none; } }
+  @media (min-width: 440px) { .frame { border-radius: var(--r-xl); max-height: calc(100dvh - 40px); } }
+
+  /* ── 다이얼로그 ── */
+  .login-dialog {
+    position: relative;
+    max-width: 336px;
+    padding: 28px 24px 24px;
+  }
+
+  .login-dialog-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    color: var(--color-text-muted);
+  }
+  .login-dialog-close i { width: 20px; height: 20px; }
+
+  /* ── 상단 컨텍스트 ── */
+  .login-context {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    text-align: center;
+    margin-bottom: 28px;
+  }
+
+  .login-context-text { word-break: keep-all; }
+
+  .ctx-name {
+    color: var(--color-primary);
+    font-weight: var(--fw-semibold);
+    white-space: nowrap;   /* 이름이 중간에서 끊기지 않게 */
+  }
+
+  /* ── 로그인 액션 ── */
+  .login-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .kakao-icon { width: 20px; height: 20px; }
+
+  .divider-label {
+    font-weight: var(--fw-medium);
+  }
+
+  .social-row {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+  }
+
+  .social-btn { color: var(--color-text-sub); }
+  .social-btn i { width: 24px; height: 24px; }
+  .social-btn img { width: 24px; height: 24px; }
+
+  .privacy-link {
+    text-align: center;
+    text-decoration: none;
+  }
+
+  /* ── 데모 전용 컨트롤 — 실서비스엔 없음 ── */
+  .demo-controls {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    z-index: 300;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+  }
+  .demo-case-row { display: flex; gap: 8px; }
+  .demo-controls .btn-line-dark { border-style: dashed; background: var(--color-surface); }
+  .demo-controls .btn[hidden] { display: none; }
+</style>
+</head>
+<body>
+
+<div class="frame">
+
+  <!-- 데모 전용: 케이스 전환 / 모달 다시 열기 (실서비스엔 없음) -->
+  <div class="demo-controls">
+    <div class="demo-case-row">
+      <button class="btn btn-sm btn-pill demo-case" data-case="0">가입 신청</button>
+      <button class="btn btn-sm btn-pill demo-case" data-case="1">행사 신청</button>
+    </div>
+    <button class="btn btn-sm btn-line-dark btn-pill" id="demoReopen" hidden>데모: 모달 열기</button>
+  </div>
+
+  <div class="dialog-overlay" id="overlay">
+    <div class="dialog login-dialog" role="dialog" aria-modal="true" aria-labelledby="contextText">
+
+      <button class="icon-btn icon-btn-sm icon-btn-clear login-dialog-close" id="btnClose" aria-label="닫기">
+        <i data-lucide="x"></i>
+      </button>
+
+      <div class="login-context">
+        <span class="avatar avatar-lg">
+          <img src="../assets/avatar-sft.png" alt="">
+        </span>
+        <p class="text-body-lg login-context-text" id="contextText"></p>
+      </div>
+
+      <div class="login-actions">
+        <button class="btn btn-lg btn-block btn-fill-kakao">
+          <svg class="kakao-icon" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 3C6.477 3 2 6.582 2 11c0 2.862 1.674 5.373 4.2 6.896L5.2 21l4.116-2.163A11.7 11.7 0 0012 19c5.523 0 10-3.582 10-8S17.523 3 12 3z"/></svg>
+          카카오로 3초만에 시작하기
+        </button>
+
+        <div class="divider-text">
+          <span class="text-caption divider-label">또는</span>
+        </div>
+
+        <div class="social-row">
+          <button class="icon-btn icon-btn-lg icon-btn-pill icon-btn-border social-btn" aria-label="구글로 시작">
+            <img src="../assets/logo-google.svg" alt="">
+          </button>
+          <button class="icon-btn icon-btn-lg icon-btn-pill icon-btn-border social-btn" aria-label="이메일로 시작">
+            <i data-lucide="mail"></i>
+          </button>
+        </div>
+
+        <a href="#" class="text-caption privacy-link">개인정보 처리방침</a>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+  const overlay     = document.getElementById('overlay');
+  const dialog      = overlay.querySelector('.dialog');
+  const btnClose    = document.getElementById('btnClose');
+  const contextText = document.getElementById('contextText');
+  const demoCases   = document.querySelectorAll('.demo-case');
+  const demoReopen  = document.getElementById('demoReopen');
+
+  /* 케이스별 상단 문장 */
+  const CASES = [
+    '<strong class="ctx-name">서울시립대학교 총동문회</strong>에 가입 신청합니다.',
+    '<strong class="ctx-name">서울시립대학교 총동문회</strong>에 가입하고 <strong class="ctx-name">26년 청춘건배</strong>에 신청합니다.'
+  ];
+
+  let caseIndex = 0;
+
+  function renderCase() {
+    contextText.innerHTML = CASES[caseIndex];
+    demoCases.forEach((btn) => {
+      const on = Number(btn.dataset.case) === caseIndex;
+      btn.classList.toggle('btn-fill-dark', on);
+      btn.classList.toggle('btn-line-dark', !on);
+    });
+  }
+
+  function openModal() {
+    overlay.hidden = false;
+    demoReopen.hidden = true;
+    dialog.style.animation = 'none';
+    void dialog.offsetWidth;
+    dialog.style.animation = '';
+  }
+
+  function closeModal() {
+    overlay.hidden = true;
+    demoReopen.hidden = false;
+  }
+
+  btnClose.addEventListener('click', closeModal);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+
+  demoReopen.addEventListener('click', openModal);
+  demoCases.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      caseIndex = Number(btn.dataset.case);
+      renderCase();
+      if (overlay.hidden) openModal();
+    });
+  });
+
+  renderCase();
+  lucide.createIcons();
+</script>
+
+</body>
+</html>
