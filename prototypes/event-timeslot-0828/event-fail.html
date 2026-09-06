@@ -150,6 +150,33 @@
   }
   .fail-summary-value { flex: 1; font-size: var(--fs-label); color: var(--color-text); line-height: 1.5; }
 
+  /* 주최 커뮤니티에 등록된 연락처 — 실패한 대표자가 물어볼 곳 */
+  .fail-contact {
+    width: 100%;
+    display: flex; flex-direction: column; gap: 12px;
+    background: var(--color-surface);
+    border-radius: var(--r-md);
+    padding: 16px 20px;
+  }
+  .fail-contact-head {
+    display: flex; align-items: center; gap: 6px;
+    font-size: var(--fs-caption); font-weight: var(--fw-semibold);
+    color: var(--color-text-muted);
+  }
+  .fail-contact-head i[data-lucide], .fail-contact-head svg.lucide { width: 14px; height: 14px; }
+  .fail-contact-org {
+    font-size: var(--fs-body); font-weight: var(--fw-semibold);
+    color: var(--color-text);
+  }
+  .fail-contact-links { display: flex; flex-direction: column; gap: 8px; }
+  .fail-contact-link {
+    display: flex; align-items: center; gap: 8px;
+    font-size: var(--fs-label); font-weight: var(--fw-medium);
+    color: var(--color-primary);
+    text-decoration: none;
+  }
+  .fail-contact-link i[data-lucide], .fail-contact-link svg.lucide { width: 16px; height: 16px; }
+
   .apply-footer {
     flex-shrink: 0;
     padding: 12px 20px calc(20px + env(safe-area-inset-bottom));
@@ -309,6 +336,12 @@
       <div class="fail-people" id="fail-people"></div>
 
       <div class="fail-summary" id="fail-summary"></div>
+
+      <div class="fail-contact">
+        <span class="fail-contact-head"><i data-lucide="help-circle"></i>문의</span>
+        <span class="fail-contact-org" id="contact-org"></span>
+        <div class="fail-contact-links" id="contact-links"></div>
+      </div>
     </div>
 
     <div class="apply-footer">
@@ -357,6 +390,13 @@
    ════════════════════════════════════════════ */
 
 var TEAM_MIN = 4;
+
+/* 주최 커뮤니티가 등록해 둔 연락처 — 이벤트 설정에서 가져온다 */
+var HOST = {
+  name: '서울시립대학교 총동문회',
+  phone: '02-1234-5678',
+  email: 'alumni@example.kr'
+};
 
 var TEAM = {
   name: '건축 다섯',
@@ -474,6 +514,15 @@ function renderFail() {
       + '<span class="fail-summary-label">' + row[0] + '</span>'
       + '<span class="fail-summary-value">' + row[1] + '</span>'
       + '</div>';
+  }).join('');
+
+  document.getElementById('contact-org').textContent = HOST.name;
+  var links = [];
+  if (HOST.phone) links.push(['phone', 'tel:' + HOST.phone.replace(/-/g, ''), HOST.phone]);
+  if (HOST.email) links.push(['mail', 'mailto:' + HOST.email, HOST.email]);
+  document.getElementById('contact-links').innerHTML = links.map(function(l) {
+    return '<a class="fail-contact-link" href="' + l[1] + '">'
+      + '<i data-lucide="' + l[0] + '"></i>' + l[2] + '</a>';
   }).join('');
 }
 
