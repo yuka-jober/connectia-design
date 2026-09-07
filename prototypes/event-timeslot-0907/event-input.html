@@ -2421,6 +2421,14 @@
     color: var(--color-text-muted);
   }
   .pv-ptype-form-block[hidden] { display: none !important; }
+  /* 동의 마감 — 다섯 칩이 폭을 나눠 갖는다 */
+  .pv-deadline-row { display: flex; gap: 8px; }
+  .pv-deadline-row .pv-chip {
+    flex: 1; min-width: 0;
+    display: flex; justify-content: center;
+    white-space: nowrap;
+    padding: 10px 8px;
+  }
   /* 동의 화면 질문 카드 — 앞에 기본 필드가 없어 들여쓰기도 첫 줄 선도 필요 없다 */
   .pv-consent-form .pv-questions-list > .pv-field-row:first-child { border-top: none; }
   .pv-consent-form .pv-field-row-q { padding-left: 0; }
@@ -4541,16 +4549,13 @@
       +       '<textarea class="textarea" aria-label="동의 내용" placeholder="팀원이 무엇에 동의하는지 적어주세요" '
       +         'oninput="setConsentText(\'' + t.id + '\', this.value)">' + escapeHTML(c.text || '') + '</textarea>'
       +     '</div>'
-      +     '<div class="pv-ptype-field pv-ptype-field-inline pv-ptype-pick pv-consent-deadline">'
+      +     '<div class="pv-ptype-field pv-consent-deadline">'
       +       '<span class="pv-ptype-field-label">동의 마감</span>'
-      +       '<button type="button" class="pv-pick-btn" aria-haspopup="true" onclick="togglePickMenu(\'deadline\', \'' + t.id + '\', event)">' + c.deadlineHours + '시간</button>'
-      +       '<div class="pv-pick-menu" id="deadline-menu-' + t.id + '" hidden>'
-      +         '<div class="menu">'
-      +           DEADLINE_HOURS.map(function(h){
-                    return '<button type="button" class="menu-item' + (h === c.deadlineHours ? ' is-selected' : '') + '" '
-                      + 'onclick="pickConsentDeadline(\'' + t.id + '\', ' + h + ')">' + h + '시간</button>';
-                  }).join('')
-      +         '</div>'
+      +       '<div class="pv-deadline-row">'
+      +         DEADLINE_HOURS.map(function(h){
+                  return '<button type="button" class="pv-chip' + (h === c.deadlineHours ? ' is-selected' : '') + '" '
+                    + 'onclick="pickConsentDeadline(\'' + t.id + '\', ' + h + ')">' + h + '시간</button>';
+                }).join('')
       +       '</div>'
       +     '</div>'
       +     '<div class="pv-ptype-field pv-consent-form">'
@@ -4643,7 +4648,6 @@
     var t = ptypeById(id);
     if (!t) return;
     t.assign.consent.deadlineHours = h;
-    closePickMenus();
     renderPtypes();
   }
   function pickShowcase(id, on) {
