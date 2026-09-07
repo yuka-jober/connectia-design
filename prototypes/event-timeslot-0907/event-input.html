@@ -2421,13 +2421,19 @@
     color: var(--color-text-muted);
   }
   .pv-ptype-form-block[hidden] { display: none !important; }
-  /* 동의 마감 — 다섯 칩이 폭을 나눠 갖는다 */
+  /* 동의 마감 — 다섯 칩이 폭을 나눠 갖는다. 고른 값은 채워서 표시 */
   .pv-deadline-row { display: flex; gap: 8px; }
   .pv-deadline-row .pv-chip {
     flex: 1; min-width: 0;
     display: flex; justify-content: center;
     white-space: nowrap;
-    padding: 10px 8px;
+    padding: 12px 8px;
+    border-radius: var(--r-md);
+  }
+  .pv-deadline-row .pv-chip.is-selected {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: var(--color-on-primary);
   }
   /* 동의 화면 질문 카드 — 앞에 기본 필드가 없어 들여쓰기도 첫 줄 선도 필요 없다 */
   .pv-consent-form .pv-questions-list > .pv-field-row:first-child { border-top: none; }
