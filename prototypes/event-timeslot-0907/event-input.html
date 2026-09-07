@@ -2427,8 +2427,10 @@
     flex: 1; min-width: 0;
     display: flex; justify-content: center;
     white-space: nowrap;
-    padding: 12px 8px;
-    border-radius: var(--r-md);
+    padding: 8px;
+    font-size: var(--fs-label);
+    /* 높이가 낮아진 만큼 radius도 낮춰야 알약처럼 안 보인다 */
+    border-radius: var(--r-sm);
   }
   .pv-deadline-row .pv-chip.is-selected {
     background: var(--color-primary);
