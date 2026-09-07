@@ -1,5 +1,8 @@
 # 청춘건배 기능 QA 체크리스트
 
+> 체크하며 진행하려면 [qa.html](https://connectia-design.vercel.app/prototypes/event-timeslot-0828/qa.html)을 연다.
+> 이 문서가 원본이고, 고친 뒤 `python3 qa-build.py`로 페이지를 다시 만든다.
+
 배포 후, **청춘건배와 같은 구조의 가상 행사를 실제로 한 번 끝까지 굴려보는** 방식으로 확인한다.
 화면을 하나씩 열어보는 점검이 아니라, 주최측 → 참가자 → 현장 순서로 실제 행사처럼 진행한다.
 

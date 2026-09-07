@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="청춘건배 기능 QA를 항목별로 체크하며 진행하는 페이지">
+<title>{{TITLE}}</title>
+<link rel="stylesheet" href="../../tokens.css">
+<link rel="stylesheet" href="../../components.css">
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-base);
+    word-break: keep-all;
+    -webkit-font-smoothing: antialiased;
+  }
+  p { margin: 0; text-wrap: pretty; }
+  h1, h2, h3, h4 { margin: 0; text-wrap: balance; }
+  ul, ol { margin: 0; padding: 0; list-style: none; }
+  a { color: var(--color-primary); }
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.92em;
+    background: var(--color-surface-sub);
+    padding: 1px 5px; border-radius: var(--r-xs);
+  }
+  :focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; border-radius: var(--r-xs); }
+
+  .layout { max-width: 1160px; margin: 0 auto; padding: 0 20px 96px; display: grid; gap: 32px; }
+  @media (min-width: 1000px) {
+    .layout { grid-template-columns: 240px 1fr; align-items: start; }
+  }
+
+  /* ── 상단 진행 바 ── */
+  .bar {
+    position: sticky; top: 0; z-index: 20;
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    margin-bottom: 32px;
+  }
+  .bar-inner {
+    max-width: 1160px; margin: 0 auto; padding: 12px 20px;
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  }
+  .bar-title {
+    font-size: var(--fs-body-lg); font-weight: var(--fw-bold);
+    letter-spacing: var(--ls-body-lg);
+  }
+  .meter { flex: 1; min-width: 160px; display: flex; align-items: center; gap: 12px; }
+  .meter-track {
+    flex: 1; height: 8px; border-radius: var(--r-full);
+    background: var(--color-surface-sub); overflow: hidden; display: flex;
+  }
+  .meter-pass { background: var(--color-success); }
+  .meter-fail { background: var(--color-destructive); }
+  .meter-text {
+    font-size: var(--fs-label); font-weight: var(--fw-semibold);
+    color: var(--color-text-sub); white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  .meter-text .n-pass { color: var(--color-success-dark); }
+  .meter-text .n-fail { color: var(--color-destructive); }
+  .bar-btns { display: flex; align-items: center; gap: 8px; }
+
+  /* ── 목차 ── */
+  .nav { display: none; }
+  @media (min-width: 1000px) {
+    .nav {
+      display: flex; flex-direction: column; gap: 2px;
+      position: sticky; top: 76px;
+      background: var(--color-surface);
+      border-radius: var(--r-md);
+      padding: 8px;
+      box-shadow: var(--shadow-1);
+    }
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 12px; border-radius: var(--r-sm);
+    font-size: var(--fs-label); color: var(--color-text-sub);
+    text-decoration: none;
+  }
+  .nav-item:hover { background: var(--color-surface-sub); color: var(--color-text); }
+  .nav-item > span:first-child { flex: 1; min-width: 0; }
+  .nav-count {
+    font-size: var(--fs-badge); font-weight: var(--fw-semibold);
+    color: var(--color-text-muted); white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  .nav-count.is-done { color: var(--color-success-dark); }
+  .nav-count.has-fail { color: var(--color-destructive); }
+
+  /* ── 본문 ── */
+  .lede {
+    max-width: 62ch; margin-bottom: 32px;
+    font-size: var(--fs-body-lg); line-height: var(--lh-body-lg);
+    color: var(--color-text-sub);
+  }
+  .part {
+    background: var(--color-surface);
+    border-radius: var(--r-lg);
+    box-shadow: var(--shadow-2);
+    padding: 24px;
+    margin-bottom: 16px;
+    scroll-margin-top: 76px;
+  }
+  .part-head {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 16px;
+    margin-bottom: 16px;
+  }
+  h2 {
+    font-size: var(--fs-display); font-weight: var(--fw-bold);
+    line-height: var(--lh-display); letter-spacing: var(--ls-display);
+  }
+  .part-count {
+    font-size: var(--fs-label); font-weight: var(--fw-semibold);
+    color: var(--color-text-muted); white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  .part-count.is-done { color: var(--color-success-dark); }
+  .part-count.has-fail { color: var(--color-destructive); }
+
+  h3 {
+    font-size: var(--fs-title); font-weight: var(--fw-bold);
+    line-height: var(--lh-title); letter-spacing: var(--ls-title);
+    margin: 28px 0 12px;
+  }
+  h4 {
+    font-size: var(--fs-heading); font-weight: var(--fw-semibold);
+    line-height: var(--lh-heading); letter-spacing: var(--ls-heading);
+    margin: 24px 0 8px;
+  }
+  .part > h3:first-child, .part > h4:first-child { margin-top: 0; }
+  .part p {
+    font-size: var(--fs-body-lg); line-height: var(--lh-body-lg);
+    color: var(--color-text-sub); max-width: 72ch;
+    margin-bottom: 12px;
+  }
+  .part strong { font-weight: var(--fw-semibold); color: var(--color-text); }
+  ol.plain {
+    display: grid; gap: 8px; margin-bottom: 12px; counter-reset: n;
+    font-size: var(--fs-body-lg); line-height: var(--lh-body-lg); color: var(--color-text-sub);
+  }
+  ol.plain li { padding-left: 24px; position: relative; counter-increment: n; }
+  ol.plain li::before {
+    content: counter(n) "."; position: absolute; left: 0;
+    color: var(--color-text-muted); font-weight: var(--fw-semibold);
+  }
+
+  /* ── 체크 항목 ── */
+  .checks { display: grid; gap: 4px; margin-bottom: 16px; }
+  .check {
+    display: flex; align-items: flex-start; gap: 8px;
+    padding: 8px 12px; border-radius: var(--r-sm);
+    transition: background var(--motion-fast) var(--ease-standard);
+  }
+  .check:hover { background: var(--color-surface-sub); }
+  .check-text {
+    flex: 1; padding-top: 2px;
+    font-size: var(--fs-body-lg); line-height: var(--lh-body-lg);
+    color: var(--color-text-sub);
+  }
+  .mark {
+    flex: none;
+    width: 26px; height: 26px;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-xs);
+    background: var(--color-surface);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition: all var(--motion-fast) var(--ease-standard);
+  }
+  .mark i[data-lucide], .mark svg.lucide { width: 15px; height: 15px; }
+  .mark-pass:hover { border-color: var(--color-success); color: var(--color-success-dark); }
+  .mark-fail:hover { border-color: var(--color-destructive); color: var(--color-destructive); }
+
+  .check.is-pass .mark-pass {
+    background: var(--color-success); border-color: var(--color-success); color: var(--color-on-primary);
+  }
+  .check.is-pass .check-text { color: var(--color-text-muted); text-decoration: line-through; }
+  .check.is-pass .mark-fail { opacity: 0.35; }
+  .check.is-fail {
+    background: var(--color-destructive-subtle);
+  }
+  .check.is-fail .mark-fail {
+    background: var(--color-destructive); border-color: var(--color-destructive); color: var(--color-on-primary);
+  }
+  .check.is-fail .check-text { color: var(--color-text); font-weight: var(--fw-medium); }
+  .check.is-fail .mark-pass { opacity: 0.35; }
+
+  /* 실패만 보기 */
+  body.only-fail .check:not(.is-fail) { display: none; }
+  body.only-fail .checks:not(:has(.is-fail)) { display: none; }
+  body.only-fail .part:not(:has(.is-fail)) { display: none; }
+  body.only-fail .part p,
+  body.only-fail .part h3,
+  body.only-fail .part h4,
+  body.only-fail .part .note,
+  body.only-fail .part .table-wrap,
+  body.only-fail .part ol.plain { display: none; }
+
+  /* ── 인용 박스 · 표 ── */
+  .note {
+    background: var(--color-primary-light);
+    border-radius: var(--r-md);
+    padding: 16px 20px;
+    margin-bottom: 16px;
+  }
+  .note p { color: var(--color-text); margin-bottom: 8px; }
+  .note p:last-child, .note .checks:last-child { margin-bottom: 0; }
+  .note .check:hover { background: var(--color-surface-veil); }
+
+  .table-wrap { overflow-x: auto; margin-bottom: 16px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: var(--fs-label); line-height: 1.6;
+  }
+  th, td {
+    text-align: left; vertical-align: top;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--color-border);
+  }
+  th {
+    font-size: var(--fs-caption); font-weight: var(--fw-semibold);
+    color: var(--color-text-muted); white-space: nowrap;
+  }
+  td { color: var(--color-text-sub); }
+
+  @media (max-width: 560px) {
+    .layout { padding: 0 16px 64px; }
+    .part { padding: 20px 16px; }
+    .bar-inner { padding: 10px 16px; gap: 12px; }
+    .bar-title { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <div class="bar-inner">
+    <span class="bar-title">{{TITLE}}</span>
+    <div class="meter">
+      <div class="meter-track">
+        <div class="meter-pass" id="meter-pass" style="width:0"></div>
+        <div class="meter-fail" id="meter-fail" style="width:0"></div>
+      </div>
+      <span class="meter-text" id="meter-text"></span>
+    </div>
+    <div class="bar-btns">
+      <button class="btn btn-sm btn-line-dark btn-pill" type="button" id="filter-btn" onclick="toggleFilter()">실패만 보기</button>
+      <button class="btn btn-sm btn-line-dark btn-pill" type="button" onclick="resetAll()">초기화</button>
+    </div>
+  </div>
+</div>
+
+<div class="layout">
+  <nav class="nav">{{NAV}}</nav>
+  <main>
+    <p class="lede">{{LEAD}}</p>
+    {{BODY}}
+  </main>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+var TOTAL = {{TOTAL}};
+var KEY = 'connectia.qa.cheongchun';
+var state = {};
+
+try { state = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { state = {}; }
+
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+}
+
+/* 통과·실패를 다시 누르면 미확인으로 돌아간다 */
+function mark(btn, how) {
+  var li = btn.closest('.check');
+  var id = li.dataset.id;
+  state[id] = (state[id] === how) ? null : how;
+  if (!state[id]) delete state[id];
+  paint(li);
+  save();
+  sync();
+}
+
+function paint(li) {
+  var v = state[li.dataset.id];
+  li.classList.toggle('is-pass', v === 'pass');
+  li.classList.toggle('is-fail', v === 'fail');
+}
+
+function sync() {
+  var pass = 0, fail = 0;
+  for (var k in state) {
+    if (state[k] === 'pass') pass++;
+    else if (state[k] === 'fail') fail++;
+  }
+
+  document.getElementById('meter-pass').style.width = (pass / TOTAL * 100) + '%';
+  document.getElementById('meter-fail').style.width = (fail / TOTAL * 100) + '%';
+  document.getElementById('meter-text').innerHTML =
+    '<span class="n-pass">' + pass + '</span> / ' + TOTAL
+    + (fail ? ' · <span class="n-fail">실패 ' + fail + '</span>' : '');
+
+  document.querySelectorAll('.part').forEach(function(sec) {
+    var ids = sec.dataset.items ? sec.dataset.items.split(',') : [];
+    var p = 0, f = 0;
+    ids.forEach(function(id) {
+      if (state[id] === 'pass') p++;
+      else if (state[id] === 'fail') f++;
+    });
+    var text = ids.length ? (f ? p + '/' + ids.length + ' · 실패 ' + f : p + '/' + ids.length) : '';
+    document.querySelectorAll('[data-for="' + sec.id + '"]').forEach(function(el) {
+      el.textContent = text;
+      el.classList.toggle('is-done', ids.length > 0 && p === ids.length && f === 0);
+      el.classList.toggle('has-fail', f > 0);
+    });
+  });
+}
+
+function toggleFilter() {
+  var on = document.body.classList.toggle('only-fail');
+  document.getElementById('filter-btn').textContent = on ? '전체 보기' : '실패만 보기';
+}
+
+function resetAll() {
+  if (!confirm('체크한 내용을 모두 지울까요?')) return;
+  state = {};
+  save();
+  document.querySelectorAll('.check').forEach(paint);
+  sync();
+  showToast('처음 상태로 돌아갔어요.');
+}
+
+var toastTimer = null;
+function showToast(msg) {
+  var wrap = document.getElementById('toast-container');
+  wrap.innerHTML = '<div class="toast">' + msg + '</div>';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function() { wrap.innerHTML = ''; }, 2400);
+}
+
+document.querySelectorAll('.check').forEach(paint);
+sync();
+lucide.createIcons();
+</script>
+</body>
+</html>

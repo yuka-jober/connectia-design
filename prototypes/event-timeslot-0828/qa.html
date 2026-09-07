@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="청춘건배 기능 QA를 항목별로 체크하며 진행하는 페이지">
+<title>청춘건배 기능 QA 체크리스트</title>
+<link rel="stylesheet" href="../../tokens.css">
+<link rel="stylesheet" href="../../components.css">
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-base);
+    word-break: keep-all;
+    -webkit-font-smoothing: antialiased;
+  }
+  p { margin: 0; text-wrap: pretty; }
+  h1, h2, h3, h4 { margin: 0; text-wrap: balance; }
+  ul, ol { margin: 0; padding: 0; list-style: none; }
+  a { color: var(--color-primary); }
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.92em;
+    background: var(--color-surface-sub);
+    padding: 1px 5px; border-radius: var(--r-xs);
+  }
+  :focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; border-radius: var(--r-xs); }
+
+  .layout { max-width: 1160px; margin: 0 auto; padding: 0 20px 96px; display: grid; gap: 32px; }
+  @media (min-width: 1000px) {
+    .layout { grid-template-columns: 240px 1fr; align-items: start; }
+  }
+
+  /* ── 상단 진행 바 ── */
+  .bar {
+    position: sticky; top: 0; z-index: 20;
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    margin-bottom: 32px;
+  }
+  .bar-inner {
+    max-width: 1160px; margin: 0 auto; padding: 12px 20px;
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  }
+  .bar-title {
+    font-size: var(--fs-body-lg); font-weight: var(--fw-bold);
+    letter-spacing: var(--ls-body-lg);
+  }
+  .meter { flex: 1; min-width: 160px; display: flex; align-items: center; gap: 12px; }
+  .meter-track {
+    flex: 1; height: 8px; border-radius: var(--r-full);
+    background: var(--color-surface-sub); overflow: hidden; display: flex;
+  }
+  .meter-pass { background: var(--color-success); }
+  .meter-fail { background: var(--color-destructive); }
+  .meter-text {
+    font-size: var(--fs-label); font-weight: var(--fw-semibold);
+    color: var(--color-text-sub); white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  .meter-text .n-pass { color: var(--color-success-dark); }
+  .meter-text .n-fail { color: var(--color-destructive); }
+  .bar-btns { display: flex; align-items: center; gap: 8px; }
+
+  /* ── 목차 ── */
+  .nav { display: none; }
+  @media (min-width: 1000px) {
+    .nav {
+      display: flex; flex-direction: column; gap: 2px;
+      position: sticky; top: 76px;
+      background: var(--color-surface);
+      border-radius: var(--r-md);
+      padding: 8px;
+      box-shadow: var(--shadow-1);
+    }
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 12px; border-radius: var(--r-sm);
+    font-size: var(--fs-label); color: var(--color-text-sub);
+    text-decoration: none;
+  }
+  .nav-item:hover { background: var(--color-surface-sub); color: var(--color-text); }
+  .nav-item > span:first-child { flex: 1; min-width: 0; }
+  .nav-count {
+    font-size: var(--fs-badge); font-weight: var(--fw-semibold);
+    color: var(--color-text-muted); white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  .nav-count.is-done { color: var(--color-success-dark); }
+  .nav-count.has-fail { color: var(--color-destructive); }
+
+  /* ── 본문 ── */
+  .lede {
+    max-width: 62ch; margin-bottom: 32px;
+    font-size: var(--fs-body-lg); line-height: var(--lh-body-lg);
+    color: var(--color-text-sub);
+  }
+  .part {
+    background: var(--color-surface);
+    border-radius: var(--r-lg);
+    box-shadow: var(--shadow-2);
+    padding: 24px;
+    margin-bottom: 16px;
+    scroll-margin-top: 76px;
+  }
+  .part-head {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 16px;
+    margin-bottom: 16px;
+  }
+  h2 {
+    font-size: var(--fs-display); font-weight: var(--fw-bold);
+    line-height: var(--lh-display); letter-spacing: var(--ls-display);
+  }
+  .part-count {
+    font-size: var(--fs-label); font-weight: var(--fw-semibold);
+    color: var(--color-text-muted); white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  .part-count.is-done { color: var(--color-success-dark); }
+  .part-count.has-fail { color: var(--color-destructive); }
+
+  h3 {
+    font-size: var(--fs-title); font-weight: var(--fw-bold);
+    line-height: var(--lh-title); letter-spacing: var(--ls-title);
+    margin: 28px 0 12px;
+  }
+  h4 {
+    font-size: var(--fs-heading); font-weight: var(--fw-semibold);
+    line-height: var(--lh-heading); letter-spacing: var(--ls-heading);
+    margin: 24px 0 8px;
+  }
+  .part > h3:first-child, .part > h4:first-child { margin-top: 0; }
+  .part p {
+    font-size: var(--fs-body-lg); line-height: var(--lh-body-lg);
+    color: var(--color-text-sub); max-width: 72ch;
+    margin-bottom: 12px;
+  }
+  .part strong { font-weight: var(--fw-semibold); color: var(--color-text); }
+  ol.plain {
+    display: grid; gap: 8px; margin-bottom: 12px; counter-reset: n;
+    font-size: var(--fs-body-lg); line-height: var(--lh-body-lg); color: var(--color-text-sub);
+  }
+  ol.plain li { padding-left: 24px; position: relative; counter-increment: n; }
+  ol.plain li::before {
+    content: counter(n) "."; position: absolute; left: 0;
+    color: var(--color-text-muted); font-weight: var(--fw-semibold);
+  }
+
+  /* ── 체크 항목 ── */
+  .checks { display: grid; gap: 4px; margin-bottom: 16px; }
+  .check {
+    display: flex; align-items: flex-start; gap: 8px;
+    padding: 8px 12px; border-radius: var(--r-sm);
+    transition: background var(--motion-fast) var(--ease-standard);
+  }
+  .check:hover { background: var(--color-surface-sub); }
+  .check-text {
+    flex: 1; padding-top: 2px;
+    font-size: var(--fs-body-lg); line-height: var(--lh-body-lg);
+    color: var(--color-text-sub);
+  }
+  .mark {
+    flex: none;
+    width: 26px; height: 26px;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-xs);
+    background: var(--color-surface);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition: all var(--motion-fast) var(--ease-standard);
+  }
+  .mark i[data-lucide], .mark svg.lucide { width: 15px; height: 15px; }
+  .mark-pass:hover { border-color: var(--color-success); color: var(--color-success-dark); }
+  .mark-fail:hover { border-color: var(--color-destructive); color: var(--color-destructive); }
+
+  .check.is-pass .mark-pass {
+    background: var(--color-success); border-color: var(--color-success); color: var(--color-on-primary);
+  }
+  .check.is-pass .check-text { color: var(--color-text-muted); text-decoration: line-through; }
+  .check.is-pass .mark-fail { opacity: 0.35; }
+  .check.is-fail {
+    background: var(--color-destructive-subtle);
+  }
+  .check.is-fail .mark-fail {
+    background: var(--color-destructive); border-color: var(--color-destructive); color: var(--color-on-primary);
+  }
+  .check.is-fail .check-text { color: var(--color-text); font-weight: var(--fw-medium); }
+  .check.is-fail .mark-pass { opacity: 0.35; }
+
+  /* 실패만 보기 */
+  body.only-fail .check:not(.is-fail) { display: none; }
+  body.only-fail .checks:not(:has(.is-fail)) { display: none; }
+  body.only-fail .part:not(:has(.is-fail)) { display: none; }
+  body.only-fail .part p,
+  body.only-fail .part h3,
+  body.only-fail .part h4,
+  body.only-fail .part .note,
+  body.only-fail .part .table-wrap,
+  body.only-fail .part ol.plain { display: none; }
+
+  /* ── 인용 박스 · 표 ── */
+  .note {
+    background: var(--color-primary-light);
+    border-radius: var(--r-md);
+    padding: 16px 20px;
+    margin-bottom: 16px;
+  }
+  .note p { color: var(--color-text); margin-bottom: 8px; }
+  .note p:last-child, .note .checks:last-child { margin-bottom: 0; }
+  .note .check:hover { background: var(--color-surface-veil); }
+
+  .table-wrap { overflow-x: auto; margin-bottom: 16px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: var(--fs-label); line-height: 1.6;
+  }
+  th, td {
+    text-align: left; vertical-align: top;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--color-border);
+  }
+  th {
+    font-size: var(--fs-caption); font-weight: var(--fw-semibold);
+    color: var(--color-text-muted); white-space: nowrap;
+  }
+  td { color: var(--color-text-sub); }
+
+  @media (max-width: 560px) {
+    .layout { padding: 0 16px 64px; }
+    .part { padding: 20px 16px; }
+    .bar-inner { padding: 10px 16px; gap: 12px; }
+    .bar-title { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <div class="bar-inner">
+    <span class="bar-title">청춘건배 기능 QA 체크리스트</span>
+    <div class="meter">
+      <div class="meter-track">
+        <div class="meter-pass" id="meter-pass" style="width:0"></div>
+        <div class="meter-fail" id="meter-fail" style="width:0"></div>
+      </div>
+      <span class="meter-text" id="meter-text"></span>
+    </div>
+    <div class="bar-btns">
+      <button class="btn btn-sm btn-line-dark btn-pill" type="button" id="filter-btn" onclick="toggleFilter()">실패만 보기</button>
+      <button class="btn btn-sm btn-line-dark btn-pill" type="button" onclick="resetAll()">초기화</button>
+    </div>
+  </div>
+</div>
+
+<div class="layout">
+  <nav class="nav"><a class="nav-item" href="#sec0"><span>0. 시작하기 전에</span><span class="nav-count" data-for="sec0"></span></a><a class="nav-item" href="#sec1"><span>1. 이벤트 만들기 — 주최측</span><span class="nav-count" data-for="sec1"></span></a><a class="nav-item" href="#sec2"><span>2. 로그인과 커뮤니티 자동 가입</span><span class="nav-count" data-for="sec2"></span></a><a class="nav-item" href="#sec3"><span>3. 개인 신청 — 졸업생</span><span class="nav-count" data-for="sec3"></span></a><a class="nav-item" href="#sec4"><span>4. 팀 신청과 동의 — 이번 행사의 핵심</span><span class="nav-count" data-for="sec4"></span></a><a class="nav-item" href="#sec5"><span>5. 자리 배정과 마감</span><span class="nav-count" data-for="sec5"></span></a><a class="nav-item" href="#sec6"><span>6. 신청 실패</span><span class="nav-count" data-for="sec6"></span></a><a class="nav-item" href="#sec7"><span>7. 운영자 현황 — 주최측</span><span class="nav-count" data-for="sec7"></span></a><a class="nav-item" href="#sec8"><span>8. 엑셀 내보내기 — 명찰 제작</span><span class="nav-count" data-for="sec8"></span></a><a class="nav-item" href="#sec9"><span>9. 당일 현장 — 체크인</span><span class="nav-count" data-for="sec9"></span></a><a class="nav-item" href="#sec10"><span>10. 알림톡 전수 확인</span><span class="nav-count" data-for="sec10"></span></a><a class="nav-item" href="#sec11"><span>11. 기기·브라우저</span><span class="nav-count" data-for="sec11"></span></a><a class="nav-item" href="#sec12"><span>12. 마무리</span><span class="nav-count" data-for="sec12"></span></a></nav>
+  <main>
+    <p class="lede">&gt; 체크하며 진행하려면 <a href="https://connectia-design.vercel.app/prototypes/event-timeslot-0828/qa.html" target="_blank" rel="noopener">qa.html</a>을 연다. &gt; 이 문서가 원본이고, 고친 뒤 <code>python3 qa-build.py</code>로 페이지를 다시 만든다. 배포 후, <strong>청춘건배와 같은 구조의 가상 행사를 실제로 한 번 끝까지 굴려보는</strong> 방식으로 확인한다. 화면을 하나씩 열어보는 점검이 아니라, 주최측 → 참가자 → 현장 순서로 실제 행사처럼 진행한다.</p>
+    <section class="part" id="sec0" data-items="q433abfc776,q481666de54,qa5ede42372"><div class="part-head"><h2>0. 시작하기 전에</h2><span class="part-count" data-for="sec0"></span></div><h3>준비물</h3>
+<div class="table-wrap"><table><thead><tr><th>항목</th><th>필요 수량</th><th>비고</th></tr></thead><tbody><tr><td>테스트용 휴대폰 번호</td><td>6개 이상</td><td>팀원 동의는 번호마다 따로 받으므로 실제로 필요</td></tr><tr><td>휴대폰 기기</td><td>3대 이상</td><td>iOS·Android 섞어서. 나머지는 링크 전달로 대체 가능</td></tr><tr><td>주최측 계정</td><td>1개</td><td>이벤트를 만들 계정</td></tr><tr><td>커뮤니티 <strong>비회원</strong> 계정</td><td>2개 이상</td><td>자동 가입을 확인하려면 아직 가입 안 된 사람이 필요하다</td></tr><tr><td>커뮤니티 <strong>기존 회원</strong> 계정</td><td>1개</td><td>중복 가입이 안 되는지 확인용</td></tr><tr><td>스태프 계정</td><td>1개</td><td>체크인 전용 링크만 받는 사람</td></tr></tbody></table></div>
+<h3>시작 전 확인</h3>
+<ul class="checks"><li class="check" data-id="q433abfc776"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">알림톡 템플릿이 <strong>승인 완료</strong> 상태인가 (승인 전이면 발송이 안 되므로 QA 자체가 막힌다)</span></li><li class="check" data-id="q481666de54"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">테스트 이벤트가 <strong>실제 청춘건배 신청자에게 보이지 않는지</strong> 확인 (비공개 또는 별도 계정)</span></li><li class="check" data-id="qa5ede42372"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">참여자 전원에게 &quot;테스트 알림톡이 갈 것&quot;이라고 미리 공지</span></li></ul>
+<div class="note"><p>⚠️ <strong>배포 후 QA는 실서비스다.</strong> 알림톡이 실제로 발송되고 비용이 나간다. 반드시 팀원 번호로만 진행하고, 외부 번호를 절대 넣지 않는다.</p>
+</div>
+<h3>리허설 행사 설정 (청춘건배와 같은 구조, 규모만 축소)</h3>
+<div class="table-wrap"><table><thead><tr><th>설정</th><th>값</th><th>청춘건배와 다른 점</th></tr></thead><tbody><tr><td>참가 유형</td><td>졸업생(개인) / 재학생 팀(2~8명)</td><td>동일</td></tr><tr><td>자리</td><td>18:00 · 19:00 · 20:00, <strong>각 1팀</strong></td><td>정원을 빨리 채워 마감을 보려고 축소</td></tr><tr><td>팀원 동의받기</td><td>켬</td><td>동일</td></tr><tr><td>동의 마감</td><td><strong>1시간</strong></td><td>마감 경과를 당일에 보려고 단축</td></tr><tr><td>신청폼</td><td>이름 · 전화번호 · 이메일 · 학과/학번 · 소속</td><td>동일</td></tr><tr><td>추가 질문</td><td>카드뉴스 동의(객관식) + 프로필 사진(파일 업로드)</td><td>동일</td></tr><tr><td>로그인 사용자만 신청 가능</td><td>켬</td><td>동일 — 신청하면 총동문회에 자동 가입된다</td></tr><tr><td>현장 체크인</td><td>켬</td><td>동일</td></tr></tbody></table></div>
+</section>
+<section class="part" id="sec1" data-items="qc16abe225c,qbfa8ac77e4,q9353915259,q3968997265,q4e49ac2261,q202825eb60,qc6f2c3a1c6,q2e77749c69,qee37d16576,q99d2699559,q7ce4c96827,q8e18b0e051,q674b0d7b2b,q10d6263dc3,q38fe1c9161"><div class="part-head"><h2>1. 이벤트 만들기 — 주최측</h2><span class="part-count" data-for="sec1"></span></div><ul class="checks"><li class="check" data-id="qc16abe225c"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">이벤트를 만들고 <strong>참가 유형 나눠서 받기</strong>를 켠다</span></li><li class="check" data-id="qbfa8ac77e4"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">졸업생(개인) / 재학생 팀(2~8명) 두 유형을 만든다</span></li><li class="check" data-id="q9353915259"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">유형 목록에 이름과 켜 둔 설정이 맞게 표시된다 (<code>개인 | 참석자 공개</code>, <code>팀 2~8명 | 자리 배정 | 팀원 동의</code>)</span></li><li class="check" data-id="q3968997265"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">재학생 팀 상세에서 자리 3개를 만들고 각 1팀으로 정한다</span></li><li class="check" data-id="q4e49ac2261"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text"><strong>팀원 동의받기</strong>를 켜고, 동의 문구를 청춘건배와 같은 내용으로 적는다</span></li><li class="check" data-id="q202825eb60"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">동의받기를 켰을 때 <strong>팀원 전화번호가 필수로 잠기고 선택 버튼이 사라지는지</strong> 확인</span></li><li class="check" data-id="qc6f2c3a1c6"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">유형별로 신청폼을 다르게 구성한다 (졸업생에만 카드뉴스 동의 + 프로필 사진)</span></li><li class="check" data-id="q2e77749c69"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">이벤트 안내에 카드뉴스 이미지를 캐러셀로 올린다 (2장 이상)</span></li><li class="check" data-id="qee37d16576"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">이벤트 설정에서 <strong>로그인 사용자만 신청 가능</strong>을 켠다</span></li><li class="check" data-id="q99d2699559"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">현장 체크인을 켜고 <strong>발급 단위</strong>를 정한다</span></li><li class="check" data-id="q7ce4c96827"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">발행한다</span></li></ul>
+<h4>확인 포인트</h4>
+<ul class="checks"><li class="check" data-id="q8e18b0e051"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">발행 직후 이벤트 페이지가 열리고, 작성한 내용이 <strong>빠짐없이 그대로</strong> 보인다</span></li><li class="check" data-id="q674b0d7b2b"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">캐러셀이 좌우로 넘어가고 페이지네이션 점이 맞게 움직인다</span></li><li class="check" data-id="q10d6263dc3"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">작성 화면에서 켠 설정만 이벤트 페이지에 나온다 (끈 것이 새어 나오지 않는다)</span></li><li class="check" data-id="q38fe1c9161"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">발행 후 <strong>이벤트를 수정</strong>했을 때 이미 들어온 신청에 문제가 없다</span></li></ul>
+</section>
+<section class="part" id="sec2" data-items="q2e2cba0bcd,q55f0679eaa,q691be355c7,qbc9bc583bf,qa68be22d54,qad3cc17d43,q7b55f55eb6,q6dec9c58f8,q8d40eadb0c,q3f259ad9ca,q51d4781878,q5c1428cd41,q77e7fdfcc5,q7492c79c1e,q9aba679346,q5e02115ad2,q30d1f77229,q59a4030053,qe4bf8714d8,q71be3caf1b,q921dad7ff5,qef4a6da88c,q836fb0b18d,q5240ee020c,qa2df8c51a3"><div class="part-head"><h2>2. 로그인과 커뮤니티 자동 가입</h2><span class="part-count" data-for="sec2"></span></div><p><strong>로그인 사용자만 신청 가능</strong>을 켜고 행사를 여는 방식이다. 이 이벤트에 신청하면 <strong>총동문회 커뮤니티에 자동으로 가입</strong>된다. 신청자가 스스로 가입 버튼을 누르지 않는데 회원이 되는 것이므로, 되는지 안 되는지보다 <strong>누가 언제 가입되는지</strong>를 정확히 봐야 한다.</p>
+<h3>2-1. 로그인 없이는 신청할 수 없다</h3>
+<ul class="checks"><li class="check" data-id="q2e2cba0bcd"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">로그아웃 상태로 이벤트 페이지를 연다 — 페이지 자체는 보인다</span></li><li class="check" data-id="q55f0679eaa"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">신청 버튼을 누르면 <strong>로그인 안내 모달</strong>이 뜬다 (<code>신청하려면 로그인이 필요해요</code>)</span></li><li class="check" data-id="q691be355c7"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">모달을 닫으면 이벤트 페이지로 돌아오고, 신청은 진행되지 않는다</span></li><li class="check" data-id="qbc9bc583bf"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">카카오 · 구글 · 이메일 <strong>세 가지 방법 모두</strong> 로그인이 된다</span></li><li class="check" data-id="qa68be22d54"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">로그인을 마치면 <strong>누르려던 신청 화면으로 그대로 이어진다</strong> (처음부터 다시 하지 않는다)</span></li></ul>
+<h3>2-2. 비회원이 신청하면 자동으로 가입된다</h3>
+<p>커뮤니티에 가입한 적 없는 계정으로 진행한다.</p>
+<ul class="checks"><li class="check" data-id="qad3cc17d43"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">신청을 마치면 총동문회 <strong>회원 목록에 그 사람이 새로 들어와 있다</strong></span></li><li class="check" data-id="q7b55f55eb6"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">가입 시점이 언제인지 확인한다 — <strong>신청 제출 시점</strong>인지, 팀이 <strong>확정된 시점</strong>인지</span></li><li class="check" data-id="q6dec9c58f8"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">본인 화면(마이페이지 등)에서도 총동문회 회원으로 보인다</span></li><li class="check" data-id="q8d40eadb0c"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">가입 환영 알림톡이나 메일이 따로 나가는지 확인 — 나간다면 신청 알림톡과 겹치지 않는지</span></li></ul>
+<h3>2-3. 이미 회원이면 중복으로 가입되지 않는다</h3>
+<ul class="checks"><li class="check" data-id="q3f259ad9ca"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">기존 회원 계정으로 신청한다</span></li><li class="check" data-id="q51d4781878"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">회원 목록에 <strong>같은 사람이 두 줄로 늘지 않는다</strong></span></li><li class="check" data-id="q5c1428cd41"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">기존 가입일이 신청일로 덮어써지지 않는다</span></li></ul>
+<h3>2-4. 팀원은 어떻게 되는가 (가장 중요)</h3>
+<p>이번 행사는 <strong>대표자가 신청하고 팀원은 링크로 동의만 한다.</strong> 팀원은 로그인을 하지 않는다. 그래서 &quot;신청하면 자동 가입&quot;이 팀원에게도 적용되는지가 이 행사에서 가장 애매한 지점이다.</p>
+<ul class="checks"><li class="check" data-id="q77e7fdfcc5"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">팀원이 동의를 마친 뒤, 그 팀원이 <strong>회원 목록에 들어오는지</strong> 확인</span></li><li class="check" data-id="q7492c79c1e"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">들어온다면 어떤 정보로 가입되는지 확인 (이름·전화번호만? 계정 없이도 회원이 되나?)</span></li><li class="check" data-id="q9aba679346"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">들어오지 않는다면, 팀원은 회원이 아닌 채로 행사에만 참석하는 것이 맞는지 확인</span></li><li class="check" data-id="q5e02115ad2"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">동의 문구(<code>총동문회 소식·행사 안내를 받는 데 동의합니다</code>)가 <strong>가입까지 포함하는 내용인지</strong> 확인</span></li></ul>
+<div class="note"><h4>이 항목은 확인이 아니라 결정이 필요할 수 있다.</h4>
+<p>이번 행사의 목적이 팀원 개개인에게 알림 수신 동의를 받는 것이므로, 동의한 팀원이 회원이 되지 않으면 정작 소식을 보낼 대상이 대표자뿐이 된다. 실제 동작을 보고 팀에서 정한다.</p>
+</div>
+<h3>2-5. 자동 가입이 적용되지 않는 경로</h3>
+<p>로그인을 거치지 않고 명단에 들어오는 길이 몇 군데 있다. 각각 어떻게 되는지 본다.</p>
+<ul class="checks"><li class="check" data-id="q30d1f77229"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text"><strong>현장 신청 등록</strong> — 스태프가 당일 현장에서 등록한 사람 (9절)</span></li><li class="check" data-id="q59a4030053"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text"><strong>호스트가 미리 등록한 참석자</strong> — 주최측이 신청 전에 넣어 둔 사람</span></li><li class="check" data-id="qe4bf8714d8"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">위 두 경우가 회원이 되는지 / 안 되는지, 그리고 그게 의도한 동작인지 확인</span></li></ul>
+<h3>2-6. 신청을 취소하면</h3>
+<ul class="checks"><li class="check" data-id="q71be3caf1b"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">신청을 취소해도 <strong>커뮤니티 회원 자격은 유지되는지</strong> 확인</span></li><li class="check" data-id="q921dad7ff5"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">신청이 실패(6절)해도 회원 자격이 유지되는지 확인</span></li><li class="check" data-id="qef4a6da88c"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">유지된다면, 취소한 사람에게 그 사실이 안내되는지 확인 → 정책 확인 필요</span></li></ul>
+<h3>2-7. 가입 사실을 신청자가 알 수 있는가</h3>
+<p>자동 가입은 사용자가 누르지 않은 동작이므로, 모르는 사이 회원이 되는 상황을 만들지 않아야 한다.</p>
+<ul class="checks"><li class="check" data-id="q836fb0b18d"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">신청 화면이나 로그인 모달에 <strong>가입된다는 사실이 보이는지</strong> 확인</span></li><li class="check" data-id="q5240ee020c"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">보이지 않는다면 어디에 어떻게 넣을지 정한다 → 문구 결정 필요</span></li><li class="check" data-id="qa2df8c51a3"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">가입 후 커뮤니티의 <strong>다른 알림이 오기 시작하는지</strong> 확인 (행사와 무관한 알림이 갑자기 가면 안 된다)</span></li></ul>
+</section>
+<section class="part" id="sec3" data-items="qc062912392,qd1965dad7c,q03647e02d2,q64fbc0eea3,q34a0673f11,qf478ecf07a,q62a7f05b71,qe2c229723f,qf306afe5f2,q0dc724b9c9,qb509688405,q45eb7f642a"><div class="part-head"><h2>3. 개인 신청 — 졸업생</h2><span class="part-count" data-for="sec3"></span></div><p>가장 단순한 경로부터 확인한다.</p>
+<ul class="checks"><li class="check" data-id="qc062912392"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">졸업생으로 신청한다 (이름·전화번호·이메일·학과/학번·소속)</span></li><li class="check" data-id="qd1965dad7c"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">카드뉴스 동의에 <strong>예</strong>를 고르고 프로필 사진을 올린다</span></li><li class="check" data-id="q03647e02d2"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">필수 항목을 비우고 제출하면 <strong>어디가 비었는지</strong> 알려준다</span></li><li class="check" data-id="q64fbc0eea3"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">제출하면 신청 완료 화면이 뜨고 <strong>QR이 발급</strong>된다</span></li><li class="check" data-id="q34a0673f11"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text"><strong>신청 완료 알림톡</strong>이 온다</span></li><li class="check" data-id="qf478ecf07a"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">화면을 나갔다가 다시 들어와도 QR을 다시 볼 수 있다</span></li><li class="check" data-id="q62a7f05b71"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">신청을 취소하면 취소되고, QR이 더 이상 유효하지 않다</span></li><li class="check" data-id="qe2c229723f"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">취소 후 <strong>같은 번호로 다시 신청</strong>할 수 있다</span></li></ul>
+<h4>파일 업로드</h4>
+<ul class="checks"><li class="check" data-id="qf306afe5f2"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">사진을 올리면 미리보기가 뜨고, 다시 고를 수 있다</span></li><li class="check" data-id="q0dc724b9c9"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">아주 큰 파일(10MB 이상)을 올리면 어떻게 되는지 확인 — 막든 통과시키든 <strong>말없이 실패하지 않아야</strong> 한다</span></li><li class="check" data-id="qb509688405"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">사진이 아닌 파일(PDF·zip)을 올렸을 때의 동작 확인</span></li><li class="check" data-id="q45eb7f642a"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">올린 사진을 <strong>주최측이 실제로 내려받을 수 있는지</strong> 확인 (카드뉴스 제작에 써야 한다)</span></li></ul>
+</section>
+<section class="part" id="sec4" data-items="qc9480444dc,q717cbe388b,qf29ac737db,q030e83abdd,qcc3d564e83,qcc393e3827,q9a82621102,q3c18a6a5d7,qaa58139bb5,qa467aa49a6,q96ba2b4832,q000e898a1b,q4432123865,qfe2282e7f0,qea84b29f7d,q7d5c106555,q1fba2dd71d,qaafd286fab,qc87c5e7006"><div class="part-head"><h2>4. 팀 신청과 동의 — 이번 행사의 핵심</h2><span class="part-count" data-for="sec4"></span></div><p><strong>여기가 가장 중요하다.</strong> 대표자가 대신 동의하지 못한다는 것이 이 행사의 목적이므로, 이 절은 실제 사람 여러 명이 각자 휴대폰으로 진행한다.</p>
+<h3>4-1. 대표자가 신청</h3>
+<ul class="checks"><li class="check" data-id="qc9480444dc"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">재학생 팀으로 신청한다 (팀 이름 + 팀원 3명, 각자 다른 실제 번호)</span></li><li class="check" data-id="q717cbe388b"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text"><strong>참석 가능한 자리를 2개 이상</strong> 고른다</span></li><li class="check" data-id="qf29ac737db"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">제출하면 &quot;동의 대기&quot; 상태가 되고, <strong>아직 자리가 배정되지 않았다</strong></span></li><li class="check" data-id="q030e83abdd"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">대표자에게 <strong>현황을 확인하라는 알림톡</strong>이 온다</span></li><li class="check" data-id="qcc3d564e83"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">대표자 현황 화면에서 <code>1 / 3명</code>, 마감까지 남은 시간이 보인다</span></li></ul>
+<h3>4-2. 팀원이 각자 동의</h3>
+<ul class="checks"><li class="check" data-id="qcc393e3827"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">팀원 전원에게 <strong>각자 다른 링크로</strong> 동의 알림톡이 온다</span></li><li class="check" data-id="q9a82621102"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">팀원 A가 링크를 열면 <strong>본인 이름·정보</strong>가 보인다 (다른 팀원 것이 아니다)</span></li><li class="check" data-id="q3c18a6a5d7"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">동의 문구가 주최측이 작성한 그대로 보인다</span></li><li class="check" data-id="qaa58139bb5"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">동의를 누르면 완료되고, 대표자 화면의 숫자가 올라간다</span></li><li class="check" data-id="qa467aa49a6"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text"><strong>이미 동의한 링크를 다시 열면</strong> 동의 완료 상태로 보인다 (중복 동의가 되지 않는다)</span></li><li class="check" data-id="q96ba2b4832"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">팀원 B의 링크를 팀원 A의 휴대폰에서 열어도 <strong>B의 정보</strong>가 보인다 — 즉 링크만 있으면 열린다는 뜻이므로, 이게 의도한 동작인지 팀에서 확인 필요</span></li><li class="check" data-id="q000e898a1b"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">마지막 팀원이 동의하는 <strong>순간</strong> 신청이 확정되고 자리가 배정된다</span></li><li class="check" data-id="q4432123865"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">팀 전원에게 확정 알림톡과 QR이 간다</span></li></ul>
+<h3>4-3. 대표자가 팀원을 제외</h3>
+<p>새 팀으로 다시 신청해서 확인한다.</p>
+<ul class="checks"><li class="check" data-id="qfe2282e7f0"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">팀원 1명이 응답하지 않는 상태에서 대표자가 <strong>제외</strong>를 누른다</span></li><li class="check" data-id="qea84b29f7d"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">제외하면 남은 인원만으로 <strong>바로 확정</strong>된다</span></li><li class="check" data-id="q7d5c106555"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">제외된 사람에게 더 이상 알림톡이 가지 않는다</span></li><li class="check" data-id="q1fba2dd71d"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">제외된 사람의 동의 링크를 열면 어떻게 되는지 확인</span></li><li class="check" data-id="qaafd286fab"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">제외된 사람이 <strong>엑셀 명단과 체크인 명단에 나오지 않는다</strong></span></li><li class="check" data-id="qc87c5e7006"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">팀원을 제외해서 <strong>최소 인원 아래로</strong> 떨어지는 경우는 6절에서 따로 확인한다</span></li></ul>
+</section>
+<section class="part" id="sec5" data-items="qa9d672ae40,q835ad36f1d,q692d1f4d96,q1f80c5bb75,q9afdca84da,qe845185f47,q11c1d33914,qd04cc3886f,q471c1226b6,qf5ee1039ae"><div class="part-head"><h2>5. 자리 배정과 마감</h2><span class="part-count" data-for="sec5"></span></div><p>자리를 각 1팀으로 잡아 두었으므로 세 팀이면 정원이 찬다.</p>
+<ul class="checks"><li class="check" data-id="qa9d672ae40"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">팀 1이 18:00·19:00을 고르고 전원 동의 → 어느 자리에 배정되는지 확인</span></li><li class="check" data-id="q835ad36f1d"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">팀 2가 같은 자리를 고르고 전원 동의 → 남은 자리로 배정된다</span></li><li class="check" data-id="q692d1f4d96"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">팀 3이 <strong>이미 다 찬 자리만</strong> 골라 신청하려 하면 그 자리가 <strong>마감으로 표시되어 고를 수 없다</strong></span></li><li class="check" data-id="q1f80c5bb75"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">고른 자리가 신청 중에 마감되면 어떻게 되는지 확인 (신청 화면을 열어 둔 채 다른 팀이 먼저 채우는 상황)</span></li><li class="check" data-id="q9afdca84da"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">전원 동의를 마쳤는데 <strong>고른 자리가 모두 차 버린 경우</strong> 어떻게 되는지 확인 → 정책 확인 필요</span></li></ul>
+<div class="note"><h4>동시 확정 확인 (꼭 해볼 것)</h4>
+<p>자리 1개만 남긴 상태에서, 두 팀의 마지막 팀원이 <strong>거의 동시에</strong> 동의를 누른다.</p>
+<ul class="checks"><li class="check" data-id="qe845185f47"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">한 팀만 배정되고 다른 팀은 적절히 처리된다</span></li><li class="check" data-id="q11c1d33914"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text"><strong>두 팀이 모두 배정되어 정원을 넘지 않는다</strong></span></li></ul>
+</div>
+<h3>동의 마감 경과</h3>
+<p>동의 마감을 1시간으로 잡았으므로 한 팀은 일부러 방치한다.</p>
+<ul class="checks"><li class="check" data-id="qd04cc3886f"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">마감 시각이 지나면 그 팀이 어떻게 되는지 확인</span></li><li class="check" data-id="q471c1226b6"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">마감 후 팀원이 동의 링크를 열면 어떻게 되는지 확인</span></li><li class="check" data-id="qf5ee1039ae"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">대표자에게 실패 알림톡이 가는지 확인 (6절 케이스 1-2와 같은 건이다)</span></li></ul>
+</section>
+<section class="part" id="sec6" data-items="q1b1f3e6201,q775a455d58,q628987ec3d,qd85e58139c,q65942cf38f,q231dc7a8f6,q58be81c851,q82294ff28c,q70556aea76,q806e239ed7,qfba371fb80,q84967e4513,qa81c72123d,q40aa3e0595,qcb515371af,qe4075d77b7,q9b30543a4b,q84967e4513,q40d81c1e13,q7cd6e69d44,qe8cc24671d,q13a760ac1b,qebaddcd1d0,q2af11b2eb2,q92eb675894,qcebc30f20b,qd0ff1fedfe,q70921c0e0e,q5e30f3db36,q11ec8ea64c,q08ddff3bf7,q56b4734832,qcae0772a72,q4cd1aa3f7e,qd262e80674,q62213322ce,q2b6601c5fb,qf0c4f95695,q9bf97b69d1"><div class="part-head"><h2>6. 신청 실패</h2><span class="part-count" data-for="sec6"></span></div><p>팀이 최소 인원을 못 채워 취소되는 경우다. <strong>대표자가 그 순간 화면을 보고 있는지</strong>에 따라 처리가 갈린다.</p>
+<div class="table-wrap"><table><thead><tr><th></th><th>언제</th><th>알림톡</th><th>화면</th></tr></thead><tbody><tr><td><strong>케이스 A</strong></td><td>대표자가 현황 화면에서 팀원을 <strong>제외</strong>해 미달</td><td><strong>안 보낸다</strong> (방금 본인이 한 행동)</td><td>그 자리에서 바로 <code>신청 실패</code></td></tr><tr><td><strong>케이스 B</strong></td><td><strong>거절 · 미응답 · 시간 초과</strong>로 미달</td><td>대표자에게 <strong>기존 현황 알림톡</strong>을 결과 필드만 <code>신청 실패</code>로 바꿔 발송</td><td>알림톡의 &quot;자세히 보기&quot;로 들어가면 <code>신청 실패</code></td></tr></tbody></table></div>
+<p>두 경우 모두 팀 상태는 <code>신청 실패</code>가 되고, 실패한 팀은 다시 신청할 수 있다.</p>
+<h3>테스트 준비</h3>
+<ul class="checks"><li class="check" data-id="q1b1f3e6201"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">이벤트 만들기 → 재학생 팀 상세에서 <strong>한 팀에 2~8명</strong>으로 둔다 (최소 2명 → 3인 팀에서 한 명만 빠져도 미달을 볼 수 있다)</span></li><li class="check" data-id="q775a455d58"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">동의 마감은 0절에서 정한 <strong>1시간</strong> 그대로 둔다 (시간 초과를 당일에 봐야 한다)</span></li><li class="check" data-id="q628987ec3d"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">그룹 3에서는 최소 인원을 3명·4명으로 바꿔 이벤트를 다시 만든다</span></li></ul>
+<h4>어느 화면에서 누르는지</h4>
+<div class="table-wrap"><table><thead><tr><th>동작</th><th>위치</th></tr></thead><tbody><tr><td>거절</td><td>팀원 동의 화면 맨 아래 <strong>참석 어려워요</strong></td></tr><tr><td>팀장 제외</td><td>대표자 현황 화면에서 팀원 옆 <strong>제외</strong></td></tr><tr><td>실패 화면</td><td><a href="https://connectia-design.vercel.app/prototypes/event-timeslot-0828/event-fail.html" target="_blank" rel="noopener">event-fail.html</a> — 사유별로 <code>?reason=reject / noreply / timeout / exclude</code></td></tr></tbody></table></div>
+<div class="note"><p><strong>자리 확인 방법</strong> — 동의 대기 중인 팀은 <strong>자리를 잡지 않는다.</strong> 전원 동의로 확정된 팀만 자리를 차지한다. 그러므로 실패해도 자리별 현황(<code>18:00 1/1</code>) 숫자가 <strong>변하지 않아야</strong> 정상이다. 대기 중인 팀 때문에 숫자가 올라가 있다면 그것이 버그다.</p>
+</div>
+<h3>그룹 1 — 팀원 응답으로 인한 미달 (케이스 B)</h3>
+<h4>1-1 · 팀원이 거절해서 미달</h4>
+<p>재현: 3인 팀(대표자 + 팀원 2명)으로 신청 → 팀원이 각자 동의 링크를 열어 <strong>참석 어려워요</strong>를 눌러, 남은 인원이 최소 2명 아래로 떨어지게 한다.</p>
+<ul class="checks"><li class="check" data-id="qd85e58139c"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">거절한 팀원 옆에 <strong>거절</strong> 뱃지가 뜬다</span></li><li class="check" data-id="q65942cf38f"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">팀 상태가 <code>신청 실패</code>가 된다 (<code>동의 대기 0/0</code>이 아니다)</span></li><li class="check" data-id="q231dc7a8f6"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">대표자에게 실패 알림톡이 온다 — <strong>새 템플릿이 아니라</strong> 기존 현황 알림톡의 결과 필드가 <code>신청 실패</code>로 바뀐 것이다</span></li><li class="check" data-id="q58be81c851"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">알림톡의 <strong>자세히 보기</strong>로 들어가면 실패 화면이 열린다</span></li><li class="check" data-id="q82294ff28c"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">자리별 현황 숫자가 변하지 않는다 (위 박스 참고)</span></li></ul>
+<h4>1-2 · 팀원이 응답을 안 해서 시간 초과</h4>
+<p>재현: 팀 신청 후 팀원이 아무 응답도 하지 않은 채 <strong>동의 마감 1시간</strong>이 지나게 둔다.</p>
+<ul class="checks"><li class="check" data-id="q70556aea76"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">마감 시각이 지나면 팀 상태가 <code>신청 실패</code>가 된다</span></li><li class="check" data-id="q806e239ed7"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">실패 사유가 <strong>시간 초과</strong>로 구분되어 보인다 (거절과 다른 사유로 표시)</span></li><li class="check" data-id="qfba371fb80"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">대표자에게 실패 알림톡이 온다</span></li><li class="check" data-id="q84967e4513"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">자리별 현황 숫자가 변하지 않는다</span></li></ul>
+<h4>1-3 · 거절과 미응답이 섞였을 때</h4>
+<p>재현: 한 명은 <strong>참석 어려워요</strong>, 다른 한 명은 응답 없이 마감 경과.</p>
+<ul class="checks"><li class="check" data-id="qa81c72123d"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">팀원 목록에서 <strong>거절</strong>과 <strong>미응답</strong>이 서로 다르게 표시된다</span></li><li class="check" data-id="q40aa3e0595"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">최종 상태가 <code>신청 실패</code>다</span></li><li class="check" data-id="qcb515371af"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">실패 사유가 둘 중 무엇으로 기록되는지 확인 → 표기 규칙 확인 필요</span></li></ul>
+<h3>그룹 2 — 팀장의 제외로 인한 미달 (케이스 A)</h3>
+<h4>2-1 · 팀장이 팀원을 제외해서 미달</h4>
+<p>재현: 3인 팀에서 대표자가 현황 화면의 <strong>제외</strong>를 눌러 남은 인원이 최소 아래로 떨어지게 한다.</p>
+<ul class="checks"><li class="check" data-id="qe4075d77b7"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">제외를 누른 <strong>그 자리에서 바로</strong> 화면이 <code>신청 실패</code>로 바뀐다</span></li><li class="check" data-id="q9b30543a4b"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text"><strong>알림톡이 오지 않는다</strong> — 방금 본인이 한 행동이라 보내지 않는 것이 정책이다</span></li><li class="check" data-id="q84967e4513"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">자리별 현황 숫자가 변하지 않는다</span></li></ul>
+<h4>2-2 · 이미 동의한 팀원을 제외</h4>
+<p>재현: 팀원이 동의를 마친 상태에서 대표자가 그 팀원을 제외해 미달을 만든다.</p>
+<ul class="checks"><li class="check" data-id="q40d81c1e13"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">동의를 마친 팀원을 뺐을 때도 <code>신청 실패</code>가 된다</span></li><li class="check" data-id="q7cd6e69d44"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">그 팀원이 남긴 <strong>동의 기록 자체는 남아 있는지</strong> 확인 — 이번 행사는 알림 수신 동의를 받는 것이 목적이라 중요하다</span></li><li class="check" data-id="qe8cc24671d"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">제외된 사람에게 취소 알림이 가는지 확인 → 정책 확인 필요</span></li></ul>
+<h3>그룹 3 — 경계값</h3>
+<h4>3-1 · 정확히 경계에서 실패가 발동하는지</h4>
+<p>재현: 최소 2명 설정에서 <strong>2명 → 1명</strong>으로 떨어지는 순간.</p>
+<ul class="checks"><li class="check" data-id="q13a760ac1b"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">2명일 때는 실패가 아니고, 1명이 되는 순간 실패가 된다</span></li><li class="check" data-id="qebaddcd1d0"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text"><strong>0명이 되어야 실패하는 오류</strong>가 없다</span></li></ul>
+<h4>3-2 · 최소 인원을 바꿔도 임계점이 따라가는지</h4>
+<p>재현: 최소 인원을 <strong>3명</strong>, <strong>4명</strong>으로 바꿔 이벤트를 다시 만들고 같은 절차를 반복한다.</p>
+<ul class="checks"><li class="check" data-id="q2af11b2eb2"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">최소 3명 → 3명은 정상, 2명이 되는 순간 실패</span></li><li class="check" data-id="q92eb675894"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">최소 4명 → 4명은 정상, 3명이 되는 순간 실패</span></li><li class="check" data-id="qcebc30f20b"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">실패 화면의 <code>동의 n / m명 · 최소 N명</code> 표시가 설정값과 맞다</span></li></ul>
+<h3>그룹 4 — 실패 후 재신청</h3>
+<h4>4-1 · 재신청도 전원이 다시 동의하는지 (꼭 확인)</h4>
+<p>재현: 실패 화면에서 <strong>다시 신청하기</strong> → 재신청을 끝까지 진행한다.</p>
+<ul class="checks"><li class="check" data-id="qd0ff1fedfe"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">재신청도 <strong>팀원 전원 동의 절차</strong>를 거친다</span></li><li class="check" data-id="q70921c0e0e"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">동의 요청 알림톡이 팀원 전원에게 <strong>다시</strong> 발송된다</span></li><li class="check" data-id="q5e30f3db36"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text"><strong>동의 없이 바로 확정되지 않는다</strong> — 이전에 문제가 났던 지점이므로 반드시 밟는다</span></li></ul>
+<h4>4-2 · 재신청 화면의 초기 상태</h4>
+<p>재현: <strong>다시 신청하기</strong>를 눌러 들어간 신청 화면을 본다.</p>
+<ul class="checks"><li class="check" data-id="q11ec8ea64c"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">팀 정보가 채워져 있는지 / 빈 화면인지가 정한 방식과 맞다</span></li><li class="check" data-id="q08ddff3bf7"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">거절했던 팀원이 목록에 남아 있는지, 빠져 있는지 확인 → 정책 확인 필요</span></li></ul>
+<h4>4-3 · 상태별 버튼이 맞는지 (회귀 확인)</h4>
+<p>재현: 동의 대기 중 · 확정 · 실패 세 상태를 각각 만들어 이벤트 페이지의 버튼을 본다.</p>
+<ul class="checks"><li class="check" data-id="q56b4734832"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">동의 대기 중 → <strong>동의 현황 확인</strong></span></li><li class="check" data-id="qcae0772a72"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">실패 → <strong>다시 신청하기</strong></span></li><li class="check" data-id="q4cd1aa3f7e"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">확정 → 재신청 버튼이 뜨지 않는다</span></li><li class="check" data-id="qd262e80674"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">화면을 나갔다 다시 들어와도 버튼이 그대로다</span></li></ul>
+<h3>그룹 5 — 실패가 아닌데 실패로 처리되지 않는지 (반대 검증)</h3>
+<h4>5-1 · 정상 확정이 실패로 빠지지 않는지</h4>
+<p>재현: 팀원 전원이 정상 동의한다.</p>
+<ul class="checks"><li class="check" data-id="q62213322ce"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text"><code>신청 실패</code>로 잘못 빠지지 않고 정상 확정된다</span></li><li class="check" data-id="q2b6601c5fb"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">실패 알림톡이 잘못 나가지 않는다</span></li></ul>
+<h4>5-2 · 최소 인원을 딱 채웠을 때</h4>
+<p>재현: 최소 2명 설정에서 정확히 2명만 동의를 마친다.</p>
+<ul class="checks"><li class="check" data-id="qf0c4f95695"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">미달로 오판하지 않고 확정된다</span></li><li class="check" data-id="q9bf97b69d1"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">자리가 정상 배정되고 QR이 발급된다</span></li></ul>
+</section>
+<section class="part" id="sec7" data-items="qe9977d04d0,q10a8fb6578,q6cf1d9c3ab,qbffc6bb142,q4ae8c736e6,q29f15f2fee,qa787717369,q23bba2b47c,q327f2add14,q93e201063f,q49d2387c3d"><div class="part-head"><h2>7. 운영자 현황 — 주최측</h2><span class="part-count" data-for="sec7"></span></div><ul class="checks"><li class="check" data-id="qe9977d04d0"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">신청자 리스트에서 <strong>자리별 현황</strong>이 실제 배정과 맞다 (<code>18:00 1/1 · 19:00 1/1 · 20:00 0/1</code>)</span></li><li class="check" data-id="q10a8fb6578"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">정원이 찬 자리의 표시가 다르게 보인다</span></li><li class="check" data-id="q6cf1d9c3ab"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">확정된 팀은 배정된 자리가, 대기 중인 팀은 <code>동의 대기 n/m</code>이 보인다</span></li><li class="check" data-id="qbffc6bb142"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">팀을 열면 팀원 전원과 각자의 답변이 보인다</span></li><li class="check" data-id="q4ae8c736e6"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">졸업생 / 재학생 팀 탭 전환이 맞게 걸러진다</span></li><li class="check" data-id="q29f15f2fee"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">총 신청 인원 수가 실제와 맞다 (팀은 팀원 수만큼 세는지 확인)</span></li></ul>
+<h4>자리 옮기기</h4>
+<ul class="checks"><li class="check" data-id="qa787717369"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">확정된 팀의 자리를 눌러 다른 자리로 옮긴다</span></li><li class="check" data-id="q23bba2b47c"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text"><strong>정원이 찬 자리로도</strong> 옮길 수 있다 (예외 허용이 의도)</span></li><li class="check" data-id="q327f2add14"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">옮긴 뒤 자리별 현황 숫자가 바로 맞게 바뀐다</span></li><li class="check" data-id="q93e201063f"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">정원을 넘긴 자리가 눈에 띄게 표시된다</span></li><li class="check" data-id="q49d2387c3d"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">자리를 옮기면 참가자에게 알림이 가는지 확인 → <strong>정책 확인 필요. 안 가면 참가자는 바뀐 걸 모른다</strong></span></li></ul>
+</section>
+<section class="part" id="sec8" data-items="q753135e90b,qb44c4937fc,qfdb606f80b,q38a4573860,qc9f260e84d,qc40aaf8613,q6bcd6e11c9,qf95ceadc65,q11f19b9fd2,q4b371eda47"><div class="part-head"><h2>8. 엑셀 내보내기 — 명찰 제작</h2><span class="part-count" data-for="sec8"></span></div><p>명찰을 실제로 만들 수 있는지가 목표다. 파일만 열어 보고 끝내지 말고 <strong>캔바까지 넣어본다.</strong></p>
+<ul class="checks"><li class="check" data-id="q753135e90b"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">졸업생만 / 재학생 팀만 / 둘 다 각각 내보내 본다</span></li><li class="check" data-id="qb44c4937fc"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">유형을 고르면 선택 표시(체크)가 눈에 보인다</span></li><li class="check" data-id="qfdb606f80b"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text"><strong>한 사람씩 / 신청 건별</strong> 두 가지를 모두 내보낸다</span></li><li class="check" data-id="q38a4573860"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">항목을 3~4개만 골라 내보냈을 때 그 열만 나온다</span></li><li class="check" data-id="qc9f260e84d"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">졸업생만 골랐을 때 팀에만 있는 항목(팀명·대표 여부)이 목록에서 빠진다</span></li><li class="check" data-id="qc40aaf8613"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">팀을 &quot;한 사람씩&quot;으로 내보내면 <strong>팀원 수만큼 줄이 나온다</strong></span></li><li class="check" data-id="q6bcd6e11c9"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">파일을 엑셀·구글시트에서 열었을 때 <strong>한글이 깨지지 않는다</strong></span></li><li class="check" data-id="qf95ceadc65"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">제외된 팀원, 취소한 신청자가 명단에 없다</span></li><li class="check" data-id="q11f19b9fd2"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">아직 동의 대기 중인 팀이 명단에 어떻게 나오는지 확인</span></li><li class="check" data-id="q4b371eda47"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text"><strong>내려받은 파일을 캔바 대량 제작에 실제로 넣어 명찰 3장을 만들어 본다</strong></span></li></ul>
+</section>
+<section class="part" id="sec9" data-items="q6e88827b6e,q2cf5167eee,q600e543cbd,qbd973d43c2,q32a3f3113d,q864ffcf250,q28120f4abe,qde35aa6be6,qa97ca8a58d,q950509bd11,q124e762b19,q8d86ca579a,q38c0430f59,q5aeb234404"><div class="part-head"><h2>9. 당일 현장 — 체크인</h2><span class="part-count" data-for="sec9"></span></div><ul class="checks"><li class="check" data-id="q6e88827b6e"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">스태프에게 체크인 전용 링크를 보낸다</span></li><li class="check" data-id="q2cf5167eee"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">스태프 화면에서 <strong>참가자 연락처가 보이지 않는다</strong></span></li><li class="check" data-id="q600e543cbd"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">참가자의 QR을 스캔하면 <strong>누르지 않아도 바로</strong> 입장 처리된다</span></li><li class="check" data-id="qbd973d43c2"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">같은 QR을 다시 스캔하면 <strong>이미 입장</strong>이라고 알려준다</span></li><li class="check" data-id="q32a3f3113d"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">취소된 신청의 QR을 스캔하면 입장이 막힌다</span></li><li class="check" data-id="q864ffcf250"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">명단 탭에서 이름으로 찾아 입장 처리한다</span></li><li class="check" data-id="q28120f4abe"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">재학생 팀은 <strong>모두 입장</strong> 한 번으로 팀 전체가 처리된다</span></li><li class="check" data-id="qde35aa6be6"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">자리별 칩(<code>18:00 1/1</code>)이 실제 입장 수와 맞게 올라간다</span></li><li class="check" data-id="qa97ca8a58d"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">미입장 / 전체 필터가 맞게 걸러진다</span></li><li class="check" data-id="q950509bd11"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text"><strong>현장 신청 등록</strong>으로 그 자리에서 등록하고 입장까지 처리한다</span></li><li class="check" data-id="q124e762b19"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">두 사람이 <strong>동시에</strong> 같은 참가자를 입장 처리해도 숫자가 어긋나지 않는다</span></li><li class="check" data-id="q8d86ca579a"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">스캔 화면에서 카메라 권한을 거부했을 때 안내가 나온다</span></li></ul>
+<div class="note"><p><strong>현장 조건에서 확인</strong> — 행사장은 인터넷이 불안정할 수 있다.</p>
+<ul class="checks"><li class="check" data-id="q38c0430f59"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">네트워크를 껐다 켜는 중에 스캔하면 어떻게 되는지 확인</span></li><li class="check" data-id="q5aeb234404"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">입장 처리가 실패했을 때 <strong>성공한 것처럼 보이지 않는다</strong></span></li></ul>
+</div>
+</section>
+<section class="part" id="sec10" data-items="q806f550ad1,q8bc5204002,qf53100410d,qd2b6cea469,q395f8815c5,q10687ba221"><div class="part-head"><h2>10. 알림톡 전수 확인</h2><span class="part-count" data-for="sec10"></span></div><p>QA를 진행하며 받은 알림톡을 모아 한 번에 본다.</p>
+<div class="table-wrap"><table><thead><tr><th>#</th><th>언제</th><th>받는 사람</th><th>확인</th></tr></thead><tbody><tr><td>1</td><td>팀 신청 직후</td><td>팀원 전원</td><td>[ ] 도착 [ ] 문구 [ ] 링크</td></tr><tr><td>2</td><td>팀 신청 직후</td><td>대표자</td><td>[ ] 도착 [ ] 문구 [ ] 링크</td></tr><tr><td>3</td><td>전원 동의 완료</td><td>팀 전원</td><td>[ ] 도착 [ ] 문구 [ ] 링크</td></tr><tr><td>4</td><td>개인 신청 완료</td><td>신청자</td><td>[ ] 도착 [ ] 문구 [ ] 링크</td></tr><tr><td>5</td><td>거절·미응답·시간 초과로 실패</td><td>대표자</td><td>[ ] 도착 [ ] 결과 필드가 <code>신청 실패</code> [ ] 링크</td></tr><tr><td>6</td><td>대표자가 제외해서 실패</td><td>—</td><td>[ ] <strong>오지 않아야 한다</strong> (케이스 A)</td></tr><tr><td>7</td><td>행사 전날 리마인드</td><td>참가자 전원</td><td><strong>미정</strong> — 넣을지 여부 결정 필요</td></tr></tbody></table></div>
+<h4>공통 확인</h4>
+<ul class="checks"><li class="check" data-id="q806f550ad1"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">발신 이름이 <strong>서울시립대학교 총동문회</strong>로 나온다</span></li><li class="check" data-id="q8bc5204002"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">행사명·날짜·시간이 실제 설정과 맞다</span></li><li class="check" data-id="qf53100410d"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">링크를 눌렀을 때 <strong>로그인 없이</strong> 해당 화면이 바로 열린다</span></li><li class="check" data-id="qd2b6cea469"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">카카오톡이 없는 번호에는 문자로 대체 발송되는지 확인</span></li><li class="check" data-id="q395f8815c5"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">같은 알림톡이 두 번 오지 않는다</span></li><li class="check" data-id="q10687ba221"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">실패 알림톡 때문에 <strong>새 템플릿이 늘지 않았다</strong> — 5번은 2번과 같은 템플릿에서 결과 필드만 바뀐 것이다</span></li></ul>
+</section>
+<section class="part" id="sec11" data-items="q44b7671b8a,qfe8c562065,qf2f8fd00db,qc42cbb6163,q39d347cefb,qede74f025d"><div class="part-head"><h2>11. 기기·브라우저</h2><span class="part-count" data-for="sec11"></span></div><p>참가자는 대부분 알림톡 링크를 <strong>카카오톡 안에서</strong> 연다. 이 환경을 반드시 포함한다.</p>
+<ul class="checks"><li class="check" data-id="q44b7671b8a"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">iPhone Safari</span></li><li class="check" data-id="qfe8c562065"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">Android Chrome</span></li><li class="check" data-id="qf2f8fd00db"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text"><strong>카카오톡 인앱 브라우저</strong> (동의·신청·QR 모두)</span></li><li class="check" data-id="qc42cbb6163"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">PC 브라우저 (주최측 화면 위주)</span></li><li class="check" data-id="q39d347cefb"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">작은 화면(320px 폭)에서 글자가 잘리거나 가로 스크롤이 생기지 않는다</span></li><li class="check" data-id="qede74f025d"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">휴대폰 글자 크기를 크게 설정한 상태에서 버튼이 눌린다</span></li></ul>
+</section>
+<section class="part" id="sec12" data-items="qde1b918693,qeac34f3b83,qba32ab6e1b,qdc2dcdb83b,q7f1c6feeac"><div class="part-head"><h2>12. 마무리</h2><span class="part-count" data-for="sec12"></span></div><ul class="checks"><li class="check" data-id="qde1b918693"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">테스트 이벤트를 삭제하거나 비공개로 돌린다</span></li><li class="check" data-id="qeac34f3b83"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">테스트로 올린 프로필 사진 등 개인정보를 지운다</span></li><li class="check" data-id="qba32ab6e1b"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">자동 가입으로 <strong>커뮤니티 회원이 된 테스트 계정을 정리</strong>한다 (2절에서 늘어난 회원)</span></li><li class="check" data-id="qdc2dcdb83b"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">QA 중 나온 문제를 <strong>화면 캡처 + 재현 순서</strong>와 함께 정리한다</span></li><li class="check" data-id="q7f1c6feeac"><button class="mark mark-pass" type="button" aria-label="통과" onclick="mark(this,'pass')"><i data-lucide="check"></i></button><button class="mark mark-fail" type="button" aria-label="실패" onclick="mark(this,'fail')"><i data-lucide="x"></i></button><span class="check-text">정책을 정해야 하는 항목을 모아 팀에 공유한다</span></li></ul>
+<h3>이번 QA에서 결정해야 하는 것</h3>
+<p>QA를 하며 실제 동작을 보고 팀이 정할 것들. 코드 문제가 아니라 <strong>아직 안 정한 것</strong>이다.</p>
+<ol class="plain"><li>전원 동의했는데 고른 자리가 모두 차 버린 경우의 처리</li><li>주최측이 자리를 옮겼을 때 참가자에게 알릴지</li><li>행사 전날 리마인드 알림톡을 넣을지</li><li>거절·미응답이 섞였을 때 실패 사유를 무엇으로 적을지 (6절 1-3)</li><li>제외된 팀원에게 취소 알림을 보낼지 (6절 2-2)</li><li>재신청 화면에서 거절했던 팀원을 남길지 뺄지 (6절 4-2)</li><li><strong>동의한 팀원도 커뮤니티 회원이 되게 할지</strong> (2절 2-4) — 이번 행사의 목적과 직결된다</li><li>자동 가입된다는 사실을 신청 화면 어디에 알릴지 (2절 2-7)</li></ol>
+<p>동의 마감 경과 처리와 팀원 거절 허용 여부는 6절 정책으로 정해졌다.</p>
+</section>
+
+  </main>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+var TOTAL = 175;
+var KEY = 'connectia.qa.cheongchun';
+var state = {};
+
+try { state = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { state = {}; }
+
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+}
+
+/* 통과·실패를 다시 누르면 미확인으로 돌아간다 */
+function mark(btn, how) {
+  var li = btn.closest('.check');
+  var id = li.dataset.id;
+  state[id] = (state[id] === how) ? null : how;
+  if (!state[id]) delete state[id];
+  paint(li);
+  save();
+  sync();
+}
+
+function paint(li) {
+  var v = state[li.dataset.id];
+  li.classList.toggle('is-pass', v === 'pass');
+  li.classList.toggle('is-fail', v === 'fail');
+}
+
+function sync() {
+  var pass = 0, fail = 0;
+  for (var k in state) {
+    if (state[k] === 'pass') pass++;
+    else if (state[k] === 'fail') fail++;
+  }
+
+  document.getElementById('meter-pass').style.width = (pass / TOTAL * 100) + '%';
+  document.getElementById('meter-fail').style.width = (fail / TOTAL * 100) + '%';
+  document.getElementById('meter-text').innerHTML =
+    '<span class="n-pass">' + pass + '</span> / ' + TOTAL
+    + (fail ? ' · <span class="n-fail">실패 ' + fail + '</span>' : '');
+
+  document.querySelectorAll('.part').forEach(function(sec) {
+    var ids = sec.dataset.items ? sec.dataset.items.split(',') : [];
+    var p = 0, f = 0;
+    ids.forEach(function(id) {
+      if (state[id] === 'pass') p++;
+      else if (state[id] === 'fail') f++;
+    });
+    var text = ids.length ? (f ? p + '/' + ids.length + ' · 실패 ' + f : p + '/' + ids.length) : '';
+    document.querySelectorAll('[data-for="' + sec.id + '"]').forEach(function(el) {
+      el.textContent = text;
+      el.classList.toggle('is-done', ids.length > 0 && p === ids.length && f === 0);
+      el.classList.toggle('has-fail', f > 0);
+    });
+  });
+}
+
+function toggleFilter() {
+  var on = document.body.classList.toggle('only-fail');
+  document.getElementById('filter-btn').textContent = on ? '전체 보기' : '실패만 보기';
+}
+
+function resetAll() {
+  if (!confirm('체크한 내용을 모두 지울까요?')) return;
+  state = {};
+  save();
+  document.querySelectorAll('.check').forEach(paint);
+  sync();
+  showToast('처음 상태로 돌아갔어요.');
+}
+
+var toastTimer = null;
+function showToast(msg) {
+  var wrap = document.getElementById('toast-container');
+  wrap.innerHTML = '<div class="toast">' + msg + '</div>';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function() { wrap.innerHTML = ''; }, 2400);
+}
+
+document.querySelectorAll('.check').forEach(paint);
+sync();
+lucide.createIcons();
+</script>
+</body>
+</html>
