@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="운영자 승인 단계가 들어간 신청 흐름에서 알림톡이 언제 나가고 어느 화면으로 이어지는지">
+<title>청춘건배 알림톡 흐름</title>
+<link rel="stylesheet" href="../../tokens.css">
+<link rel="stylesheet" href="../../components.css">
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-base);
+    word-break: keep-all;
+    -webkit-font-smoothing: antialiased;
+  }
+  img { max-width: 100%; display: block; }
+  p { margin: 0; text-wrap: pretty; }
+  h1, h2, h3 { margin: 0; text-wrap: balance; }
+  ul { margin: 0; padding: 0; list-style: none; }
+
+  .wrap { max-width: 900px; margin: 0 auto; padding: 0 20px 96px; }
+
+  /* ── 머리말 ── */
+  .masthead { padding: 56px 0 32px; }
+  .eyebrow {
+    display: block; margin-bottom: 12px;
+    font-size: var(--fs-label); font-weight: var(--fw-semibold);
+    color: var(--color-text-muted);
+  }
+  h1 {
+    font-size: var(--fs-metric); font-weight: var(--fw-bold);
+    line-height: var(--lh-display); letter-spacing: var(--ls-metric);
+  }
+  .lede {
+    max-width: 60ch; margin-top: 16px;
+    font-size: var(--fs-body-lg); line-height: var(--lh-body-lg);
+    color: var(--color-text-sub);
+  }
+  .lede strong { font-weight: var(--fw-semibold); color: var(--color-text); }
+
+  .card {
+    background: var(--color-surface);
+    border-radius: var(--r-lg);
+    box-shadow: var(--shadow-2);
+    padding: 24px;
+  }
+
+  /* ── 템플릿 요약 ── */
+  .templates { margin-top: 24px; }
+  .templates h2 {
+    font-size: var(--fs-title); font-weight: var(--fw-bold);
+    letter-spacing: var(--ls-title); margin-bottom: 16px;
+  }
+  .tpl-list { display: grid; gap: 12px; }
+  .tpl {
+    display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+    padding: 12px 16px;
+    background: var(--color-surface-sub);
+    border-radius: var(--r-md);
+  }
+  .tpl-no {
+    flex: none;
+    font-size: var(--fs-badge); font-weight: var(--fw-bold);
+    color: var(--color-primary);
+  }
+  .tpl-name { font-size: var(--fs-body); font-weight: var(--fw-semibold); }
+  .tpl-desc { font-size: var(--fs-label); color: var(--color-text-sub); flex: 1; min-width: 200px; }
+  .tpl-note {
+    margin-top: 16px;
+    font-size: var(--fs-label); color: var(--color-text-sub);
+  }
+  .tpl-note strong { color: var(--color-success-dark); font-weight: var(--fw-bold); }
+
+  /* ── 흐름 ── */
+  .flow { margin-top: 40px; display: grid; gap: 16px; }
+
+  .step { display: grid; gap: 20px 28px; }
+  @media (min-width: 760px) {
+    /* 화면은 길고 글은 짧아서, 가운데 맞춰야 카드에 빈 구멍이 안 생긴다 */
+    .step { grid-template-columns: 220px 1fr; align-items: center; }
+  }
+  .shot {
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-md);
+    overflow: hidden;
+    background: var(--color-surface-sub);
+  }
+  @media (max-width: 759px) { .shot { max-width: 300px; margin: 0 auto; } }
+
+  .step-head { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+  .step-no {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 24px; height: 24px; border-radius: var(--r-full);
+    background: var(--color-primary-light); color: var(--color-primary-dark);
+    font-size: var(--fs-badge); font-weight: var(--fw-bold);
+    flex: none;
+  }
+  .step h3 {
+    font-size: var(--fs-title); font-weight: var(--fw-bold);
+    line-height: var(--lh-title); letter-spacing: var(--ls-title);
+  }
+  .step-body p {
+    font-size: var(--fs-body-lg); line-height: var(--lh-body-lg);
+    color: var(--color-text-sub); max-width: 54ch;
+  }
+  .step-body strong { font-weight: var(--fw-semibold); color: var(--color-text); }
+
+  /* 알림톡이 나가는 지점 */
+  .talk { margin-top: 16px; display: grid; gap: 8px; }
+  .talk-row {
+    display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+    padding: 12px 16px;
+    background: var(--color-primary-light);
+    border-radius: var(--r-md);
+  }
+  .talk-to {
+    flex: none;
+    font-size: var(--fs-caption); font-weight: var(--fw-bold);
+    color: var(--color-primary-dark);
+  }
+  .talk-what { font-size: var(--fs-label); color: var(--color-text); flex: 1; min-width: 180px; }
+  .talk-what code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.92em;
+    background: var(--color-surface);
+    padding: 1px 6px; border-radius: var(--r-xs);
+  }
+
+  /* 알림톡이 없는 지점 */
+  .quiet {
+    margin-top: 16px;
+    display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+    padding: 12px 16px;
+    background: var(--color-surface-sub);
+    border-radius: var(--r-md);
+    font-size: var(--fs-label); color: var(--color-text-muted);
+  }
+  .quiet-tag {
+    flex: none;
+    font-size: var(--fs-caption); font-weight: var(--fw-bold);
+    color: var(--color-text-sub);
+  }
+
+  .step.is-owner .step-no { background: var(--color-surface-dark); color: var(--color-on-primary); }
+  .step.is-fail .step-no { background: var(--color-destructive-subtle); color: var(--color-destructive); }
+
+  /* ── 맺음 ── */
+  .closing { margin-top: 40px; }
+  .closing h2 {
+    font-size: var(--fs-title); font-weight: var(--fw-bold);
+    letter-spacing: var(--ls-title); margin-bottom: 12px;
+  }
+  .closing p {
+    font-size: var(--fs-body-lg); line-height: var(--lh-body-lg);
+    color: var(--color-text-sub); max-width: 62ch;
+  }
+  .closing p + p { margin-top: 12px; }
+  .closing strong { font-weight: var(--fw-semibold); color: var(--color-text); }
+
+  @media (max-width: 560px) {
+    .wrap { padding: 0 16px 64px; }
+    .masthead { padding: 40px 0 24px; }
+    .card { padding: 20px 16px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="masthead">
+    <span class="eyebrow">서울시립대학교 총동문회 · 26년 청춘건배</span>
+    <h1>알림톡이 언제 나가나</h1>
+    <p class="lede">
+      전원 동의 후 <strong>운영자 승인</strong>을 거쳐 확정되는 흐름입니다.
+      각 단계에서 누구에게 무엇이 나가는지, 그 알림톡을 누르면 어떤 화면이 열리는지 정리했습니다.
+    </p>
+  </header>
+
+  <section class="card templates">
+    <h2>쓰는 템플릿 세 개</h2>
+    <div class="tpl-list">
+      <div class="tpl">
+        <span class="tpl-no">01</span>
+        <span class="tpl-name">동의 요청</span>
+        <span class="tpl-desc">팀원 각자에게. 본인 동의 화면으로 이어지는 개별 링크</span>
+      </div>
+      <div class="tpl">
+        <span class="tpl-no">02</span>
+        <span class="tpl-name">현황 안내</span>
+        <span class="tpl-desc">대표자에게. 결과 필드가 <code>동의 대기 중</code> 또는 <code>신청 실패</code>로 바뀝니다</span>
+      </div>
+      <div class="tpl">
+        <span class="tpl-no">03</span>
+        <span class="tpl-name">확정 + QR</span>
+        <span class="tpl-desc">팀 전원에게. 자동 배정이든 운영자 승인이든 같은 템플릿을 씁니다</span>
+      </div>
+    </div>
+    <p class="tpl-note"><strong>신규 승인이 필요한 템플릿은 없습니다.</strong> 승인 대기 안내는 알림톡을 보내지 않고 화면으로만 알립니다.</p>
+  </section>
+
+  <div class="flow">
+
+    <article class="card step">
+      <div class="shot"><img src="shots/apply.png" alt="대표자가 팀 이름과 팀원 이름·전화번호를 적고 참석 가능한 자리를 고르는 신청 화면"></div>
+      <div class="step-body">
+        <div class="step-head"><span class="step-no">1</span><h3>대표자가 팀으로 신청</h3></div>
+        <p>
+          팀원의 <strong>이름과 전화번호만</strong> 적고, 참석 가능한 자리를 여러 개 고릅니다.
+          학번·학과·사연은 팀원이 각자 채웁니다.
+        </p>
+        <div class="talk">
+          <div class="talk-row">
+            <span class="talk-to">팀원 전원</span>
+            <span class="talk-what"><strong>01 동의 요청</strong> — 각자 다른 링크</span>
+          </div>
+          <div class="talk-row">
+            <span class="talk-to">대표자</span>
+            <span class="talk-what"><strong>02 현황 안내</strong> — 결과 <code>동의 대기 중</code></span>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <article class="card step">
+      <div class="shot"><img src="shots/consent.png" alt="팀원이 동의 내용을 확인하고 학번·학과·사연을 직접 입력하는 동의 화면"></div>
+      <div class="step-body">
+        <div class="step-head"><span class="step-no">2</span><h3>팀원이 각자 동의</h3></div>
+        <p>
+          <strong>01 동의 요청</strong>의 링크로 들어오는 화면입니다.
+          동의 내용을 확인하고 본인 정보를 채운 뒤 동의합니다. 필수를 비우면 넘어갈 수 없습니다.
+        </p>
+        <div class="quiet">
+          <span class="quiet-tag">알림톡 없음</span>
+          <span>팀원이 동의할 때마다 알림을 보내지는 않습니다</span>
+        </div>
+      </div>
+    </article>
+
+    <article class="card step">
+      <div class="shot"><img src="shots/pending.png" alt="대표자가 팀원별 동의 상태와 남은 시간을 보는 현황 화면"></div>
+      <div class="step-body">
+        <div class="step-head"><span class="step-no">3</span><h3>대표자가 현황을 본다</h3></div>
+        <p>
+          <strong>02 현황 안내</strong>의 링크로 들어오는 화면입니다.
+          누가 아직 동의하지 않았는지 보이고, 연락이 닿지 않는 팀원은 제외할 수 있습니다.
+        </p>
+        <div class="quiet">
+          <span class="quiet-tag">알림톡 없음</span>
+          <span>대표자가 링크로 다시 들어와 확인합니다</span>
+        </div>
+      </div>
+    </article>
+
+    <article class="card step">
+      <div class="shot"><img src="shots/review.png" alt="팀원 전원이 동의해 승인 대기 상태가 된 대표자 화면"></div>
+      <div class="step-body">
+        <div class="step-head"><span class="step-no">4</span><h3>전원 동의 완료 → 승인 대기</h3></div>
+        <p>
+          마지막 팀원이 동의하면 자동 배정이 자리를 <strong>잡아 두고</strong> 승인 대기 상태가 됩니다.
+          이때부터 그 인원만큼 자리가 차서, 다른 참가자에게 보이는 잔여 인원이 실제와 맞습니다.
+        </p>
+        <div class="quiet">
+          <span class="quiet-tag">알림톡 없음</span>
+          <span>대표자가 들어오면 이 화면으로 보입니다. 확정을 약속하지 않는 문구를 씁니다</span>
+        </div>
+      </div>
+    </article>
+
+    <article class="card step is-owner">
+      <div class="shot"><img src="shots/admin-review.png" alt="운영자가 승인 대기 팀을 선택해 일괄 승인하는 화면"></div>
+      <div class="step-body">
+        <div class="step-head"><span class="step-no">5</span><h3>운영자가 승인</h3></div>
+        <p>
+          신청자 리스트에서 <strong>승인 대기</strong>를 누르면 대기 건만 남고 선택·일괄 승인 바가 뜹니다.
+          자동 배정이 제안한 자리가 <strong>18:00 예정</strong>처럼 보이고, 눌러서 바꿀 수 있습니다.
+        </p>
+        <p>
+          위쪽 자리별 현황을 보면서 어디에 넣을지 판단합니다. 반려하면 그 팀이 잡고 있던 자리는 바로 풀립니다.
+        </p>
+        <div class="quiet">
+          <span class="quiet-tag">운영자 화면</span>
+          <span>모집 중에 하루 한 번 처리하는 것을 권합니다</span>
+        </div>
+      </div>
+    </article>
+
+    <article class="card step">
+      <div class="shot"><img src="shots/done.png" alt="자리가 확정되고 입장용 QR이 발급된 화면"></div>
+      <div class="step-body">
+        <div class="step-head"><span class="step-no">6</span><h3>승인 → 확정</h3></div>
+        <p>
+          운영자가 승인하는 순간 자리가 확정되고 <strong>입장용 QR</strong>이 발급됩니다.
+        </p>
+        <div class="talk">
+          <div class="talk-row">
+            <span class="talk-to">팀 전원</span>
+            <span class="talk-what"><strong>03 확정 + QR</strong> — 배정된 시간대와 입장 QR</span>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <article class="card step is-fail">
+      <div class="shot"><img src="shots/rejected.png" alt="주최측 확인 결과 취소되었다는 안내와 총동문회 연락처가 보이는 화면"></div>
+      <div class="step-body">
+        <div class="step-head"><span class="step-no">6′</span><h3>승인하지 않으면 — 반려</h3></div>
+        <p>
+          팀은 멀쩡한데 주최측 판단으로 받지 않는 경우입니다. 재신청해도 같은 결과라
+          <strong>다시 신청하기 버튼을 감추고</strong> 총동문회 연락처로 문의하도록 합니다.
+        </p>
+        <div class="talk">
+          <div class="talk-row">
+            <span class="talk-to">대표자</span>
+            <span class="talk-what"><strong>02 현황 안내</strong> — 결과 <code>신청 실패</code></span>
+          </div>
+        </div>
+      </div>
+    </article>
+
+  </div>
+
+  <section class="card closing">
+    <h2>인원 미달로 실패한 경우는 다릅니다</h2>
+    <p>
+      팀원이 거절하거나 응답하지 않아 <strong>최소 인원에 미달</strong>하면, 승인 단계까지 가지 못하고
+      그 자리에서 신청 실패가 됩니다. 팀 자체가 성립하지 않은 것이라 <strong>다시 신청하기</strong>가 나옵니다.
+    </p>
+    <p>
+      알림톡은 <strong>02 현황 안내</strong>의 결과 필드를 <code>신청 실패</code>로 바꿔 보냅니다.
+      다만 대표자가 직접 팀원을 제외해서 미달이 된 경우에는 방금 본인이 한 행동이므로 알림을 보내지 않고 화면만 바뀝니다.
+    </p>
+  </section>
+
+</div>
+</body>
+</html>

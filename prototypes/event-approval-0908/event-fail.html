@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>신청 실패 — 26년 청춘건배</title>
+<link rel="stylesheet" href="../../tokens.css">
+<link rel="stylesheet" href="../../components.css">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-base);
+    background: #e0e0e0;
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ── Frame (mobile) ── */
+  .frame {
+    width: 390px;
+    height: 844px;
+    max-height: 100dvh;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 32px 80px -20px rgba(0,0,0,0.28);
+    background: var(--color-surface);
+    border-radius: 44px;
+  }
+  @media (max-width: 439px) {
+    .frame { width: 100vw; height: 100dvh; max-height: none; border-radius: 0; }
+  }
+
+  .screen { position: absolute; inset: 0; display: none; flex-direction: column; background: var(--color-surface); }
+  .screen.on { display: flex; }
+
+  i[data-lucide] { display: inline-flex; flex-shrink: 0; }
+  svg.lucide { flex-shrink: 0; }
+
+  .topbar-solid {
+    position: sticky; top: 0; z-index: 10;
+    display: flex; align-items: center; gap: 8px;
+    padding: 12px 8px;
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    flex-shrink: 0;
+  }
+  .topbar-solid .topbar-title {
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text);
+  }
+
+  /* ── 프로토타입 전용: 상태 전환 바 ── */
+  .viewer-bar {
+    position: absolute; top: 0; left: 0; right: 0; z-index: 100;
+    background: var(--color-surface-dark);
+    padding: 6px 12px;
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .viewer-bar-row { display: flex; align-items: center; gap: 8px; height: 32px; }
+  .viewer-bar-label {
+    font-size: var(--fs-badge); font-weight: var(--fw-semibold);
+    color: var(--color-on-primary-sub);
+    flex: 0 0 52px;
+  }
+  .viewer-bar-tabs { display: flex; gap: 4px; margin-left: auto; }
+  .viewer-bar-tab {
+    padding: 4px 10px;
+    border: none; border-radius: var(--r-full);
+    background: transparent;
+    font-family: var(--font-base);
+    font-size: var(--fs-badge); font-weight: var(--fw-medium);
+    color: var(--color-on-primary-sub);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .viewer-bar-tab:hover { color: var(--color-on-primary); }
+  .viewer-bar-tab.active { background: var(--color-primary); color: var(--color-on-primary); }
+  /* 화면을 viewer-bar 아래로 밀기 (viewer-bar-row 1줄 × 32px + 여백) */
+  .frame .screen { top: 44px; }
+  body.is-share .viewer-bar { display: none; }
+  body.is-share .frame .screen { top: 0; }
+
+  /* ============================================
+     대표자 — 신청 실패 화면
+     ============================================ */
+  .fail-body {
+    flex: 1; overflow-y: auto;
+    background: var(--color-bg);
+    padding: 32px 20px;
+    display: flex; flex-direction: column; align-items: center; gap: 20px;
+  }
+  .fail-head {
+    display: flex; flex-direction: column; align-items: center; gap: 12px;
+    text-align: center;
+  }
+  .fail-icon {
+    width: 56px; height: 56px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: var(--r-full);
+    background: var(--color-destructive-subtle);
+  }
+  .fail-icon i[data-lucide], .fail-icon svg.lucide {
+    width: 28px; height: 28px; color: var(--color-destructive);
+  }
+  .fail-reason {
+    font-size: var(--fs-body); color: var(--color-text-sub);
+    line-height: var(--lh-body); max-width: 30ch;
+  }
+
+  .fail-people {
+    width: 100%;
+    display: flex; flex-direction: column;
+    background: var(--color-surface);
+    border-radius: var(--r-md);
+    padding: 4px 20px;
+  }
+  .fail-person {
+    display: flex; align-items: center; gap: 8px;
+    padding: 12px 0;
+    border-top: 1px solid var(--color-border);
+  }
+  .fail-people > .fail-person:first-child { border-top: none; }
+  .fail-person-name {
+    font-size: var(--fs-body); font-weight: var(--fw-medium);
+    color: var(--color-text);
+  }
+  .fail-person-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+  .fail-state {
+    font-size: var(--fs-label); font-weight: var(--fw-semibold);
+    color: var(--color-text-muted);
+  }
+  .fail-state.is-done { color: var(--color-success-dark); }
+  .fail-person.is-out .fail-person-name { color: var(--color-text-muted); }
+
+  .fail-summary {
+    width: 100%;
+    display: flex; flex-direction: column; gap: 8px;
+    background: var(--color-surface);
+    border-radius: var(--r-md);
+    padding: 16px 20px;
+  }
+  .fail-summary-row { display: flex; align-items: baseline; gap: 12px; }
+  .fail-summary-label {
+    flex: 0 0 76px;
+    font-size: var(--fs-caption); color: var(--color-text-muted); font-weight: var(--fw-medium);
+  }
+  .fail-summary-value { flex: 1; font-size: var(--fs-label); color: var(--color-text); line-height: 1.5; }
+
+  /* 주최 커뮤니티에 등록된 연락처 — 실패한 대표자가 물어볼 곳 */
+  .fail-contact {
+    width: 100%;
+    display: flex; flex-direction: column; gap: 12px;
+    background: var(--color-surface);
+    border-radius: var(--r-md);
+    padding: 16px 20px;
+  }
+  .fail-contact-head {
+    display: flex; align-items: center; gap: 6px;
+    font-size: var(--fs-caption); font-weight: var(--fw-semibold);
+    color: var(--color-text-muted);
+  }
+  .fail-contact-head i[data-lucide], .fail-contact-head svg.lucide { width: 14px; height: 14px; }
+  .fail-contact-org {
+    font-size: var(--fs-body); font-weight: var(--fw-semibold);
+    color: var(--color-text);
+  }
+  .fail-contact-links { display: flex; flex-direction: column; gap: 8px; }
+  .fail-contact-link {
+    display: flex; align-items: center; gap: 8px;
+    font-size: var(--fs-label); font-weight: var(--fw-medium);
+    color: var(--color-primary);
+    text-decoration: none;
+  }
+  .fail-contact-link i[data-lucide], .fail-contact-link svg.lucide { width: 16px; height: 16px; }
+
+  .apply-footer {
+    flex-shrink: 0;
+    padding: 12px 20px calc(20px + env(safe-area-inset-bottom));
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  /* 재신청하면 전원이 처음부터 다시 동의한다는 규칙을 누르기 전에 알려준다 */
+  .fail-footer-note {
+    display: flex; align-items: flex-start; gap: 6px;
+    font-size: var(--fs-caption); color: var(--color-text-muted);
+    line-height: var(--lh-caption);
+  }
+  .fail-footer-note i[data-lucide], .fail-footer-note svg.lucide {
+    width: 14px; height: 14px; margin-top: 2px;
+  }
+
+  .frame .toast-container { position: absolute; bottom: 96px; }
+</style>
+</head>
+<body data-reason="reject">
+
+<div class="frame">
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- 프로토타입 전용: 상태 전환 바                  -->
+  <!-- ════════════════════════════════════════════ -->
+  <div class="viewer-bar">
+    <div class="viewer-bar-row">
+      <span class="viewer-bar-label">실패 사유</span>
+      <div class="viewer-bar-tabs">
+        <button class="viewer-bar-tab" type="button" data-axis="reason" data-value="reject" onclick="setReason('reject')">거절</button>
+        <button class="viewer-bar-tab" type="button" data-axis="reason" data-value="noreply" onclick="setReason('noreply')">미응답</button>
+        <button class="viewer-bar-tab" type="button" data-axis="reason" data-value="timeout" onclick="setReason('timeout')">시간 초과</button>
+        <button class="viewer-bar-tab" type="button" data-axis="reason" data-value="exclude" onclick="setReason('exclude')">대표자 제외</button>
+        <button class="viewer-bar-tab" type="button" data-axis="reason" data-value="rejected" onclick="setReason('rejected')">운영자 반려</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- SCREEN — 대표자가 보는 신청 실패                -->
+  <!-- ════════════════════════════════════════════ -->
+  <div class="screen on" id="screen-fail">
+    <div class="topbar-solid">
+      <button class="icon-btn icon-btn-clear" aria-label="뒤로" onclick="showToast('이벤트 페이지로 돌아가요.')">
+        <i data-lucide="chevron-left" style="width:22px;height:22px;color:var(--color-text);"></i>
+      </button>
+      <span class="topbar-title">내 신청</span>
+    </div>
+
+    <div class="fail-body">
+      <div class="fail-head">
+        <div class="fail-icon"><i data-lucide="x"></i></div>
+        <span class="badge badge-md badge-weak-danger">신청 실패</span>
+        <h2 class="text-title" id="fail-title">신청이 취소되었어요</h2>
+        <p class="fail-reason" id="fail-reason"></p>
+      </div>
+
+      <div class="fail-people" id="fail-people"></div>
+
+      <div class="fail-summary" id="fail-summary"></div>
+
+      <div class="fail-contact">
+        <span class="fail-contact-head"><i data-lucide="help-circle"></i>문의</span>
+        <span class="fail-contact-org" id="contact-org"></span>
+        <div class="fail-contact-links" id="contact-links"></div>
+      </div>
+    </div>
+
+    <div class="apply-footer">
+      <button class="btn btn-lg btn-block btn-fill-primary" type="button" id="fail-cta" onclick="reapply()">
+        다시 신청하기
+      </button>
+      <p class="fail-footer-note" id="fail-note">
+        <i data-lucide="info"></i>
+        <span>다시 신청하면 팀원 전원이 처음부터 다시 동의해야 해요.</span>
+      </p>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toast-container"></div>
+
+</div>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+/* ════════════════════════════════════════════
+   데모 데이터 — 재학생 팀(4~8명) "건축 다섯"
+   ════════════════════════════════════════════ */
+
+var TEAM_MIN = 4;
+
+/* 주최 커뮤니티가 등록해 둔 연락처 — 이벤트 설정에서 가져온다 */
+var HOST = {
+  name: '서울시립대학교 총동문회',
+  phone: '02-1234-5678',
+  email: 'alumni@example.kr'
+};
+
+var TEAM = {
+  name: '건축 다섯',
+  date: '2026.08.26 09:12',
+  slotChoices: ['18:00', '19:00'],
+  deadlineAt: '2026.08.27 09:12',
+  lastConsentAt: '2026.08.26 11:40',
+  leaderIndex: 0,
+  members: [
+    { name: '노지민' },
+    { name: '김도현' },
+    { name: '한지영' },
+    { name: '오세훈' },
+    { name: '배소연' }
+  ]
+};
+
+/* 사유마다 팀원이 어떤 상태로 끝났는지가 다르다.
+   done 동의 완료 · reject 거절 · none 미응답 · out 대표자가 제외 */
+var REASONS = {
+  reject: {
+    adminLabel: '팀원 거절',
+    leaderText: '팀원 동의가 최소 인원에 미치지 못해 신청이 취소되었습니다.',
+    states: ['done', 'done', 'reject', 'none', 'none']
+  },
+  noreply: {
+    adminLabel: '팀원 미응답',
+    leaderText: '팀원 동의가 최소 인원에 미치지 못해 신청이 취소되었습니다.',
+    states: ['done', 'done', 'none', 'none', 'none']
+  },
+  timeout: {
+    adminLabel: '동의 기한 초과',
+    leaderText: '동의 기한이 지나 신청이 취소되었습니다.',
+    states: ['done', 'done', 'none', 'none', 'none']
+  },
+  exclude: {
+    adminLabel: '대표자 제외',
+    leaderText: '팀 인원이 최소 인원 미만이 되어 신청이 취소되었습니다.',
+    states: ['done', 'done', 'done', 'out', 'out']
+  },
+  /* 전원 동의를 마쳤지만 주최측이 승인하지 않은 경우 — 팀은 멀쩡하다 */
+  rejected: {
+    adminLabel: '운영자 반려',
+    leaderText: '주최측 확인 결과 신청이 취소되었습니다.',
+    states: ['done', 'done', 'done', 'done', 'done']
+  }
+};
+
+var STATE_TEXT = { done: '완료', reject: '거절', none: '미응답', out: '제외됨' };
+
+/* ════════════════════════════════════════════
+   상태 전환
+   ════════════════════════════════════════════ */
+
+function setReason(reason) {
+  document.body.dataset.reason = reason;
+  render();
+  syncBar();
+}
+
+function syncBar() {
+  document.querySelectorAll('.viewer-bar-tab').forEach(function(t) {
+    var axis = t.dataset.axis;
+    t.classList.toggle('active', document.body.dataset[axis] === t.dataset.value);
+  });
+}
+
+/* ════════════════════════════════════════════
+   렌더
+   ════════════════════════════════════════════ */
+
+function currentReason() { return REASONS[document.body.dataset.reason] || REASONS.reject; }
+
+function memberStates() { return currentReason().states; }
+
+function doneCount() {
+  return memberStates().filter(function(s){ return s === 'done'; }).length;
+}
+
+function render() {
+  renderFail();
+  if (window.lucide) lucide.createIcons();
+}
+
+/* ── 대표자 화면 ── */
+function renderFail() {
+  var r = currentReason();
+  var states = memberStates();
+
+  document.getElementById('fail-reason').textContent = r.leaderText;
+
+  document.getElementById('fail-people').innerHTML = TEAM.members.map(function(m, i) {
+    var st = states[i];
+    return ''
+      + '<div class="fail-person' + (st === 'out' ? ' is-out' : '') + '">'
+      +   '<span class="fail-person-name">' + m.name + '</span>'
+      +   (i === TEAM.leaderIndex ? '<span class="badge badge-sm badge-weak-primary">대표</span>' : '')
+      +   '<span class="fail-person-right">'
+      +     (st === 'reject'
+            ? '<span class="badge badge-sm badge-weak-danger">거절</span>'
+            : '<span class="fail-state' + (st === 'done' ? ' is-done' : '') + '">' + STATE_TEXT[st] + '</span>')
+      +   '</span>'
+      + '</div>';
+  }).join('');
+
+  var rows = [
+    ['동의', doneCount() + ' / ' + TEAM.members.length + '명 · 최소 ' + TEAM_MIN + '명'],
+    ['고른 자리', TEAM.slotChoices.join(' · ')],
+    ['동의 마감', TEAM.deadlineAt]
+  ];
+  document.getElementById('fail-summary').innerHTML = rows.map(function(row) {
+    return '<div class="fail-summary-row">'
+      + '<span class="fail-summary-label">' + row[0] + '</span>'
+      + '<span class="fail-summary-value">' + row[1] + '</span>'
+      + '</div>';
+  }).join('');
+
+  /* 반려는 팀이 멀쩡한 경우라 재신청이 답이 아니다 — 문의로 넘긴다 */
+  var rejected = document.body.dataset.reason === 'rejected';
+  document.getElementById('fail-cta').hidden = rejected;
+  document.getElementById('fail-note').hidden = rejected;
+
+  document.getElementById('contact-org').textContent = HOST.name;
+  var links = [];
+  if (HOST.phone) links.push(['phone', 'tel:' + HOST.phone.replace(/-/g, ''), HOST.phone]);
+  if (HOST.email) links.push(['mail', 'mailto:' + HOST.email, HOST.email]);
+  document.getElementById('contact-links').innerHTML = links.map(function(l) {
+    return '<a class="fail-contact-link" href="' + l[1] + '">'
+      + '<i data-lucide="' + l[0] + '"></i>' + l[2] + '</a>';
+  }).join('');
+}
+
+/* ════════════════════════════════════════════
+   동작
+   ════════════════════════════════════════════ */
+
+function reapply() {
+  showToast('신청 화면으로 넘어가요. 팀원 정보는 그대로 채워져 있어요.');
+}
+
+var toastTimer = null;
+function showToast(msg) {
+  var wrap = document.getElementById('toast-container');
+  wrap.innerHTML = '<div class="toast">' + msg + '</div>';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function() { wrap.innerHTML = ''; }, 2400);
+}
+
+/* ════════════════════════════════════════════
+   URL 상태 — 공유 링크로 특정 화면을 바로 열 수 있게
+   ════════════════════════════════════════════ */
+
+(function init() {
+  var q = location.search;
+  if (/[?&]share=1/.test(q)) document.body.classList.add('is-share');
+
+  var reason = (q.match(/[?&]reason=(\w+)/) || [])[1];
+  if (reason && REASONS[reason]) document.body.dataset.reason = reason;
+
+  render();
+  syncBar();
+})();
+</script>
+</body>
+</html>
