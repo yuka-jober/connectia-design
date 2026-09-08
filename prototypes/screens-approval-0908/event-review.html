@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>승인 대기 — 26년 청춘건배</title>
+<link rel="stylesheet" href="../../tokens.css">
+<link rel="stylesheet" href="../../components.css">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-base);
+    background: #e0e0e0;
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ── Frame (mobile) ── */
+  .frame {
+    width: 390px;
+    height: 844px;
+    max-height: 100dvh;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 32px 80px -20px rgba(0,0,0,0.28);
+    background: var(--color-surface);
+    border-radius: 44px;
+  }
+  @media (max-width: 439px) {
+    .frame { width: 100vw; height: 100dvh; max-height: none; border-radius: 0; }
+  }
+
+  .screen { position: absolute; inset: 0; display: flex; flex-direction: column; background: var(--color-surface); }
+
+  i[data-lucide] { display: inline-flex; flex-shrink: 0; }
+  svg.lucide { flex-shrink: 0; }
+
+  .topbar-solid {
+    position: sticky; top: 0; z-index: 10;
+    display: flex; align-items: center; gap: 8px;
+    padding: 12px 8px;
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    flex-shrink: 0;
+  }
+  .topbar-solid .topbar-title {
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text);
+  }
+
+  /* ============================================
+     승인 대기 — 전원 동의 완료, 운영자 확인 전
+     ============================================ */
+  .review-body {
+    flex: 1; overflow-y: auto;
+    background: var(--color-bg);
+    padding: 32px 20px;
+    display: flex; flex-direction: column; align-items: center; gap: 20px;
+  }
+  .review-head {
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    text-align: center;
+  }
+  .review-icon {
+    width: 56px; height: 56px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: var(--r-full);
+    background: var(--color-warning-subtle);
+    margin-bottom: 4px;
+  }
+  .review-icon i[data-lucide], .review-icon svg.lucide {
+    width: 28px; height: 28px; color: var(--color-warning-dark);
+  }
+  .review-text {
+    font-size: var(--fs-body); color: var(--color-text-sub);
+    line-height: var(--lh-body); max-width: 32ch;
+  }
+
+  .review-summary {
+    width: 100%;
+    display: flex; flex-direction: column; gap: 8px;
+    background: var(--color-surface);
+    border-radius: var(--r-md);
+    padding: 16px 20px;
+  }
+  .review-summary-row { display: flex; align-items: baseline; gap: 12px; }
+  .review-summary-label {
+    flex: 0 0 76px;
+    font-size: var(--fs-caption); color: var(--color-text-muted); font-weight: var(--fw-medium);
+  }
+  .review-summary-value { flex: 1; font-size: var(--fs-label); color: var(--color-text); line-height: 1.5; }
+
+  .review-cancel {
+    display: block;
+    width: fit-content;
+    margin: 32px auto 0;
+    background: none; border: 0; padding: 4px;
+    cursor: pointer;
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    color: var(--color-text-muted);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .review-cancel:hover { color: var(--color-destructive); }
+
+  .frame .toast-container { position: absolute; bottom: 96px; }
+</style>
+</head>
+<body>
+
+<div class="frame">
+  <div class="screen">
+    <div class="topbar-solid">
+      <button class="icon-btn icon-btn-clear" aria-label="뒤로" onclick="showToast('이벤트 페이지로 돌아가요.')">
+        <i data-lucide="chevron-left" style="width:22px;height:22px;color:var(--color-text);"></i>
+      </button>
+      <span class="topbar-title">내 신청</span>
+    </div>
+
+    <div class="review-body">
+      <div class="review-head">
+        <div class="review-icon"><i data-lucide="clock"></i></div>
+        <span class="badge badge-md badge-weak-warning">승인 대기</span>
+        <h2 class="text-title">신청이 접수되었어요</h2>
+        <p class="review-text">
+          팀원 전원이 동의했어요. 주최측 확인 후 자리가 확정되면
+          입장용 QR을 알림톡으로 보내드려요.
+        </p>
+      </div>
+
+      <div class="review-summary" id="review-summary"></div>
+
+      <button type="button" class="review-cancel" onclick="showToast('신청을 취소할까요? 확인 모달이 열려요.')">신청 취소하기</button>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toast-container"></div>
+</div>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+/* ════════════════════════════════════════════
+   데모 데이터 — 전원 동의를 마친 재학생 팀
+   ════════════════════════════════════════════ */
+
+var TEAM = {
+  name: '건축 다섯',
+  members: 3,
+  slotChoices: ['18:00', '19:00'],
+  consentDoneAt: '2026.08.26 11:40'
+};
+
+/* 배정될 자리는 일부러 보여주지 않는다.
+   '19:00 예정'이라고 했다가 승인 때 바뀌면 그게 컴플레인이 된다. */
+function render() {
+  var rows = [
+    ['고른 자리', TEAM.slotChoices.join(' · ')],
+    ['팀원', TEAM.members + '명 · 전원 동의 완료'],
+    ['동의 완료', TEAM.consentDoneAt]
+  ];
+  document.getElementById('review-summary').innerHTML = rows.map(function(r){
+    return '<div class="review-summary-row">'
+      + '<span class="review-summary-label">' + r[0] + '</span>'
+      + '<span class="review-summary-value">' + r[1] + '</span>'
+      + '</div>';
+  }).join('');
+  if (window.lucide) lucide.createIcons();
+}
+
+var toastTimer = null;
+function showToast(msg) {
+  var wrap = document.getElementById('toast-container');
+  wrap.innerHTML = '<div class="toast">' + msg + '</div>';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function() { wrap.innerHTML = ''; }, 2400);
+}
+
+render();
+</script>
+</body>
+</html>
