@@ -145,6 +145,13 @@
     color: var(--color-text-sub);
   }
 
+  .step-link { margin-top: 12px; font-size: var(--fs-label); }
+  .step-link a {
+    color: var(--color-primary); font-weight: var(--fw-medium);
+    text-decoration: none; border-bottom: 1px solid var(--color-primary-subtle);
+  }
+  .step-link a:hover { border-bottom-color: var(--color-primary); }
+
   .step.is-owner .step-no { background: var(--color-surface-dark); color: var(--color-on-primary); }
   .step.is-fail .step-no { background: var(--color-destructive-subtle); color: var(--color-destructive); }
 
@@ -267,6 +274,9 @@
           <span class="quiet-tag">알림톡 없음</span>
           <span>대표자가 들어오면 이 화면으로 보입니다. 확정을 약속하지 않는 문구를 씁니다</span>
         </div>
+        <p class="step-link">
+          <a href="event-landing.html?share=1&amp;assign=consent&amp;screen=review" target="_blank" rel="noopener">이 화면 직접 열어보기</a>
+        </p>
       </div>
     </article>
 

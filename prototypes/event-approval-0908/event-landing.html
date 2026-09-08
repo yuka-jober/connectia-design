@@ -4899,6 +4899,10 @@
       var waiting = pendingTeams()[0];
       if (waiting) { openPending(waiting); return; }
     }
+    if (screen === 'review') {
+      var inReview = reviewList()[0];
+      if (inReview) { openReview(inReview); return; }
+    }
     if (screen) navigate('screen-' + screen);
   })();
 
