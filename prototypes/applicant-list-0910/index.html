@@ -176,12 +176,11 @@
   }
   .row-main:hover { background: var(--color-surface-sub); }
   .row.is-open .row-main { background: var(--color-surface-sub); }
-  /* 펼친 상태로 상세를 훑을 때 어느 신청을 보는지 놓치지 않게 그 줄만 붙여 둔다 */
-  @media (min-width: 768px) {
-    .row.is-open .row-main {
-      position: sticky; top: 0; z-index: 5;
-      border-bottom: 1px solid var(--color-border);
-    }
+  /* 펼친 상태로 상세를 훑을 때 어느 신청을 보는지 놓치지 않게 그 줄만 붙여 둔다.
+     붙어 있는 줄에 승인·거절이 함께 있어 돌아가지 않고 처리할 수 있다 */
+  .row.is-open .row-main {
+    position: sticky; top: 0; z-index: 5;
+    border-bottom: 1px solid var(--color-border);
   }
 
   .row-name {
