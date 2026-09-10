@@ -139,9 +139,9 @@
     gap: 12px;
     padding: 16px 20px;
     cursor: pointer;
-    /* 선택 · 이름 · 유형 · 자리 · 상태 · 액션 · 신청일 */
-    grid-template-columns:
-      24px minmax(160px, 1.4fr) minmax(72px, 0.5fr) minmax(72px, 0.5fr) 84px auto 132px;
+    /* 선택 · 이름 · 유형 · 자리 · 상태 · 액션 · 신청일
+       이름만 남는 폭을 먹고 나머지는 고정이라 줄마다 열이 어긋나지 않는다 */
+    grid-template-columns: 24px minmax(120px, 1fr) 72px 168px 76px 104px 128px;
   }
   .row-main:hover { background: var(--color-surface-sub); }
   .row.is-open .row-main { background: var(--color-surface-sub); }
@@ -158,6 +158,7 @@
     text-align: right; font-variant-numeric: tabular-nums;
   }
   .row-actions { display: flex; gap: 4px; }
+  .row-slot { white-space: nowrap; }
 
   /* 모바일 — 같은 줄을 두 층으로 접는다 */
   @media (max-width: 767px) {
@@ -473,7 +474,7 @@ function typeName(id) {
 }
 function slotName(id) {
   var s = SLOTS.filter(function(x){ return x.id === id; })[0];
-  return s ? s.name.split(' ')[0] : '미배정';
+  return s ? s.name : '미배정';
 }
 function esc(v) {
   return String(v == null ? '' : v).replace(/[&<>"']/g, function(c){
