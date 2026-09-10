@@ -261,6 +261,20 @@
   }
   .field-value.is-empty { color: var(--color-text-muted); }
   /* 객관식은 고른 보기라 값이 아니라 하나의 선택으로 읽혀야 한다 */
+  /* 대표자가 고른 순서 — 승인할 때 어디에 넣을지 판단하는 근거다 */
+  .field-ranks { display: flex; flex-wrap: wrap; gap: 8px; }
+  .rank-chip {
+    display: inline-flex; align-items: baseline; gap: 8px;
+    padding: 4px 12px;
+    border-radius: var(--r-full);
+    background: var(--color-surface-sub);
+    font-size: var(--fs-caption); color: var(--color-text);
+  }
+  .rank-chip .rank-no {
+    font-weight: var(--fw-bold); color: var(--color-text-muted);
+    font-style: normal;
+  }
+
   .field-file {
     align-self: flex-start;
     max-width: 100%;
@@ -447,11 +461,15 @@ var SLOTS = [
   { id: 's3', name: '3타임 (20:10~21:00)', used: 7,  cap: 80 }
 ];
 
+/* 재학생 팀은 자리를 배정받고 동의를 거쳐 승인해야 확정된다.
+   졸업생은 신청과 동시에 완료되고 자리를 쓰지 않는다. */
 var TYPES = [
   { id: 'all',  name: '전체' },
-  { id: 'stu',  name: '재학생' },
-  { id: 'grad', name: '졸업생' }
+  { id: 'stu',  name: '재학생', slots: true,  approval: true  },
+  { id: 'grad', name: '졸업생', slots: false, approval: false }
 ];
+function typeOf(id) { return TYPES.filter(function(t){ return t.id === id; })[0] || {}; }
+function usesSlot(a) { return !!typeOf(a.type).slots; }
 
 /* 이벤트마다 다른 신청폼 항목 — 줄에는 안 나오고 상세에서만 보인다 */
 var FIELD_GROUPS = [
@@ -465,6 +483,7 @@ var APPLICANTS = [
     id: 'a1', type: 'stu', name: '대나무 밭', slot: 's2',
     status: 'review', date: '2026.09.09 21:52',
     fields: [
+      ['자리 우선순위', ['2타임 (19:00~19:50)', '1타임 (17:30~18:40)'], 'ranks'],
       ['(대표자) [필수항목] 개인정보 수집, 이용 제공에 동의하십니까?', '동의합니다.', 'choice'],
       ['(대표자) [선택항목] 향후 총동문회 소식 수신에 동의하십니까?', '동의합니다.', 'choice'],
       ['(대표자, 선택) 장학금 사연', '취준생과 대학원준비생입니다.'],
@@ -485,7 +504,7 @@ var APPLICANTS = [
   },
   {
     id: 'a2', type: 'grad', name: '이희철', slot: null,
-    status: 'review', date: '2026.09.10 04:13',
+    status: 'done', date: '2026.09.10 04:13',
     fields: [
       ['전화번호', '01064420118'],
       ['졸업한 학과, 학번', '디자인 09'],
@@ -502,6 +521,7 @@ var APPLICANTS = [
     id: 'a3', type: 'stu', name: '건축 다섯', slot: 's1',
     status: 'approved', date: '2026.09.08 14:22',
     fields: [
+      ['자리 우선순위', ['1타임 (17:30~18:40)', '3타임 (20:10~21:00)'], 'ranks'],
       ['(대표자) [필수항목] 개인정보 수집, 이용 제공에 동의하십니까?', '동의합니다.', 'choice'],
       ['(대표자) [선택항목] 향후 총동문회 소식 수신에 동의하십니까?', '동의합니다.', 'choice'],
       ['(대표자, 선택) 장학금 사연', '설계 스튜디오에서 밤새운 다섯 명이 선배 이야기를 듣고 싶어 신청했어요.'],
@@ -531,12 +551,15 @@ var APPLICANTS = [
       ] }
     ]
   },
-  { id: 'a4', type: 'grad', name: '김도현', slot: 's1', status: 'approved', date: '2026.09.07 09:41',
+  { id: 'a4', type: 'grad', name: '김도현', slot: null, status: 'done', date: '2026.09.07 09:41',
     fields: [['전화번호', '01028419032'], ['졸업한 학과, 학번', '경영학부 04'], ['소속 직장', '삼성전자'], ['후배들에게 한마디', '궁금한 건 뭐든 물어보세요']] },
-  { id: 'a5', type: 'grad', name: '박서연', slot: 's2', status: 'approved', date: '2026.09.07 11:03',
+  { id: 'a5', type: 'grad', name: '박서연', slot: null, status: 'done', date: '2026.09.07 11:03',
     fields: [['전화번호', '01033915527'], ['졸업한 학과, 학번', '도시공학과 07'], ['소속 직장', '서울시청'], ['후배들에게 한마디', '진로 고민 들고 오세요']] },
   { id: 'a6', type: 'stu', name: '경영 삼총사', slot: null, status: 'review', date: '2026.09.09 16:02',
-    fields: [['(대표자) 학과', '경영학부'], ['(대표자) 학번', '2021270044']],
+    fields: [
+      ['자리 우선순위', ['2타임 (19:00~19:50)'], 'ranks'],
+      ['(대표자) 학과', '경영학부'], ['(대표자) 학번', '2021270044']
+    ],
     members: [
       { name: '한지우', lead: true, fields: [['전화번호', '01081204436']] },
       { name: '문채원', fields: [
@@ -548,11 +571,20 @@ var APPLICANTS = [
         ['[필수항목] 개인정보 수집, 이용 제공에 동의하십니까?', '동의합니다.', 'choice']
       ] }
     ] },
-  { id: 'a7', type: 'grad', name: '이준호', slot: 's3', status: 'rejected', date: '2026.09.06 20:15',
-    fields: [['전화번호', '01077120384'], ['졸업한 학과, 학번', '전자전기컴퓨터공학부 09'], ['소속 직장', '네이버']] },
+  { id: 'a7', type: 'stu', name: '조경 트리오', slot: null, status: 'rejected', date: '2026.09.06 20:15',
+    fields: [
+      ['자리 우선순위', ['1타임 (17:30~18:40)'], 'ranks'],
+      ['(대표자) 학과', '조경학과'], ['(대표자) 학번', '2020460072']
+    ],
+    members: [
+      { name: '윤소라', lead: true, fields: [['전화번호', '01033912244']] },
+      { name: '배준혁', fields: [['전화번호', '01077813390'], ['학과', '조경학과']] },
+      { name: '김하람', fields: [['전화번호', '01055027781'], ['학과', '조경학과']] }
+    ] },
   /* 팀원 동의가 최소 인원에 못 미쳐 무효가 된 건 */
   { id: 'a8', type: 'stu', name: '세무 듀오', slot: null, status: 'failed', date: '2026.09.05 18:44',
     fields: [
+      ['자리 우선순위', ['3타임 (20:10~21:00)'], 'ranks'],
       ['(대표자) [필수항목] 개인정보 수집, 이용 제공에 동의하십니까?', '동의합니다.', 'choice'],
       ['(대표자) 학과', '세무학과'],
       ['(대표자) 학번', '2021290011']
@@ -569,6 +601,7 @@ var APPLICANTS = [
 /* review·approved만 아직 손댈 수 있다. 나머지는 끝난 상태다 */
 var STATUS = {
   review:    { label: '승인 대기',  cls: 'badge-weak-warning' },
+  done:      { label: '신청 완료',  cls: 'badge-weak-success' },
   approved:  { label: '승인',       cls: 'badge-weak-success' },
   rejected:  { label: '거절',       cls: 'badge-weak-dark' },
   failed:    { label: '신청 실패',  cls: 'badge-weak-danger' },
@@ -633,10 +666,14 @@ function renderSlots() {
 }
 
 function fieldHTML(f) {
-  var v = String(f[1] || '').trim();
+  var v = Array.isArray(f[1]) ? '' : String(f[1] || '').trim();
   var body;
   if (f[2] === 'choice' && v) {
     body = '<span class="field-chip">' + esc(v) + '</span>';
+  } else if (f[2] === 'ranks' && Array.isArray(f[1]) && f[1].length) {
+    body = '<div class="field-ranks">' + f[1].map(function(name, i){
+      return '<span class="rank-chip"><em class="rank-no">' + (i + 1) + '</em>' + esc(name) + '</span>';
+    }).join('') + '</div>';
   } else if (f[2] === 'file' && v) {
     body = '<button type="button" class="btn btn-sm btn-line-dark btn-pill field-file" '
       + 'onclick="event.stopPropagation();showToast(\'' + esc(v) + ' 을 내려받아요.\')">'
@@ -695,9 +732,10 @@ function renderRows() {
       +   '<span class="row-name">' + esc(a.name)
       +     (a.members ? '<span class="row-count">' + a.members.length + '명</span>' : '') + '</span>'
       +   '<span class="row-meta row-type">' + esc(typeName(a.type)) + '</span>'
-      +   '<span class="row-meta row-slot">' + esc(slotName(a.slot)) + '</span>'
+      +   '<span class="row-meta row-slot">' + (usesSlot(a) ? esc(slotName(a.slot)) : '—') + '</span>'
       +   '<span class="row-status"><span class="badge badge-sm ' + st.cls + '">' + st.label + '</span></span>'
-      +   '<span class="row-meta-m">' + esc(typeName(a.type)) + ' · ' + esc(slotName(a.slot)) + '</span>'
+      +   '<span class="row-meta-m">' + esc(typeName(a.type))
+      +     (usesSlot(a) ? ' · ' + esc(slotName(a.slot)) : '') + '</span>'
       +   '<span class="row-actions">'
       +     (canApprove(a)
             ? '<button type="button" class="btn btn-xs btn-weak-primary" onclick="event.stopPropagation();act(\'' + a.id + '\',\'approve\')">승인</button>' : '')
