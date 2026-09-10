@@ -258,6 +258,16 @@
   }
   .field-value.is-empty { color: var(--color-text-muted); }
   /* 객관식은 고른 보기라 값이 아니라 하나의 선택으로 읽혀야 한다 */
+  .field-file {
+    align-self: flex-start;
+    max-width: 100%;
+    min-width: 0;
+  }
+  .field-file .field-file-name {
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .field-file i[data-lucide], .field-file svg.lucide { width: 14px; height: 14px; }
+
   .field-chip {
     align-self: flex-start;
     padding: 4px 12px;
@@ -468,7 +478,7 @@ var APPLICANTS = [
       ['차량번호', ''],
       ['도착 예상 시간', '18:00'],
       ['후배들에게 카드뉴스 형태로 소개를 희망하시나요?', '예', 'choice'],
-      ['프로필 사진', '1788981084682189091506687.jpg'],
+      ['프로필 사진', '1788981084682189091506687.jpg', 'file'],
       ['후배들에게 한마디', '응원합니다!'],
       ['소속 직장', '(주)트러스트데이터'],
       ['후원 여부', '예', 'choice']
@@ -588,9 +598,18 @@ function renderSlots() {
 function fieldHTML(f) {
   var v = String(f[1] || '').trim();
   var inline = f[2] !== 'choice' && f[0].length <= 8;
-  var body = (f[2] === 'choice' && v)
-    ? '<span class="field-chip">' + esc(v) + '</span>'
-    : '<span class="field-value' + (v ? '' : ' is-empty') + '">' + esc(v || '—') + '</span>';
+  var body;
+  if (f[2] === 'choice' && v) {
+    body = '<span class="field-chip">' + esc(v) + '</span>';
+  } else if (f[2] === 'file' && v) {
+    body = '<button type="button" class="btn btn-sm btn-line-dark btn-pill field-file" '
+      + 'onclick="event.stopPropagation();showToast(\'' + esc(v) + ' 을 내려받아요.\')">'
+      + '<i data-lucide="download"></i>'
+      + '<span class="field-file-name">' + esc(v) + '</span>'
+      + '</button>';
+  } else {
+    body = '<span class="field-value' + (v ? '' : ' is-empty') + '">' + esc(v || '—') + '</span>';
+  }
   return '<div class="field' + (inline ? ' is-inline' : '') + '">'
     + '<span class="field-label">' + esc(f[0]) + '</span>'
     + body
