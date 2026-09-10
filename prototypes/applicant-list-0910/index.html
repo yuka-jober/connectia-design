@@ -230,11 +230,16 @@
     font-size: var(--fs-caption); font-weight: var(--fw-bold);
     color: var(--color-text-muted);
   }
-  .fields { display: grid; gap: 16px; }
+  .fields { display: grid; gap: 12px; }
   @media (max-width: 767px) {
     .detail { padding: 16px; gap: 24px; }
   }
   .field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .field.is-inline {
+    flex-direction: row; align-items: baseline; gap: 12px;
+  }
+  /* (대표자) 학과처럼 8자짜리 라벨도 넘치지 않을 만큼 */
+  .field.is-inline .field-label { flex: 0 0 88px; }
   .field-label {
     font-size: var(--fs-caption); font-weight: var(--fw-medium);
     color: var(--color-text-muted); line-height: var(--lh-caption);
@@ -426,7 +431,7 @@ var FIELD_GROUPS = [
 
 var APPLICANTS = [
   {
-    id: 'a1', type: 'stu', name: '대나무 밭', size: 2, slot: 's2',
+    id: 'a1', type: 'stu', name: '대나무 밭', slot: 's2',
     status: 'review', date: '2026.09.09 21:52',
     fields: [
       ['(대표자) [필수항목] 개인정보 수집, 이용 제공에 동의하십니까?', '동의합니다.', 'choice'],
@@ -463,7 +468,7 @@ var APPLICANTS = [
     ]
   },
   {
-    id: 'a3', type: 'stu', name: '건축 다섯', size: 5, slot: 's1',
+    id: 'a3', type: 'stu', name: '건축 다섯', slot: 's1',
     status: 'approved', date: '2026.09.08 14:22',
     fields: [
       ['(대표자) [필수항목] 개인정보 수집, 이용 제공에 동의하십니까?', '동의합니다.', 'choice'],
@@ -474,16 +479,44 @@ var APPLICANTS = [
     ],
     members: [
       { name: '정윤재', lead: true, fields: [['전화번호', '01033827714']] },
-      { name: '서하늘', fields: [['전화번호', '01044712298'], ['학과', '건축학부'], ['학번', '2020430077']] }
+      { name: '서하늘', fields: [
+        ['전화번호', '01044712298'], ['학과', '건축학부'], ['학번', '2020430077'],
+        ['[필수항목] 개인정보 수집, 이용 제공에 동의하십니까?', '동의합니다.', 'choice'],
+        ['[선택항목] 향후 총동문회 소식 수신에 동의하십니까?', '동의합니다.', 'choice']
+      ] },
+      { name: '김태윤', fields: [
+        ['전화번호', '01062210945'], ['학과', '건축학부'], ['학번', '2021430210'],
+        ['[필수항목] 개인정보 수집, 이용 제공에 동의하십니까?', '동의합니다.', 'choice'],
+        ['[선택항목] 향후 총동문회 소식 수신에 동의하십니까?', '동의하지 않습니다.', 'choice']
+      ] },
+      { name: '노지민', fields: [
+        ['전화번호', '01066205583'], ['학과', '도시공학과'], ['학번', '2020450133'],
+        ['(선택) 장학금 사연', '스튜디오 막차 타고 같이 집 가던 사이입니다. 졸업 전에 제대로 한번 모이고 싶어요.'],
+        ['[필수항목] 개인정보 수집, 이용 제공에 동의하십니까?', '동의합니다.', 'choice']
+      ] },
+      { name: '이서준', fields: [
+        ['전화번호', '01029417760'], ['학과', '건축학부'], ['학번', '2022430058'],
+        ['[필수항목] 개인정보 수집, 이용 제공에 동의하십니까?', '동의합니다.', 'choice']
+      ] }
     ]
   },
   { id: 'a4', type: 'grad', name: '김도현', slot: 's1', status: 'approved', date: '2026.09.07 09:41',
     fields: [['전화번호', '01028419032'], ['졸업한 학과, 학번', '경영학부 04'], ['소속 직장', '삼성전자'], ['후배들에게 한마디', '궁금한 건 뭐든 물어보세요']] },
   { id: 'a5', type: 'grad', name: '박서연', slot: 's2', status: 'approved', date: '2026.09.07 11:03',
     fields: [['전화번호', '01033915527'], ['졸업한 학과, 학번', '도시공학과 07'], ['소속 직장', '서울시청'], ['후배들에게 한마디', '진로 고민 들고 오세요']] },
-  { id: 'a6', type: 'stu', name: '경영 삼총사', size: 3, slot: null, status: 'review', date: '2026.09.09 16:02',
+  { id: 'a6', type: 'stu', name: '경영 삼총사', slot: null, status: 'review', date: '2026.09.09 16:02',
     fields: [['(대표자) 학과', '경영학부'], ['(대표자) 학번', '2021270044']],
-    members: [{ name: '한지우', lead: true, fields: [['전화번호', '01081204436']] }] },
+    members: [
+      { name: '한지우', lead: true, fields: [['전화번호', '01081204436']] },
+      { name: '문채원', fields: [
+        ['전화번호', '01099312074'], ['학과', '경영학부'], ['학번', '2021270118'],
+        ['[필수항목] 개인정보 수집, 이용 제공에 동의하십니까?', '동의합니다.', 'choice']
+      ] },
+      { name: '류시원', fields: [
+        ['전화번호', '01047762233'], ['학과', '세무학과'], ['학번', '2021290064'],
+        ['[필수항목] 개인정보 수집, 이용 제공에 동의하십니까?', '동의합니다.', 'choice']
+      ] }
+    ] },
   { id: 'a7', type: 'grad', name: '이준호', slot: 's3', status: 'rejected', date: '2026.09.06 20:15',
     fields: [['전화번호', '01077120384'], ['졸업한 학과, 학번', '전자전기컴퓨터공학부 09'], ['소속 직장', '네이버']] }
 ];
@@ -501,6 +534,8 @@ var STATUS = {
 var filter = 'all';
 var picked = {};
 var open = {};
+
+function headcount(a) { return a.members ? a.members.length : 1; }
 
 function shown() {
   return filter === 'all' ? APPLICANTS : APPLICANTS.filter(function(a){ return a.type === filter; });
@@ -542,12 +577,14 @@ function renderSlots() {
   document.getElementById('mobile-slots').innerHTML = html;
 }
 
+/* 라벨이 짧을 때만 값을 옆에 둔다. 긴 질문을 옆에 두면 라벨이 여러 줄로 접힌다 */
 function fieldHTML(f) {
   var v = String(f[1] || '').trim();
+  var inline = f[2] !== 'choice' && f[0].length <= 8;
   var body = (f[2] === 'choice' && v)
     ? '<span class="field-chip">' + esc(v) + '</span>'
     : '<span class="field-value' + (v ? '' : ' is-empty') + '">' + esc(v || '—') + '</span>';
-  return '<div class="field">'
+  return '<div class="field' + (inline ? ' is-inline' : '') + '">'
     + '<span class="field-label">' + esc(f[0]) + '</span>'
     + body
     + '</div>';
@@ -556,7 +593,7 @@ function fieldHTML(f) {
 function renderRows() {
   var rows = shown();
   document.getElementById('count-total').textContent = rows.reduce(function(n, a){
-    return n + (a.size || 1);
+    return n + headcount(a);
   }, 0);
 
   document.getElementById('rows').innerHTML = rows.map(function(a){
@@ -592,7 +629,7 @@ function renderRows() {
       +   '<input type="checkbox" class="checkbox row-check" aria-label="' + esc(a.name) + ' 선택" '
       +     (picked[a.id] ? 'checked ' : '') + 'onclick="event.stopPropagation()" onchange="pick(\'' + a.id + '\')">'
       +   '<span class="row-name">' + esc(a.name)
-      +     (a.size ? '<span class="row-count">' + a.size + '명</span>' : '') + '</span>'
+      +     (a.members ? '<span class="row-count">' + a.members.length + '명</span>' : '') + '</span>'
       +   '<span class="row-meta row-type">' + esc(typeName(a.type)) + '</span>'
       +   '<span class="row-meta row-slot">' + esc(slotName(a.slot)) + '</span>'
       +   '<span class="row-status"><span class="badge badge-sm ' + st.cls + '">' + st.label + '</span></span>'
