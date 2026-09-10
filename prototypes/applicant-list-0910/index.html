@@ -164,6 +164,8 @@
     background: var(--color-surface);
     border-bottom: 1px solid var(--color-border);
   }
+  /* 펼친 줄은 끝나는 지점이 다음 줄과 같은 굵기면 어디까지가 상세인지 안 보인다 */
+  .row.is-open { border-bottom: 8px solid var(--color-bg); }
   .row-main {
     display: grid;
     align-items: center;
