@@ -238,6 +238,11 @@
     color: var(--color-text-muted);
   }
   .fields { display: grid; gap: 12px; }
+  /* 항목이 붙어 보이지 않게 옅은 선으로 가른다 */
+  .field + .field {
+    border-top: 1px solid var(--color-border);
+    padding-top: 12px;
+  }
   @media (max-width: 767px) {
     .detail { padding: 16px; gap: 24px; }
   }
