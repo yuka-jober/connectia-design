@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>참석자 등록 — 26년 청춘건배</title>
+<link rel="stylesheet" href="../../tokens.css">
+<link rel="stylesheet" href="../../components.css">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-base);
+    background: var(--color-scrim);
+    min-height: 100dvh;
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+  }
+  body::before {
+    content: ""; position: fixed; inset: 0; z-index: -1;
+    background: var(--color-banner-gradient);
+  }
+  i[data-lucide] { display: inline-flex; flex-shrink: 0; }
+  svg.lucide { flex-shrink: 0; }
+
+  .modal {
+    width: 100%;
+    max-width: 1280px;
+    height: 90vh;
+    background: var(--color-surface);
+    border-radius: var(--r-lg);
+    box-shadow: var(--shadow-4);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  @media (max-width: 767px) {
+    body { padding: 0; }
+    .modal { max-width: none; height: 100dvh; border-radius: 0; }
+  }
+
+  .head {
+    flex-shrink: 0;
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .head-top {
+    display: flex; align-items: center; gap: 8px;
+    padding: 16px 20px 12px;
+  }
+  .head-title {
+    font-size: var(--fs-title); font-weight: var(--fw-bold);
+    letter-spacing: var(--ls-title); color: var(--color-text);
+    margin-right: auto;
+  }
+  .head-tools { display: flex; align-items: center; gap: 4px; }
+  .head-tools .icon-btn i[data-lucide],
+  .head-tools .icon-btn svg.lucide { width: 18px; height: 18px; }
+
+  /* ── 본문 — 긴 폼이라 가운데 한 단으로 세운다 ── */
+  .body {
+    flex: 1; overflow-y: auto;
+    background: var(--color-bg);
+    padding: 24px 20px 32px;
+  }
+  .sheet {
+    width: 100%; max-width: 720px; margin: 0 auto;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+
+  .group {
+    background: var(--color-surface);
+    border-radius: var(--r-md);
+    padding: 20px;
+    display: flex; flex-direction: column; gap: 20px;
+  }
+  .group-head { display: flex; align-items: center; gap: 8px; }
+  .group-name {
+    font-size: var(--fs-title-sm); line-height: var(--lh-title-sm);
+    letter-spacing: var(--ls-title-sm);
+    font-weight: var(--fw-bold); color: var(--color-text);
+  }
+  .group-head .btn { margin-left: auto; }
+
+  .field { display: flex; flex-direction: column; gap: 8px; }
+  .field .label { display: block; }
+
+  /* 예·아니오, 동의 — 보기가 둘뿐이라 나란히 둔다 */
+  .choices { display: flex; flex-wrap: wrap; gap: 20px; }
+  .choice {
+    display: flex; align-items: center; gap: 8px;
+    font-size: var(--fs-label); color: var(--color-text);
+    cursor: pointer;
+  }
+
+  /* ── 자리 우선순위 — 누른 차례가 순위가 된다 ── */
+  .ranks { display: flex; flex-wrap: wrap; gap: 8px; }
+  .rank {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-full);
+    background: var(--color-surface);
+    font-family: var(--font-base);
+    font-size: var(--fs-caption); color: var(--color-text-sub);
+    cursor: pointer;
+  }
+  .rank:hover { border-color: var(--color-text-muted); }
+  .rank.is-picked {
+    border-color: var(--color-primary);
+    background: var(--color-primary-subtle);
+    color: var(--color-text);
+  }
+  .rank-no {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 18px; height: 18px;
+    border-radius: var(--r-full);
+    background: var(--color-primary); color: var(--color-on-primary);
+    font-size: var(--fs-badge); font-style: normal; font-weight: var(--fw-bold);
+  }
+
+  /* ── 노출 프로필 사진 ── */
+  .photo { display: flex; align-items: center; gap: 16px; }
+  .photo-frame {
+    width: 88px; height: 88px; flex-shrink: 0;
+    border-radius: var(--r-md);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  .photo-frame img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .photo-frame i[data-lucide], .photo-frame svg.lucide {
+    width: 24px; height: 24px; color: var(--color-text-muted);
+  }
+  .photo-side { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+  .photo-name {
+    font-size: var(--fs-caption); color: var(--color-text-sub);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .photo-acts { display: flex; gap: 8px; }
+
+  /* ── 팀원 ── */
+  .people { display: flex; flex-direction: column; gap: 12px; }
+  .person {
+    background: var(--color-bg);
+    border-radius: var(--r-md);
+    padding: 16px;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  .person-top { display: flex; align-items: center; gap: 8px; }
+  .person-name { font-size: var(--fs-body); font-weight: var(--fw-bold); color: var(--color-text); }
+  .person-top .icon-btn { margin-left: auto; }
+  .person-top .icon-btn i[data-lucide], .person-top .icon-btn svg.lucide { width: 16px; height: 16px; }
+
+  /* ── 유형 고르기 ── */
+  .types { display: flex; gap: 8px; }
+  .type {
+    flex: 1;
+    padding: 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-md);
+    background: var(--color-surface);
+    font-family: var(--font-base);
+    font-size: var(--fs-body); font-weight: var(--fw-medium); color: var(--color-text-sub);
+    cursor: pointer;
+    text-align: left;
+  }
+  .type.is-active {
+    border-color: var(--color-primary);
+    background: var(--color-primary-subtle);
+    color: var(--color-text);
+    font-weight: var(--fw-bold);
+  }
+  .type[disabled] { cursor: default; opacity: 0.5; }
+  .type.is-active[disabled] { opacity: 1; }
+
+  /* ── 바닥 — 늘 보이는 저장 줄 ── */
+  .foot {
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: flex-end; gap: 8px;
+    padding: 12px 20px;
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+  }
+  @media (max-width: 767px) {
+    .foot .btn { flex: 1; }
+  }
+
+  .toast-container { position: fixed; bottom: 32px; z-index: 200; }
+</style>
+</head>
+<body>
+
+<div class="modal">
+  <div class="head">
+    <div class="head-top">
+      <span class="head-title" id="title">참석자 등록</span>
+      <div class="head-tools">
+        <button class="icon-btn icon-btn-sm icon-btn-clear" type="button" aria-label="닫기" onclick="leave()">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="body">
+    <form class="sheet" id="sheet" onsubmit="return save(event)"></form>
+  </div>
+
+  <div class="foot">
+    <button type="button" class="btn btn-md btn-line-dark" onclick="leave()">취소</button>
+    <button type="button" class="btn btn-md btn-fill-primary" id="submit" onclick="save(event)">등록</button>
+  </div>
+</div>
+
+<input type="file" id="photo-input" accept="image/*" hidden onchange="tookPhoto(this)">
+
+<div class="toast-container" id="toast-container"></div>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+/* ════════════════════════════════════════════
+   주최측이 참석자를 직접 등록하는 화면.
+   신청자가 채우는 폼을 그대로 열어 두고, 주최측만 정하는 자리 배정을 뒤에 붙였다.
+   ?id=<신청 id> 로 열면 이미 등록된 참석자를 고치는 화면이 된다.
+   ════════════════════════════════════════════ */
+
+/* base — 이 목록에 안 보이는 기존 신청자. 실제 서비스에서는 전체를 센다 */
+var SLOTS = [
+  { id: 's1', name: '1타임 (17:30~18:40)', base: 16, cap: 80 },
+  { id: 's2', name: '2타임 (19:00~19:50)', base: 5,  cap: 80 },
+  { id: 's3', name: '3타임 (20:10~21:00)', base: 7,  cap: 80 }
+];
+
+var APPLICANTS = [
+  {
+    id: 'a1', type: 'stu', name: '대나무 밭', slot: 's2',
+    status: 'review', date: '2026.09.09 21:52',
+    fields: [
+      ['자리 우선순위', ['2타임 (19:00~19:50)', '1타임 (17:30~18:40)'], 'ranks'],
+      ['(대표자) [필수항목] 개인정보 수집, 이용 제공에 동의하십니까?', '동의합니다.', 'choice'],
+      ['(대표자) [선택항목] 향후 총동문회 소식 수신에 동의하십니까?', '동의합니다.', 'choice'],
+      ['(대표자, 선택) 장학금 사연', '취준생과 대학원준비생입니다.'],
+      ['(대표자) 학과', '경제학부'],
+      ['(대표자) 학번', '2023280033']
+    ],
+    members: [
+      { name: '김형우', lead: true, fields: [['전화번호', '01092524624']] },
+      { name: '김범룡', fields: [
+        ['전화번호', '01046704850'],
+        ['학과', '전자전기컴퓨터공학부'],
+        ['학번', '2020440018'],
+        ['(선택) 장학금 사연', '같이 신청한 친구가 중학교때부터 찐친인데 비록 과는 다르지만 이번 학기를 마지막으로 같이 졸업하게 되었습니다! 졸업 전에 마지막으로 시립대학교 학생으로 같이 즐거운 추억 만들어보고 싶습니다.'],
+        ['[필수항목] 개인정보 수집, 이용 제공에 동의하십니까?', '동의합니다.', 'choice'],
+        ['[선택항목] 향후 총동문회 소식 수신에 동의하십니까?', '동의합니다.', 'choice']
+      ] }
+    ]
+  },
+  {
+    id: 'a2', type: 'grad', name: '이희철', slot: null,
+    status: 'done', date: '2026.09.10 04:13',
+    fields: [
+      ['전화번호', '01064420118'],
+      ['졸업한 학과, 학번', '디자인 09'],
+      ['차량번호', ''],
+      ['도착 예상 시간', '18:00'],
+      ['후배들에게 카드뉴스 형태로 소개를 희망하시나요?', '예', 'choice'],
+      ['프로필 사진', '1788981084682189091506687.jpg', 'file'],
+      ['후배들에게 한마디', '응원합니다!'],
+      ['소속 직장', '(주)트러스트데이터'],
+      ['후원 여부', '예', 'choice']
+    ]
+  },
+  {
+    id: 'a3', type: 'stu', name: '건축 다섯', slot: 's1',
+    status: 'approved', date: '2026.09.08 14:22',
+    fields: [
+      ['자리 우선순위', ['1타임 (17:30~18:40)', '3타임 (20:10~21:00)'], 'ranks'],
+      ['(대표자) [필수항목] 개인정보 수집, 이용 제공에 동의하십니까?', '동의합니다.', 'choice'],
+      ['(대표자) [선택항목] 향후 총동문회 소식 수신에 동의하십니까?', '동의합니다.', 'choice'],
+      ['(대표자, 선택) 장학금 사연', '설계 스튜디오에서 밤새운 다섯 명이 선배 이야기를 듣고 싶어 신청했어요.'],
+      ['(대표자) 학과', '건축학부'],
+      ['(대표자) 학번', '2019430112']
+    ],
+    members: [
+      { name: '정윤재', lead: true, fields: [['전화번호', '01033827714']] },
+      { name: '서하늘', fields: [
+        ['전화번호', '01044712298'], ['학과', '건축학부'], ['학번', '2020430077'],
+        ['[필수항목] 개인정보 수집, 이용 제공에 동의하십니까?', '동의합니다.', 'choice'],
+        ['[선택항목] 향후 총동문회 소식 수신에 동의하십니까?', '동의합니다.', 'choice']
+      ] },
+      { name: '김태윤', fields: [
+        ['전화번호', '01062210945'], ['학과', '건축학부'], ['학번', '2021430210'],
+        ['[필수항목] 개인정보 수집, 이용 제공에 동의하십니까?', '동의합니다.', 'choice'],
+        ['[선택항목] 향후 총동문회 소식 수신에 동의하십니까?', '동의하지 않습니다.', 'choice']
+      ] },
+      { name: '노지민', fields: [
+        ['전화번호', '01066205583'], ['학과', '도시공학과'], ['학번', '2020450133'],
+        ['(선택) 장학금 사연', '스튜디오 막차 타고 같이 집 가던 사이입니다. 졸업 전에 제대로 한번 모이고 싶어요.'],
+        ['[필수항목] 개인정보 수집, 이용 제공에 동의하십니까?', '동의합니다.', 'choice']
+      ] },
+      { name: '이서준', fields: [
+        ['전화번호', '01029417760'], ['학과', '건축학부'], ['학번', '2022430058'],
+        ['[필수항목] 개인정보 수집, 이용 제공에 동의하십니까?', '동의합니다.', 'choice']
+      ] }
+    ]
+  },
+  { id: 'a4', type: 'grad', name: '김도현', slot: null, status: 'done', date: '2026.09.07 09:41',
+    fields: [['전화번호', '01028419032'], ['졸업한 학과, 학번', '경영학부 04'], ['소속 직장', '삼성전자'], ['후배들에게 한마디', '궁금한 건 뭐든 물어보세요']] },
+  { id: 'a5', type: 'grad', name: '박서연', slot: null, status: 'done', date: '2026.09.07 11:03',
+    fields: [['전화번호', '01033915527'], ['졸업한 학과, 학번', '도시공학과 07'], ['소속 직장', '서울시청'], ['후배들에게 한마디', '진로 고민 들고 오세요']] },
+  { id: 'a6', type: 'stu', name: '경영 삼총사', slot: 's2', status: 'review', date: '2026.09.09 16:02',
+    fields: [
+      ['자리 우선순위', ['2타임 (19:00~19:50)'], 'ranks'],
+      ['(대표자) 학과', '경영학부'], ['(대표자) 학번', '2021270044']
+    ],
+    members: [
+      { name: '한지우', lead: true, fields: [['전화번호', '01081204436']] },
+      { name: '문채원', fields: [
+        ['전화번호', '01099312074'], ['학과', '경영학부'], ['학번', '2021270118'],
+        ['[필수항목] 개인정보 수집, 이용 제공에 동의하십니까?', '동의합니다.', 'choice']
+      ] },
+      { name: '류시원', fields: [
+        ['전화번호', '01047762233'], ['학과', '세무학과'], ['학번', '2021290064'],
+        ['[필수항목] 개인정보 수집, 이용 제공에 동의하십니까?', '동의합니다.', 'choice']
+      ] }
+    ] },
+  { id: 'a7', type: 'stu', name: '조경 트리오', slot: null, status: 'rejected', date: '2026.09.06 20:15',
+    fields: [
+      ['자리 우선순위', ['1타임 (17:30~18:40)'], 'ranks'],
+      ['(대표자) 학과', '조경학과'], ['(대표자) 학번', '2020460072']
+    ],
+    members: [
+      { name: '윤소라', lead: true, fields: [['전화번호', '01033912244']] },
+      { name: '배준혁', fields: [['전화번호', '01077813390'], ['학과', '조경학과']] },
+      { name: '김하람', fields: [['전화번호', '01055027781'], ['학과', '조경학과']] }
+    ] },
+  /* 팀원 동의가 최소 인원에 못 미쳐 무효가 된 건 */
+  { id: 'a8', type: 'stu', name: '세무 듀오', slot: null, status: 'failed', date: '2026.09.05 18:44',
+    fields: [
+      ['자리 우선순위', ['3타임 (20:10~21:00)'], 'ranks'],
+      ['(대표자) [필수항목] 개인정보 수집, 이용 제공에 동의하십니까?', '동의합니다.', 'choice'],
+      ['(대표자) 학과', '세무학과'],
+      ['(대표자) 학번', '2021290011']
+    ],
+    members: [
+      { name: '장예린', lead: true, fields: [['전화번호', '01022045578']] },
+      { name: '신동우', fields: [['전화번호', '01066401123'], ['학과', '세무학과']] }
+    ] },
+  /* 신청자가 스스로 취소한 건 */
+  { id: 'a9', type: 'grad', name: '한지영', slot: null, status: 'cancelled', date: '2026.09.05 10:12',
+    fields: [['전화번호', '01033903390'], ['졸업한 학과, 학번', '도시행정학과 09'], ['소속 직장', '국토연구원']] }
+];
+
+/* review·approved만 아직 손댈 수 있다. 나머지는 끝난 상태다 */
+
+/* 신청폼 — 유형마다 받는 항목 전부.
+   재학생은 팀이라 사람마다 반복되는 항목(person)이 따로 있다 */
+var SCHEMA = {
+  stu: {
+    name: '재학생 팀',
+    team: [['팀 이름', 'text', true]],
+    person: [
+      ['이름', 'text', true],
+      ['전화번호', 'tel', true],
+      ['학과', 'text'],
+      ['학번', 'text'],
+      ['장학금 사연', 'textarea'],
+      ['[필수항목] 개인정보 수집, 이용 제공에 동의하십니까?', 'consent', true],
+      ['[선택항목] 향후 총동문회 소식 수신에 동의하십니까?', 'consent']
+    ]
+  },
+  grad: {
+    name: '졸업생',
+    team: [
+      ['이름', 'text', true],
+      ['전화번호', 'tel', true],
+      ['졸업한 학과, 학번', 'text', true],
+      ['차량번호', 'text'],
+      ['도착 예상 시간', 'time'],
+      ['후배들에게 카드뉴스 형태로 소개를 희망하시나요?', 'yesno'],
+      ['프로필 사진', 'photo'],
+      ['후배들에게 한마디', 'textarea'],
+      ['소속 직장', 'text'],
+      ['후원 여부', 'yesno']
+    ],
+    person: null
+  }
+};
+
+/* 신청폼에 적힌 질문에서 (대표자) (선택) 같은 앞말을 떼면 같은 항목이 된다 */
+function key(label) { return String(label).replace(/^\([^)]*\)\s*/, ''); }
+function answer(list, label) {
+  var hit = (list || []).filter(function(f){ return key(f[0]) === label; })[0];
+  return hit && !Array.isArray(hit[1]) ? String(hit[1] || '') : '';
+}
+
+/* ════════════════════════════════════════════
+   상태
+   ════════════════════════════════════════════ */
+
+var editing = null;
+var form = { type: 'grad', team: {}, people: [], slot: '', ranks: [], photo: null };
+
+function slotName(id) {
+  var s = SLOTS.filter(function(x){ return x.id === id; })[0];
+  return s ? s.name : '미배정';
+}
+
+function load(id) {
+  var a = APPLICANTS.filter(function(x){ return x.id === id; })[0];
+  if (!a) return;
+  editing = a;
+  form.type = a.type;
+  form.slot = a.slot || '';
+  var ranks = (a.fields || []).filter(function(f){ return f[2] === 'ranks'; })[0];
+  form.ranks = ranks && Array.isArray(ranks[1])
+    ? ranks[1].map(function(n){ return (SLOTS.filter(function(s){ return s.name === n; })[0] || {}).id; }).filter(Boolean)
+    : [];
+  var photo = (a.fields || []).filter(function(f){ return f[2] === 'file'; })[0];
+  form.photo = photo && photo[1] ? { name: photo[1], url: '' } : null;
+
+  if (a.members) {
+    form.team['팀 이름'] = a.name;
+    /* '(대표자) 학과'는 팀 신청서에 적혀 있지만 대표자가 답한 것이다 */
+    form.people = a.members.map(function(m, i){
+      var own = (i === 0 ? (a.fields || []) : []).concat(m.fields || []);
+      var v = { '이름': m.name };
+      SCHEMA.stu.person.forEach(function(f){
+        if (f[0] !== '이름') v[f[0]] = answer(own, f[0]);
+      });
+      return v;
+    });
+  } else {
+    SCHEMA.grad.team.forEach(function(f){
+      form.team[f[0]] = f[0] === '이름' ? a.name : answer(a.fields, f[0]);
+    });
+  }
+}
+
+/* ════════════════════════════════════════════
+   그리기
+   ════════════════════════════════════════════ */
+
+function esc(v) {
+  return String(v == null ? '' : v).replace(/[&<>"']/g, function(c){
+    return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+  });
+}
+
+function labelHTML(f) {
+  return '<span class="label' + (f[2] ? ' label-required' : '') + '">' + esc(f[0]) + '</span>';
+}
+
+/* where — 'team' 이면 팀 답, 숫자면 그 사람의 답 */
+function fieldHTML(f, where, val) {
+  var at = 'onchange="put(\'' + where + '\', this.dataset.k, this.value)"';
+  var box;
+  if (f[1] === 'textarea') {
+    box = '<textarea class="textarea textarea-auto" rows="3" data-k="' + esc(f[0]) + '" '
+      + at + '>' + esc(val) + '</textarea>';
+  } else if (f[1] === 'yesno' || f[1] === 'consent') {
+    var opts = f[1] === 'yesno' ? ['예', '아니오'] : ['동의합니다.', '동의하지 않습니다.'];
+    var nm = where + '-' + esc(f[0]);
+    box = '<div class="choices">' + opts.map(function(o){
+      return '<label class="choice">'
+        + '<input type="radio" class="radio" name="' + nm + '" data-k="' + esc(f[0]) + '" '
+        + 'value="' + esc(o) + '"' + (val === o ? ' checked' : '') + ' ' + at + '>'
+        + esc(o) + '</label>';
+    }).join('') + '</div>';
+  } else if (f[1] === 'photo') {
+    box = photoHTML();
+  } else {
+    box = '<input type="' + (f[1] === 'time' ? 'time' : f[1] === 'tel' ? 'tel' : 'text') + '" '
+      + 'class="input" data-k="' + esc(f[0]) + '" value="' + esc(val) + '" ' + at + '>';
+  }
+  return '<div class="field">' + labelHTML(f) + box + '</div>';
+}
+
+function photoHTML() {
+  var p = form.photo;
+  return '<div class="photo">'
+    + '<div class="photo-frame">'
+    +   (p && p.url ? '<img src="' + p.url + '" alt="">' : '')
+    +   (p && !p.url ? '<i data-lucide="image"></i>' : '')
+    +   (p ? '' : '<i data-lucide="image-plus"></i>')
+    + '</div>'
+    + '<div class="photo-side">'
+    +   (p ? '<span class="photo-name">' + esc(p.name) + '</span>' : '')
+    +   '<div class="photo-acts">'
+    +     '<button type="button" class="btn btn-sm btn-line-dark btn-pill" onclick="pickPhoto()">'
+    +       (p ? '사진 변경' : '사진 올리기') + '</button>'
+    +     (p ? '<button type="button" class="btn btn-sm btn-weak-danger btn-pill" onclick="dropPhoto()">삭제</button>' : '')
+    +   '</div>'
+    + '</div>'
+    + '</div>';
+}
+
+function ranksHTML() {
+  return '<div class="field">'
+    + '<span class="label">자리 우선순위</span>'
+    + '<div class="ranks">' + SLOTS.map(function(s){
+        var i = form.ranks.indexOf(s.id);
+        return '<button type="button" class="rank' + (i > -1 ? ' is-picked' : '') + '" '
+          + 'onclick="rank(\'' + s.id + '\')">'
+          + (i > -1 ? '<em class="rank-no">' + (i + 1) + '</em>' : '')
+          + esc(s.name) + '</button>';
+      }).join('') + '</div>'
+    + '</div>';
+}
+
+function personHTML(v, i) {
+  return '<div class="person">'
+    + '<div class="person-top">'
+    +   '<span class="person-name">' + (i === 0 ? '대표자' : '팀원 ' + i) + '</span>'
+    +   (i === 0 ? '' : '<button type="button" class="icon-btn icon-btn-sm icon-btn-clear" '
+          + 'aria-label="팀원 ' + i + ' 빼기" onclick="dropPerson(' + i + ')"><i data-lucide="trash-2"></i></button>')
+    + '</div>'
+    + SCHEMA.stu.person.map(function(f){ return fieldHTML(f, i, v[f[0]] || ''); }).join('')
+    + '</div>';
+}
+
+function render() {
+  var s = SCHEMA[form.type];
+  var html = '';
+
+  html += '<div class="group">'
+    + '<div class="group-head"><span class="group-name">유형</span></div>'
+    + '<div class="types">' + Object.keys(SCHEMA).map(function(id){
+        return '<button type="button" class="type' + (form.type === id ? ' is-active' : '') + '" '
+          + (editing ? 'disabled ' : '') + 'onclick="pickType(\'' + id + '\')">'
+          + esc(SCHEMA[id].name) + '</button>';
+      }).join('') + '</div>'
+    + '</div>';
+
+  html += '<div class="group">'
+    + '<div class="group-head"><span class="group-name">' + esc(s.name) + ' 신청 정보</span></div>'
+    + s.team.map(function(f){ return fieldHTML(f, 'team', form.team[f[0]] || ''); }).join('')
+    + (form.type === 'stu' ? ranksHTML() : '')
+    + '</div>';
+
+  if (s.person) {
+    html += '<div class="group">'
+      + '<div class="group-head"><span class="group-name">참석자 ' + form.people.length + '명</span>'
+      +   '<button type="button" class="btn btn-sm btn-weak-primary" onclick="addPerson()">팀원 추가</button>'
+      + '</div>'
+      + '<div class="people">' + form.people.map(personHTML).join('') + '</div>'
+      + '</div>';
+
+    html += '<div class="group">'
+      + '<div class="group-head"><span class="group-name">자리 배정</span></div>'
+      + '<div class="field">'
+      +   '<span class="label">배정 자리</span>'
+      +   '<select class="select" onchange="form.slot = this.value">'
+      +     '<option value=""' + (form.slot ? '' : ' selected') + '>미배정</option>'
+      +     SLOTS.map(function(x){
+              return '<option value="' + x.id + '"' + (form.slot === x.id ? ' selected' : '') + '>'
+                + esc(x.name) + '</option>';
+            }).join('')
+      +   '</select>'
+      + '</div>'
+      + '</div>';
+  }
+
+  document.getElementById('sheet').innerHTML = html;
+  if (window.lucide) lucide.createIcons();
+}
+
+/* ════════════════════════════════════════════
+   동작
+   ════════════════════════════════════════════ */
+
+function put(where, k, v) {
+  if (where === 'team') form.team[k] = v;
+  else form.people[Number(where)][k] = v;
+}
+
+function pickType(id) {
+  if (editing || form.type === id) return;
+  form.type = id;
+  form.team = {};
+  form.ranks = [];
+  form.photo = null;
+  form.people = id === 'stu' ? [{}] : [];
+  render();
+}
+
+function rank(id) {
+  var i = form.ranks.indexOf(id);
+  if (i > -1) form.ranks.splice(i, 1); else form.ranks.push(id);
+  render();
+}
+
+function addPerson() { form.people.push({}); render(); }
+function dropPerson(i) { form.people.splice(i, 1); render(); }
+
+function pickPhoto() { document.getElementById('photo-input').click(); }
+function dropPhoto() { form.photo = null; render(); }
+function tookPhoto(el) {
+  var f = el.files && el.files[0];
+  if (!f) return;
+  var r = new FileReader();
+  r.onload = function() { form.photo = { name: f.name, url: r.result }; render(); };
+  r.readAsDataURL(f);
+  el.value = '';
+}
+
+function leave() { location.href = 'index.html'; }
+
+/* 대표자 이름이 팀 이름을 대신하지 않는다 — 둘 다 필요하다 */
+function save(e) {
+  if (e && e.preventDefault) e.preventDefault();
+  var s = SCHEMA[form.type];
+  var missing = s.team.filter(function(f){ return f[2] && !String(form.team[f[0]] || '').trim(); });
+  if (s.person && form.people.length) {
+    SCHEMA.stu.person.forEach(function(f){
+      if (f[2] && !String(form.people[0][f[0]] || '').trim()) missing.push(f);
+    });
+  }
+  if (missing.length) { showToast(missing[0][0] + ' 항목을 채워 주세요.'); return false; }
+  showToast(esc(form.team[s.team[0][0]]) + ' 참석자를 ' + (editing ? '고쳤어요.' : '등록했어요.'));
+  setTimeout(leave, 1200);
+  return false;
+}
+
+var toastTimer = null;
+function showToast(msg) {
+  var wrap = document.getElementById('toast-container');
+  wrap.innerHTML = '<div class="toast">' + esc(msg) + '</div>';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ wrap.innerHTML = ''; }, 2400);
+}
+
+var id = new URLSearchParams(location.search).get('id');
+if (id) load(id);
+if (!editing && form.type === 'stu') form.people = [{}];
+if (editing) {
+  document.title = '참석자 수정 — 26년 청춘건배';
+  document.getElementById('title').textContent = '참석자 수정';
+  document.getElementById('submit').textContent = '저장';
+}
+render();
+lucide.createIcons();
+</script>
+</body>
+</html>

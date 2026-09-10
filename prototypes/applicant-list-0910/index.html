@@ -234,6 +234,7 @@
   @media (max-width: 767px) {
   }
   /* 사용자 화면에서는 운영 도구를 통째로 감춘다 */
+  body.is-user .head-tools .btn,
   body.is-user .head-tools .icon-btn[aria-label="더보기"],
   body.is-user .menu-wrap,
   body.is-user #pending-toggle,
@@ -285,6 +286,8 @@
     font-size: var(--fs-caption); font-weight: var(--fw-bold);
     color: var(--color-text-muted);
   }
+  .detail-top { display: flex; align-items: center; gap: 12px; }
+  .detail-top .btn { margin-left: auto; }
   .fields { display: grid; gap: 12px; }
   /* 항목이 붙어 보이지 않게 옅은 선으로 가른다 */
   .field + .field {
@@ -451,6 +454,7 @@
       </div>
 
       <div class="head-tools">
+        <a class="btn btn-sm btn-fill-primary" href="add.html">참석자 등록</a>
         <button class="icon-btn icon-btn-sm icon-btn-clear" type="button" aria-label="받고 있는 정보" onclick="openFields()">
           <i data-lucide="info"></i>
         </button>
@@ -861,7 +865,11 @@ function renderRows() {
     if (isOpen) {
       detail = '<div class="detail' + (a.members ? ' has-members' : '') + '">'
         + '<div class="detail-col">'
-        +   '<span class="detail-head">신청 정보</span>'
+        +   '<div class="detail-top">'
+        +     '<span class="detail-head">신청 정보</span>'
+        +     '<a class="btn btn-xs btn-line-dark" href="add.html?id=' + a.id + '" '
+        +       'onclick="event.stopPropagation()">수정</a>'
+        +   '</div>'
         +   '<div class="fields">' + (a.fields || []).map(fieldHTML).join('') + '</div>'
         + '</div>'
         + (a.members
