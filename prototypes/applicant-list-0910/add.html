@@ -152,28 +152,6 @@
   .person-top .icon-btn { margin-left: auto; }
   .person-top .icon-btn i[data-lucide], .person-top .icon-btn svg.lucide { width: 16px; height: 16px; }
 
-  /* ── 유형 고르기 ── */
-  .types { display: flex; gap: 8px; }
-  .type {
-    flex: 1;
-    padding: 16px;
-    border: 1px solid var(--color-border);
-    border-radius: var(--r-md);
-    background: var(--color-surface);
-    font-family: var(--font-base);
-    font-size: var(--fs-body); font-weight: var(--fw-medium); color: var(--color-text-sub);
-    cursor: pointer;
-    text-align: left;
-  }
-  .type.is-active {
-    border-color: var(--color-primary);
-    background: var(--color-primary-subtle);
-    color: var(--color-text);
-    font-weight: var(--fw-bold);
-  }
-  .type[disabled] { cursor: default; opacity: 0.5; }
-  .type.is-active[disabled] { opacity: 1; }
-
   /* ── 바닥 — 늘 보이는 저장 줄 ── */
   .foot {
     flex-shrink: 0;
@@ -355,34 +333,40 @@ var APPLICANTS = [
 /* review·approved만 아직 손댈 수 있다. 나머지는 끝난 상태다 */
 
 /* 신청폼 — 유형마다 받는 항목 전부.
+   답의 종류는 신청폼이 만들 수 있는 것만 쓴다. 주관식(short·long) · 객관식(choice) ·
+   파일업로드(file) 셋뿐이고, 시간이나 날짜를 따로 받는 칸은 없다.
+   short와 long은 같은 주관식이고 상자 크기만 다르다.
    재학생은 팀이라 사람마다 반복되는 항목(person)이 따로 있다 */
+var YESNO = ['예', '아니오'];
+var CONSENT = ['동의합니다.', '동의하지 않습니다.'];
+
 var SCHEMA = {
   stu: {
     name: '재학생 팀',
-    team: [['팀 이름', 'text', true]],
+    team: [['팀 이름', 'short', true]],
     person: [
-      ['이름', 'text', true],
-      ['전화번호', 'tel', true],
-      ['학과', 'text'],
-      ['학번', 'text'],
-      ['장학금 사연', 'textarea'],
-      ['[필수항목] 개인정보 수집, 이용 제공에 동의하십니까?', 'consent', true],
-      ['[선택항목] 향후 총동문회 소식 수신에 동의하십니까?', 'consent']
+      ['이름', 'short', true],
+      ['전화번호', 'short', true],
+      ['학과', 'short'],
+      ['학번', 'short'],
+      ['장학금 사연', 'long'],
+      ['[필수항목] 개인정보 수집, 이용 제공에 동의하십니까?', 'choice', true, CONSENT],
+      ['[선택항목] 향후 총동문회 소식 수신에 동의하십니까?', 'choice', false, CONSENT]
     ]
   },
   grad: {
     name: '졸업생',
     team: [
-      ['이름', 'text', true],
-      ['전화번호', 'tel', true],
-      ['졸업한 학과, 학번', 'text', true],
-      ['차량번호', 'text'],
-      ['도착 예상 시간', 'time'],
-      ['후배들에게 카드뉴스 형태로 소개를 희망하시나요?', 'yesno'],
-      ['프로필 사진', 'photo'],
-      ['후배들에게 한마디', 'textarea'],
-      ['소속 직장', 'text'],
-      ['후원 여부', 'yesno']
+      ['이름', 'short', true],
+      ['전화번호', 'short', true],
+      ['졸업한 학과, 학번', 'short', true],
+      ['차량번호', 'short'],
+      ['도착 예상 시간', 'short'],
+      ['후배들에게 카드뉴스 형태로 소개를 희망하시나요?', 'choice', false, YESNO],
+      ['프로필 사진', 'file'],
+      ['후배들에게 한마디', 'long'],
+      ['소속 직장', 'short'],
+      ['후원 여부', 'choice', false, YESNO]
     ],
     person: null
   }
@@ -456,23 +440,22 @@ function labelHTML(f) {
 function fieldHTML(f, where, val) {
   var at = 'onchange="put(\'' + where + '\', this.dataset.k, this.value)"';
   var box;
-  if (f[1] === 'textarea') {
+  if (f[1] === 'long') {
     box = '<textarea class="textarea textarea-auto" rows="3" data-k="' + esc(f[0]) + '" '
       + at + '>' + esc(val) + '</textarea>';
-  } else if (f[1] === 'yesno' || f[1] === 'consent') {
-    var opts = f[1] === 'yesno' ? ['예', '아니오'] : ['동의합니다.', '동의하지 않습니다.'];
+  } else if (f[1] === 'choice') {
     var nm = where + '-' + esc(f[0]);
-    box = '<div class="choices">' + opts.map(function(o){
+    box = '<div class="choices">' + (f[3] || YESNO).map(function(o){
       return '<label class="choice">'
         + '<input type="radio" class="radio" name="' + nm + '" data-k="' + esc(f[0]) + '" '
         + 'value="' + esc(o) + '"' + (val === o ? ' checked' : '') + ' ' + at + '>'
         + esc(o) + '</label>';
     }).join('') + '</div>';
-  } else if (f[1] === 'photo') {
+  } else if (f[1] === 'file') {
     box = photoHTML();
   } else {
-    box = '<input type="' + (f[1] === 'time' ? 'time' : f[1] === 'tel' ? 'tel' : 'text') + '" '
-      + 'class="input" data-k="' + esc(f[0]) + '" value="' + esc(val) + '" ' + at + '>';
+    box = '<input type="text" class="input" data-k="' + esc(f[0]) + '" '
+      + 'value="' + esc(val) + '" ' + at + '>';
   }
   return '<div class="field">' + labelHTML(f) + box + '</div>';
 }
@@ -525,12 +508,15 @@ function render() {
   var html = '';
 
   html += '<div class="group">'
-    + '<div class="group-head"><span class="group-name">유형</span></div>'
-    + '<div class="types">' + Object.keys(SCHEMA).map(function(id){
-        return '<button type="button" class="type' + (form.type === id ? ' is-active' : '') + '" '
-          + (editing ? 'disabled ' : '') + 'onclick="pickType(\'' + id + '\')">'
-          + esc(SCHEMA[id].name) + '</button>';
-      }).join('') + '</div>'
+    + '<div class="field">'
+    +   '<span class="label label-required">유형</span>'
+    +   '<select class="select"' + (editing ? ' disabled' : '') + ' onchange="pickType(this.value)">'
+    +     Object.keys(SCHEMA).map(function(id){
+            return '<option value="' + id + '"' + (form.type === id ? ' selected' : '') + '>'
+              + esc(SCHEMA[id].name) + '</option>';
+          }).join('')
+    +   '</select>'
+    + '</div>'
     + '</div>';
 
   html += '<div class="group">'
