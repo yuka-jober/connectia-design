@@ -215,14 +215,24 @@
 
   /* ── 상세 — 라벨을 값 위에, PC는 두 열 ── */
   .detail {
-    padding: 4px 20px 20px 52px;
+    display: grid; gap: 32px;
+    padding: 20px;
     background: var(--color-surface);
     border-top: 1px solid var(--color-border);
   }
+  /* 팀이면 왼쪽은 신청 정보, 오른쪽은 사람. 개인이면 한 열로 둔다 */
+  @media (min-width: 768px) {
+    .detail.has-members { grid-template-columns: 1fr 1fr; }
+  }
   .detail[hidden] { display: none; }
+  .detail-col { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+  .detail-head {
+    font-size: var(--fs-caption); font-weight: var(--fw-bold);
+    color: var(--color-text-muted);
+  }
   .fields { display: grid; gap: 16px; }
   @media (max-width: 767px) {
-    .detail { padding: 4px 16px 20px 16px; }
+    .detail { padding: 16px; gap: 24px; }
   }
   .field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
   .field-label {
@@ -246,14 +256,8 @@
     color: var(--color-text);
   }
 
-  .detail-sub {
-    margin-top: 20px;
-    font-size: var(--fs-caption); font-weight: var(--fw-bold);
-    color: var(--color-text-muted);
-  }
-  .members { display: grid; gap: 12px; margin-top: 12px; }
-  /* 항목 수가 다른 팀원끼리 높이를 맞추면 짧은 쪽이 텅 빈다 */
-  @media (min-width: 768px) { .members { grid-template-columns: 1fr 1fr; align-items: start; } }
+  /* 세로로 쌓으면 인원이 홀수든 항목 수가 다르든 어긋나지 않는다 */
+  .members { display: flex; flex-direction: column; gap: 12px; }
   .member {
     background: var(--color-bg);
     border-radius: var(--r-md);
@@ -561,19 +565,25 @@ function renderRows() {
 
     var detail = '';
     if (isOpen) {
-      detail = '<div class="detail">'
-        + '<div class="fields">' + (a.fields || []).map(fieldHTML).join('') + '</div>'
-        + (a.members ? '<div class="detail-sub">팀원 ' + a.members.length + '명</div>'
-            + '<div class="members">' + a.members.map(function(m){
-                return '<div class="member">'
-                  + '<div class="member-top">'
-                  +   '<span class="member-name">' + esc(m.name) + '</span>'
-                  +   (m.lead ? '<span class="badge badge-sm badge-weak-primary">대표자</span>' : '')
-                  + '</div>'
-                  + '<div class="fields">' + (m.fields || []).map(fieldHTML).join('') + '</div>'
-                  + '</div>';
-              }).join('') + '</div>'
-          : '')
+      detail = '<div class="detail' + (a.members ? ' has-members' : '') + '">'
+        + '<div class="detail-col">'
+        +   '<span class="detail-head">신청 정보</span>'
+        +   '<div class="fields">' + (a.fields || []).map(fieldHTML).join('') + '</div>'
+        + '</div>'
+        + (a.members
+            ? '<div class="detail-col">'
+              + '<span class="detail-head">팀원 ' + a.members.length + '명</span>'
+              + '<div class="members">' + a.members.map(function(m){
+                  return '<div class="member">'
+                    + '<div class="member-top">'
+                    +   '<span class="member-name">' + esc(m.name) + '</span>'
+                    +   (m.lead ? '<span class="badge badge-sm badge-weak-primary">대표자</span>' : '')
+                    + '</div>'
+                    + '<div class="fields">' + (m.fields || []).map(fieldHTML).join('') + '</div>'
+                    + '</div>';
+                }).join('') + '</div>'
+              + '</div>'
+            : '')
         + '</div>';
     }
 
