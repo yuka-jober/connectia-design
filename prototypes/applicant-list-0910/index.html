@@ -535,14 +535,36 @@ var APPLICANTS = [
       ] }
     ] },
   { id: 'a7', type: 'grad', name: '이준호', slot: 's3', status: 'rejected', date: '2026.09.06 20:15',
-    fields: [['전화번호', '01077120384'], ['졸업한 학과, 학번', '전자전기컴퓨터공학부 09'], ['소속 직장', '네이버']] }
+    fields: [['전화번호', '01077120384'], ['졸업한 학과, 학번', '전자전기컴퓨터공학부 09'], ['소속 직장', '네이버']] },
+  /* 팀원 동의가 최소 인원에 못 미쳐 무효가 된 건 */
+  { id: 'a8', type: 'stu', name: '세무 듀오', slot: null, status: 'failed', date: '2026.09.05 18:44',
+    fields: [
+      ['(대표자) [필수항목] 개인정보 수집, 이용 제공에 동의하십니까?', '동의합니다.', 'choice'],
+      ['(대표자) 학과', '세무학과'],
+      ['(대표자) 학번', '2021290011']
+    ],
+    members: [
+      { name: '장예린', lead: true, fields: [['전화번호', '01022045578']] },
+      { name: '신동우', fields: [['전화번호', '01066401123'], ['학과', '세무학과']] }
+    ] },
+  /* 신청자가 스스로 취소한 건 */
+  { id: 'a9', type: 'grad', name: '한지영', slot: null, status: 'cancelled', date: '2026.09.05 10:12',
+    fields: [['전화번호', '01033903390'], ['졸업한 학과, 학번', '도시행정학과 09'], ['소속 직장', '국토연구원']] }
 ];
 
+/* review·approved만 아직 손댈 수 있다. 나머지는 끝난 상태다 */
 var STATUS = {
-  review:   { label: '승인 대기', cls: 'badge-weak-warning' },
-  approved: { label: '승인',      cls: 'badge-weak-success' },
-  rejected: { label: '거절',      cls: 'badge-weak-neutral' }
+  review:    { label: '승인 대기',  cls: 'badge-weak-warning' },
+  approved:  { label: '승인',       cls: 'badge-weak-success' },
+  rejected:  { label: '거절',       cls: 'badge-weak-dark' },
+  failed:    { label: '신청 실패',  cls: 'badge-weak-danger' },
+  cancelled: { label: '신청 취소',  cls: 'badge-weak-neutral' }
 };
+
+/* 거절은 되돌릴 수 없고, 실패·취소는 운영자가 만든 상태가 아니다 */
+function canApprove(a) { return a.status === 'review'; }
+function canReject(a)  { return a.status === 'review' || a.status === 'approved'; }
+function canAct(a)     { return canApprove(a) || canReject(a); }
 
 /* ════════════════════════════════════════════
    상태
@@ -650,8 +672,10 @@ function renderRows() {
 
     return '<div class="row' + (isOpen ? ' is-open' : '') + '">'
       + '<div class="row-main" onclick="toggleOpen(\'' + a.id + '\')">'
-      +   '<input type="checkbox" class="checkbox row-check" aria-label="' + esc(a.name) + ' 선택" '
-      +     (picked[a.id] ? 'checked ' : '') + 'onclick="event.stopPropagation()" onchange="pick(\'' + a.id + '\')">'
+      +   (canAct(a)
+            ? '<input type="checkbox" class="checkbox row-check" aria-label="' + esc(a.name) + ' 선택" '
+              + (picked[a.id] ? 'checked ' : '') + 'onclick="event.stopPropagation()" onchange="pick(\'' + a.id + '\')">'
+            : '<span class="row-check"></span>')
       +   '<span class="row-name">' + esc(a.name)
       +     (a.members ? '<span class="row-count">' + a.members.length + '명</span>' : '') + '</span>'
       +   '<span class="row-meta row-type">' + esc(typeName(a.type)) + '</span>'
@@ -659,9 +683,9 @@ function renderRows() {
       +   '<span class="row-status"><span class="badge badge-sm ' + st.cls + '">' + st.label + '</span></span>'
       +   '<span class="row-meta-m">' + esc(typeName(a.type)) + ' · ' + esc(slotName(a.slot)) + '</span>'
       +   '<span class="row-actions">'
-      +     (a.status !== 'approved'
+      +     (canApprove(a)
             ? '<button type="button" class="btn btn-xs btn-weak-primary" onclick="event.stopPropagation();act(\'' + a.id + '\',\'approve\')">승인</button>' : '')
-      +     (a.status !== 'rejected'
+      +     (canReject(a)
             ? '<button type="button" class="btn btn-xs btn-weak-dark" onclick="event.stopPropagation();act(\'' + a.id + '\',\'reject\')">거절</button>' : '')
       +   '</span>'
       +   '<span class="row-date">' + esc(a.date) + '</span>'
@@ -695,10 +719,15 @@ function pick(id) {
   syncBulk();
 }
 
-function pickedIds() { return Object.keys(picked); }
+function pickedIds() {
+  return Object.keys(picked).filter(function(id){
+    var a = APPLICANTS.filter(function(x){ return x.id === id; })[0];
+    return a && canAct(a);
+  });
+}
 
 function toggleAll() {
-  var rows = shown();
+  var rows = shown().filter(canAct);
   var all = rows.every(function(a){ return picked[a.id]; });
   picked = {};
   if (!all) rows.forEach(function(a){ picked[a.id] = true; });
@@ -710,7 +739,7 @@ function syncBulk() {
   var bar = document.getElementById('bulk');
   bar.hidden = n === 0;
   document.getElementById('bulk-approve').textContent = n ? n + '건 승인' : '승인';
-  var rows = shown();
+  var rows = shown().filter(canAct);
   document.getElementById('bulk-all-text').textContent =
     (rows.length && rows.every(function(a){ return picked[a.id]; })) ? '전체 해제' : '전체 선택';
 }
@@ -718,6 +747,7 @@ function syncBulk() {
 function act(id, how) {
   var a = APPLICANTS.filter(function(x){ return x.id === id; })[0];
   if (!a) return;
+  if (how === 'approve' ? !canApprove(a) : !canReject(a)) return;
   a.status = how === 'approve' ? 'approved' : 'rejected';
   renderRows();
   showToast(a.name + (how === 'approve' ? ' 승인했어요.' : ' 거절했어요.'));
@@ -728,7 +758,9 @@ function bulkAct(how) {
   if (!ids.length) return;
   ids.forEach(function(id){
     var a = APPLICANTS.filter(function(x){ return x.id === id; })[0];
-    if (a) a.status = how === 'approve' ? 'approved' : 'rejected';
+    if (!a) return;
+    if (how === 'approve' ? !canApprove(a) : !canReject(a)) return;
+    a.status = how === 'approve' ? 'approved' : 'rejected';
   });
   picked = {};
   renderRows();
