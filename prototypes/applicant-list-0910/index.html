@@ -335,6 +335,7 @@
   .pop-overlay[hidden] { display: none; }
   .pop {
     width: 100%; max-width: 520px;
+    max-height: 80vh; overflow-y: auto;
     background: var(--color-surface);
     border-radius: var(--r-lg);
     box-shadow: var(--shadow-4);
@@ -346,16 +347,25 @@
     color: var(--color-text);
   }
   .pop-title .icon-btn { margin-left: auto; }
-  .pop-list { display: grid; gap: 12px; }
-  .pop-group {
-    display: flex; flex-direction: column; gap: 4px;
-  }
+  .pop-list { display: grid; gap: 24px; }
+  .pop-group { display: flex; flex-direction: column; gap: 8px; }
   .pop-group-name {
-    font-size: var(--fs-caption); font-weight: var(--fw-bold);
-    color: var(--color-primary);
+    font-size: var(--fs-body); font-weight: var(--fw-bold);
+    color: var(--color-text);
   }
-  .pop-group-items {
-    font-size: var(--fs-label); color: var(--color-text-sub); line-height: 1.7;
+  .pop-items {
+    display: grid; gap: 4px;
+    font-size: var(--fs-label); color: var(--color-text-sub); line-height: 1.5;
+  }
+  /* 팀원 항목은 팀 항목의 하위다 — 들여쓰고 세로선으로 묶는다 */
+  .pop-sub {
+    margin-top: 8px; padding-left: 16px;
+    border-left: 2px solid var(--color-border);
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .pop-sub-name {
+    font-size: var(--fs-caption); font-weight: var(--fw-bold);
+    color: var(--color-text-muted);
   }
 
   .menu-wrap { position: relative; }
@@ -473,9 +483,18 @@ function usesSlot(a) { return !!typeOf(a.type).slots; }
 
 /* 이벤트마다 다른 신청폼 항목 — 줄에는 안 나오고 상세에서만 보인다 */
 var FIELD_GROUPS = [
-  { name: '재학생 팀', items: ['팀 이름', '(대표자) [필수항목] 개인정보 수집, 이용 제공에 동의하십니까?', '(대표자) [선택항목] 향후 총동문회 소식 수신에 동의하십니까?', '(대표자, 선택) 장학금 사연', '(대표자) 학과', '(대표자) 학번'] },
-  { name: '팀원마다', items: ['이름', '전화번호', '학과', '학번', '(선택) 장학금 사연', '[필수항목] 개인정보 수집, 이용 제공에 동의하십니까?', '[선택항목] 향후 총동문회 소식 수신에 동의하십니까?'] },
-  { name: '졸업생', items: ['이름', '전화번호', '졸업한 학과, 학번', '차량번호', '도착 예상 시간', '후배들에게 카드뉴스 형태로 소개를 희망하시나요?', '프로필 사진', '후배들에게 한마디', '소속 직장', '후원 여부'] }
+  {
+    name: '재학생 팀',
+    items: ['팀 이름', '자리 우선순위', '(대표자) [필수항목] 개인정보 수집, 이용 제공에 동의하십니까?', '(대표자) [선택항목] 향후 총동문회 소식 수신에 동의하십니까?', '(대표자, 선택) 장학금 사연', '(대표자) 학과', '(대표자) 학번'],
+    sub: {
+      name: '팀원마다 반복',
+      items: ['이름', '전화번호', '학과', '학번', '(선택) 장학금 사연', '[필수항목] 개인정보 수집, 이용 제공에 동의하십니까?', '[선택항목] 향후 총동문회 소식 수신에 동의하십니까?']
+    }
+  },
+  {
+    name: '졸업생',
+    items: ['이름', '전화번호', '졸업한 학과, 학번', '차량번호', '도착 예상 시간', '후배들에게 카드뉴스 형태로 소개를 희망하시나요?', '프로필 사진', '후배들에게 한마디', '소속 직장', '후원 여부']
+  }
 ];
 
 var APPLICANTS = [
@@ -759,10 +778,21 @@ function renderRows() {
 }
 
 function renderFields() {
+  function items(list) {
+    return '<ul class="pop-items">'
+      + list.map(function(x){ return '<li>' + esc(x) + '</li>'; }).join('')
+      + '</ul>';
+  }
   document.getElementById('fields-list').innerHTML = FIELD_GROUPS.map(function(g){
     return '<div class="pop-group">'
       + '<span class="pop-group-name">' + esc(g.name) + '</span>'
-      + '<span class="pop-group-items">' + g.items.map(esc).join(' · ') + '</span>'
+      + items(g.items)
+      + (g.sub
+          ? '<div class="pop-sub">'
+            + '<span class="pop-sub-name">' + esc(g.sub.name) + '</span>'
+            + items(g.sub.items)
+            + '</div>'
+          : '')
       + '</div>';
   }).join('');
 }
