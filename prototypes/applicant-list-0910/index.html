@@ -348,25 +348,42 @@
   }
   .pop-title .icon-btn { margin-left: auto; }
   .pop-list { display: grid; gap: 24px; }
-  .pop-group { display: flex; flex-direction: column; gap: 8px; }
+  .pop-group { display: flex; flex-direction: column; gap: 12px; }
   .pop-group-name {
+    display: flex; align-items: baseline; gap: 8px;
     font-size: var(--fs-body); font-weight: var(--fw-bold);
     color: var(--color-text);
   }
-  .pop-items {
-    display: grid; gap: 4px;
-    font-size: var(--fs-label); color: var(--color-text-sub); line-height: 1.5;
-  }
-  /* 팀원 항목은 팀 항목의 하위다 — 들여쓰고 세로선으로 묶는다 */
-  .pop-sub {
-    margin-top: 8px; padding-left: 16px;
-    border-left: 2px solid var(--color-border);
-    display: flex; flex-direction: column; gap: 8px;
-  }
-  .pop-sub-name {
-    font-size: var(--fs-caption); font-weight: var(--fw-bold);
+  .pop-group-count {
+    font-size: var(--fs-caption); font-weight: var(--fw-regular);
     color: var(--color-text-muted);
   }
+  /* 읽을 문장이 아니라 받는 항목의 목록이라 태그로 늘어놓는다 */
+  .pop-items {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    list-style: none;
+  }
+  .pop-items li {
+    padding: 8px 12px;
+    border-radius: var(--r-sm);
+    background: var(--color-surface-sub);
+    font-size: var(--fs-caption);
+    color: var(--color-text-sub);
+    line-height: var(--lh-caption);
+  }
+  /* 팀원 항목은 팀 항목의 하위다 — 안쪽 카드로 한 겹 넣는다 */
+  .pop-sub {
+    display: flex; flex-direction: column; gap: 12px;
+    padding: 16px;
+    background: var(--color-bg);
+    border-radius: var(--r-md);
+  }
+  .pop-sub-name {
+    display: flex; align-items: baseline; gap: 8px;
+    font-size: var(--fs-caption); font-weight: var(--fw-bold);
+    color: var(--color-text-sub);
+  }
+  .pop-sub .pop-items li { background: var(--color-surface); }
 
   .menu-wrap { position: relative; }
   .menu-wrap .menu {
@@ -783,13 +800,14 @@ function renderFields() {
       + list.map(function(x){ return '<li>' + esc(x) + '</li>'; }).join('')
       + '</ul>';
   }
+  function count(n) { return '<span class="pop-group-count">' + n + '개</span>'; }
   document.getElementById('fields-list').innerHTML = FIELD_GROUPS.map(function(g){
     return '<div class="pop-group">'
-      + '<span class="pop-group-name">' + esc(g.name) + '</span>'
+      + '<span class="pop-group-name">' + esc(g.name) + count(g.items.length) + '</span>'
       + items(g.items)
       + (g.sub
           ? '<div class="pop-sub">'
-            + '<span class="pop-sub-name">' + esc(g.sub.name) + '</span>'
+            + '<span class="pop-sub-name">' + esc(g.sub.name) + count(g.sub.items.length) + '</span>'
             + items(g.sub.items)
             + '</div>'
           : '')
