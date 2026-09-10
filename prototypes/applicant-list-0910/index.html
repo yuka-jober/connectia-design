@@ -358,32 +358,29 @@
     font-size: var(--fs-caption); font-weight: var(--fw-regular);
     color: var(--color-text-muted);
   }
-  /* 읽을 문장이 아니라 받는 항목의 목록이라 태그로 늘어놓는다 */
-  .pop-items {
-    display: flex; flex-wrap: wrap; gap: 8px;
-    list-style: none;
-  }
+  .pop-items { display: grid; gap: 8px; list-style: none; }
   .pop-items li {
-    padding: 8px 12px;
-    border-radius: var(--r-sm);
-    background: var(--color-surface-sub);
-    font-size: var(--fs-caption);
-    color: var(--color-text-sub);
-    line-height: var(--lh-caption);
+    position: relative; padding-left: 16px;
+    font-size: var(--fs-label); color: var(--color-text-sub);
+    line-height: var(--lh-label);
   }
-  /* 팀원 항목은 팀 항목의 하위다 — 안쪽 카드로 한 겹 넣는다 */
+  /* 브라우저 기본 마커 대신 작은 점 — 다른 화면의 목록과 같은 모양 */
+  .pop-items li::before {
+    content: ""; position: absolute; left: 0; top: 8px;
+    width: 4px; height: 4px; border-radius: var(--r-full);
+    background: var(--color-border);
+  }
+  /* 팀원 항목은 팀 항목의 하위다 — 들여쓰고 세로선으로 묶는다 */
   .pop-sub {
-    display: flex; flex-direction: column; gap: 12px;
-    padding: 16px;
-    background: var(--color-bg);
-    border-radius: var(--r-md);
+    display: flex; flex-direction: column; gap: 8px;
+    margin-top: 4px; padding-left: 16px;
+    border-left: 2px solid var(--color-border);
   }
   .pop-sub-name {
     display: flex; align-items: baseline; gap: 8px;
     font-size: var(--fs-caption); font-weight: var(--fw-bold);
-    color: var(--color-text-sub);
+    color: var(--color-text-muted);
   }
-  .pop-sub .pop-items li { background: var(--color-surface); }
 
   .menu-wrap { position: relative; }
   .menu-wrap .menu {
