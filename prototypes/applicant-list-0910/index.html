@@ -57,12 +57,38 @@
     letter-spacing: var(--ls-title); color: var(--color-text);
     margin-right: auto;
   }
+  /* 보기 전환 — 늘 보이는 스위치 탭 */
+  .view-seg {
+    display: flex; gap: 4px;
+    padding: 4px;
+    background: var(--color-surface-sub);
+    border-radius: var(--r-full);
+  }
+  .view-seg-btn {
+    padding: 8px 16px;
+    border: none; border-radius: var(--r-full);
+    background: transparent;
+    font-family: var(--font-base);
+    font-size: var(--fs-label); font-weight: var(--fw-medium);
+    color: var(--color-text-muted);
+    cursor: pointer; white-space: nowrap;
+    transition: background var(--motion-fast) var(--ease-standard),
+                color var(--motion-fast) var(--ease-standard);
+  }
+  .view-seg-btn:hover { color: var(--color-text-sub); }
+  .view-seg-btn.is-active {
+    background: var(--color-surface);
+    color: var(--color-text);
+    font-weight: var(--fw-bold);
+    box-shadow: var(--shadow-1);
+  }
+
   .head-tools { display: flex; align-items: center; gap: 4px; }
   .head-tools .icon-btn i[data-lucide],
   .head-tools .icon-btn svg.lucide { width: 18px; height: 18px; }
   @media (max-width: 767px) {
-    .head-tools .btn-pill { padding-left: 12px; padding-right: 12px; }
-    .head-tools .btn-pill .btn-text { display: none; }
+    .head-title { display: none; }
+    .view-seg { margin-right: auto; }
   }
 
   .head-filters {
@@ -300,6 +326,11 @@
   <div class="head">
     <div class="head-top">
       <span class="head-title">신청자 리스트</span>
+      <div class="view-seg" id="view-seg" role="group" aria-label="보기 전환">
+        <button type="button" class="view-seg-btn is-active" data-view="admin" onclick="pickView('admin')">관리자 보기</button>
+        <button type="button" class="view-seg-btn" data-view="user" onclick="pickView('user')">사용자 보기</button>
+      </div>
+
       <div class="head-tools">
         <button class="icon-btn icon-btn-sm icon-btn-clear" type="button" aria-label="받고 있는 정보" onclick="openFields()">
           <i data-lucide="info"></i>
@@ -309,14 +340,9 @@
             <i data-lucide="more-horizontal"></i>
           </button>
           <div class="menu" id="head-menu" hidden>
-            <button type="button" class="menu-item is-selected" onclick="pickView('admin')">관리자 보기</button>
-            <button type="button" class="menu-item" onclick="pickView('user')">사용자 보기</button>
+            <button type="button" class="menu-item" onclick="pickExport()">엑셀 다운로드</button>
           </div>
         </div>
-        <button class="btn btn-sm btn-line-dark btn-pill" type="button" onclick="showToast('엑셀 내보내기 시트가 열려요.')">
-          <i data-lucide="download" style="width:14px;height:14px"></i>
-          <span class="btn-text">엑셀 다운로드</span>
-        </button>
         <button class="icon-btn icon-btn-sm icon-btn-clear" type="button" aria-label="닫기" onclick="showToast('이벤트 페이지로 돌아가요.')">
           <i data-lucide="x"></i>
         </button>
@@ -637,8 +663,14 @@ function toggleMenu() {
   m.hidden = !m.hidden;
 }
 function pickView(which) {
-  toggleMenu();
+  document.querySelectorAll('.view-seg-btn').forEach(function(b){
+    b.classList.toggle('is-active', b.dataset.view === which);
+  });
   showToast(which === 'admin' ? '관리자 보기예요.' : '신청자에게 보이는 화면으로 바꿨어요.');
+}
+function pickExport() {
+  toggleMenu();
+  showToast('엑셀 내보내기 시트가 열려요.');
 }
 document.addEventListener('click', function(e) {
   if (!e.target.closest('.menu-wrap')) document.getElementById('head-menu').hidden = true;
