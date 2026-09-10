@@ -88,6 +88,7 @@
   .head-tools .icon-btn svg.lucide { width: 18px; height: 18px; }
   @media (max-width: 767px) {
     .head-title { display: none; }
+    body.is-user .head-title { display: block; }
     .view-seg { margin-right: auto; }
   }
 
@@ -223,19 +224,14 @@
   .row-del { display: flex; justify-content: flex-end; }
   /* 사용자 화면 — 이름·요약·펼치기 셋뿐이라 줄 구성이 다르다 */
   body.is-user .row-main {
-    grid-template-columns: minmax(120px, 1fr) 2fr 24px;
-    grid-template-areas: none;
+    grid-template-columns: 1fr 24px;
+    grid-template-areas: "name more";
   }
-  .row-summary { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  body.is-user .row-name { grid-area: name; }
+  body.is-user .row-more { grid-area: more; }
   .row-more { display: flex; justify-content: flex-end; color: var(--color-text-muted); }
   .row-more i[data-lucide], .row-more svg.lucide { width: 18px; height: 18px; }
   @media (max-width: 767px) {
-    body.is-user .row-main {
-      grid-template-columns: 1fr 24px;
-      grid-template-areas: none;
-      row-gap: 4px;
-    }
-    body.is-user .row-summary { grid-column: 1 / 2; }
   }
   /* 사용자 화면에서는 운영 도구를 통째로 감춘다 */
   body.is-user .head-tools .icon-btn[aria-label="더보기"],
@@ -547,9 +543,9 @@ var SLOTS = [
    주최측이 이벤트 만들 때 고르는 '참석자 공개' 설정이 여기로 온다. */
 var TYPES = [
   { id: 'all',  name: '전체' },
-  { id: 'stu',  name: '재학생', slots: true,  approval: true,  reveal: null },
+  { id: 'stu',  name: '재학생', slots: true,  approval: true,  reveal: ['학과'] },
   { id: 'grad', name: '졸업생', slots: false, approval: false,
-    reveal: ['졸업한 학과, 학번', '소속 직장', '후배들에게 한마디', '프로필 사진'] }
+    reveal: ['졸업한 학과, 학번', '소속 직장', '후배들에게 한마디'] }
 ];
 function typeOf(id) { return TYPES.filter(function(t){ return t.id === id; })[0] || {}; }
 function usesSlot(a) { return !!typeOf(a.type).slots; }
@@ -795,12 +791,23 @@ function renderSlots() {
   });
 }
 
-/* 관리자에게는 전부, 신청자에게는 공개로 켠 항목만 */
-function fieldsFor(a) {
-  var all = a.fields || [];
-  if (view !== 'user') return all;
-  var ok = revealOf(a.type) || [];
-  return all.filter(function(f){ return ok.indexOf(f[0]) > -1; });
+/* '(대표자) 학과'는 대표자가 답한 '학과'다. 공개 항목을 맞출 때 접두사는 떼고 본다 */
+function baseLabel(name) { return String(name).replace(/^\(대표자[^)]*\)\s*/, ''); }
+
+/* 공개로 켠 항목만, 켠 순서대로 — 누구를 보든 같은 항목이 같은 자리에 온다.
+   팀은 대표자와 팀원의 답을 한 항목으로 모은다 */
+function publicFields(a) {
+  var pool = (a.fields || []);
+  (a.members || []).forEach(function(m){ pool = pool.concat(m.fields || []); });
+  return (revealOf(a.type) || []).map(function(label){
+    var vals = [];
+    pool.forEach(function(f){
+      if (baseLabel(f[0]) !== label) return;
+      var v = Array.isArray(f[1]) ? '' : String(f[1] || '').trim();
+      if (v && vals.indexOf(v) < 0) vals.push(v);
+    });
+    return vals.length ? [label, vals.join(' · ')] : null;
+  }).filter(Boolean);
 }
 
 function fieldHTML(f) {
@@ -871,14 +878,11 @@ function renderRows() {
     }
 
     if (view === 'user') {
-      var pub = fieldsFor(a);
-      /* 요약에는 글자 답변만 — 파일명이나 고른 보기는 줄에서 읽을 값이 아니다 */
-      var summary = pub.filter(function(f){ return !f[2] && f[1] && !Array.isArray(f[1]); })
-        .slice(0, 2).map(function(f){ return f[1]; }).join(' · ');
+      var pub = publicFields(a);
       return '<div class="row' + (isOpen ? ' is-open' : '') + '">'
         + '<div class="row-main" onclick="toggleOpen(\'' + a.id + '\')">'
-        +   '<span class="row-name">' + esc(a.name) + '</span>'
-        +   '<span class="row-meta row-summary">' + esc(summary) + '</span>'
+        +   '<span class="row-name">' + esc(a.name)
+        +     (a.members ? '<span class="row-count">' + a.members.length + '명</span>' : '') + '</span>'
         +   '<span class="row-more"><i data-lucide="' + (isOpen ? 'chevron-up' : 'chevron-down') + '"></i></span>'
         + '</div>'
         + (isOpen
