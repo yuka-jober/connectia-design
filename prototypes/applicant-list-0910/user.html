@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>신청자 리스트 — 26년 청춘건배</title>
+<title>참석자 — 26년 청춘건배</title>
 <link rel="stylesheet" href="../../tokens.css">
 <link rel="stylesheet" href="../../components.css">
 <style>
@@ -441,31 +441,14 @@
   .toast-container { position: fixed; bottom: 32px; z-index: 200; }
 </style>
 </head>
-<body>
+<body class="is-user">
 
 <div class="modal">
 
-  <!-- ── 헤더 : 두 줄 ── -->
   <div class="head">
     <div class="head-top">
-      <span class="head-title">신청자 리스트</span>
-      <div class="view-seg" id="view-seg" role="group" aria-label="보기 전환">
-        <button type="button" class="view-seg-btn is-active" data-view="admin" onclick="pickView('admin')">관리자 보기</button>
-        <button type="button" class="view-seg-btn" data-view="user" onclick="pickView('user')">사용자 보기</button>
-      </div>
-
+      <span class="head-title">참석자</span>
       <div class="head-tools">
-        <button class="icon-btn icon-btn-sm icon-btn-clear" type="button" aria-label="받고 있는 정보" onclick="openFields()">
-          <i data-lucide="info"></i>
-        </button>
-        <div class="menu-wrap">
-          <button class="icon-btn icon-btn-sm icon-btn-clear" type="button" aria-label="더보기" onclick="toggleMenu()">
-            <i data-lucide="more-horizontal"></i>
-          </button>
-          <div class="menu" id="head-menu" hidden>
-            <button type="button" class="menu-item" onclick="pickExport()">엑셀 다운로드</button>
-          </div>
-        </div>
         <button class="icon-btn icon-btn-sm icon-btn-clear" type="button" aria-label="닫기" onclick="showToast('이벤트 페이지로 돌아가요.')">
           <i data-lucide="x"></i>
         </button>
@@ -474,55 +457,14 @@
 
     <div class="head-filters">
       <div class="type-tabs" id="type-tabs"></div>
-      <div class="slots head-slots" id="head-slots"></div>
       <div class="head-right">
-        <label class="pending-toggle" id="pending-toggle" hidden>
-          <span id="pending-toggle-text">승인 대기만 보기</span>
-          <input type="checkbox" class="toggle toggle-sm" id="pending-switch" onchange="togglePending()">
-        </label>
         <span class="head-count">총 <strong id="count-total">0</strong>명</span>
       </div>
     </div>
   </div>
 
-  <!-- ── 본문 ── -->
   <div class="body">
-    <div class="slots slots-mobile" id="mobile-slots"></div>
     <div class="rows" id="rows"></div>
-  </div>
-
-  <!-- ── 고른 게 있을 때만 뜨는 처리 바 ── -->
-  <div class="bulk" id="bulk" hidden>
-    <button type="button" class="bulk-all" onclick="toggleAll()">
-      <i data-lucide="check-square" style="width:16px;height:16px"></i>
-      <span id="bulk-all-text">전체 선택</span>
-    </button>
-    <button type="button" class="btn btn-sm btn-weak-dark" onclick="bulkAct('reject')">거절</button>
-    <button type="button" class="btn btn-sm btn-fill-primary" id="bulk-approve" onclick="bulkAct('approve')">승인</button>
-  </div>
-</div>
-
-<!-- 받고 있는 정보 — 한 번 확인하는 내용이라 버튼 안에 넣었다 -->
-<div class="pop-overlay" id="fields-pop" hidden onclick="closeFields()">
-  <div class="pop" onclick="event.stopPropagation()">
-    <div class="pop-title">
-      받고 있는 정보
-      <button class="icon-btn icon-btn-sm icon-btn-clear" type="button" aria-label="닫기" onclick="closeFields()">
-        <i data-lucide="x"></i>
-      </button>
-    </div>
-    <div class="pop-list" id="fields-list"></div>
-  </div>
-</div>
-
-<div class="dialog-overlay" id="del-overlay" hidden onclick="closeDelete()">
-  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="del-title" onclick="event.stopPropagation()">
-    <div class="dialog-title" id="del-title">신청을 삭제할까요?</div>
-    <p class="dialog-desc" id="del-desc"></p>
-    <div class="dialog-actions">
-      <button type="button" class="btn btn-md btn-weak-dark" onclick="closeDelete()">취소</button>
-      <button type="button" class="btn btn-md btn-fill-danger" onclick="confirmDelete()">삭제</button>
-    </div>
   </div>
 </div>
 
@@ -531,18 +473,10 @@
 <script src="https://unpkg.com/lucide@latest"></script>
 <script>
 /* ════════════════════════════════════════════
-   데모 데이터 — 실서버 화면과 같은 구성
+   신청자에게 보이는 참석자 목록.
+   관리자 화면(index.html)의 '사용자 보기'와 같은 것을 보여준다.
    ════════════════════════════════════════════ */
 
-/* base — 이 목록에 안 보이는 기존 신청자. 실제 서비스에서는 전체를 센다 */
-var SLOTS = [
-  { id: 's1', name: '1타임 (17:30~18:40)', base: 16, cap: 80 },
-  { id: 's2', name: '2타임 (19:00~19:50)', base: 5,  cap: 80 },
-  { id: 's3', name: '3타임 (20:10~21:00)', base: 7,  cap: 80 }
-];
-
-/* 재학생 팀은 자리를 배정받고 동의를 거쳐 승인해야 확정된다.
-   졸업생은 신청과 동시에 완료되고 자리를 쓰지 않는다. */
 /* reveal — 신청자에게 공개하는 항목. 없으면 그 유형은 사용자 화면에 아예 안 나온다.
    주최측이 이벤트 만들 때 고르는 '참석자 공개' 설정이 여기로 온다. */
 var TYPES = [
@@ -550,34 +484,6 @@ var TYPES = [
   { id: 'stu',  name: '재학생', slots: true,  approval: true,  reveal: null },
   { id: 'grad', name: '졸업생', slots: false, approval: false,
     reveal: ['졸업한 학과, 학번', '소속 직장', '후배들에게 한마디', '프로필 사진'] }
-];
-function typeOf(id) { return TYPES.filter(function(t){ return t.id === id; })[0] || {}; }
-function usesSlot(a) { return !!typeOf(a.type).slots; }
-function revealOf(id) { return typeOf(id).reveal || null; }
-
-/* 사용자 화면에 나오는 유형 — 공개를 켠 것만 */
-function revealedTypes() {
-  return TYPES.filter(function(t){ return t.id !== 'all' && t.reveal; });
-}
-/* 확정된 신청만 공개한다. 대기·거절·실패·취소 건은 남에게 보일 이유가 없다 */
-function isPublic(a) {
-  return !!revealOf(a.type) && (a.status === 'approved' || a.status === 'done');
-}
-
-/* 이벤트마다 다른 신청폼 항목 — 줄에는 안 나오고 상세에서만 보인다 */
-var FIELD_GROUPS = [
-  {
-    name: '재학생 팀',
-    items: ['팀 이름', '자리 우선순위', '(대표자) [필수항목] 개인정보 수집, 이용 제공에 동의하십니까?', '(대표자) [선택항목] 향후 총동문회 소식 수신에 동의하십니까?', '(대표자, 선택) 장학금 사연', '(대표자) 학과', '(대표자) 학번'],
-    sub: {
-      name: '팀원 정보',
-      items: ['이름', '전화번호', '학과', '학번', '(선택) 장학금 사연', '[필수항목] 개인정보 수집, 이용 제공에 동의하십니까?', '[선택항목] 향후 총동문회 소식 수신에 동의하십니까?']
-    }
-  },
-  {
-    name: '졸업생',
-    items: ['이름', '전화번호', '졸업한 학과, 학번', '차량번호', '도착 예상 시간', '후배들에게 카드뉴스 형태로 소개를 희망하시나요?', '프로필 사진', '후배들에게 한마디', '소속 직장', '후원 여부']
-  }
 ];
 
 var APPLICANTS = [
@@ -700,49 +606,31 @@ var APPLICANTS = [
     fields: [['전화번호', '01033903390'], ['졸업한 학과, 학번', '도시행정학과 09'], ['소속 직장', '국토연구원']] }
 ];
 
-/* review·approved만 아직 손댈 수 있다. 나머지는 끝난 상태다 */
-var STATUS = {
-  review:    { label: '승인 대기',  cls: 'badge-weak-warning' },
-  done:      { label: '신청 완료',  cls: 'badge-weak-success' },
-  approved:  { label: '승인',       cls: 'badge-weak-success' },
-  rejected:  { label: '거절',       cls: 'badge-weak-dark' },
-  failed:    { label: '신청 실패',  cls: 'badge-weak-danger' },
-  cancelled: { label: '신청 취소',  cls: 'badge-weak-neutral' }
-};
+function typeOf(id) { return TYPES.filter(function(t){ return t.id === id; })[0] || {}; }
+function revealOf(id) { return typeOf(id).reveal || null; }
 
-/* 승인도 거절도 알림이 나간 뒤라 되돌리지 않는다. 판단은 승인 대기에서 한 번만 */
-function canApprove(a) { return a.status === 'review'; }
-function canReject(a)  { return a.status === 'review'; }
-function canAct(a)     { return a.status === 'review'; }
-/* 승인 대기는 아직 처리할 일이 남아 있다 — 지우기 전에 판단부터 */
-function canDelete(a)  { return a.status !== 'review'; }
+/* 공개를 켠 유형만 이 화면에 나온다 */
+function revealedTypes() {
+  return TYPES.filter(function(t){ return t.id !== 'all' && t.reveal; });
+}
+/* 확정된 신청만 공개한다. 대기·거절·실패·취소 건은 남에게 보일 이유가 없다 */
+function isPublic(a) {
+  return !!revealOf(a.type) && (a.status === 'approved' || a.status === 'done');
+}
+/* 공개로 켠 항목만 남긴다 */
+function fieldsFor(a) {
+  var ok = revealOf(a.type) || [];
+  return (a.fields || []).filter(function(f){ return ok.indexOf(f[0]) > -1; });
+}
 
-/* ════════════════════════════════════════════
-   상태
-   ════════════════════════════════════════════ */
-
-var filter = 'all';
-var picked = {};
+var filter = revealedTypes().length === 1 ? revealedTypes()[0].id : 'all';
 var open = {};
 
 function headcount(a) { return a.members ? a.members.length : 1; }
-
-var view = 'admin';          /* 'admin' | 'user' */
-var pendingOnly = false;
-
 function shown() {
-  var rows = filter === 'all' ? APPLICANTS : APPLICANTS.filter(function(a){ return a.type === filter; });
-  if (view === 'user') return rows.filter(isPublic);
-  if (pendingOnly) rows = rows.filter(function(a){ return a.status === 'review'; });
-  return rows;
-}
-function typeName(id) {
-  var t = TYPES.filter(function(x){ return x.id === id; })[0];
-  return t ? t.name : '';
-}
-function slotName(id) {
-  var s = SLOTS.filter(function(x){ return x.id === id; })[0];
-  return s ? s.name : '미배정';
+  return APPLICANTS.filter(function(a){
+    return isPublic(a) && (filter === 'all' || a.type === filter);
+  });
 }
 function esc(v) {
   return String(v == null ? '' : v).replace(/[&<>"']/g, function(c){
@@ -750,57 +638,13 @@ function esc(v) {
   });
 }
 
-/* ════════════════════════════════════════════
-   렌더
-   ════════════════════════════════════════════ */
-
 function renderTabs() {
-  var list = view === 'user'
-    ? (revealedTypes().length > 1 ? [TYPES[0]].concat(revealedTypes()) : revealedTypes())
-    : TYPES;
+  var list = revealedTypes();
+  if (list.length > 1) list = [TYPES[0]].concat(list);
   document.getElementById('type-tabs').innerHTML = list.map(function(t){
     return '<button type="button" class="type-tab' + (filter === t.id ? ' is-active' : '') + '" '
       + 'onclick="setFilter(\'' + t.id + '\')">' + esc(t.name) + '</button>';
   }).join('');
-}
-
-/* 승인 대기(초안)와 승인만 자리를 잡는다. 거절·실패·취소는 놓아준 상태다 */
-function holdsSlot(a) {
-  return usesSlot(a) && a.slot && (a.status === 'review' || a.status === 'approved');
-}
-function slotUsed(id) {
-  return SLOTS.filter(function(s){ return s.id === id; })[0].base
-    + APPLICANTS.filter(function(a){ return holdsSlot(a) && a.slot === id; })
-                .reduce(function(n, a){ return n + headcount(a); }, 0);
-}
-
-function renderSlots() {
-  /* 자리를 안 쓰는 유형만 보고 있으면 자리 현황도 의미가 없다 */
-  var t = typeOf(filter);
-  var show = view === 'admin' && (filter === 'all' || t.slots);
-
-  var html = SLOTS.map(function(s){
-    var used = slotUsed(s.id);
-    var full = used >= s.cap;
-    return '<span class="slot' + (full ? ' is-full' : '') + '">'
-      + esc(s.name)
-      + '<span class="slot-left">' + used + '/' + s.cap + '</span>'
-      + '</span>';
-  }).join('');
-
-  ['head-slots', 'mobile-slots'].forEach(function(id){
-    var el = document.getElementById(id);
-    el.innerHTML = show ? html : '';
-    el.hidden = !show;
-  });
-}
-
-/* 관리자에게는 전부, 신청자에게는 공개로 켠 항목만 */
-function fieldsFor(a) {
-  var all = a.fields || [];
-  if (view !== 'user') return all;
-  var ok = revealOf(a.type) || [];
-  return all.filter(function(f){ return ok.indexOf(f[0]) > -1; });
 }
 
 function fieldHTML(f) {
@@ -835,254 +679,35 @@ function renderRows() {
 
   if (rows.length === 0) {
     document.getElementById('rows').innerHTML =
-      '<p class="rows-empty">해당하는 신청자가 없어요.</p>';
-    syncBulk();
-    syncPendingToggle();
-    if (window.lucide) lucide.createIcons();
+      '<p class="rows-empty">아직 참석자가 없어요.</p>';
     return;
   }
 
   document.getElementById('rows').innerHTML = rows.map(function(a){
-    var st = STATUS[a.status];
     var isOpen = !!open[a.id];
-
-    var detail = '';
-    if (isOpen) {
-      detail = '<div class="detail' + (a.members ? ' has-members' : '') + '">'
-        + '<div class="detail-col">'
-        +   '<span class="detail-head">신청 정보</span>'
-        +   '<div class="fields">' + (a.fields || []).map(fieldHTML).join('') + '</div>'
-        + '</div>'
-        + (a.members
-            ? '<div class="detail-col">'
-              + '<span class="detail-head">팀원 ' + a.members.length + '명</span>'
-              + '<div class="members">' + a.members.map(function(m){
-                  return '<div class="member">'
-                    + '<div class="member-top">'
-                    +   '<span class="member-name">' + esc(m.name) + '</span>'
-                    +   (m.lead ? '<span class="badge badge-sm badge-weak-primary">대표자</span>' : '')
-                    + '</div>'
-                    + '<div class="fields">' + (m.fields || []).map(fieldHTML).join('') + '</div>'
-                    + '</div>';
-                }).join('') + '</div>'
-              + '</div>'
-            : '')
-        + '</div>';
-    }
-
-    if (view === 'user') {
-      var pub = fieldsFor(a);
-      /* 요약에는 글자 답변만 — 파일명이나 고른 보기는 줄에서 읽을 값이 아니다 */
-      var summary = pub.filter(function(f){ return !f[2] && f[1] && !Array.isArray(f[1]); })
-        .slice(0, 2).map(function(f){ return f[1]; }).join(' · ');
-      return '<div class="row' + (isOpen ? ' is-open' : '') + '">'
-        + '<div class="row-main" onclick="toggleOpen(\'' + a.id + '\')">'
-        +   '<span class="row-name">' + esc(a.name) + '</span>'
-        +   '<span class="row-meta row-summary">' + esc(summary) + '</span>'
-        +   '<span class="row-more"><i data-lucide="' + (isOpen ? 'chevron-up' : 'chevron-down') + '"></i></span>'
-        + '</div>'
-        + (isOpen
-            ? '<div class="detail"><div class="detail-col">'
-              + '<div class="fields">' + pub.map(fieldHTML).join('') + '</div>'
-              + '</div></div>'
-            : '')
-        + '</div>';
-    }
-
+    var pub = fieldsFor(a);
+    /* 요약에는 글자 답변만 — 파일명이나 고른 보기는 줄에서 읽을 값이 아니다 */
+    var summary = pub.filter(function(f){ return !f[2] && f[1] && !Array.isArray(f[1]); })
+      .slice(0, 2).map(function(f){ return f[1]; }).join(' · ');
     return '<div class="row' + (isOpen ? ' is-open' : '') + '">'
       + '<div class="row-main" onclick="toggleOpen(\'' + a.id + '\')">'
-      +   (canAct(a)
-            ? '<input type="checkbox" class="checkbox row-check" aria-label="' + esc(a.name) + ' 선택" '
-              + (picked[a.id] ? 'checked ' : '') + 'onclick="event.stopPropagation()" onchange="pick(\'' + a.id + '\')">'
-            : '<span class="row-check"></span>')
-      +   '<span class="row-name">' + esc(a.name)
-      +     (a.members ? '<span class="row-count">' + a.members.length + '명</span>' : '') + '</span>'
-      +   '<span class="row-meta row-type">' + esc(typeName(a.type)) + '</span>'
-      +   '<span class="row-meta row-slot">' + (usesSlot(a) ? esc(slotName(a.slot)) : '—') + '</span>'
-      +   '<span class="row-status"><span class="badge badge-sm ' + st.cls + '">' + st.label + '</span></span>'
-      +   '<span class="row-meta-m">' + esc(typeName(a.type))
-      +     (usesSlot(a) ? ' · ' + esc(slotName(a.slot)) : '') + '</span>'
-      +   '<span class="row-actions">'
-      +     (canApprove(a)
-            ? '<button type="button" class="btn btn-xs btn-weak-primary" onclick="event.stopPropagation();act(\'' + a.id + '\',\'approve\')">승인</button>' : '')
-      +     (canReject(a)
-            ? '<button type="button" class="btn btn-xs btn-weak-dark" onclick="event.stopPropagation();act(\'' + a.id + '\',\'reject\')">거절</button>' : '')
-      +   '</span>'
-      +   '<span class="row-date">' + esc(a.date) + '</span>'
-      +   '<span class="row-del">'
-      +     (canDelete(a)
-            ? '<button type="button" class="icon-btn icon-btn-sm icon-btn-clear" aria-label="' + esc(a.name) + ' 삭제" '
-              + 'onclick="event.stopPropagation();askDelete(\'' + a.id + '\')"><i data-lucide="trash-2"></i></button>'
-            : '')
-      +   '</span>'
+      +   '<span class="row-name">' + esc(a.name) + '</span>'
+      +   '<span class="row-meta row-summary">' + esc(summary) + '</span>'
+      +   '<span class="row-more"><i data-lucide="' + (isOpen ? 'chevron-up' : 'chevron-down') + '"></i></span>'
       + '</div>'
-      + detail
-      + '</div>';
-  }).join('');
-
-  syncBulk();
-  syncPendingToggle();
-  if (window.lucide) lucide.createIcons();
-}
-
-function renderFields() {
-  function items(list) {
-    return '<ul class="pop-items">'
-      + list.map(function(x){ return '<li>' + esc(x) + '</li>'; }).join('')
-      + '</ul>';
-  }
-  function count(n) { return '<span class="pop-group-count">' + n + '개</span>'; }
-  document.getElementById('fields-list').innerHTML = FIELD_GROUPS.map(function(g){
-    return '<div class="pop-group">'
-      + '<span class="pop-group-name">' + esc(g.name) + count(g.items.length) + '</span>'
-      + items(g.items)
-      + (g.sub
-          ? '<div class="pop-sub">'
-            + '<span class="pop-sub-name">' + esc(g.sub.name) + count(g.sub.items.length) + '</span>'
-            + items(g.sub.items)
-            + '</div>'
+      + (isOpen
+          ? '<div class="detail"><div class="detail-col">'
+            + '<div class="fields">' + pub.map(fieldHTML).join('') + '</div>'
+            + '</div></div>'
           : '')
       + '</div>';
   }).join('');
+
+  if (window.lucide) lucide.createIcons();
 }
 
-/* ════════════════════════════════════════════
-   동작
-   ════════════════════════════════════════════ */
-
-function setFilter(id) {
-  filter = id;
-  /* 승인 대기는 재학생 팀에만 있는 개념이라 탭을 벗어나면 푼다 */
-  if (!typeOf(filter).approval) pendingOnly = false;
-  renderTabs(); renderSlots(); renderRows();
-}
-
-function togglePending() {
-  pendingOnly = !pendingOnly;
-  picked = {};
-  renderRows();
-}
-
-/* 승인을 쓰는 유형을 보고 있을 때만, 대기 건이 있을 때만 */
-function syncPendingToggle() {
-  var btn = document.getElementById('pending-toggle');
-  if (!btn) return;
-  var t = typeOf(filter);
-  var base = filter === 'all' ? APPLICANTS : APPLICANTS.filter(function(a){ return a.type === filter; });
-  var n = base.filter(function(a){ return a.status === 'review'; }).length;
-  btn.hidden = !t.approval || (n === 0 && !pendingOnly);
-  document.getElementById('pending-switch').checked = pendingOnly;
-  document.getElementById('pending-toggle-text').textContent = '승인 대기 ' + n + '건만 보기';
-}
+function setFilter(id) { filter = id; renderTabs(); renderRows(); }
 function toggleOpen(id) { open[id] = !open[id]; renderRows(); }
-
-function pick(id) {
-  if (picked[id]) delete picked[id]; else picked[id] = true;
-  syncBulk();
-}
-
-function pickedIds() {
-  return Object.keys(picked).filter(function(id){
-    var a = APPLICANTS.filter(function(x){ return x.id === id; })[0];
-    return a && canAct(a);
-  });
-}
-
-function toggleAll() {
-  var rows = shown().filter(canAct);
-  var all = rows.every(function(a){ return picked[a.id]; });
-  picked = {};
-  if (!all) rows.forEach(function(a){ picked[a.id] = true; });
-  renderRows();
-}
-
-function syncBulk() {
-  var n = pickedIds().length;
-  var bar = document.getElementById('bulk');
-  bar.hidden = n === 0;
-  document.getElementById('bulk-approve').textContent = n ? n + '건 승인' : '승인';
-  var rows = shown().filter(canAct);
-  document.getElementById('bulk-all-text').textContent =
-    (rows.length && rows.every(function(a){ return picked[a.id]; })) ? '전체 해제' : '전체 선택';
-}
-
-function act(id, how) {
-  var a = APPLICANTS.filter(function(x){ return x.id === id; })[0];
-  if (!a) return;
-  if (how === 'approve' ? !canApprove(a) : !canReject(a)) return;
-  a.status = how === 'approve' ? 'approved' : 'rejected';
-  renderRows(); renderSlots();
-  showToast(a.name + (how === 'approve' ? ' 승인했어요.' : ' 거절했어요.'));
-}
-
-function bulkAct(how) {
-  var ids = pickedIds();
-  if (!ids.length) return;
-  ids.forEach(function(id){
-    var a = APPLICANTS.filter(function(x){ return x.id === id; })[0];
-    if (!a) return;
-    if (how === 'approve' ? !canApprove(a) : !canReject(a)) return;
-    a.status = how === 'approve' ? 'approved' : 'rejected';
-  });
-  picked = {};
-  renderRows(); renderSlots();
-  showToast(ids.length + '건을 ' + (how === 'approve' ? '승인' : '거절') + '했어요.');
-}
-
-var delId = null;
-
-function askDelete(id) {
-  var a = APPLICANTS.filter(function(x){ return x.id === id; })[0];
-  if (!a || !canDelete(a)) return;
-  delId = id;
-  document.getElementById('del-desc').textContent =
-    a.name + (a.members ? ' (' + a.members.length + '명)' : '') + ' — 되돌릴 수 없어요.';
-  document.getElementById('del-overlay').hidden = false;
-}
-function closeDelete() { document.getElementById('del-overlay').hidden = true; delId = null; }
-function confirmDelete() {
-  var i = APPLICANTS.map(function(a){ return a.id; }).indexOf(delId);
-  if (i < 0) { closeDelete(); return; }
-  var name = APPLICANTS[i].name;
-  APPLICANTS.splice(i, 1);
-  delete picked[delId];
-  delete open[delId];
-  closeDelete();
-  renderRows(); renderSlots();
-  showToast(name + ' 신청을 삭제했어요.');
-}
-
-function openFields()  { document.getElementById('fields-pop').hidden = false; if (window.lucide) lucide.createIcons(); }
-function closeFields() { document.getElementById('fields-pop').hidden = true; }
-
-function toggleMenu() {
-  var m = document.getElementById('head-menu');
-  m.hidden = !m.hidden;
-}
-function pickView(which) {
-  view = which;
-  document.body.classList.toggle('is-user', which === 'user');
-  document.querySelectorAll('.view-seg-btn').forEach(function(b){
-    b.classList.toggle('is-active', b.dataset.view === which);
-  });
-  /* 공개하지 않는 유형을 보고 있었다면 공개하는 유형으로 옮긴다 */
-  if (which === 'user') {
-    pendingOnly = false;
-    picked = {};
-    open = {};
-    var list = revealedTypes();
-    if (filter !== 'all' && !revealOf(filter)) filter = list.length ? list[0].id : 'all';
-    if (list.length === 1) filter = list[0].id;
-  }
-  renderTabs(); renderSlots(); renderRows();
-}
-function pickExport() {
-  toggleMenu();
-  showToast('엑셀 내보내기 시트가 열려요.');
-}
-document.addEventListener('click', function(e) {
-  if (!e.target.closest('.menu-wrap')) document.getElementById('head-menu').hidden = true;
-});
 
 var toastTimer = null;
 function showToast(msg) {
@@ -1093,8 +718,6 @@ function showToast(msg) {
 }
 
 renderTabs();
-renderSlots();
-renderFields();
 renderRows();
 lucide.createIcons();
 </script>
