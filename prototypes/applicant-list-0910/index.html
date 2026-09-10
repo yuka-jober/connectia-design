@@ -155,6 +155,11 @@
 
   /* ── 목록 — 한 줄에 한 신청 ── */
   .rows { display: flex; flex-direction: column; }
+  .rows-empty {
+    padding: 64px 20px; text-align: center;
+    background: var(--color-surface);
+    font-size: var(--fs-body); color: var(--color-text-muted);
+  }
   .row {
     background: var(--color-surface);
     border-bottom: 1px solid var(--color-border);
@@ -479,10 +484,11 @@
    데모 데이터 — 실서버 화면과 같은 구성
    ════════════════════════════════════════════ */
 
+/* base — 이 목록에 안 보이는 기존 신청자. 실제 서비스에서는 전체를 센다 */
 var SLOTS = [
-  { id: 's1', name: '1타임 (17:30~18:40)', used: 21, cap: 80 },
-  { id: 's2', name: '2타임 (19:00~19:50)', used: 10, cap: 80 },
-  { id: 's3', name: '3타임 (20:10~21:00)', used: 7,  cap: 80 }
+  { id: 's1', name: '1타임 (17:30~18:40)', base: 16, cap: 80 },
+  { id: 's2', name: '2타임 (19:00~19:50)', base: 5,  cap: 80 },
+  { id: 's3', name: '3타임 (20:10~21:00)', base: 7,  cap: 80 }
 ];
 
 /* 재학생 팀은 자리를 배정받고 동의를 거쳐 승인해야 확정된다.
@@ -686,16 +692,35 @@ function renderTabs() {
   }).join('');
 }
 
+/* 승인 대기(초안)와 승인만 자리를 잡는다. 거절·실패·취소는 놓아준 상태다 */
+function holdsSlot(a) {
+  return usesSlot(a) && a.slot && (a.status === 'review' || a.status === 'approved');
+}
+function slotUsed(id) {
+  return SLOTS.filter(function(s){ return s.id === id; })[0].base
+    + APPLICANTS.filter(function(a){ return holdsSlot(a) && a.slot === id; })
+                .reduce(function(n, a){ return n + headcount(a); }, 0);
+}
+
 function renderSlots() {
+  /* 자리를 안 쓰는 유형만 보고 있으면 자리 현황도 의미가 없다 */
+  var t = typeOf(filter);
+  var show = filter === 'all' || t.slots;
+
   var html = SLOTS.map(function(s){
-    var full = s.used >= s.cap;
+    var used = slotUsed(s.id);
+    var full = used >= s.cap;
     return '<span class="slot' + (full ? ' is-full' : '') + '">'
       + esc(s.name)
-      + '<span class="slot-left">' + s.used + '/' + s.cap + '</span>'
+      + '<span class="slot-left">' + used + '/' + s.cap + '</span>'
       + '</span>';
   }).join('');
-  document.getElementById('head-slots').innerHTML = html;
-  document.getElementById('mobile-slots').innerHTML = html;
+
+  ['head-slots', 'mobile-slots'].forEach(function(id){
+    var el = document.getElementById(id);
+    el.innerHTML = show ? html : '';
+    el.hidden = !show;
+  });
 }
 
 function fieldHTML(f) {
@@ -727,6 +752,13 @@ function renderRows() {
   document.getElementById('count-total').textContent = rows.reduce(function(n, a){
     return n + headcount(a);
   }, 0);
+
+  if (rows.length === 0) {
+    document.getElementById('rows').innerHTML =
+      '<p class="rows-empty">해당하는 신청자가 없어요.</p>';
+    syncBulk();
+    return;
+  }
 
   document.getElementById('rows').innerHTML = rows.map(function(a){
     var st = STATUS[a.status];
@@ -816,7 +848,7 @@ function renderFields() {
    동작
    ════════════════════════════════════════════ */
 
-function setFilter(id) { filter = id; renderTabs(); renderRows(); }
+function setFilter(id) { filter = id; renderTabs(); renderSlots(); renderRows(); }
 function toggleOpen(id) { open[id] = !open[id]; renderRows(); }
 
 function pick(id) {
@@ -854,7 +886,7 @@ function act(id, how) {
   if (!a) return;
   if (how === 'approve' ? !canApprove(a) : !canReject(a)) return;
   a.status = how === 'approve' ? 'approved' : 'rejected';
-  renderRows();
+  renderRows(); renderSlots();
   showToast(a.name + (how === 'approve' ? ' 승인했어요.' : ' 거절했어요.'));
 }
 
@@ -868,7 +900,7 @@ function bulkAct(how) {
     a.status = how === 'approve' ? 'approved' : 'rejected';
   });
   picked = {};
-  renderRows();
+  renderRows(); renderSlots();
   showToast(ids.length + '건을 ' + (how === 'approve' ? '승인' : '거절') + '했어요.');
 }
 
@@ -891,7 +923,7 @@ function confirmDelete() {
   delete picked[delId];
   delete open[delId];
   closeDelete();
-  renderRows();
+  renderRows(); renderSlots();
   showToast(name + ' 신청을 삭제했어요.');
 }
 
