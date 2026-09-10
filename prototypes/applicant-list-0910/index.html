@@ -109,6 +109,30 @@
     color: var(--color-text); font-weight: var(--fw-bold);
     border-bottom-color: var(--color-text);
   }
+  /* 승인이 주 용도라 대기 건만 보는 경로를 한 번에 준다 */
+  .pending-toggle {
+    flex-shrink: 0;
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 8px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-full);
+    background: var(--color-surface);
+    font-family: var(--font-base);
+    font-size: var(--fs-label); font-weight: var(--fw-medium);
+    color: var(--color-text-sub);
+    cursor: pointer; white-space: nowrap;
+    transition: background var(--motion-fast) var(--ease-standard),
+                color var(--motion-fast) var(--ease-standard);
+  }
+  .pending-toggle[hidden] { display: none; }
+  .pending-toggle:hover { background: var(--color-surface-sub); }
+  .pending-toggle[aria-pressed="true"] {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: var(--color-on-primary);
+  }
+  .pending-toggle i[data-lucide], .pending-toggle svg.lucide { width: 14px; height: 14px; }
+
   .head-count {
     margin-left: auto; flex-shrink: 0;
     font-size: var(--fs-label); color: var(--color-text-sub);
@@ -431,6 +455,11 @@
 
     <div class="head-filters">
       <div class="type-tabs" id="type-tabs"></div>
+      <button type="button" class="pending-toggle" id="pending-toggle" hidden
+              aria-pressed="false" onclick="togglePending()">
+        <i data-lucide="clock"></i>
+        <span id="pending-toggle-text">승인 대기</span>
+      </button>
       <div class="slots head-slots" id="head-slots"></div>
       <span class="head-count">총 <strong id="count-total">0</strong>명</span>
     </div>
@@ -665,8 +694,12 @@ var open = {};
 
 function headcount(a) { return a.members ? a.members.length : 1; }
 
+var pendingOnly = false;
+
 function shown() {
-  return filter === 'all' ? APPLICANTS : APPLICANTS.filter(function(a){ return a.type === filter; });
+  var rows = filter === 'all' ? APPLICANTS : APPLICANTS.filter(function(a){ return a.type === filter; });
+  if (pendingOnly) rows = rows.filter(function(a){ return a.status === 'review'; });
+  return rows;
 }
 function typeName(id) {
   var t = TYPES.filter(function(x){ return x.id === id; })[0];
@@ -758,6 +791,8 @@ function renderRows() {
     document.getElementById('rows').innerHTML =
       '<p class="rows-empty">해당하는 신청자가 없어요.</p>';
     syncBulk();
+    syncPendingToggle();
+    if (window.lucide) lucide.createIcons();
     return;
   }
 
@@ -821,6 +856,7 @@ function renderRows() {
   }).join('');
 
   syncBulk();
+  syncPendingToggle();
   if (window.lucide) lucide.createIcons();
 }
 
@@ -849,7 +885,31 @@ function renderFields() {
    동작
    ════════════════════════════════════════════ */
 
-function setFilter(id) { filter = id; renderTabs(); renderSlots(); renderRows(); }
+function setFilter(id) {
+  filter = id;
+  /* 승인 대기는 재학생 팀에만 있는 개념이라 탭을 벗어나면 푼다 */
+  if (!typeOf(filter).approval) pendingOnly = false;
+  renderTabs(); renderSlots(); renderRows();
+}
+
+function togglePending() {
+  pendingOnly = !pendingOnly;
+  picked = {};
+  renderRows();
+}
+
+/* 승인을 쓰는 유형을 보고 있을 때만, 대기 건이 있을 때만 */
+function syncPendingToggle() {
+  var btn = document.getElementById('pending-toggle');
+  if (!btn) return;
+  var t = typeOf(filter);
+  var base = filter === 'all' ? APPLICANTS : APPLICANTS.filter(function(a){ return a.type === filter; });
+  var n = base.filter(function(a){ return a.status === 'review'; }).length;
+  btn.hidden = !t.approval || (n === 0 && !pendingOnly);
+  btn.setAttribute('aria-pressed', pendingOnly ? 'true' : 'false');
+  document.getElementById('pending-toggle-text').textContent =
+    pendingOnly ? '전체 보기' : '승인 대기 ' + n;
+}
 function toggleOpen(id) { open[id] = !open[id]; renderRows(); }
 
 function pick(id) {
