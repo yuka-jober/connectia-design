@@ -794,20 +794,24 @@ function renderSlots() {
 /* '(대표자) 학과'는 대표자가 답한 '학과'다. 공개 항목을 맞출 때 접두사는 떼고 본다 */
 function baseLabel(name) { return String(name).replace(/^\(대표자[^)]*\)\s*/, ''); }
 
-/* 공개로 켠 항목만, 켠 순서대로 — 누구를 보든 같은 항목이 같은 자리에 온다.
-   팀은 대표자와 팀원의 답을 한 항목으로 모은다 */
-function publicFields(a) {
-  var pool = (a.fields || []);
-  (a.members || []).forEach(function(m){ pool = pool.concat(m.fields || []); });
-  return (revealOf(a.type) || []).map(function(label){
-    var vals = [];
-    pool.forEach(function(f){
-      if (baseLabel(f[0]) !== label) return;
-      var v = Array.isArray(f[1]) ? '' : String(f[1] || '').trim();
-      if (v && vals.indexOf(v) < 0) vals.push(v);
-    });
-    return vals.length ? [label, vals.join(' · ')] : null;
+/* 공개로 켠 항목만, 켠 순서대로 — 누구를 보든 같은 항목이 같은 자리에 온다 */
+function publicFields(list, ok) {
+  return ok.map(function(label){
+    var hit = (list || []).filter(function(f){ return baseLabel(f[0]) === label; })[0];
+    var v = hit && !Array.isArray(hit[1]) ? String(hit[1] || '').trim() : '';
+    return v ? [label, v] : null;
   }).filter(Boolean);
+}
+
+/* 학과도 한마디도 사람에게 붙는 답이다. 팀은 대표자와 팀원을 각각 한 사람으로 편다 */
+function publicPeople(a) {
+  var ok = revealOf(a.type) || [];
+  if (!a.members) return [{ name: a.name, fields: publicFields(a.fields, ok) }];
+  return a.members.map(function(m){
+    /* '(대표자) 학과'는 팀 신청서에 적혀 있지만 대표자가 답한 것이다 */
+    var own = (m.lead ? (a.fields || []) : []).concat(m.fields || []);
+    return { name: m.name, lead: !!m.lead, fields: publicFields(own, ok) };
+  });
 }
 
 function fieldHTML(f) {
@@ -878,7 +882,18 @@ function renderRows() {
     }
 
     if (view === 'user') {
-      var pub = publicFields(a);
+      var people = publicPeople(a);
+      var inner = a.members
+        ? '<div class="members">' + people.map(function(one){
+            return '<div class="member">'
+              + '<div class="member-top">'
+              +   '<span class="member-name">' + esc(one.name) + '</span>'
+              +   (one.lead ? '<span class="badge badge-sm badge-weak-primary">대표자</span>' : '')
+              + '</div>'
+              + (one.fields.length ? '<div class="fields">' + one.fields.map(fieldHTML).join('') + '</div>' : '')
+              + '</div>';
+          }).join('') + '</div>'
+        : '<div class="fields">' + people[0].fields.map(fieldHTML).join('') + '</div>';
       return '<div class="row' + (isOpen ? ' is-open' : '') + '">'
         + '<div class="row-main" onclick="toggleOpen(\'' + a.id + '\')">'
         +   '<span class="row-name">' + esc(a.name)
@@ -886,9 +901,7 @@ function renderRows() {
         +   '<span class="row-more"><i data-lucide="' + (isOpen ? 'chevron-up' : 'chevron-down') + '"></i></span>'
         + '</div>'
         + (isOpen
-            ? '<div class="detail"><div class="detail-col">'
-              + '<div class="fields">' + pub.map(fieldHTML).join('') + '</div>'
-              + '</div></div>'
+            ? '<div class="detail"><div class="detail-col">' + inner + '</div></div>'
             : '')
         + '</div>';
     }
