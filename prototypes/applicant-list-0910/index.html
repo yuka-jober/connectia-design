@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>신청자 리스트 — 26년 청춘건배</title>
+<link rel="stylesheet" href="../../tokens.css">
+<link rel="stylesheet" href="../../components.css">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-base);
+    background: var(--color-scrim);
+    min-height: 100dvh;
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+  }
+  /* 이벤트 페이지 위에 뜨는 모달이라는 걸 보이려고 깔아 둔 배경 */
+  body::before {
+    content: ""; position: fixed; inset: 0; z-index: -1;
+    background: var(--color-banner-gradient);
+  }
+  i[data-lucide] { display: inline-flex; flex-shrink: 0; }
+  svg.lucide { flex-shrink: 0; }
+
+  /* ============================================
+     모달 — PC는 넓게, 모바일은 화면 전체
+     ============================================ */
+  .modal {
+    width: 100%;
+    max-width: 1280px;
+    height: 90vh;
+    background: var(--color-surface);
+    border-radius: var(--r-lg);
+    box-shadow: var(--shadow-4);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  @media (max-width: 767px) {
+    body { padding: 0; }
+    .modal { max-width: none; height: 100dvh; border-radius: 0; }
+  }
+
+  /* ── 헤더 — 두 줄만 고정 ── */
+  .head {
+    flex-shrink: 0;
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .head-top {
+    display: flex; align-items: center; gap: 8px;
+    padding: 16px 20px 12px;
+  }
+  .head-title {
+    font-size: var(--fs-title); font-weight: var(--fw-bold);
+    letter-spacing: var(--ls-title); color: var(--color-text);
+    margin-right: auto;
+  }
+  .head-tools { display: flex; align-items: center; gap: 4px; }
+  .head-tools .icon-btn i[data-lucide],
+  .head-tools .icon-btn svg.lucide { width: 18px; height: 18px; }
+  @media (max-width: 767px) {
+    .head-tools .btn-pill { padding-left: 12px; padding-right: 12px; }
+    .head-tools .btn-pill .btn-text { display: none; }
+  }
+
+  .head-filters {
+    display: flex; align-items: center; gap: 16px;
+    padding: 0 20px 12px;
+  }
+  .type-tabs { display: flex; gap: 4px; flex-shrink: 0; }
+  .type-tab {
+    padding: 8px 12px;
+    background: none; border: none;
+    border-bottom: 2px solid transparent;
+    font-family: var(--font-base);
+    font-size: var(--fs-body); font-weight: var(--fw-medium);
+    color: var(--color-text-muted);
+    cursor: pointer; white-space: nowrap;
+  }
+  .type-tab.is-active {
+    color: var(--color-text); font-weight: var(--fw-bold);
+    border-bottom-color: var(--color-text);
+  }
+  .head-count {
+    margin-left: auto; flex-shrink: 0;
+    font-size: var(--fs-label); color: var(--color-text-sub);
+  }
+  .head-count strong { color: var(--color-text); font-weight: var(--fw-bold); }
+
+  /* 자리 현황 — PC는 헤더 안 한 줄, 모바일은 목록과 함께 스크롤 */
+  .slots {
+    display: flex; gap: 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .slots::-webkit-scrollbar { display: none; }
+  .slot {
+    display: flex; align-items: baseline; gap: 8px;
+    flex-shrink: 0;
+    padding: 8px 16px;
+    background: var(--color-surface-sub);
+    border-radius: var(--r-full);
+    font-size: var(--fs-label); font-weight: var(--fw-medium);
+    color: var(--color-text);
+    white-space: nowrap;
+  }
+  .slot-left {
+    font-size: var(--fs-caption); color: var(--color-text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .slot.is-full .slot-left { color: var(--color-destructive); font-weight: var(--fw-bold); }
+
+  /* ── 본문 ── */
+  .body {
+    flex: 1; overflow-y: auto;
+    background: var(--color-bg);
+  }
+  .slots-mobile { display: none; }
+  @media (max-width: 767px) {
+    .head-slots { display: none; }
+    .slots-mobile {
+      display: flex;
+      padding: 12px 16px;
+      background: var(--color-bg);
+    }
+  }
+
+  /* ── 목록 — 한 줄에 한 신청 ── */
+  .rows { display: flex; flex-direction: column; }
+  .row {
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .row-main {
+    display: grid;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    cursor: pointer;
+    /* 선택 · 이름 · 유형 · 자리 · 상태 · 액션 · 신청일 */
+    grid-template-columns:
+      24px minmax(160px, 1.4fr) minmax(72px, 0.5fr) minmax(72px, 0.5fr) 84px auto 132px;
+  }
+  .row-main:hover { background: var(--color-surface-sub); }
+  .row.is-open .row-main { background: var(--color-surface-sub); }
+
+  .row-name {
+    display: flex; align-items: baseline; gap: 8px; min-width: 0;
+    font-size: var(--fs-body-lg); font-weight: var(--fw-bold);
+    color: var(--color-text); letter-spacing: var(--ls-body-lg);
+  }
+  .row-count { font-size: var(--fs-caption); color: var(--color-text-muted); font-weight: var(--fw-regular); }
+  .row-meta { font-size: var(--fs-label); color: var(--color-text-sub); }
+  .row-date {
+    font-size: var(--fs-caption); color: var(--color-text-muted);
+    text-align: right; font-variant-numeric: tabular-nums;
+  }
+  .row-actions { display: flex; gap: 4px; }
+
+  /* 모바일 — 같은 줄을 두 층으로 접는다 */
+  @media (max-width: 767px) {
+    .row-main {
+      grid-template-columns: 24px 1fr auto;
+      grid-template-areas:
+        "check name   status"
+        ".     meta   meta"
+        ".     action action";
+      row-gap: 8px;
+      padding: 16px;
+    }
+    .row-check  { grid-area: check; }
+    .row-name   { grid-area: name; }
+    .row-status { grid-area: status; justify-self: end; }
+    .row-type, .row-slot { display: none; }
+    .row-meta-m { grid-area: meta; }
+    .row-actions { grid-area: action; }
+    .row-date { display: none; }
+  }
+  .row-meta-m { display: none; }
+  @media (max-width: 767px) {
+    .row-meta-m {
+      display: flex; gap: 8px;
+      font-size: var(--fs-label); color: var(--color-text-sub);
+    }
+  }
+
+  /* ── 상세 — 라벨을 값 위에, PC는 두 열 ── */
+  .detail {
+    padding: 4px 20px 20px 52px;
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+  }
+  .detail[hidden] { display: none; }
+  .fields {
+    display: grid; gap: 16px 32px;
+    grid-template-columns: 1fr 1fr;
+  }
+  @media (max-width: 767px) {
+    .detail { padding: 4px 16px 20px 16px; }
+    .fields { grid-template-columns: 1fr; }
+  }
+  .field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .field.is-wide { grid-column: 1 / -1; }
+  .field-label {
+    font-size: var(--fs-caption); font-weight: var(--fw-medium);
+    color: var(--color-text-muted); line-height: var(--lh-caption);
+  }
+  .field-value {
+    font-size: var(--fs-label); color: var(--color-text);
+    line-height: 1.6; word-break: break-word;
+  }
+  .field-value.is-empty { color: var(--color-text-muted); }
+
+  .detail-sub {
+    margin-top: 20px;
+    font-size: var(--fs-caption); font-weight: var(--fw-bold);
+    color: var(--color-text-muted);
+  }
+  .members { display: grid; gap: 12px; margin-top: 12px; }
+  @media (min-width: 768px) { .members { grid-template-columns: 1fr 1fr; } }
+  .member {
+    background: var(--color-bg);
+    border-radius: var(--r-md);
+    padding: 16px;
+  }
+  .member-top { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+  .member-name { font-size: var(--fs-body); font-weight: var(--fw-bold); color: var(--color-text); }
+  .member .fields { grid-template-columns: 1fr; gap: 12px; }
+
+  /* ── 하단 일괄 처리 바 ── */
+  .bulk {
+    flex-shrink: 0;
+    display: flex; align-items: center; gap: 8px;
+    padding: 12px 20px calc(12px + env(safe-area-inset-bottom));
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+  }
+  .bulk[hidden] { display: none; }
+  .bulk-all {
+    margin-right: auto;
+    display: flex; align-items: center; gap: 8px;
+    background: none; border: none; padding: 4px 0;
+    font-family: var(--font-base);
+    font-size: var(--fs-label); font-weight: var(--fw-medium);
+    color: var(--color-text-sub);
+    cursor: pointer;
+  }
+
+  /* ── 받고 있는 정보 · 메뉴 ── */
+  .pop-overlay {
+    position: fixed; inset: 0; z-index: 100;
+    background: var(--color-scrim);
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+  }
+  .pop-overlay[hidden] { display: none; }
+  .pop {
+    width: 100%; max-width: 520px;
+    background: var(--color-surface);
+    border-radius: var(--r-lg);
+    box-shadow: var(--shadow-4);
+    padding: 24px;
+  }
+  .pop-title {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 16px;
+    font-size: var(--fs-heading); font-weight: var(--fw-bold);
+    color: var(--color-text);
+  }
+  .pop-title .icon-btn { margin-left: auto; }
+  .pop-list { display: grid; gap: 12px; }
+  .pop-group {
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .pop-group-name {
+    font-size: var(--fs-caption); font-weight: var(--fw-bold);
+    color: var(--color-primary);
+  }
+  .pop-group-items {
+    font-size: var(--fs-label); color: var(--color-text-sub); line-height: 1.7;
+  }
+
+  .menu-wrap { position: relative; }
+  .menu-wrap .menu {
+    position: absolute; top: calc(100% + 4px); right: 0; z-index: 50;
+    min-width: 180px;
+  }
+  .menu-wrap .menu[hidden] { display: none; }
+
+  .toast-container { position: fixed; bottom: 32px; z-index: 200; }
+</style>
+</head>
+<body>
+
+<div class="modal">
+
+  <!-- ── 헤더 : 두 줄 ── -->
+  <div class="head">
+    <div class="head-top">
+      <span class="head-title">신청자 리스트</span>
+      <div class="head-tools">
+        <button class="icon-btn icon-btn-sm icon-btn-clear" type="button" aria-label="받고 있는 정보" onclick="openFields()">
+          <i data-lucide="info"></i>
+        </button>
+        <div class="menu-wrap">
+          <button class="icon-btn icon-btn-sm icon-btn-clear" type="button" aria-label="더보기" onclick="toggleMenu()">
+            <i data-lucide="more-horizontal"></i>
+          </button>
+          <div class="menu" id="head-menu" hidden>
+            <button type="button" class="menu-item is-selected" onclick="pickView('admin')">관리자 보기</button>
+            <button type="button" class="menu-item" onclick="pickView('user')">사용자 보기</button>
+          </div>
+        </div>
+        <button class="btn btn-sm btn-line-dark btn-pill" type="button" onclick="showToast('엑셀 내보내기 시트가 열려요.')">
+          <i data-lucide="download" style="width:14px;height:14px"></i>
+          <span class="btn-text">엑셀 다운로드</span>
+        </button>
+        <button class="icon-btn icon-btn-sm icon-btn-clear" type="button" aria-label="닫기" onclick="showToast('이벤트 페이지로 돌아가요.')">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+    </div>
+
+    <div class="head-filters">
+      <div class="type-tabs" id="type-tabs"></div>
+      <div class="slots head-slots" id="head-slots"></div>
+      <span class="head-count">총 <strong id="count-total">0</strong>명</span>
+    </div>
+  </div>
+
+  <!-- ── 본문 ── -->
+  <div class="body">
+    <div class="slots slots-mobile" id="mobile-slots"></div>
+    <div class="rows" id="rows"></div>
+  </div>
+
+  <!-- ── 고른 게 있을 때만 뜨는 처리 바 ── -->
+  <div class="bulk" id="bulk" hidden>
+    <button type="button" class="bulk-all" onclick="toggleAll()">
+      <i data-lucide="check-square" style="width:16px;height:16px"></i>
+      <span id="bulk-all-text">전체 선택</span>
+    </button>
+    <button type="button" class="btn btn-sm btn-weak-dark" onclick="bulkAct('reject')">거절</button>
+    <button type="button" class="btn btn-sm btn-fill-primary" id="bulk-approve" onclick="bulkAct('approve')">승인</button>
+  </div>
+</div>
+
+<!-- 받고 있는 정보 — 한 번 확인하는 내용이라 버튼 안에 넣었다 -->
+<div class="pop-overlay" id="fields-pop" hidden onclick="closeFields()">
+  <div class="pop" onclick="event.stopPropagation()">
+    <div class="pop-title">
+      받고 있는 정보
+      <button class="icon-btn icon-btn-sm icon-btn-clear" type="button" aria-label="닫기" onclick="closeFields()">
+        <i data-lucide="x"></i>
+      </button>
+    </div>
+    <div class="pop-list" id="fields-list"></div>
+  </div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+/* ════════════════════════════════════════════
+   데모 데이터 — 실서버 화면과 같은 구성
+   ════════════════════════════════════════════ */
+
+var SLOTS = [
+  { id: 's1', name: '1타임 (17:30~18:40)', used: 21, cap: 80 },
+  { id: 's2', name: '2타임 (19:00~19:50)', used: 10, cap: 80 },
+  { id: 's3', name: '3타임 (20:10~21:00)', used: 7,  cap: 80 }
+];
+
+var TYPES = [
+  { id: 'all',  name: '전체' },
+  { id: 'stu',  name: '재학생' },
+  { id: 'grad', name: '졸업생' }
+];
+
+/* 이벤트마다 다른 신청폼 항목 — 줄에는 안 나오고 상세에서만 보인다 */
+var FIELD_GROUPS = [
+  { name: '재학생 팀', items: ['팀 이름', '(대표자) [필수항목] 개인정보 수집, 이용 제공에 동의하십니까?', '(대표자) [선택항목] 향후 총동문회 소식 수신에 동의하십니까?', '(대표자, 선택) 장학금 사연', '(대표자) 학과', '(대표자) 학번'] },
+  { name: '팀원마다', items: ['이름', '전화번호', '학과', '학번', '(선택) 장학금 사연', '[필수항목] 개인정보 수집, 이용 제공에 동의하십니까?', '[선택항목] 향후 총동문회 소식 수신에 동의하십니까?'] },
+  { name: '졸업생', items: ['이름', '전화번호', '졸업한 학과, 학번', '차량번호', '도착 예상 시간', '후배들에게 카드뉴스 형태로 소개를 희망하시나요?', '프로필 사진', '후배들에게 한마디', '소속 직장', '후원 여부'] }
+];
+
+var APPLICANTS = [
+  {
+    id: 'a1', type: 'stu', name: '대나무 밭', size: 2, slot: 's2',
+    status: 'review', date: '2026.09.09 21:52',
+    fields: [
+      ['(대표자) [필수항목] 개인정보 수집, 이용 제공에 동의하십니까?', '동의합니다.'],
+      ['(대표자) [선택항목] 향후 총동문회 소식 수신에 동의하십니까?', '동의합니다.'],
+      ['(대표자, 선택) 장학금 사연', '취준생과 대학원준비생입니다.', 'wide'],
+      ['(대표자) 학과', '경제학부'],
+      ['(대표자) 학번', '2023280033']
+    ],
+    members: [
+      { name: '김형우', lead: true, fields: [['전화번호', '01092524624']] },
+      { name: '김범룡', fields: [
+        ['전화번호', '01046704850'],
+        ['학과', '전자전기컴퓨터공학부'],
+        ['학번', '2020440018'],
+        ['(선택) 장학금 사연', '같이 신청한 친구가 중학교때부터 찐친인데 비록 과는 다르지만 이번 학기를 마지막으로 같이 졸업하게 되었습니다! 졸업 전에 마지막으로 시립대학교 학생으로 같이 즐거운 추억 만들어보고 싶습니다.'],
+        ['[필수항목] 개인정보 수집, 이용 제공에 동의하십니까?', '동의합니다.'],
+        ['[선택항목] 향후 총동문회 소식 수신에 동의하십니까?', '동의합니다.']
+      ] }
+    ]
+  },
+  {
+    id: 'a2', type: 'grad', name: '이희철', slot: null,
+    status: 'review', date: '2026.09.10 04:13',
+    fields: [
+      ['전화번호', '01064420118'],
+      ['졸업한 학과, 학번', '디자인 09'],
+      ['차량번호', ''],
+      ['도착 예상 시간', '18:00'],
+      ['후배들에게 카드뉴스 형태로 소개를 희망하시나요?', '예'],
+      ['프로필 사진', '1788981084682189091506687.jpg'],
+      ['후배들에게 한마디', '응원합니다!', 'wide'],
+      ['소속 직장', '(주)트러스트데이터'],
+      ['후원 여부', '예']
+    ]
+  },
+  {
+    id: 'a3', type: 'stu', name: '건축 다섯', size: 5, slot: 's1',
+    status: 'approved', date: '2026.09.08 14:22',
+    fields: [
+      ['(대표자) [필수항목] 개인정보 수집, 이용 제공에 동의하십니까?', '동의합니다.'],
+      ['(대표자) [선택항목] 향후 총동문회 소식 수신에 동의하십니까?', '동의합니다.'],
+      ['(대표자, 선택) 장학금 사연', '설계 스튜디오에서 밤새운 다섯 명이 선배 이야기를 듣고 싶어 신청했어요.', 'wide'],
+      ['(대표자) 학과', '건축학부'],
+      ['(대표자) 학번', '2019430112']
+    ],
+    members: [
+      { name: '정윤재', lead: true, fields: [['전화번호', '01033827714']] },
+      { name: '서하늘', fields: [['전화번호', '01044712298'], ['학과', '건축학부'], ['학번', '2020430077']] }
+    ]
+  },
+  { id: 'a4', type: 'grad', name: '김도현', slot: 's1', status: 'approved', date: '2026.09.07 09:41',
+    fields: [['전화번호', '01028419032'], ['졸업한 학과, 학번', '경영학부 04'], ['소속 직장', '삼성전자'], ['후배들에게 한마디', '궁금한 건 뭐든 물어보세요', 'wide']] },
+  { id: 'a5', type: 'grad', name: '박서연', slot: 's2', status: 'approved', date: '2026.09.07 11:03',
+    fields: [['전화번호', '01033915527'], ['졸업한 학과, 학번', '도시공학과 07'], ['소속 직장', '서울시청'], ['후배들에게 한마디', '진로 고민 들고 오세요', 'wide']] },
+  { id: 'a6', type: 'stu', name: '경영 삼총사', size: 3, slot: null, status: 'review', date: '2026.09.09 16:02',
+    fields: [['(대표자) 학과', '경영학부'], ['(대표자) 학번', '2021270044']],
+    members: [{ name: '한지우', lead: true, fields: [['전화번호', '01081204436']] }] },
+  { id: 'a7', type: 'grad', name: '이준호', slot: 's3', status: 'rejected', date: '2026.09.06 20:15',
+    fields: [['전화번호', '01077120384'], ['졸업한 학과, 학번', '전자전기컴퓨터공학부 09'], ['소속 직장', '네이버']] }
+];
+
+var STATUS = {
+  review:   { label: '승인 대기', cls: 'badge-weak-warning' },
+  approved: { label: '승인',      cls: 'badge-weak-success' },
+  rejected: { label: '거절',      cls: 'badge-weak-neutral' }
+};
+
+/* ════════════════════════════════════════════
+   상태
+   ════════════════════════════════════════════ */
+
+var filter = 'all';
+var picked = {};
+var open = {};
+
+function shown() {
+  return filter === 'all' ? APPLICANTS : APPLICANTS.filter(function(a){ return a.type === filter; });
+}
+function typeName(id) {
+  var t = TYPES.filter(function(x){ return x.id === id; })[0];
+  return t ? t.name : '';
+}
+function slotName(id) {
+  var s = SLOTS.filter(function(x){ return x.id === id; })[0];
+  return s ? s.name.split(' ')[0] : '미배정';
+}
+function esc(v) {
+  return String(v == null ? '' : v).replace(/[&<>"']/g, function(c){
+    return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+  });
+}
+
+/* ════════════════════════════════════════════
+   렌더
+   ════════════════════════════════════════════ */
+
+function renderTabs() {
+  document.getElementById('type-tabs').innerHTML = TYPES.map(function(t){
+    return '<button type="button" class="type-tab' + (filter === t.id ? ' is-active' : '') + '" '
+      + 'onclick="setFilter(\'' + t.id + '\')">' + esc(t.name) + '</button>';
+  }).join('');
+}
+
+function renderSlots() {
+  var html = SLOTS.map(function(s){
+    var full = s.used >= s.cap;
+    return '<span class="slot' + (full ? ' is-full' : '') + '">'
+      + esc(s.name)
+      + '<span class="slot-left">' + s.used + '/' + s.cap + '</span>'
+      + '</span>';
+  }).join('');
+  document.getElementById('head-slots').innerHTML = html;
+  document.getElementById('mobile-slots').innerHTML = html;
+}
+
+function fieldHTML(f) {
+  var wide = f[2] === 'wide' ? ' is-wide' : '';
+  var v = String(f[1] || '').trim();
+  return '<div class="field' + wide + '">'
+    + '<span class="field-label">' + esc(f[0]) + '</span>'
+    + '<span class="field-value' + (v ? '' : ' is-empty') + '">' + esc(v || '—') + '</span>'
+    + '</div>';
+}
+
+function renderRows() {
+  var rows = shown();
+  document.getElementById('count-total').textContent = rows.reduce(function(n, a){
+    return n + (a.size || 1);
+  }, 0);
+
+  document.getElementById('rows').innerHTML = rows.map(function(a){
+    var st = STATUS[a.status];
+    var isOpen = !!open[a.id];
+
+    var detail = '';
+    if (isOpen) {
+      detail = '<div class="detail">'
+        + '<div class="fields">' + (a.fields || []).map(fieldHTML).join('') + '</div>'
+        + (a.members ? '<div class="detail-sub">팀원 ' + a.members.length + '명</div>'
+            + '<div class="members">' + a.members.map(function(m){
+                return '<div class="member">'
+                  + '<div class="member-top">'
+                  +   '<span class="member-name">' + esc(m.name) + '</span>'
+                  +   (m.lead ? '<span class="badge badge-sm badge-weak-primary">대표자</span>' : '')
+                  + '</div>'
+                  + '<div class="fields">' + (m.fields || []).map(fieldHTML).join('') + '</div>'
+                  + '</div>';
+              }).join('') + '</div>'
+          : '')
+        + '</div>';
+    }
+
+    return '<div class="row' + (isOpen ? ' is-open' : '') + '">'
+      + '<div class="row-main" onclick="toggleOpen(\'' + a.id + '\')">'
+      +   '<input type="checkbox" class="checkbox row-check" aria-label="' + esc(a.name) + ' 선택" '
+      +     (picked[a.id] ? 'checked ' : '') + 'onclick="event.stopPropagation()" onchange="pick(\'' + a.id + '\')">'
+      +   '<span class="row-name">' + esc(a.name)
+      +     (a.size ? '<span class="row-count">' + a.size + '명</span>' : '') + '</span>'
+      +   '<span class="row-meta row-type">' + esc(typeName(a.type)) + '</span>'
+      +   '<span class="row-meta row-slot">' + esc(slotName(a.slot)) + '</span>'
+      +   '<span class="row-status"><span class="badge badge-sm ' + st.cls + '">' + st.label + '</span></span>'
+      +   '<span class="row-meta-m">' + esc(typeName(a.type)) + ' · ' + esc(slotName(a.slot)) + '</span>'
+      +   '<span class="row-actions">'
+      +     (a.status !== 'approved'
+            ? '<button type="button" class="btn btn-xs btn-weak-primary" onclick="event.stopPropagation();act(\'' + a.id + '\',\'approve\')">승인</button>' : '')
+      +     (a.status !== 'rejected'
+            ? '<button type="button" class="btn btn-xs btn-weak-dark" onclick="event.stopPropagation();act(\'' + a.id + '\',\'reject\')">거절</button>' : '')
+      +   '</span>'
+      +   '<span class="row-date">' + esc(a.date) + '</span>'
+      + '</div>'
+      + detail
+      + '</div>';
+  }).join('');
+
+  syncBulk();
+  if (window.lucide) lucide.createIcons();
+}
+
+function renderFields() {
+  document.getElementById('fields-list').innerHTML = FIELD_GROUPS.map(function(g){
+    return '<div class="pop-group">'
+      + '<span class="pop-group-name">' + esc(g.name) + '</span>'
+      + '<span class="pop-group-items">' + g.items.map(esc).join(' · ') + '</span>'
+      + '</div>';
+  }).join('');
+}
+
+/* ════════════════════════════════════════════
+   동작
+   ════════════════════════════════════════════ */
+
+function setFilter(id) { filter = id; renderTabs(); renderRows(); }
+function toggleOpen(id) { open[id] = !open[id]; renderRows(); }
+
+function pick(id) {
+  if (picked[id]) delete picked[id]; else picked[id] = true;
+  syncBulk();
+}
+
+function pickedIds() { return Object.keys(picked); }
+
+function toggleAll() {
+  var rows = shown();
+  var all = rows.every(function(a){ return picked[a.id]; });
+  picked = {};
+  if (!all) rows.forEach(function(a){ picked[a.id] = true; });
+  renderRows();
+}
+
+function syncBulk() {
+  var n = pickedIds().length;
+  var bar = document.getElementById('bulk');
+  bar.hidden = n === 0;
+  document.getElementById('bulk-approve').textContent = n ? n + '건 승인' : '승인';
+  var rows = shown();
+  document.getElementById('bulk-all-text').textContent =
+    (rows.length && rows.every(function(a){ return picked[a.id]; })) ? '전체 해제' : '전체 선택';
+}
+
+function act(id, how) {
+  var a = APPLICANTS.filter(function(x){ return x.id === id; })[0];
+  if (!a) return;
+  a.status = how === 'approve' ? 'approved' : 'rejected';
+  renderRows();
+  showToast(a.name + (how === 'approve' ? ' 승인했어요.' : ' 거절했어요.'));
+}
+
+function bulkAct(how) {
+  var ids = pickedIds();
+  if (!ids.length) return;
+  ids.forEach(function(id){
+    var a = APPLICANTS.filter(function(x){ return x.id === id; })[0];
+    if (a) a.status = how === 'approve' ? 'approved' : 'rejected';
+  });
+  picked = {};
+  renderRows();
+  showToast(ids.length + '건을 ' + (how === 'approve' ? '승인' : '거절') + '했어요.');
+}
+
+function openFields()  { document.getElementById('fields-pop').hidden = false; if (window.lucide) lucide.createIcons(); }
+function closeFields() { document.getElementById('fields-pop').hidden = true; }
+
+function toggleMenu() {
+  var m = document.getElementById('head-menu');
+  m.hidden = !m.hidden;
+}
+function pickView(which) {
+  toggleMenu();
+  showToast(which === 'admin' ? '관리자 보기예요.' : '신청자에게 보이는 화면으로 바꿨어요.');
+}
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.menu-wrap')) document.getElementById('head-menu').hidden = true;
+});
+
+var toastTimer = null;
+function showToast(msg) {
+  var wrap = document.getElementById('toast-container');
+  wrap.innerHTML = '<div class="toast">' + esc(msg) + '</div>';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ wrap.innerHTML = ''; }, 2400);
+}
+
+renderTabs();
+renderSlots();
+renderFields();
+renderRows();
+lucide.createIcons();
+</script>
+</body>
+</html>
