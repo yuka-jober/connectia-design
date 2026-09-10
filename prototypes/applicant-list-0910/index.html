@@ -200,7 +200,7 @@
       grid-template-areas:
         "check name   status"
         ".     meta   meta"
-        ".     action action";
+        ".     action date";
       row-gap: 8px;
       padding: 16px;
     }
@@ -210,7 +210,7 @@
     .row-type, .row-slot { display: none; }
     .row-meta-m { grid-area: meta; }
     .row-actions { grid-area: action; }
-    .row-date { display: none; }
+    .row-date { grid-area: date; align-self: center; }
   }
   .row-meta-m { display: none; }
   @media (max-width: 767px) {
@@ -242,11 +242,6 @@
     .detail { padding: 16px; gap: 24px; }
   }
   .field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-  .field.is-inline {
-    flex-direction: row; align-items: baseline; gap: 12px;
-  }
-  /* (대표자) 학과처럼 8자짜리 라벨도 넘치지 않을 만큼 */
-  .field.is-inline .field-label { flex: 0 0 88px; }
   .field-label {
     font-size: var(--fs-caption); font-weight: var(--fw-medium);
     color: var(--color-text-muted); line-height: var(--lh-caption);
@@ -594,10 +589,8 @@ function renderSlots() {
   document.getElementById('mobile-slots').innerHTML = html;
 }
 
-/* 라벨이 짧을 때만 값을 옆에 둔다. 긴 질문을 옆에 두면 라벨이 여러 줄로 접힌다 */
 function fieldHTML(f) {
   var v = String(f[1] || '').trim();
-  var inline = f[2] !== 'choice' && f[0].length <= 8;
   var body;
   if (f[2] === 'choice' && v) {
     body = '<span class="field-chip">' + esc(v) + '</span>';
@@ -610,7 +603,7 @@ function fieldHTML(f) {
   } else {
     body = '<span class="field-value' + (v ? '' : ' is-empty') + '">' + esc(v || '—') + '</span>';
   }
-  return '<div class="field' + (inline ? ' is-inline' : '') + '">'
+  return '<div class="field">'
     + '<span class="field-label">' + esc(f[0]) + '</span>'
     + body
     + '</div>';
