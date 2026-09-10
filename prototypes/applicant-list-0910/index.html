@@ -167,7 +167,7 @@
     cursor: pointer;
     /* 선택 · 이름 · 유형 · 자리 · 상태 · 액션 · 신청일
        이름만 남는 폭을 먹고 나머지는 고정이라 줄마다 열이 어긋나지 않는다 */
-    grid-template-columns: 24px minmax(120px, 1fr) 72px 168px 76px 104px 128px;
+    grid-template-columns: 24px minmax(120px, 1fr) 72px 168px 76px 104px 128px 32px;
   }
   .row-main:hover { background: var(--color-surface-sub); }
   .row.is-open .row-main { background: var(--color-surface-sub); }
@@ -192,15 +192,17 @@
   }
   .row-actions { display: flex; gap: 4px; }
   .row-slot { white-space: nowrap; }
+  .row-del { display: flex; justify-content: flex-end; }
+  .row-del i[data-lucide], .row-del svg.lucide { width: 16px; height: 16px; }
 
   /* 모바일 — 같은 줄을 두 층으로 접는다 */
   @media (max-width: 767px) {
     .row-main {
-      grid-template-columns: 24px 1fr auto;
+      grid-template-columns: 24px 1fr auto auto;
       grid-template-areas:
-        "check name   status"
-        ".     meta   meta"
-        ".     action date";
+        "check name   status del"
+        ".     meta   meta   meta"
+        ".     action date   date";
       row-gap: 8px;
       padding: 16px;
     }
@@ -211,6 +213,7 @@
     .row-meta-m { grid-area: meta; }
     .row-actions { grid-area: action; }
     .row-date { grid-area: date; align-self: center; }
+    .row-del { grid-area: del; }
   }
   .row-meta-m { display: none; }
   @media (max-width: 767px) {
@@ -419,6 +422,17 @@
   </div>
 </div>
 
+<div class="dialog-overlay" id="del-overlay" hidden onclick="closeDelete()">
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="del-title" onclick="event.stopPropagation()">
+    <div class="dialog-title" id="del-title">신청을 삭제할까요?</div>
+    <p class="dialog-desc" id="del-desc"></p>
+    <div class="dialog-actions">
+      <button type="button" class="btn btn-md btn-weak-dark" onclick="closeDelete()">취소</button>
+      <button type="button" class="btn btn-md btn-fill-danger" onclick="confirmDelete()">삭제</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast-container" id="toast-container"></div>
 
 <script src="https://unpkg.com/lucide@latest"></script>
@@ -561,10 +575,12 @@ var STATUS = {
   cancelled: { label: '신청 취소',  cls: 'badge-weak-neutral' }
 };
 
-/* 거절은 되돌릴 수 없고, 실패·취소는 운영자가 만든 상태가 아니다 */
+/* 승인도 거절도 알림이 나간 뒤라 되돌리지 않는다. 판단은 승인 대기에서 한 번만 */
 function canApprove(a) { return a.status === 'review'; }
-function canReject(a)  { return a.status === 'review' || a.status === 'approved'; }
-function canAct(a)     { return canApprove(a) || canReject(a); }
+function canReject(a)  { return a.status === 'review'; }
+function canAct(a)     { return a.status === 'review'; }
+/* 승인 대기는 아직 처리할 일이 남아 있다 — 지우기 전에 판단부터 */
+function canDelete(a)  { return a.status !== 'review'; }
 
 /* ════════════════════════════════════════════
    상태
@@ -689,6 +705,12 @@ function renderRows() {
             ? '<button type="button" class="btn btn-xs btn-weak-dark" onclick="event.stopPropagation();act(\'' + a.id + '\',\'reject\')">거절</button>' : '')
       +   '</span>'
       +   '<span class="row-date">' + esc(a.date) + '</span>'
+      +   '<span class="row-del">'
+      +     (canDelete(a)
+            ? '<button type="button" class="icon-btn icon-btn-sm icon-btn-clear" aria-label="' + esc(a.name) + ' 삭제" '
+              + 'onclick="event.stopPropagation();askDelete(\'' + a.id + '\')"><i data-lucide="trash-2"></i></button>'
+            : '')
+      +   '</span>'
       + '</div>'
       + detail
       + '</div>';
@@ -765,6 +787,29 @@ function bulkAct(how) {
   picked = {};
   renderRows();
   showToast(ids.length + '건을 ' + (how === 'approve' ? '승인' : '거절') + '했어요.');
+}
+
+var delId = null;
+
+function askDelete(id) {
+  var a = APPLICANTS.filter(function(x){ return x.id === id; })[0];
+  if (!a || !canDelete(a)) return;
+  delId = id;
+  document.getElementById('del-desc').textContent =
+    a.name + (a.members ? ' (' + a.members.length + '명)' : '') + ' — 되돌릴 수 없어요.';
+  document.getElementById('del-overlay').hidden = false;
+}
+function closeDelete() { document.getElementById('del-overlay').hidden = true; delId = null; }
+function confirmDelete() {
+  var i = APPLICANTS.map(function(a){ return a.id; }).indexOf(delId);
+  if (i < 0) { closeDelete(); return; }
+  var name = APPLICANTS[i].name;
+  APPLICANTS.splice(i, 1);
+  delete picked[delId];
+  delete open[delId];
+  closeDelete();
+  renderRows();
+  showToast(name + ' 신청을 삭제했어요.');
 }
 
 function openFields()  { document.getElementById('fields-pop').hidden = false; if (window.lucide) lucide.createIcons(); }
