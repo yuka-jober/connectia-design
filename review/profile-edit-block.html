@@ -65,14 +65,14 @@
     .tool-chip {
       display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0;
       height: 32px; padding: 0 12px; white-space: nowrap;
-      border: 1px solid var(--color-border); background: var(--color-surface);
+      border: 1px solid var(--color-border-subtle); background: var(--color-surface);
       border-radius: var(--r-full);
       font-family: var(--font-base); font-size: var(--fs-label); font-weight: var(--fw-medium);
       color: var(--color-text-sub); cursor: pointer;
     }
     .tool-chip svg { width: 14px; height: 14px; }
     .tool-chip.is-active {
-      background: var(--color-text); border-color: var(--color-text); color: var(--color-on-primary);
+      background: var(--color-surface-sub); border-color: transparent; color: var(--color-text);
     }
     .tool-chip:disabled { opacity: 0.4; cursor: not-allowed; }
 
@@ -92,18 +92,30 @@
        transform을 .stage에 주면 안쪽의 .page-cta(position:fixed)도 함께 축소·클리핑된다. */
     body.design-open .navbar,
     body.design-open .toolbar { display: none; }
+    /* 시트가 페이지를 덮고 있을 뿐이라는 인상을 주기 위해 목업을 시트 뒤까지 내리고
+       아래쪽 라운딩을 없앤다. body가 overflow:hidden이라 넘치는 만큼은 잘린다. */
     body.design-open .stage {
-      flex: none; height: 76vh; margin-top: 16px;
+      flex: none; height: 92vh; margin-top: 16px;
       transform: scale(0.6); transform-origin: top center;
       pointer-events: none; overflow: hidden;
       box-shadow: var(--shadow-3);
-      border-radius: var(--r-lg);
+      border-radius: var(--r-lg) var(--r-lg) 0 0;
     }
     body.design-open .scroll-area { overflow: hidden; padding-bottom: 0; }
 
-    /* ── 커버 + 프로필 헤드 ── */
+    /* ── 커버 — 본문 블록이 아니라 페이지 배경. 이미지가 등록됐을 때만 렌더된다 ── */
     .head { background: var(--page-bg); position: relative; }
-    /* 커버 이미지가 등록돼 있으면 이미지, 없으면 페이지 배경색이 그대로 보인다 */
+    body:not(.preview) .cover { cursor: pointer; }
+    /* 커버가 없으면 편집 중에만 등록 슬롯을 둔다 — 미리보기·실제 페이지에는 아무것도 없다 */
+    .cover-empty {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      width: calc(100% - 40px); height: 72px; margin: 8px 20px 0;
+      border: 1px dashed var(--color-border); border-radius: var(--r-md);
+      background: none; cursor: pointer; font-family: var(--font-base);
+      font-size: var(--fs-label); font-weight: var(--fw-medium); color: var(--color-text-muted);
+    }
+    .cover-empty svg { width: 16px; height: 16px; }
+    body.preview .cover-empty { display: none; }
     .cover {
       position: relative;
       aspect-ratio: 9 / 5;
@@ -111,9 +123,6 @@
       background-size: cover; background-position: center;
       background-color: var(--page-bg);
     }
-    /* 그라데이션 배치 — mask 대신 배경색으로 흐려지는 오버레이를 얹는다.
-       mask 는 stacking context 를 만들어 커버가 프로필 사진을 덮어버리고,
-       지원하지 않는 환경에서는 효과가 아예 사라진다. */
     /* 페이드는 커버 배경에 합치지 않고 별도 오버레이로 얹는다.
        같은 요소에 이미지와 그라데이션을 겹치면 두 레이어가 각각 안티에일리어싱된 뒤
        합성되면서 하단 경계에 잔선이 남고, 화면 배율에 따라 보였다 안 보였다 한다.
@@ -124,67 +133,25 @@
       pointer-events: none;
     }
 
-
-    /* .cover 가 position:relative 라 위치 지정 레이어에 그려진다.
-       헤드 본문도 같은 레이어로 올려야 아바타·이름이 커버 위에 온다. */
-    .head-body { position: relative; z-index: 1; padding: 0 20px 20px; }
-    .head-avatar { display: block; box-shadow: 0 0 0 4px var(--color-surface); }
-    .head-avatar.is-empty {
+    /* ── 프로필 사진 블록 ── */
+    .av-block { display: flex; }
+    .av-block.av-center { justify-content: center; }
+    .av-block .avatar.is-empty {
       background: var(--color-surface-sub); color: var(--color-text-muted);
-      display: flex; align-items: center; justify-content: center; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
     }
-    .head-avatar.is-empty svg { width: 28px; height: 28px; }
-    .head.lay-overlap .head-avatar { margin-top: -36px; }
-    .head.lay-stacked .head-avatar { margin-top: 16px; }
-    .head.lay-fade   .head-avatar { margin-top: -48px; }
-    .head.lay-none   .head-avatar { display: none; }
-    .head.al-center .head-body { text-align: center; }
-    .head.al-center .head-avatar { margin-left: auto; margin-right: auto; }
-    .head.al-center .head-handle-row { justify-content: center; }
-    .head.lay-none .head-body { margin-top: -24px; }
+    .av-block .avatar.is-empty svg { width: 28px; height: 28px; }
 
-    .head-name {
-      font-size: var(--fs-title); font-weight: var(--fw-bold); letter-spacing: var(--ls-title);
-      margin-top: 12px; background: none; border: none; padding: 0; cursor: pointer;
-      font-family: var(--font-base); color: var(--color-text); display: block; width: 100%; text-align: inherit;
+    /* ── 이름 블록 ── */
+    .nm-block { width: 100%; }
+    .nm-block.nm-center { text-align: center; }
+    .nm-name {
+      font-size: var(--fs-title); font-weight: var(--fw-bold);
+      line-height: var(--lh-title); letter-spacing: var(--ls-title);
+      color: var(--color-text);
     }
-    .head-name.is-empty { color: var(--color-text-muted); font-weight: var(--fw-medium); }
-    .head-handle-row { display: flex; align-items: center; gap: 4px; margin-top: 4px; }
-    .head-handle { font-size: var(--fs-caption); color: var(--color-text-muted); }
-
-    /* 랜딩 탭 — board.html .lp-tabs. 실제 페이지의 요소이므로 편집 chrome이 떠 있는
-       기본 화면에서는 감추고, 미리보기와 디자인 목업(둘 다 body.preview)에서만 보여준다. */
-    .lp-tabs {
-      display: none;
-      border-bottom: 1px solid var(--color-border);
-      background: var(--page-bg);
-      padding: 0 20px;
-      overflow-x: auto;
-      scrollbar-width: none;
-    }
-    .lp-tabs::-webkit-scrollbar { display: none; }
-    body.preview .lp-tabs { display: flex; margin-bottom: 12px; }
-    .lp-tab {
-      flex: none;
-      padding: 12px 16px;
-      border: none;
-      background: transparent;
-      font-family: var(--font-base);
-      font-size: var(--fs-body);
-      font-weight: var(--fw-medium);
-      color: var(--color-text-muted);
-      cursor: pointer;
-      position: relative;
-      white-space: nowrap;
-    }
-    .lp-tab.active { color: var(--color-text); font-weight: var(--fw-semibold); }
-    .lp-tab.active::after {
-      content: '';
-      position: absolute;
-      left: 16px; right: 16px; bottom: -1px;
-      height: 2px;
-      background: var(--color-text);
-    }
+    .nm-name.is-empty { color: var(--color-text-muted); font-weight: var(--fw-medium); }
+    .nm-handle { display: block; font-size: var(--fs-caption); color: var(--color-text-muted); margin-top: 4px; }
 
     /* 대화하기 버튼 (하단 고정 / 코너) — 프레임 안에 고정 */
     /* 하단 고정·코너 CTA는 실제 페이지의 요소다. 편집 chrome이 떠 있는 기본 화면에서는 감추고,
@@ -268,12 +235,17 @@
       flex: 1; min-width: 0; position: relative; min-height: 48px;
       display: flex; flex-direction: column; justify-content: center;
     }
-    .block.is-active .block-body {
-      outline: 2px solid var(--color-primary);
-      outline-offset: 8px;
-      border-radius: var(--r-xs);
+    /* 블록을 편집하는 동안 나머지는 흐리게 뒤로 물려 편집 대상만 또렷하게 남긴다.
+       활성 블록에 테두리를 두르지 않으므로 페이지 배경색이 무엇이든 영향받지 않는다. */
+    .head,
+    .canvas > * {
+      transition: opacity var(--motion-standard) var(--ease-standard),
+                  filter var(--motion-standard) var(--ease-standard);
     }
-    .block-flag { position: absolute; top: -20px; right: 0; z-index: 2; }
+    body.editing .head:not(.is-active),
+    body.editing .canvas > *:not(.block.is-active) {
+      opacity: 0.4; filter: blur(var(--blur-dim));
+    }
     .block-tag  { position: absolute; top: -20px; left: 0; z-index: 2; }
 
     /* ── 빈 캔버스 안내 ── */
@@ -356,7 +328,9 @@
     .sns-block::-webkit-scrollbar { display: none; }
     body.balign-center .sns-block { justify-content: center; }
     body.balign-center .text-block .text-p,
-    body.balign-center .text-block .lp-section-title { text-align: center; }
+    body.balign-center .lp-section-title { text-align: center; }
+    body.balign-center .ct-row { justify-content: center; }
+    body.balign-center .lp-star-row { justify-content: center; }
     /* SNS 타일 — 브랜드 마크는 인라인 SVG(fill=currentColor)로 그린다 */
     .sns-tile {
       width: 52px; height: 52px; border-radius: var(--r-sm);
@@ -402,6 +376,15 @@
        설정의 영향을 받지 않고 board.html의 radius를 고정으로 쓴다.
        ══════════════════════════════════════════════════════════ */
     .lp-section-title { font-weight: var(--fw-semibold); font-size: var(--fs-heading); color: var(--color-text-sub); letter-spacing: var(--ls-heading); }
+    /* 컬렉션 전체보기 — 탭을 꺼도 별도 화면으로 들어갈 수 있는 진입점.
+       콘텐츠 정렬과 무관하게 섹션 우측 하단에 고정한다. */
+    .lp-more {
+      align-self: flex-end;
+      display: inline-flex; align-items: center;
+      height: 40px; padding: 0;
+      background: none; border: none; cursor: pointer; font-family: var(--font-base);
+      font-size: var(--fs-label); font-weight: var(--fw-medium); color: var(--color-text-sub);
+    }
 
     /* ── 이벤트: 가로 배너 캐러셀 ── */
     .lp-banner-section { width: 100%; display: flex; flex-direction: column; gap: 12px; }
@@ -529,7 +512,7 @@
     .lp-review-section { width: 100%; display: flex; flex-direction: column; gap: 12px; }
     .lp-star-row { display: flex; align-items: center; gap: 4px; }
     .lp-star-row i[data-lucide],
-    .lp-star-row svg { width: 14px; height: 14px; color: var(--color-primary); fill: var(--color-primary); }
+    .lp-star-row svg { width: 14px; height: 14px; color: var(--cta-solid); fill: var(--cta-solid); }
     .lp-star-rate { font-size: var(--fs-body-lg); font-weight: var(--fw-semibold); color: var(--color-text); }
     .lp-star-count { font-size: var(--fs-caption); color: var(--color-text-muted); }
     .lp-review-cards {
@@ -540,7 +523,7 @@
     .lp-review-cards::-webkit-scrollbar { display: none; }
     .lp-review-card { background: var(--color-surface); border-radius: var(--r-sm); padding: 16px; width: 240px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; }
     .lp-review-stars { display: flex; gap: 4px; }
-    .lp-review-stars svg { width: 16px; height: 16px; color: var(--color-primary); fill: currentColor; }
+    .lp-review-stars svg { width: 16px; height: 16px; color: var(--cta-solid); fill: currentColor; }
     .lp-review-stars svg.is-off { color: var(--color-star-empty); }
     .lp-review-text { font-size: var(--fs-label); color: var(--color-text); line-height: var(--lh-caption); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
     .lp-review-meta { font-size: var(--fs-badge); color: var(--color-text-muted); display: flex; gap: 4px; }
@@ -584,7 +567,6 @@
     /* ── 미리보기 모드 ── */
     body.preview .rail,
     body.preview .ins,
-    body.preview .block-flag,
     body.preview .block-tag,
     body.preview .block.is-hidden { display: none; }
     body.preview .block.is-empty-coll { display: none; }
@@ -595,9 +577,7 @@
     body.preview .lp-banner-scroll,
     body.preview .lp-gallery-carousel,
     body.preview .lp-review-cards { margin-right: -20px; }
-    body.preview .block.is-active .block-body { outline: none; }
     body.preview .canvas { display: flex; flex-direction: column; gap: 28px; }
-    body.preview .head-name { cursor: default; }
 
     /* ── 레이어 (시트 / 전체화면 / 다이얼로그) ── */
     .layer {
@@ -641,7 +621,7 @@
       font-size: var(--fs-body); font-weight: var(--fw-medium); color: var(--color-text-muted);
       padding: 8px 0; min-width: 44px; text-align: left;
     }
-    .sheet-action.primary { color: var(--color-primary); font-weight: var(--fw-semibold); text-align: right; }
+    .sheet-action.primary { color: var(--color-text); font-weight: var(--fw-semibold); text-align: right; }
     .sheet-body { flex: 1; overflow-y: auto; padding: 16px 20px calc(16px + env(safe-area-inset-bottom)); }
 
     /* 시트 내부 폼 */
@@ -650,11 +630,13 @@
     .opt-row { display: flex; gap: 8px; flex-wrap: wrap; }
     .opt {
       flex: 1 1 0; min-width: 80px; height: 40px; padding: 0 12px;
-      border: 1px solid var(--color-border); background: var(--color-surface);
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      border: 1px solid var(--color-border-subtle); background: var(--color-surface);
       border-radius: var(--r-sm); cursor: pointer; font-family: var(--font-base);
       font-size: var(--fs-label); font-weight: var(--fw-medium); color: var(--color-text-sub);
     }
-    .opt.is-active { border-color: var(--color-primary); background: var(--color-primary-light); color: var(--color-primary); font-weight: var(--fw-semibold); }
+    .opt.is-active { border-color: transparent; background: var(--color-surface-sub); color: var(--color-text); font-weight: var(--fw-semibold); }
+    .opt svg { width: 16px; height: 16px; }
     .opt-row-2 .opt { flex: 0 0 calc(50% - 4px); }
 
     .switch-row {
@@ -696,8 +678,8 @@
     .goto-full {
       display: flex; align-items: center; justify-content: space-between; gap: 8px;
       width: 100%; height: 48px; padding: 0 16px; margin: 12px 0 4px;
-      background: var(--color-primary-light); border: none; border-radius: var(--r-sm);
-      color: var(--color-primary); font-family: var(--font-base);
+      background: var(--color-surface-strong); border: none; border-radius: var(--r-sm);
+      color: var(--color-text); font-family: var(--font-base);
       font-size: var(--fs-body-lg); font-weight: var(--fw-semibold); cursor: pointer;
     }
     .goto-full svg { width: 16px; height: 16px; }
@@ -734,7 +716,7 @@
     .pick-row {
       display: flex; align-items: center; gap: 12px; width: 100%;
       padding: 12px; background: var(--color-surface);
-      border: 1px solid var(--color-border); border-radius: var(--r-sm);
+      border: 1px solid var(--color-border-subtle); border-radius: var(--r-sm);
       cursor: pointer; font-family: var(--font-base);
     }
     .pick-label { flex: 1; text-align: left; font-size: var(--fs-body-lg); font-weight: var(--fw-medium); color: var(--color-text); }
@@ -754,7 +736,7 @@
       padding: 0; cursor: pointer;
     }
     .pick-cell:disabled { opacity: 0.3; cursor: not-allowed; }
-    .pick-cell.pick-sns { background: var(--color-primary-light); display: flex; align-items: center; justify-content: center; }
+    .pick-cell.pick-sns { background: var(--color-surface-sub); display: flex; align-items: center; justify-content: center; }
     .pick-cell.pick-sns .sns-tile-ico { width: 32px; height: 32px; }
 
     .thumb-manage { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
@@ -783,19 +765,19 @@
       font-family: var(--font-base); font-size: var(--fs-body); font-weight: var(--fw-medium);
       color: var(--color-text-muted); border-bottom: 2px solid transparent;
     }
-    .tab.is-active { color: var(--color-primary); font-weight: var(--fw-semibold); border-bottom-color: var(--color-primary); }
+    .tab.is-active { color: var(--color-text); font-weight: var(--fw-semibold); border-bottom-color: var(--color-text); }
 
     /* 색상 스와치 — 프리셋 + 컬러피커(마지막 칸) */
     .swatch-row { display: flex; gap: 8px; }
     /* 크기 고정 — 행의 항목 수가 달라도 원 크기가 같아야 한다 (남는 공간은 오른쪽 여백) */
     .swatch {
       position: relative; flex: 0 0 40px; width: 40px; aspect-ratio: 1;
-      border-radius: var(--r-full); border: 1px solid var(--color-border);
+      border-radius: var(--r-full); border: 1px solid var(--color-border-subtle);
       cursor: pointer; padding: 0; overflow: hidden;
       display: flex; align-items: center; justify-content: center;
       color: var(--color-text-muted);
     }
-    .swatch.is-active { border-color: var(--color-primary); box-shadow: inset 0 0 0 2px var(--color-surface); border-width: 2px; }
+    .swatch.is-active { border-color: var(--color-text-muted); box-shadow: inset 0 0 0 2px var(--color-surface); border-width: 2px; }
     .swatch svg { width: 16px; height: 16px; }
     .swatch-pick { border-style: dashed; }
     .swatch-pick input[type="color"] {
@@ -813,16 +795,16 @@
     .mock {
       display: flex; flex-direction: column; align-items: center; gap: 8px;
       padding: 12px; cursor: pointer; font-family: var(--font-base);
-      background: var(--color-surface); border: 1px solid var(--color-border);
+      background: var(--color-surface); border: 1px solid var(--color-border-subtle);
       border-radius: var(--r-md);
     }
-    .mock.is-active { border-color: var(--color-primary); background: var(--color-primary-light); }
+    .mock.is-active { border-color: var(--color-text-muted); background: var(--color-surface-sub); }
     .mock-art { width: 100%; display: flex; align-items: center; justify-content: center; }
     .mock-name { font-size: var(--fs-label); font-weight: var(--fw-medium); color: var(--color-text-sub); }
-    .mock.is-active .mock-name { color: var(--color-primary); font-weight: var(--fw-semibold); }
+    .mock.is-active .mock-name { color: var(--color-text); font-weight: var(--fw-semibold); }
     .mk { width: 100%; height: auto; display: block; }
     .mk-ico { width: 24px; height: 24px; color: var(--color-text-sub); }
-    .mock.is-active .mk-ico { color: var(--color-primary); }
+    .mock.is-active .mk-ico { color: var(--color-text); }
     .mk-shadow {
       display: block; width: 100%; height: 24px; border-radius: var(--r-sm);
       background: var(--color-surface); border: 1px solid var(--color-border);
@@ -833,14 +815,14 @@
     .cat-cell {
       display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
       height: 88px; padding: 0 12px;
-      background: var(--color-surface); border: 1px solid var(--color-border);
+      background: var(--color-surface); border: 1px solid var(--color-border-subtle);
       border-radius: var(--r-md); cursor: pointer;
       font-family: var(--font-base); font-size: var(--fs-body-lg); font-weight: var(--fw-semibold);
       color: var(--color-text);
     }
     .cat-cell svg { width: 22px; height: 22px; color: var(--color-text-sub); }
-    .cat-cell:hover { border-color: var(--color-primary); color: var(--color-primary); }
-    .cat-cell:hover svg { color: var(--color-primary); }
+    .cat-cell:hover { border-color: var(--color-text-muted); color: var(--color-text); }
+    .cat-cell:hover svg { color: var(--color-text); }
     .cat-cell:disabled { opacity: 0.35; cursor: not-allowed; pointer-events: none; }
 
     /* ── 이름·주소 다이얼로그 ── */
@@ -892,7 +874,7 @@
        페이지 배경 위에 직접 놓인 글자만 따라간다. 버튼·카드 안 텍스트는 흰 면 위에
        있으므로 제외해야 밝은 색을 골랐을 때도 읽힌다.
        ⚠️ 뒤에 정의된 같은 선택자에 덮이지 않도록 스타일 맨 끝에 둔다. */
-    .head-name,
+    .nm-name,
     .text-block .text-p,
     .lp-section-title,
     .lp-star-rate,
@@ -1081,7 +1063,7 @@
 
   /* 전역 디자인 */
   const T = {
-    layout: 'overlap', align: 'left',
+    coverEdge: 'sharp',
     chat: 'bottom', cta: 'gradient', ctaCustom: '', ctaText: 'auto', ctaTextCustom: '', ctaLabel: '대화하기',
     pageText: 'ink', pageTextCustom: '',
     pageBg: 'mist', pageBgCustom: '',
@@ -1089,6 +1071,8 @@
   };
 
   let blocks = [
+    { id: 12, kind: 'avatar', align: 'left', visible: true },
+    { id: 13, kind: 'name', align: 'left', visible: true },
     { id: 3, kind: 'contact', visible: true,
       company: '하루요가', role: '원장 · 요가 지도자',
       tel: '02-334-1020', mobile: '010-2847-1020',
@@ -1113,13 +1097,13 @@
     ]},
     /* 컬렉션 데모 데이터 — 요가 스튜디오. 필드는 board.html 카드가 요구하는 형태.
        t 제목 / d 일정·날짜 / p 설명·미리보기 / n 신청자 수 또는 작성자 / img 썸네일 / tag 배지 */
-    { id: 7, kind: 'event', name: '진행 중인 이벤트', limit: '3', order: 'manual', visible: true, ai: true, items: [
+    { id: 7, kind: 'event', name: '진행 중인 이벤트', limit: '3', order: 'manual', visible: true, items: [
       { id: 'e1', t: '여름 상담 20% 할인', d: '08.01 ~ 08.31 · 10:00 ~ 18:00', p: '무더운 여름, 몸과 마음을 함께 돌보는 1:1 자세 상담을 특별가로 준비했어요.', n: 128, img: '../assets/yoga-event1.png' },
       { id: 'e2', t: '신규 회원 웰컴킷',   d: '',                              p: '처음 오시는 분께 요가 매트와 수련 가이드북을 드려요. 등록 후 첫 수업 날 받아 가세요.', img: '../assets/yoga-event2.png' },
       { id: 'e3', t: '호흡 명상 세미나',   d: '09.12 · 14:00 ~ 16:00',         p: '호흡과 명상을 주제로 한 오프라인 세미나에 함께해 주세요.', n: 42, img: '../assets/yoga-gallery1.png' },
       { id: 'e4', t: '첫 방문 체형 진단',   d: '',                              p: '체형과 자세를 확인하고 나에게 맞는 수련 방향을 함께 찾아드려요. 예약 후 방문해 주세요.', img: '../assets/yoga-gallery2.png' }
     ]},
-    { id: 8, kind: 'board', name: '공지사항', limit: '3', order: 'recent', visible: true, ai: true, items: [
+    { id: 8, kind: 'board', name: '공지사항', limit: '3', order: 'recent', visible: true, items: [
       { id: 'b1', t: '9월 운영 시간 안내',   d: '9/1',  tag: '공지',   tagCls: 'badge-fill-neutral',  p: '9월부터 평일 저녁 수업이 한 타임 늘어납니다. 새 시간표를 확인해 주세요.', img: '../assets/yoga-gallery2.png' },
       { id: 'b2', t: '수업 예약 방식 변경',  d: '8/22',                                             p: '수업 예약을 앱에서 바로 변경할 수 있게 됐어요. 자세한 사용법을 안내드립니다.' },
       { id: 'b3', t: '추석 휴무 공지',       d: '8/14',                                              p: '추석 연휴 기간에는 오전 수업만 운영합니다. 방문 전 일정 확인 부탁드려요.' },
@@ -1140,9 +1124,11 @@
 
   let seq = 100;
   let activeId = null;
+  /* 커버는 블록이 아니지만, 편집은 블록과 같은 반쪽 시트에서 한다 */
+  const COVER_ID = -3;
   let insertAt = null;
   let previewMode = false;
-  let designTab = 'profile';
+  let designTab = 'style';
   let fullId = null;
   let dirty = false;
 
@@ -1150,10 +1136,13 @@
   /* 컬렉션에 담기는 개별 항목의 이름 (블록 이름과 다름) */
   const ITEM = { event: { n: '이벤트', j: '가' }, board: { n: '게시글', j: '이' }, review: { n: '리뷰', j: '가' } };
   const KIND_ALL = {
+    avatar: '프로필 사진', name: '이름',
     link: '링크', text: '텍스트', gallery: '갤러리', div: '구분선', sns: 'SNS',
     contact: '연락처', info: '링크 모음', event: '이벤트', board: '게시판', review: '리뷰'
   };
-  const SINGLETON = ['sns', 'contact', 'info', 'event', 'board', 'review'];
+  const SINGLETON = ['avatar', 'name', 'sns', 'contact', 'info', 'event', 'board', 'review'];
+  /* 페이지를 '채웠다'고 보지 않는 블록 — 이것만 남으면 빈 캔버스 안내를 띄운다 */
+  const CHROME_KINDS = ['avatar', 'name', 'chat'];
   const isColl = k => !!KIND[k];
   const $ = id => document.getElementById(id);
   const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -1176,7 +1165,8 @@
   /* 텍스트 색 프리셋 — 페이지 본문용과 대화버튼 라벨용 */
   const TEXT_PRESET = ['ink', 'soft', 'white'];
   const TEXT_FILL = { ink: 'var(--color-text)', soft: 'var(--color-text-sub)', white: 'var(--color-surface)' };
-  /* 목업 SVG는 그라데이션을 fill로 못 받으므로 항상 단색 값을 따로 둔다 */
+  /* 별 아이콘은 대화하기 버튼 색을 따라간다. SVG fill 에는 그라데이션을 넣을 수 없으므로
+     그라데이션일 때 쓸 단색 값을 따로 둔다. */
   const CTA_SOLID = Object.assign({}, CTA_FILL, { gradient: 'var(--color-primary)' });
   /* 컬러피커 초기값 — 토큰에서 계산된 hex를 읽어 온다 (하드코딩 회피) */
   function tokenHex(name) {
@@ -1268,6 +1258,8 @@
     document.body.style.setProperty('--card-radius', CARD_SHAPE[T.shape]);
     document.body.style.setProperty('--block-shadow', SHADOW[T.shadow]);
     document.body.classList.toggle('balign-center', T.balign === 'center');
+    document.body.classList.toggle('editing', activeId !== null);
+    $('head').classList.toggle('is-active', activeId === COVER_ID);
 
     syncChatBlock();
     renderHead();
@@ -1284,8 +1276,8 @@
         canvas.appendChild(blockRow(b, i));
       });
       canvas.appendChild(insertRow(blocks.length));
-      /* 대화하기 블록만 있는 상태는 여전히 '빈 페이지'다 */
-      if (!blocks.some(b => b.kind !== 'chat')) canvas.appendChild(emptyCanvas());
+      /* 사진·이름·대화하기·탭만 있는 상태는 여전히 '빈 페이지'다 */
+      if (!blocks.some(b => CHROME_KINDS.indexOf(b.kind) < 0)) canvas.appendChild(emptyCanvas());
     }
     icons();
   }
@@ -1307,37 +1299,16 @@
   if (window.ResizeObserver) new ResizeObserver(snapCoverHeight).observe($('head'));
   else window.addEventListener('resize', snapCoverHeight);
 
+  /* 커버는 등록된 이미지가 있을 때만 렌더한다 — 없으면 블록이 화면 맨 위에서 시작한다 */
   function renderHead() {
     const h = $('head');
-    h.className = 'head lay-' + T.layout + ' al-' + T.align;
-
-    const coverStyle = P.cover ? ' style="--cover-img:url(\'' + P.cover + '\')"' : '';
-    const av = P.avatar
-      ? '<span class="avatar avatar-xl head-avatar"><img src="' + P.avatar + '" alt=""></span>'
-      : '<span class="avatar avatar-xl head-avatar is-empty"><i data-lucide="user-round"></i></span>';
-
+    if (!P.cover) {
+      h.innerHTML = '<button class="cover-empty" data-cover><i data-lucide="image"></i>배경 사진</button>';
+      return;
+    }
     h.innerHTML =
-      '<div class="cover"' + coverStyle + '>'
-      + (T.layout === 'fade' || T.layout === 'none' ? '<span class="cover-fade"></span>' : '')
-      + '</div>'
-      + '<div class="head-body">' + av
-      + '<button class="head-name' + (P.name ? '' : ' is-empty') + '">' + esc(P.name || '이름을 설정해주세요') + '</button>'
-      + '<div class="head-handle-row">'
-      + '<span class="head-handle">@' + esc(P.handle) + '</span>'
-      + '</div>'
-      + '</div>'
-      + tabsHtml();
-  }
-
-  /* 랜딩 탭 — board.html과 같은 고정 요소. 해당 컬렉션 블록이 있을 때만 노출된다.
-     편집 캔버스에서는 홈 고정이라 전환 동작이 없다. */
-  const LTABS = [['gallery', '갤러리'], ['event', '이벤트·행사'], ['board', '게시판'], ['review', '리뷰']];
-  function tabsHtml() {
-    const on = k => blocks.some(b => b.kind === k && b.visible);
-    const rest = LTABS.filter(t => on(t[0]));
-    if (!rest.length) return '';
-    return '<div class="lp-tabs"><button class="lp-tab active" type="button">홈</button>'
-      + rest.map(t => '<button class="lp-tab" type="button">' + t[1] + '</button>').join('')
+      '<div class="cover" data-cover style="--cover-img:url(\'' + P.cover + '\')">'
+      + (T.coverEdge === 'fade' ? '<span class="cover-fade"></span>' : '')
       + '</div>';
   }
 
@@ -1400,7 +1371,6 @@
       + '<button class="rail-btn" data-mv="1"' + (i === blocks.length - 1 ? ' disabled' : '') + ' aria-label="아래로"><i data-lucide="chevron-down"></i></button>'
       + '</div>'
       + '<div class="block-body">'
-      + (b.id === activeId ? '<span class="badge badge-sm badge-fill-primary block-flag">편집 중</span>' : '')
       + (b.visible ? '' : '<span class="badge badge-sm badge-weak-neutral block-tag">숨김</span>')
       + blockInner(b)
       + '</div>';
@@ -1420,6 +1390,17 @@
 
   function blockInner(b) {
     if (b.kind === 'chat') return chatBtn();
+    if (b.kind === 'avatar') {
+      return '<div class="av-block' + (b.align === 'center' ? ' av-center' : '') + '">' + (P.avatar
+        ? '<span class="avatar avatar-xl"><img src="' + P.avatar + '" alt=""></span>'
+        : '<span class="avatar avatar-xl is-empty"><i data-lucide="user-round"></i></span>')
+        + '</div>';
+    }
+    if (b.kind === 'name') {
+      return '<div class="nm-block' + (b.align === 'center' ? ' nm-center' : '') + '">'
+        + '<div class="nm-name' + (P.name ? '' : ' is-empty') + '">' + esc(P.name || '이름을 설정해주세요') + '</div>'
+        + '<span class="nm-handle">@' + esc(P.handle) + '</span></div>';
+    }
     if (b.kind === 'sns') {
       return '<div class="sns-block">' + b.icons.map(o => snsTile(o.p)).join('') + '</div>';
     }
@@ -1462,7 +1443,7 @@
         : b.layout === 'stack' ? 'lp-gallery-stack' : 'lp-gallery-grid';
       return '<div class="lp-gallery-section">' + title + '<div class="' + cls + '">'
         + b.items.map(galCell).join('')
-        + '</div></div>';
+        + '</div>' + moreBtn() + '</div>';
     }
     if (isColl(b.kind)) return collInner(b);
     return '';
@@ -1485,6 +1466,8 @@
 
   /* 컬렉션 본문은 screens/board.html(방문자 화면)의 마크업을 그대로 쓴다.
      블록 종류마다 형태가 고정이며 편집 화면에서 형태를 고를 수 없다. */
+  const moreBtn = () => '<button class="lp-more" type="button">전체보기</button>';
+
   function collInner(b) {
     const total = b.items.length;
     const title = '<div class="lp-section-title">' + esc(b.name) + '</div>';
@@ -1498,14 +1481,14 @@
     const rows = b.items.slice(0, n);
     if (b.kind === 'event') {
       return '<div class="lp-banner-section">' + title
-        + '<div class="lp-banner-scroll">' + rows.map(eventCard).join('') + '</div></div>';
+        + '<div class="lp-banner-scroll">' + rows.map(eventCard).join('') + '</div>' + moreBtn() + '</div>';
     }
     if (b.kind === 'board') {
       return '<div class="lp-post-section">' + title
-        + '<div class="lp-post-list">' + rows.map(postRow).join('') + '</div></div>';
+        + '<div class="lp-post-list">' + rows.map(postRow).join('') + '</div>' + moreBtn() + '</div>';
     }
     return '<div class="lp-review-section">' + title + starRow(b)
-      + '<div class="lp-review-cards">' + rows.map(reviewCard).join('') + '</div></div>';
+      + '<div class="lp-review-cards">' + rows.map(reviewCard).join('') + '</div>' + moreBtn() + '</div>';
   }
 
   function eventCard(it) {
@@ -1569,9 +1552,11 @@
   }
 
   function fieldLabel(t) { return '<p class="label field-label">' + t + '</p>'; }
+  /* opts 항목은 [값, 라벨] 또는 [값, 라벨, Lucide 아이콘] */
   function optRow(act, key, cur, opts, twoCol) {
     return '<div class="opt-row' + (twoCol ? ' opt-row-2' : '') + '">' + opts.map(o =>
-      '<button class="opt' + (String(cur) === String(o[0]) ? ' is-active' : '') + '" data-act="' + act + '" data-k="' + key + '" data-v="' + o[0] + '">' + o[1] + '</button>'
+      '<button class="opt' + (String(cur) === String(o[0]) ? ' is-active' : '') + '" data-act="' + act + '" data-k="' + key + '" data-v="' + o[0] + '">'
+      + (o[2] ? '<i data-lucide="' + o[2] + '"></i>' : '') + o[1] + '</button>'
     ).join('') + '</div>';
   }
   function switchRow(label, on, key) {
@@ -1667,6 +1652,18 @@
     });
   }
 
+  function openCover() {
+    if (previewMode || document.body.classList.contains('design-open')) return;
+    closeLayer('layer-design');
+    closeLayer('layer-catalog');
+    activeId = COVER_ID;
+    render();
+    $('scroll').scrollTo({ top: 0 });
+    openLayer('layer-editor');
+    drawEditor();
+  }
+  $('head').addEventListener('click', e => { if (e.target.closest('[data-cover]')) openCover(); });
+
   function openEditor(id) {
     const b = find(id);
     if (!b || previewMode || document.body.classList.contains('design-open')) return;
@@ -1711,12 +1708,40 @@
   }
 
   function drawEditor() {
+    if (activeId === COVER_ID) {
+      $('editor-title').textContent = '배경 사진';
+      let ch = pickRow('pick-cover', thumbBox(P.cover, 'image'), '배경 사진', P.cover, 'clear-cover');
+      /* 커버가 없으면 가장자리 처리는 의미가 없다 */
+      if (P.cover) {
+        ch += fieldLabel('가장자리') + '<div class="mock-row mock-row-2">'
+          + mock('coverEdge', 'sharp', T.coverEdge, mkCoverEdge('sharp'), '기본')
+          + mock('coverEdge', 'fade',  T.coverEdge, mkCoverEdge('fade'),  '페이드')
+          + '</div>';
+      }
+      $('editor-body').innerHTML = ch;
+      icons();
+      return;
+    }
     const b = find(activeId);
     if (!b) return;
     $('editor-title').textContent = KIND_ALL[b.kind];
     let h = '';
 
-    if (b.kind === 'link') {
+    if (b.kind === 'avatar') {
+      h += pickRow('pick-avatar', thumbBox(P.avatar, 'user-round'), '프로필 사진', P.avatar, 'clear-avatar')
+        + fieldLabel('정렬') + optRow('setf', 'align', b.align,
+            [['left', '좌측정렬', 'align-left'], ['center', '중앙정렬', 'align-center']]);
+
+    } else if (b.kind === 'name') {
+      h += fieldLabel('이름') + '<input class="input" data-pin="name" value="' + esc(P.name) + '" placeholder="이름">'
+        + fieldLabel('프로필 주소')
+        + '<div class="url-field"><span class="url-prefix">connectia.bio/</span>'
+        + '<input class="input" data-handle value="' + esc(P.handle) + '" placeholder="주소"></div>'
+        + '<span class="url-status" id="nb-status"></span>'
+        + fieldLabel('정렬') + optRow('setf', 'align', b.align,
+            [['left', '좌측정렬', 'align-left'], ['center', '중앙정렬', 'align-center']]);
+
+    } else if (b.kind === 'link') {
       h += fieldLabel('버튼 이름') + '<input class="input" data-in="title" value="' + esc(b.title) + '">'
         + fieldLabel('주소') + '<input class="input" data-in="url" value="' + esc(b.url) + '">'
         + fieldLabel('표시 방식') + '<div class="mock-row mock-row-3">'
@@ -1801,7 +1826,9 @@
         h += '<button class="goto-full" data-act="full"><span>노출 순서 변경 (' + b.items.length + ')</span>'
           + '<i data-lucide="arrow-right"></i></button>';
       }
-      h += aiKeyRow('', b.ai, 'ai');
+      /* 이벤트·게시판은 항목마다 따로 AI 학습을 지정하므로 블록 단위 토글을 두지 않는다.
+         리뷰는 방문자가 남기는 것이라 항목별 설정이 없어 블록 단위로만 둔다. */
+      if (b.kind === 'review') h += aiKeyRow('', b.ai, 'ai');
       h += '<hr class="sheet-divider">' + switchRow('프로필에 표시', b.visible, 'visible');
     }
 
@@ -1819,9 +1846,17 @@
   $('editor-body').addEventListener('click', e => {
     const el = e.target.closest('[data-act]');
     if (!el) return;
+    const act = el.dataset.act;
+
+    if (activeId === COVER_ID) {
+      if (act === 'sett') { T[el.dataset.k] = el.dataset.v; touch(); render(); drawEditor(); }
+      else if (act === 'pick-cover') pickFile(v => { P.cover = v[0].src; touch(); render(); drawEditor(); });
+      else if (act === 'clear-cover') { P.cover = ''; touch(); render(); drawEditor(); }
+      return;
+    }
+
     const b = find(activeId);
     if (!b) return;
-    const act = el.dataset.act;
 
     if (act === 'setf') {
       b[el.dataset.k] = el.dataset.v;
@@ -1845,6 +1880,12 @@
 
     } else if (act === 'fmt') {
       fmt(el.dataset.v);
+
+    } else if (act === 'pick-avatar') {
+      pickFile(v => { P.avatar = v[0].src; touch(); render(); drawEditor(); });
+
+    } else if (act === 'clear-avatar') {
+      P.avatar = ''; touch(); render(); drawEditor();
 
     } else if (act === 'pick-thumb') {
       pickFile(v => { b.thumb = v[0].src; touch(); render(); drawEditor(); });
@@ -1889,6 +1930,19 @@
   $('editor-body').addEventListener('input', e => {
     const b = find(activeId);
     if (!b) return;
+    /* 이름 블록은 블록이 아니라 프로필 정체성(P)을 고친다 */
+    const pin = e.target.closest('[data-pin]');
+    if (pin) { P[pin.dataset.pin] = pin.value; touch(); render(); return; }
+    /* 주소는 중복이면 넘기지 않는다 — 쓸 수 있는 값일 때만 P에 반영한다 */
+    const hd = e.target.closest('[data-handle]');
+    if (hd) {
+      const v = hd.value.trim().toLowerCase();
+      const st = $('nb-status');
+      if (!v || v === P.handle) { st.textContent = ''; st.className = 'url-status'; return; }
+      if (TAKEN.indexOf(v) >= 0) { st.textContent = '사용 중'; st.className = 'url-status no'; return; }
+      st.textContent = '사용 가능'; st.className = 'url-status ok';
+      P.handle = v; touch(); render(); return;
+    }
     const sns = e.target.closest('[data-sns]');
     if (sns) { b.icons[Number(sns.dataset.sns)].id = sns.value; touch(); return; }
     const kv = e.target.closest('[data-kv]');
@@ -1966,30 +2020,15 @@
       + '<rect x="10" y="31" width="26" height="4" rx="2"' + F('--color-border') + '/></svg>';
   }
 
-  function mkLayout(v) {
-    const bar = '<rect x="8" y="40" width="30" height="4" rx="2"' + F('--color-border') + '/>'
-              + '<rect x="8" y="48" width="46" height="3" rx="1.5"' + F('--color-border') + '/>';
-    const ring = ';stroke:var(--color-surface);stroke-width:2';
-    if (v === 'overlap') return '<svg class="mk" viewBox="0 0 72 56">'
-      + '<rect x="0" y="0" width="72" height="24" rx="4"' + F('--color-surface-sub') + '/>'
-      + '<circle cx="17" cy="26" r="8" style="fill:var(--color-primary)' + ring + '"/>' + bar + '</svg>';
-    if (v === 'stacked') return '<svg class="mk" viewBox="0 0 72 56">'
-      + '<rect x="0" y="0" width="72" height="18" rx="4"' + F('--color-surface-sub') + '/>'
-      + '<circle cx="17" cy="30" r="8" style="fill:var(--color-primary)' + ring + '"/>' + bar + '</svg>';
-    if (v === 'fade') return '<svg class="mk" viewBox="0 0 72 56">'
-      + '<defs><linearGradient id="mkfade" x1="0" y1="0" x2="0" y2="1">'
+  /* 커버 가장자리 — 아래쪽 경계가 또렷한지, 페이지 배경으로 풀리는지 */
+  function mkCoverEdge(v) {
+    if (v === 'sharp') return '<svg class="mk" viewBox="0 0 72 28">'
+      + '<rect x="0" y="0" width="72" height="28" rx="4"' + F('--color-surface-sub') + '/></svg>';
+    return '<svg class="mk" viewBox="0 0 72 28">'
+      + '<defs><linearGradient id="mkedge" x1="0" y1="0" x2="0" y2="1">'
       + '<stop offset="0.35" style="stop-color:var(--color-surface-sub)"/>'
       + '<stop offset="1" style="stop-color:var(--color-surface-sub);stop-opacity:0"/></linearGradient></defs>'
-      + '<rect x="0" y="0" width="72" height="30" rx="4" style="fill:url(#mkfade)"/>'
-      + '<circle cx="17" cy="26" r="8" style="fill:var(--color-primary)' + ring + '"/>' + bar + '</svg>';
-    /* 사진 없이 = 그라데이션에서 프로필 사진만 뺀 형태 */
-    return '<svg class="mk" viewBox="0 0 72 56">'
-      + '<defs><linearGradient id="mknone" x1="0" y1="0" x2="0" y2="1">'
-      + '<stop offset="0.35" style="stop-color:var(--color-surface-sub)"/>'
-      + '<stop offset="1" style="stop-color:var(--color-surface-sub);stop-opacity:0"/></linearGradient></defs>'
-      + '<rect x="0" y="0" width="72" height="30" rx="4" style="fill:url(#mknone)"/>'
-      + '<rect x="8" y="30" width="30" height="4" rx="2"' + F('--color-border') + '/>'
-      + '<rect x="8" y="38" width="46" height="3" rx="1.5"' + F('--color-border') + '/></svg>';
+      + '<rect x="0" y="0" width="72" height="28" rx="4" style="fill:url(#mkedge)"/></svg>';
   }
 
   function mkChat(v) {
@@ -1999,9 +2038,9 @@
     const blocksArt = (y) => '<rect x="6" y="' + y + '" width="32" height="6" rx="3"' + F('--color-surface-sub') + '/>'
       + '<rect x="6" y="' + (y + 9) + '" width="32" height="6" rx="3"' + F('--color-surface-sub') + '/>';
     let extra = '';
-    if (v === 'bottom') extra = blocksArt(29) + '<rect x="6" y="49" width="32" height="7" rx="3.5"' + F('--cta-solid') + '/>';
-    else if (v === 'corner') extra = blocksArt(29) + '<circle cx="34" cy="50" r="6"' + F('--cta-solid') + '/>';
-    else extra = '<rect x="6" y="27" width="32" height="7" rx="3.5"' + F('--cta-solid') + '/>' + blocksArt(39);
+    if (v === 'bottom') extra = blocksArt(29) + '<rect x="6" y="49" width="32" height="7" rx="3.5"' + F('--color-text') + '/>';
+    else if (v === 'corner') extra = blocksArt(29) + '<circle cx="34" cy="50" r="6"' + F('--color-text') + '/>';
+    else extra = '<rect x="6" y="27" width="32" height="7" rx="3.5"' + F('--color-text') + '/>' + blocksArt(39);
     return '<svg class="mk" viewBox="0 0 44 60" style="max-width:44px;margin:0 auto">' + frame + extra + '</svg>';
   }
 
@@ -2032,27 +2071,12 @@
   }
 
   function drawDesign() {
-    $('design-tabs').innerHTML = [['profile', '프로필'], ['style', '스타일'], ['block', '블록'], ['chat', '대화버튼']].map(t =>
+    $('design-tabs').innerHTML = [['style', '스타일'], ['block', '블록'], ['chat', '대화버튼']].map(t =>
       '<button class="tab' + (designTab === t[0] ? ' is-active' : '') + '" data-act="dtab" data-v="' + t[0] + '">' + t[1] + '</button>'
     ).join('');
 
     let h = '';
-    if (designTab === 'profile') {
-      h += fieldLabel('레이아웃') + '<div class="mock-row mock-row-4">'
-        + mock('layout', 'overlap', T.layout, mkLayout('overlap'), '')
-        + mock('layout', 'stacked', T.layout, mkLayout('stacked'), '')
-        + mock('layout', 'fade',    T.layout, mkLayout('fade'),    '')
-        + mock('layout', 'none',    T.layout, mkLayout('none'),    '')
-        + '</div>'
-        + fieldLabel('정렬') + '<div class="mock-row mock-row-2">'
-        + mock('align', 'left',   T.align, mkIcon('align-left'),   '왼쪽')
-        + mock('align', 'center', T.align, mkIcon('align-center'), '가운데')
-        + '</div>'
-        + '<div style="margin-top:20px"></div>'
-        + pickRow('pick-avatar', thumbBox(P.avatar, 'user-round'), '프로필 이미지', P.avatar, 'clear-avatar')
-        + pickRow('pick-cover', thumbBox(P.cover, 'image'), '배경 이미지', P.cover, 'clear-cover');
-
-    } else if (designTab === 'style') {
+    if (designTab === 'style') {
       h += fieldLabel('배경색')
         + swatchRow('pageBg', T.pageBg, PAGE_BG, v => 'var(--color-page-' + v + ')', T.pageBgCustom, '--color-page-lilac')
         + fieldLabel('텍스트 색상')
@@ -2071,8 +2095,8 @@
         + mock('shadow', 'strong', T.shadow, mkShadow('strong'), '')
         + '</div>'
         + fieldLabel('정렬') + '<div class="mock-row mock-row-2">'
-        + mock('balign', 'left',   T.balign, mkIcon('align-left'),   '왼쪽')
-        + mock('balign', 'center', T.balign, mkIcon('align-center'), '가운데')
+        + mock('balign', 'left',   T.balign, mkIcon('align-left'),   '좌측정렬')
+        + mock('balign', 'center', T.balign, mkIcon('align-center'), '중앙정렬')
         + '</div>';
 
     } else {
@@ -2106,14 +2130,6 @@
     if (act === 'sett') {
       T[el.dataset.k] = el.dataset.v;
       touch(); render(); drawDesign();
-    } else if (act === 'pick-avatar') {
-      pickFile(v => { P.avatar = v[0].src; touch(); render(); drawDesign(); });
-    } else if (act === 'clear-avatar') {
-      P.avatar = ''; touch(); render(); drawDesign();
-    } else if (act === 'pick-cover') {
-      pickFile(v => { P.cover = v[0].src; touch(); render(); drawDesign(); });
-    } else if (act === 'clear-cover') {
-      P.cover = ''; touch(); render(); drawDesign();
     }
   });
 
@@ -2165,13 +2181,14 @@
   }
 
   const KIND_ICON = {
+    avatar: 'circle-user-round', name: 'case-sensitive',
     link: 'link', text: 'type', gallery: 'images', div: 'minus', sns: 'at-sign',
     contact: 'contact', info: 'list', event: 'calendar-days', board: 'newspaper', review: 'star'
   };
 
   function drawCatalog() {
     const has = k => blocks.some(b => b.kind === k);
-    const cells = ['link', 'text', 'gallery', 'div', 'sns', 'contact', 'info', 'event', 'board', 'review'];
+    const cells = ['avatar', 'name', 'link', 'text', 'gallery', 'div', 'sns', 'contact', 'info', 'event', 'board', 'review'];
     $('catalog-body').innerHTML = '<div class="cat-grid">' + cells.map(k => {
       const off = SINGLETON.indexOf(k) >= 0 && has(k);
       return '<button class="cat-cell" data-act="add" data-v="' + k + '"' + (off ? ' disabled' : '') + '>'
@@ -2190,7 +2207,9 @@
   function addBlock(kind) {
     const id = ++seq;
     let nb;
-    if (kind === 'link') nb = { id, kind: 'link', title: '새 링크', url: '', style: 'button', thumb: '', ai: true, visible: true };
+    if (kind === 'avatar') nb = { id, kind, align: 'left', visible: true };
+    else if (kind === 'name') nb = { id, kind, align: 'left', visible: true };
+    else if (kind === 'link') nb = { id, kind: 'link', title: '새 링크', url: '', style: 'button', thumb: '', ai: true, visible: true };
     else if (kind === 'text') nb = { id, kind: 'text', title: '', html: '', ai: true, visible: true };
     else if (kind === 'div') nb = { id, kind: 'div', visible: true };
     else if (kind === 'sns') nb = { id, kind: 'sns', visible: true, icons: [{ p: 'Instagram', id: '', ai: true }] };
@@ -2360,16 +2379,10 @@
     if (h && TAKEN.indexOf(h) < 0) P.handle = h;
     $('layer-name').classList.remove('on');
     touch(); render();
+    const ab = find(activeId);
+    if (ab && ab.kind === 'name') drawEditor();
     toast('변경했어요');
   };
-
-  $('head').addEventListener('click', e => {
-    if (previewMode || document.body.classList.contains('design-open')) return;
-    if (e.target.closest('.head-name')) { openNameDialog(); return; }
-    if (e.target.closest('.head-avatar')) {
-      pickFile(v => { P.avatar = v[0].src; touch(); render(); });
-    }
-  });
 
   /* ============================================================
      확인 다이얼로그

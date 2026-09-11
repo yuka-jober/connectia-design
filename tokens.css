@@ -149,6 +149,7 @@
   --color-bg:          var(--palette-gray-50);
   --color-surface:     var(--palette-gray-0);
   --color-surface-sub: var(--palette-gray-100);
+  --color-surface-strong: var(--palette-gray-200);  /* 회색 면끼리 구분이 필요할 때 한 단계 진한 면 */
   --color-card:        #fefefe;
   --color-surface-dark: var(--palette-gray-900);  /* 카메라 뷰 등 어두운 면 */
 
@@ -159,6 +160,7 @@
 
   /* Border & Input */
   --color-border: var(--palette-gray-200);
+  --color-border-subtle: var(--palette-gray-100);  /* 버튼 등 면이 넓은 컨트롤의 옅은 테두리 */
   --color-input:  var(--palette-gray-200);
 
   /* Status */
@@ -281,10 +283,11 @@
 
 
   /* ==========================================
-     POSTER THUMB (blur-fill)
+     BLUR
      ========================================== */
 
-  --blur-fill:     24px;  /* 썸네일 배경 레이어 블러 반경 */
+  --blur-fill:     24px;  /* 포스터 썸네일 배경 레이어 블러 반경 */
+  --blur-dim:      2px;   /* 편집 중 나머지 요소를 뒤로 물릴 때의 블러 반경 */
 
 
   /* ==========================================

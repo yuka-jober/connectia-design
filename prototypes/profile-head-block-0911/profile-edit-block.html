@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>프로필 편집 — 블록형</title>
-  <link rel="stylesheet" href="../tokens.css">
-  <link rel="stylesheet" href="../components.css">
+  <link rel="stylesheet" href="../../tokens.css">
+  <link rel="stylesheet" href="../../components.css">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -1055,10 +1055,10 @@
 
   /* 프로필 정체성 — 헤드는 전부 이 객체에서 렌더된다 */
   const P = {
-    name:   '',
-    handle: 'me-8f21c4',
-    avatar: '',
-    cover:  ''
+    name:   '하루요가',
+    handle: 'haruyoga',
+    avatar: '../../assets/yoga-avatar.png',
+    cover:  '../../assets/yoga-cover.png'
   };
 
   /* 전역 디자인 */
@@ -1071,8 +1071,55 @@
   };
 
   let blocks = [
-    { id: 1, kind: 'avatar', align: 'left', visible: true },
-    { id: 2, kind: 'name', align: 'left', visible: true }
+    { id: 12, kind: 'avatar', align: 'left', visible: true },
+    { id: 13, kind: 'name', align: 'left', visible: true },
+    { id: 3, kind: 'contact', visible: true,
+      company: '하루요가', role: '원장 · 요가 지도자',
+      tel: '02-334-1020', mobile: '010-2847-1020',
+      email: 'hello@haruyoga.kr', addr: '서울 마포구 연남로 12, 3층',
+      aiCompany: true, aiRole: true, aiTel: true, aiMobile: false, aiEmail: true, aiAddr: true },
+    { id: 11, kind: 'div', visible: true },
+    { id: 1, kind: 'sns', visible: true, icons: [
+      { p: 'Instagram', id: 'haruyoga', ai: true },
+      { p: 'YouTube',   id: 'haruyoga', ai: true },
+      { p: 'X (Twitter)', id: '', ai: true },
+      { p: 'TikTok',    id: '', ai: true }
+    ]},
+    { id: 2, kind: 'text', title: 'About', html: '처음 오시는 분도 편하게 따라올 수 있도록 <b>호흡부터</b> 천천히 알려드려요. 궁금한 점은 편하게 물어보세요.', ai: true, visible: true },
+    { id: 4, kind: 'link', title: '수업 시간표', url: 'haruyoga.kr/class', style: 'button', thumb: '', ai: true, visible: true },
+    { id: 5, kind: 'link', title: '수업 예약하기', url: 'calendly.com/haruyoga', style: 'card', thumb: '../../assets/yoga-gallery1.png', ai: true, visible: true },
+    { id: 6, kind: 'gallery', name: '수련실 풍경', layout: 'grid', visible: true, items: [
+      { type: 'image',   src: '../../assets/yoga-gallery1.png' },
+      { type: 'image',   src: '../../assets/yoga-gallery2.png' },
+      { type: 'image',   src: '../../assets/yoga-event1.png' },
+      { type: 'video',   src: '', thumb: '../../assets/yoga-event2.png' },
+      { type: 'youtube', src: 'youtube.com/@haruyoga', thumb: '../../assets/yoga-cover.png' }
+    ]},
+    /* 컬렉션 데모 데이터 — 요가 스튜디오. 필드는 board.html 카드가 요구하는 형태.
+       t 제목 / d 일정·날짜 / p 설명·미리보기 / n 신청자 수 또는 작성자 / img 썸네일 / tag 배지 */
+    { id: 7, kind: 'event', name: '진행 중인 이벤트', limit: '3', order: 'manual', visible: true, items: [
+      { id: 'e1', t: '여름 상담 20% 할인', d: '08.01 ~ 08.31 · 10:00 ~ 18:00', p: '무더운 여름, 몸과 마음을 함께 돌보는 1:1 자세 상담을 특별가로 준비했어요.', n: 128, img: '../../assets/yoga-event1.png' },
+      { id: 'e2', t: '신규 회원 웰컴킷',   d: '',                              p: '처음 오시는 분께 요가 매트와 수련 가이드북을 드려요. 등록 후 첫 수업 날 받아 가세요.', img: '../../assets/yoga-event2.png' },
+      { id: 'e3', t: '호흡 명상 세미나',   d: '09.12 · 14:00 ~ 16:00',         p: '호흡과 명상을 주제로 한 오프라인 세미나에 함께해 주세요.', n: 42, img: '../../assets/yoga-gallery1.png' },
+      { id: 'e4', t: '첫 방문 체형 진단',   d: '',                              p: '체형과 자세를 확인하고 나에게 맞는 수련 방향을 함께 찾아드려요. 예약 후 방문해 주세요.', img: '../../assets/yoga-gallery2.png' }
+    ]},
+    { id: 8, kind: 'board', name: '공지사항', limit: '3', order: 'recent', visible: true, items: [
+      { id: 'b1', t: '9월 운영 시간 안내',   d: '9/1',  tag: '공지',   tagCls: 'badge-fill-neutral',  p: '9월부터 평일 저녁 수업이 한 타임 늘어납니다. 새 시간표를 확인해 주세요.', img: '../../assets/yoga-gallery2.png' },
+      { id: 'b2', t: '수업 예약 방식 변경',  d: '8/22',                                             p: '수업 예약을 앱에서 바로 변경할 수 있게 됐어요. 자세한 사용법을 안내드립니다.' },
+      { id: 'b3', t: '추석 휴무 공지',       d: '8/14',                                              p: '추석 연휴 기간에는 오전 수업만 운영합니다. 방문 전 일정 확인 부탁드려요.' },
+      { id: 'b4', t: '수련 매트 대여 안내',  d: '8/2',                                               p: '매트를 두고 오셔도 괜찮아요. 데스크에서 무료로 대여해 드립니다.', img: '../../assets/yoga-gallery1.png' },
+      { id: 'b5', t: '여름 정비 휴무',       d: '7/28',                                              p: '8월 셋째 주는 스튜디오 정비를 위해 휴무입니다. 참고해 주세요.' }
+    ]},
+    { id: 9, kind: 'review', name: '수련 후기', limit: '3', order: 'recent', visible: true, ai: true, items: [
+      { id: 'r1', rate: 5, t: '수업 전에 몸 상태를 꼭 물어봐 주셔서 무리 없이 따라갈 수 있었어요. 굳어 있던 어깨가 확실히 편해졌습니다 :)', n: '익명의 사슴',   d: '2026년 8월 4일' },
+      { id: 'r2', rate: 5, t: '요가가 처음이라 걱정했는데 동작마다 자세를 잡아 주셔서 안심됐어요. 다음 달도 이어서 등록했습니다!',        n: '익명의 거북이', d: '2026년 7월 29일' },
+      { id: 'r3', rate: 4, t: '수련실이 조용하고 정돈되어 있어서 집중이 잘 돼요. 호흡 안내가 자세해서 좋았습니다.',                     n: '익명의 다람쥐', d: '2026년 7월 18일' }
+    ]},
+    { id: 10, kind: 'info', visible: true, links: [
+      { title: '하루요가 홈페이지',    url: 'haruyoga.kr', ai: true },
+      { title: '수업 예약 안내',       url: 'haruyoga.kr/booking', ai: true },
+      { title: '네이버 예약 바로가기', url: 'naver.me/haruyoga', ai: false }
+    ]}
   ];
 
   let seq = 100;
@@ -1445,7 +1492,7 @@
   }
 
   function eventCard(it) {
-    const avatars = '<span class="avatar"><img src="../assets/profile.svg" alt=""></span>'.repeat(4);
+    const avatars = '<span class="avatar"><img src="../../assets/profile.svg" alt=""></span>'.repeat(4);
     return '<div class="lp-banner-card">'
       + '<div class="lp-banner-img">'
       + (it.n
