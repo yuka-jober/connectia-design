@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>커넥티아 운영 지표</title>
+<link rel="stylesheet" href="../../tokens.css">
+<link rel="stylesheet" href="../../components.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-base);
+  background: var(--color-bg);
+  color: var(--color-text);
+  min-height: 100dvh;
+}
+
+i[data-lucide] { display: inline-flex; flex-shrink: 0; }
+[hidden] { display: none !important; }
+
+.page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 24px 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+@media (max-width: 599px) { .page { padding: 24px 16px 48px; gap: 32px; } }
+
+/* ── Header ── */
+.head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.head-title { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.head-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin-top: 8px;
+  color: var(--color-text-muted);
+}
+.head-meta span { display: inline-flex; align-items: center; gap: 4px; }
+.head-meta i, .head-meta svg { width: 14px; height: 14px; }
+.head-meta b { color: var(--color-text-sub); font-weight: var(--fw-semibold); }
+.month-picker { width: 240px; }
+.head-actions { display: flex; align-items: center; gap: 8px; }
+.head-actions .btn { gap: 4px; flex-shrink: 0; }
+.head-actions .btn svg { width: 16px; height: 16px; }
+.is-refreshing svg { animation: spin var(--motion-slow) linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.section { display: flex; flex-direction: column; gap: 16px; }
+.section-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 32px; }
+
+/* ── Metric cards ── */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 16px;
+}
+@media (max-width: 399px) { .grid { grid-template-columns: 1fr; } }
+
+.card {
+  background: var(--color-surface);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-1);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+.metric-name { color: var(--color-text-sub); }
+.metric-group { color: var(--color-text-muted); }
+.metric-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+.metric-prev { color: var(--color-text-muted); }
+.badge i, .badge svg { width: 12px; height: 12px; }
+
+/* ── Chart ── */
+.chart { position: relative; height: 160px; }
+.chart svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.chart .grid-line { stroke: var(--color-border-subtle); stroke-width: 1; }
+.chart .base-line { stroke: var(--color-border); stroke-width: 1; }
+.chart .tick { fill: var(--color-text-muted); font-size: var(--fs-badge); font-family: var(--font-base); }
+.chart .bar { fill: var(--color-primary-subtle); transition: fill var(--motion-fast) var(--ease-standard); }
+.chart .bar.is-selected { fill: var(--color-primary); }
+.chart .col.is-hover .bar:not(.is-selected) { fill: var(--color-primary-light); stroke: var(--color-primary); stroke-width: 1; }
+/* 진행 중인 달 — 아직 다 안 찬 값이라 점선 테두리로 구분 */
+.chart .bar.is-partial { fill: var(--color-primary-light); stroke: var(--color-primary-subtle); stroke-width: 1; stroke-dasharray: 4 2; }
+.chart .bar.is-partial.is-selected { fill: var(--color-primary-subtle); stroke: var(--color-primary); stroke-width: 2; }
+.chart .hit { fill: transparent; cursor: pointer; }
+
+.tooltip {
+  position: absolute;
+  top: 0;
+  pointer-events: none;
+  background: var(--color-surface-dark);
+  color: var(--color-on-primary);
+  border-radius: var(--r-xs);
+  box-shadow: var(--shadow-3);
+  padding: 8px 12px;
+  white-space: nowrap;
+  transform: translate(-50%, calc(-100% - 8px));
+  opacity: 0;
+  transition: opacity var(--motion-fast) var(--ease-standard);
+  z-index: 2;
+}
+.tooltip.is-visible { opacity: 1; }
+.tooltip-sub { color: var(--color-on-primary-sub); }
+
+/* ── Table ── */
+.table-wrap {
+  background: var(--color-surface);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-1);
+  overflow-x: auto;
+}
+table { border-collapse: collapse; width: 100%; }
+.table-monthly { min-width: 1200px; }
+.table-weekly { min-width: 1520px; }
+.table-weekly th, .table-weekly td { text-align: left; }
+th, td {
+  padding: 12px 16px;
+  text-align: right;
+  border-bottom: 1px solid var(--color-border-subtle);
+  white-space: nowrap;
+}
+th:first-child, td:first-child { text-align: left; }
+thead th { color: var(--color-text-muted); font-weight: var(--fw-medium); background: var(--color-surface); position: sticky; top: 0; }
+tbody tr:last-child td { border-bottom: 0; }
+.table-monthly tbody tr { cursor: pointer; }
+.table-monthly tbody tr:hover { background: var(--color-primary-light); }
+tbody tr.is-selected { background: var(--color-primary-light); }
+tbody tr.is-selected td:first-child { color: var(--color-primary); font-weight: var(--fw-semibold); }
+.cell-delta { display: block; color: var(--color-text-muted); }
+.week-cell { display: flex; flex-direction: column; gap: 4px; }
+.week-cell .text-label { display: inline-flex; align-items: center; gap: 4px; }
+.week-cell .text-caption { color: var(--color-text-muted); }
+.view-switch { display: flex; gap: 4px; }
+.view-switch svg { width: 18px; height: 18px; }
+.chart-sm { height: 120px; }
+/* 표 안 막대 — 지표(열)마다 가장 큰 주를 100%로, 회색 트랙 위에 왼쪽부터 채우고 오른쪽 끝에 숫자 */
+.bar-cell { display: flex; align-items: center; gap: 4px; }
+.bar-cell .num { min-width: 48px; text-align: left; }
+.cell-bar { flex: 1; min-width: 64px; display: flex; border-radius: var(--r-full); background: var(--color-surface-sub); }
+.cell-bar span { display: block; height: 8px; min-width: 4px; border-radius: var(--r-full); background: var(--color-primary); }
+.cell-bar span.is-partial { background: var(--color-primary-subtle); border: 1px dashed var(--color-primary); }
+td { font-variant-numeric: tabular-nums; }
+
+/* ── Collapsible section ── */
+.section-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: 0;
+  padding: 0;
+  font-family: var(--font-base);
+  color: var(--color-text);
+  cursor: pointer;
+}
+.section-toggle svg { width: 20px; height: 20px; color: var(--color-text-muted); transition: transform var(--motion-fast) var(--ease-standard); }
+.section-toggle[aria-expanded="false"] svg { transform: rotate(-90deg); }
+
+/* ── Data connection ── */
+.req-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 16px;
+}
+@media (max-width: 399px) { .req-grid { grid-template-columns: 1fr; } }
+.req-card { gap: 12px; }
+.req-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.req-dl { display: grid; grid-template-columns: 72px 1fr; gap: 8px 12px; }
+.req-dl dt { color: var(--color-text-muted); }
+.req-dl dd { color: var(--color-text-sub); }
+.req-dl ul { padding-left: 16px; display: flex; flex-direction: column; gap: 4px; }
+.req-card.is-common { background: var(--color-primary-light); box-shadow: none; }
+</style>
+</head>
+<body>
+
+<main class="page">
+
+  <!-- Header -->
+  <header class="head">
+    <div>
+      <div class="head-title">
+        <h1 class="text-title">커넥티아 운영 지표</h1>
+        <span class="badge badge-md badge-weak-primary">초안</span>
+        <span class="badge badge-md badge-weak-warning">샘플 데이터</span>
+      </div>
+      <div class="head-meta text-caption">
+        <span><i data-lucide="calendar"></i>집계 기준 <b>한국 시간 매월 1일~말일</b></span>
+        <span><i data-lucide="zap"></i>갱신 주기 <b>실시간 · 새로고침할 때 집계</b></span>
+        <span><i data-lucide="clock"></i>마지막 갱신 <b id="lastUpdated">2026.09.17 14:32</b></span>
+        <span><i data-lucide="filter"></i><b>내부 테스트 데이터 제외</b></span>
+      </div>
+    </div>
+    <div class="head-actions">
+      <button class="btn btn-md btn-weak-dark" id="refreshBtn"><i data-lucide="refresh-cw"></i>새로고침</button>
+      <select class="select month-picker" id="monthPicker" aria-label="기준 월"></select>
+    </div>
+  </header>
+
+  <!-- Weekly (this month) -->
+  <section class="section">
+    <div class="section-head">
+      <button class="section-toggle text-heading" id="weeklyToggle" aria-expanded="true" aria-controls="weeklyBody">
+        <i data-lucide="chevron-down"></i>이번 달 주간 지표
+      </button>
+      <div class="view-switch" id="weeklyView">
+        <button class="icon-btn icon-btn-sm icon-btn-fill" data-view="table" aria-pressed="true" aria-label="표로 보기"><i data-lucide="table-2"></i></button>
+        <button class="icon-btn icon-btn-sm icon-btn-clear" data-view="chart" aria-pressed="false" aria-label="그래프로 보기"><i data-lucide="chart-column"></i></button>
+      </div>
+    </div>
+    <div id="weeklyBody">
+      <div class="table-wrap" data-view-panel="table">
+        <table class="text-body table-weekly">
+          <thead id="weeklyHead"></thead>
+          <tbody id="weeklyRows"></tbody>
+        </table>
+      </div>
+      <div class="grid" id="weeklyCharts" data-view-panel="chart" hidden></div>
+    </div>
+  </section>
+
+  <!-- Trend cards -->
+  <section class="section">
+    <div class="section-head">
+      <h2 class="text-heading">월별 추이</h2>
+    </div>
+    <div class="grid" id="cards"></div>
+  </section>
+
+  <!-- Table -->
+  <section class="section">
+    <div class="section-head">
+      <h2 class="text-heading">월별 실적</h2>
+    </div>
+    <div class="table-wrap">
+      <table class="text-body table-monthly">
+        <thead id="tableHead"></thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Data connection request -->
+  <section class="section">
+    <div class="section-head">
+      <h2 class="text-heading">데이터 연결 요청</h2>
+    </div>
+    <div class="req-grid" id="reqs"></div>
+  </section>
+
+</main>
+
+<script>
+/* ───────── 샘플 데이터 (2025.09 ~ 2026.09 진행 중) ───────── */
+const MONTHS = ['2025-09','2025-10','2025-11','2025-12','2026-01','2026-02','2026-03','2026-04','2026-05','2026-06','2026-07','2026-08','2026-09'];
+// 진행 중인 달: 마지막 인덱스, 1일 ~ 오늘(CURRENT_DAYS일) 지금까지 누적
+const CURRENT = MONTHS.length - 1;
+const CURRENT_DAYS = 17;
+
+// 이번 달 주간: 월~일 기준, 달 경계에서 자름 (주간 합 = 월 누적, UV만 주마다 따로 중복 제거)
+const WEEKS = [
+  { label: '1주차', range: '9.1~9.6' },
+  { label: '2주차', range: '9.7~9.13' },
+  { label: '3주차', range: '9.14~9.17', partial: true },
+];
+
+// data 마지막 값 = 이번 달 1일~지금 누적, prevSame = 전월 같은 기간 누적
+const METRICS = [
+  { key: 'signup',   group: '회원',    name: '신규 회원 가입', unit: '명',
+    data: [412,468,455,503,590,612,688,731,802,776,845,921,508], prevSame: 470, weeks: [190,222,96] },
+  { key: 'uv',       group: '트래픽',  name: '방문자 수 (UV)', unit: '명',
+    data: [18240,20115,19870,22410,25930,27120,30480,32950,35210,34080,37640,41290,26380], prevSame: 24110, weeks: [11200,12650,6030] },
+  { key: 'pv',       group: '트래픽',  name: '페이지 조회 수 (PV)', unit: '회',
+    data: [61880,68420,66950,75310,88400,92760,104230,112980,121450,117300,129870,143520,80150], prevSame: 73800, weeks: [30100,34800,15250] },
+  { key: 'rooms',    group: 'AI 채팅', name: '대화방 수', unit: '개',
+    data: [1320,1488,1452,1690,2010,2155,2470,2688,2931,2804,3120,3456,1935], prevSame: 1770, weeks: [725,845,365] },
+  { key: 'messages', group: 'AI 채팅', name: '사용자 메시지 수', unit: '건',
+    data: [4870,5530,5402,6315,7610,8190,9480,10350,11420,10930,12240,13710,7720], prevSame: 7050, weeks: [2890,3370,1460] },
+  { key: 'pages',    group: '제작',    name: '페이지 제작', unit: '개',
+    data: [380,431,420,466,548,571,640,683,752,729,791,866,482], prevSame: 445, weeks: [180,211,91] },
+  { key: 'events',   group: '제작',    name: '이벤트 생성', unit: '개',
+    data: [42,51,48,57,70,74,86,95,108,101,131,124,58], prevSame: 64, weeks: [22,25,11] },
+  { key: 'plan', noBar: true,     group: '요금제',  name: '요금제 버튼 클릭', unit: '회',
+    data: [610,690,672,745,880,925,1040,1120,1230,1190,1310,1445,812], prevSame: 740, weeks: [305,354,153] },
+  { key: 'pro', noBar: true,      group: '요금제',  name: '프로 시작하기 클릭', unit: '회',
+    data: [148,171,165,186,224,236,268,291,322,310,344,382,205], prevSame: 196, weeks: [77,89,39] },
+  { key: 'brand', noBar: true,    group: '요금제',  name: '브랜드 시작하기 클릭', unit: '회',
+    data: [52,60,57,66,81,85,97,104,118,112,126,139,69], prevSame: 72, weeks: [26,30,13] },
+];
+
+/* ───────── 데이터 연결 요청 ───────── */
+const REQUESTS = [
+  { name: '공통', common: true, rows: [
+    ['기간', '한국 시간(KST) 매월 1일 00:00 ~ 말일 23:59'],
+    ['진행 중', '이번 달 1일 ~ 지금 누적, 전월 같은 기간(1일 ~ 같은 날짜·시각)과 비교'],
+    ['주간', '월~일 기준, 달이 바뀌는 주는 1일·말일에서 자름'],
+    ['개발 결정', ['DB 시각이 UTC로 저장돼 있으면 KST 변환 후 집계', '일별 비교가 가능하도록 날짜 단위로 적재', '내부 테스트 계정 목록 또는 판별 기준(이메일 도메인·계정 ID)', '사내 IP 대역 (트래픽 제외용)', '갱신 방식: 새로고침할 때 바로 집계 (조회가 무거우면 캐시)']],
+  ]},
+  { name: '신규 회원 가입', status: 'need', rows: [
+    ['정의', '가입일이 해당 월인 회원 수 (탈퇴 회원 포함, 재가입은 새 가입)'],
+    ['소스', '서비스 DB · 회원 테이블 (가입일시)'],
+    ['결정', ['탈퇴한 회원도 포함', '탈퇴 후 재가입은 새 가입으로 셈']],
+  ]},
+  { name: '방문자 수 (UV) · 페이지 조회 수 (PV)', status: 'setup', rows: [
+    ['정의', 'UV: 월 기준 중복 제거한 방문자 수 · PV: 페이지 조회 이벤트 수 (비회원 포함)'],
+    ['소스', '웹 분석 도구(GA4 등) 또는 서버 접근 로그'],
+    ['개발 결정', ['분석 도구 설치 여부와 속성 시간대(KST)', '월 UV·주 UV는 일별 UV의 합이 아니라 기간마다 따로 중복 제거', '화면 전환(SPA)마다 조회가 기록되는지', '분석 도구는 집계 반영이 늦음 — 실시간 API 쓸지, 서버 로그로 직접 셀지', '봇·사내 IP 제외 필터']],
+  ]},
+  { name: '대화방 수 · 사용자 메시지 수', status: 'need', rows: [
+    ['정의', '대화방: 해당 월에 사용자 메시지가 1건 이상 있는 대화방 수 · 메시지: 해당 월에 사용자가 보낸 메시지 수 (페이지 주인의 시험 대화 포함)'],
+    ['소스', '채팅 DB · 대화방·메시지 테이블 (발신자 구분 필요)'],
+    ['결정', ['여러 달에 걸친 대화방은 메시지가 있는 달마다 셈', '페이지 주인이 자기 AI를 시험해 본 대화도 포함']],
+    ['개발 결정', ['메시지에 사용자/AI 발신자 구분 값이 있는지']],
+  ]},
+  { name: '페이지 제작', status: 'need', rows: [
+    ['정의', '첫 생성일이 해당 월인 페이지 수 (삭제·커뮤니티 전환 페이지 포함)'],
+    ['소스', '서비스 DB · 페이지 테이블 (생성일시)'],
+    ['결정', ['삭제된 페이지 포함', '로그인 전에는 페이지를 만들 수 없음', '커뮤니티 페이지는 페이지를 만든 뒤 전환하므로 포함, 첫 생성일 기준']],
+  ]},
+  { name: '이벤트 생성', status: 'need', rows: [
+    ['정의', '발행일이 해당 월인 이벤트 수 (삭제 이벤트 포함)'],
+    ['소스', '서비스 DB · 이벤트 테이블 (발행일시)'],
+    ['결정', ['임시저장 이벤트는 없음, 발행 기준', '삭제된 이벤트도 포함, 발행 기준']],
+  ]},
+  { name: '요금제 버튼 · 프로 시작하기 · 브랜드 시작하기 클릭', status: 'setup', rows: [
+    ['정의', '각 버튼의 클릭 수 (비회원 포함)'],
+    ['소스', '웹 분석 도구(GA4 등) 클릭 이벤트'],
+    ['미정', ['같은 버튼이 여러 화면에 있으면 합칠지, 위치별로 나눌지', '클릭 수로 볼지, 클릭한 사람 수로 볼지']],
+    ['개발 결정', ['버튼마다 클릭 이벤트 심기 (이벤트 이름 정의)', '실시간이 필요하면 분석 도구 대신 서버에 클릭 기록', '이벤트를 심기 전 기간은 데이터 없음']],
+  ]},
+];
+
+/* ───────── helpers ───────── */
+const fmt = n => n.toLocaleString('ko-KR');
+const monthLabel = i => `${+MONTHS[i].split('-')[1]}월`;
+const monthFull  = i => {
+  const [y, m] = MONTHS[i].split('-');
+  return i === CURRENT ? `${y}년 ${+m}월 (1~${CURRENT_DAYS}일)` : `${y}년 ${+m}월`;
+};
+// 진행 중인 달은 전월 같은 기간과 비교
+const prevValue = (m, i) => i === CURRENT ? m.prevSame : m.data[i - 1];
+const prevLabel = (m, i) => i === CURRENT ? `${monthLabel(i - 1)} 1~${CURRENT_DAYS}일 ${fmt(m.prevSame)}` : `전월 ${fmt(m.data[i - 1])}`;
+const delta = (m, i) => i === 0 ? null : (m.data[i] - prevValue(m, i)) / prevValue(m, i) * 100;
+
+function deltaBadge(d) {
+  if (d === null) return '<span class="badge badge-md badge-weak-neutral">비교 없음</span>';
+  const up = d >= 0;
+  return `<span class="badge badge-md ${up ? 'badge-weak-success' : 'badge-weak-danger'}">
+    <i data-lucide="${up ? 'trending-up' : 'trending-down'}"></i>${up ? '+' : ''}${d.toFixed(1)}%</span>`;
+}
+const deltaText = d => d === null ? '–' : `${d >= 0 ? '+' : ''}${d.toFixed(1)}%`;
+
+let selected = MONTHS.length - 1;
+
+/* ───────── month picker ───────── */
+const picker = document.getElementById('monthPicker');
+picker.innerHTML = MONTHS.map((_, i) => `<option value="${i}">${i === CURRENT ? `이번 달 · 진행 중 (1~${CURRENT_DAYS}일)` : monthFull(i)}</option>`).reverse().join('');
+picker.value = selected;
+picker.addEventListener('change', () => select(+picker.value));
+
+/* ───────── cards ───────── */
+const cardsEl = document.getElementById('cards');
+cardsEl.innerHTML = METRICS.map(m => `
+  <article class="card" data-key="${m.key}">
+    <div>
+      <div class="text-caption metric-group">${m.group}</div>
+      <div class="text-label metric-name">${m.name}</div>
+      <div class="metric-row">
+        <span class="text-metric" data-role="value"></span>
+      </div>
+      <div class="metric-row">
+        <span data-role="delta"></span>
+        <span class="text-caption metric-prev" data-role="prev"></span>
+      </div>
+    </div>
+    <div class="chart" data-role="chart">
+      <div class="tooltip"></div>
+    </div>
+  </article>`).join('');
+
+function niceMax(v) {
+  const p = Math.pow(10, Math.floor(Math.log10(v)));
+  for (const s of [1, 1.2, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10]) if (s * p >= v) return s * p;
+}
+const tickFmt = v => v >= 10000 ? `${+(v / 10000).toFixed(1)}만` : fmt(v);
+
+// opts: { values, name, unit, label(i), tipTitle(i), tipExtra(i), barClass(i), onClick(i) }
+function drawChart(el, o) {
+  const W = el.clientWidth, H = el.clientHeight;
+  if (!W || !H) return;
+  const padL = 40, padB = 20, padT = 4;
+  const plotW = W - padL, plotH = H - padB - padT;
+  const max = niceMax(Math.max(...o.values));
+  const n = o.values.length;
+  const slot = plotW / n;
+  const barW = Math.max(4, Math.min(24, slot - 8));
+  const labelEvery = slot < 24 ? 2 : 1;
+  const y = v => padT + plotH - v / max * plotH;
+  const r = 4;
+
+  let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${o.name}">`;
+  for (let t = 0; t <= 2; t++) {
+    const v = max * t / 2, yy = Math.round(y(v)) + .5;
+    svg += `<line class="${t ? 'grid-line' : 'base-line'}" x1="${padL}" x2="${W}" y1="${yy}" y2="${yy}"/>`;
+    svg += `<text class="tick" x="${padL - 8}" y="${yy + 4}" text-anchor="end">${tickFmt(v)}</text>`;
+  }
+  o.values.forEach((v, i) => {
+    const cx = padL + slot * i + slot / 2;
+    const x = cx - barW / 2, top = y(v), base = y(0), h = base - top;
+    const rr = Math.min(r, h, barW / 2);
+    const d = `M${x},${base} V${top + rr} Q${x},${top} ${x + rr},${top} H${x + barW - rr} Q${x + barW},${top} ${x + barW},${top + rr} V${base} Z`;
+    svg += `<g class="col" data-i="${i}">
+      <path class="bar ${o.barClass(i)}" d="${d}"/>
+      <rect class="hit" x="${padL + slot * i}" y="0" width="${slot}" height="${H}"${o.onClick ? '' : ' style="cursor:default"'}/>
+      ${i % labelEvery === (n - 1) % labelEvery ? `<text class="tick" x="${cx}" y="${H - 4}" text-anchor="middle">${o.label(i)}</text>` : ''}
+    </g>`;
+  });
+  svg += '</svg>';
+
+  const tip = el.querySelector('.tooltip');
+  el.querySelector('svg')?.remove();
+  el.insertAdjacentHTML('afterbegin', svg);
+
+  el.querySelectorAll('.col').forEach(g => {
+    const i = +g.dataset.i;
+    const cx = padL + slot * i + slot / 2;
+    g.addEventListener('mouseenter', () => {
+      g.classList.add('is-hover');
+      const extra = o.tipExtra ? ` <span class="tooltip-sub">${o.tipExtra(i)}</span>` : '';
+      tip.innerHTML = `<div class="text-caption tooltip-sub">${o.tipTitle(i)}</div>
+        <div class="text-label">${fmt(o.values[i])}${o.unit}${extra}</div>`;
+      const half = tip.offsetWidth / 2;
+      tip.style.left = `${Math.min(Math.max(cx, half), W - half)}px`;
+      tip.style.top = `${y(o.values[i])}px`;
+      tip.classList.add('is-visible');
+    });
+    g.addEventListener('mouseleave', () => { g.classList.remove('is-hover'); tip.classList.remove('is-visible'); });
+    if (o.onClick) g.addEventListener('click', () => o.onClick(i));
+  });
+}
+
+function renderCards() {
+  METRICS.forEach(m => {
+    const card = cardsEl.querySelector(`[data-key="${m.key}"]`);
+    card.querySelector('[data-role="value"]').textContent = fmt(m.data[selected]);
+    card.querySelector('[data-role="delta"]').innerHTML = deltaBadge(delta(m, selected));
+    card.querySelector('[data-role="prev"]').textContent = selected > 0 ? prevLabel(m, selected) : '';
+    drawChart(card.querySelector('[data-role="chart"]'), {
+      values: m.data, name: `${m.name} 월별 추이`, unit: m.unit,
+      label: monthLabel, tipTitle: monthFull,
+      tipExtra: i => `${i === CURRENT ? '전월 같은 기간' : '전월'} 대비 ${deltaText(delta(m, i))}`,
+      barClass: i => `${i === selected ? 'is-selected' : ''} ${i === CURRENT ? 'is-partial' : ''}`,
+      onClick: select,
+    });
+  });
+  lucide.createIcons();
+}
+
+/* ───────── table ───────── */
+document.getElementById('tableHead').innerHTML =
+  `<tr><th class="text-caption">월</th>${METRICS.map(m => `<th class="text-caption">${m.name}</th>`).join('')}</tr>`;
+
+function renderTable() {
+  document.getElementById('tableBody').innerHTML = MONTHS.map((_, i) => `
+    <tr data-i="${i}" class="${i === selected ? 'is-selected' : ''}">
+      <td>${monthFull(i)}</td>
+      ${METRICS.map(m => `<td>${fmt(m.data[i])}<span class="text-caption cell-delta">${deltaText(delta(m, i))}</span></td>`).join('')}
+    </tr>`).reverse().join('');
+  document.querySelectorAll('#tableBody tr').forEach(tr => tr.addEventListener('click', () => select(+tr.dataset.i)));
+}
+
+/* ───────── weekly ───────── */
+const weekCell = w => `<span class="week-cell">
+  <span class="text-label">${w.label}${w.partial ? '<span class="badge badge-sm badge-weak-primary">진행 중</span>' : ''}</span>
+  <span class="text-caption">${w.range}</span></span>`;
+document.getElementById('weeklyHead').innerHTML =
+  `<tr><th class="text-caption">주</th>${METRICS.map(m => `<th class="text-caption">${m.name}</th>`).join('')}</tr>`;
+document.getElementById('weeklyRows').innerHTML = WEEKS.map((w, wi) => `
+  <tr><td>${weekCell(w)}</td>${METRICS.map(m => m.noBar ? `<td>${fmt(m.weeks[wi])}</td>` : `<td><span class="bar-cell"><span class="cell-bar"><span class="${w.partial ? 'is-partial' : ''}" style="width:${m.weeks[wi] / Math.max(...m.weeks) * 100}%"></span></span><span class="num">${fmt(m.weeks[wi])}</span></span></td>`).join('')}</tr>`).reverse().join('');
+
+const weeklyCharts = document.getElementById('weeklyCharts');
+weeklyCharts.innerHTML = METRICS.map(m => `
+  <article class="card" data-key="${m.key}">
+    <div>
+      <div class="text-caption metric-group">${m.group}</div>
+      <div class="text-label metric-name">${m.name}</div>
+    </div>
+    <div class="chart chart-sm"><div class="tooltip"></div></div>
+  </article>`).join('');
+
+function renderWeeklyCharts() {
+  METRICS.forEach(m => drawChart(weeklyCharts.querySelector(`[data-key="${m.key}"] .chart`), {
+    values: m.weeks, name: `${m.name} 이번 달 주간`, unit: m.unit,
+    label: i => WEEKS[i].label,
+    tipTitle: i => `${WEEKS[i].label} · ${WEEKS[i].range}${WEEKS[i].partial ? ' (진행 중)' : ''}`,
+    barClass: i => `is-selected ${WEEKS[i].partial ? 'is-partial' : ''}`,
+  }));
+}
+new ResizeObserver(renderWeeklyCharts).observe(weeklyCharts);
+
+const weeklyView = document.getElementById('weeklyView');
+weeklyView.querySelectorAll('[data-view]').forEach(btn => btn.addEventListener('click', () => {
+  weeklyView.querySelectorAll('[data-view]').forEach(b => {
+    const on = b === btn;
+    b.setAttribute('aria-pressed', on);
+    b.classList.toggle('icon-btn-fill', on);
+    b.classList.toggle('icon-btn-clear', !on);
+  });
+  document.querySelectorAll('#weeklyBody [data-view-panel]').forEach(p => p.hidden = p.dataset.viewPanel !== btn.dataset.view);
+}));
+
+const weeklyToggle = document.getElementById('weeklyToggle');
+weeklyToggle.addEventListener('click', () => {
+  const open = weeklyToggle.getAttribute('aria-expanded') !== 'true';
+  weeklyToggle.setAttribute('aria-expanded', open);
+  document.getElementById('weeklyBody').hidden = !open;
+  weeklyView.hidden = !open;
+});
+
+/* ───────── refresh ───────── */
+function stampUpdated() {
+  const p = Object.fromEntries(new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false })
+    .formatToParts(new Date()).map(x => [x.type, x.value]));
+  document.getElementById('lastUpdated').textContent = `${p.year}.${p.month}.${p.day} ${p.hour}:${p.minute}`;
+}
+stampUpdated();
+const refreshBtn = document.getElementById('refreshBtn');
+refreshBtn.addEventListener('click', () => {
+  refreshBtn.classList.add('is-refreshing');
+  refreshBtn.disabled = true;
+  setTimeout(() => {
+    stampUpdated();
+    refreshBtn.classList.remove('is-refreshing');
+    refreshBtn.disabled = false;
+  }, 800);
+});
+
+/* ───────── requests ───────── */
+const STATUS = {
+  need:  '<span class="badge badge-md badge-weak-neutral">연결 필요</span>',
+  setup: '<span class="badge badge-md badge-weak-warning">추가 설정 필요</span>',
+};
+document.getElementById('reqs').innerHTML = REQUESTS.map(r => `
+  <article class="card req-card${r.common ? ' is-common' : ''}">
+    <div class="req-head">
+      <h3 class="text-label">${r.name}</h3>
+      ${r.status ? STATUS[r.status] : ''}
+    </div>
+    <dl class="req-dl text-caption">
+      ${r.rows.map(([k, v]) => `<dt>${k}</dt><dd>${Array.isArray(v) ? `<ul>${v.map(x => `<li>${x}</li>`).join('')}</ul>` : v}</dd>`).join('')}
+    </dl>
+  </article>`).join('');
+
+/* ───────── state ───────── */
+function select(i) {
+  selected = i;
+  picker.value = i;
+  renderCards();
+  renderTable();
+}
+
+new ResizeObserver(() => renderCards()).observe(cardsEl);
+select(selected);
+</script>
+</body>
+</html>
