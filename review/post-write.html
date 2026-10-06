@@ -559,6 +559,82 @@
     cursor: grab; touch-action: none; user-select: none;
   }
   .write-block-handle:active { cursor: grabbing; }
+  /* ── 링크 블록 (캔버스) — 공개 화면 노출 모습 그대로 ── */
+  .write-block-media.write-block-link {
+    background: var(--color-surface); border-radius: var(--r-md); cursor: pointer;
+  }
+  .write-link-btn { pointer-events: none; }
+  .write-link-box {
+    border: 1px solid var(--color-border); border-radius: var(--r-md); overflow: hidden;
+  }
+  .write-link-row {
+    display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+  }
+  .write-link-thumb {
+    width: 48px; height: 48px; flex-shrink: 0; border-radius: var(--r-xs); overflow: hidden;
+    background: var(--color-surface-sub); color: var(--color-text-muted);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .write-link-cover {
+    aspect-ratio: 16 / 9; background: var(--color-surface-sub); color: var(--color-text-muted);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .write-link-thumb img, .write-link-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .write-link-thumb svg, .write-link-cover svg { width: 20px; height: 20px; }
+  .write-link-title {
+    flex: 1; min-width: 0; color: var(--color-text); font-weight: var(--fw-medium);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .write-link-chev { width: 18px; height: 18px; flex-shrink: 0; color: var(--color-text-muted); }
+  /* 버튼형·썸네일은 높이가 낮아 편집 컨트롤을 세로 가운데로 */
+  .write-block-link[data-style="button"] .write-block-handle,
+  .write-block-link[data-style="button"] .write-block-del,
+  .write-block-link[data-style="thumb"] .write-block-handle,
+  .write-block-link[data-style="thumb"] .write-block-del { top: 50%; transform: translateY(-50%); }
+  .write-block-link[data-style="button"] .write-block-handle,
+  .write-block-link[data-style="button"] .write-block-del,
+  .write-block-link[data-style="thumb"] .write-block-del { background: var(--color-surface-sub); color: var(--color-text-sub); }
+  /* 썸네일형: 삭제 버튼 자리만큼 오른쪽 비움 */
+  .write-block-link[data-style="thumb"] .write-link-row { padding-right: 48px; }
+
+  /* ── 링크 블록 시트 (블록형 페이지 편집의 링크 편집 구조) ── */
+  .link-sheet { max-height: 88%; overflow-y: auto; }
+  .link-sheet-body { padding: 0 20px 32px; }
+  .link-sheet-body [hidden] { display: none; }
+  .link-field-label { display: block; margin: 16px 0 8px; }
+  .link-sheet-body .sheet-title + .link-field-label { margin-top: 0; }
+  .link-submit { margin-top: 24px; }
+  .mock-row { display: grid; gap: 8px; }
+  .mock-row-3 { grid-template-columns: repeat(3, 1fr); }
+  .mock {
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    padding: 12px; cursor: pointer; font-family: var(--font-base);
+    background: var(--color-surface); border: 1px solid var(--color-border-subtle);
+    border-radius: var(--r-md);
+  }
+  .mock.is-active { border-color: var(--color-text-muted); background: var(--color-surface-sub); }
+  .mock-art { width: 100%; display: flex; align-items: center; justify-content: center; }
+  .mock-name { font-size: var(--fs-label); font-weight: var(--fw-medium); color: var(--color-text-sub); }
+  .mock.is-active .mock-name { color: var(--color-text); font-weight: var(--fw-semibold); }
+  .mk { width: 100%; height: auto; display: block; }
+  .pick-wrap { display: flex; align-items: center; gap: 8px; }
+  .pick-wrap .pick-row { flex: 1; min-width: 0; }
+  .pick-row {
+    display: flex; align-items: center; gap: 12px; width: 100%;
+    padding: 12px; background: var(--color-surface);
+    border: 1px solid var(--color-border-subtle); border-radius: var(--r-sm);
+    cursor: pointer; font-family: var(--font-base);
+  }
+  .pick-label { flex: 1; text-align: left; font-size: var(--fs-body-lg); font-weight: var(--fw-medium); color: var(--color-text); }
+  .pick-more { font-size: var(--fs-body); font-weight: var(--fw-medium); color: var(--color-text-muted); flex-shrink: 0; }
+  .pick-row > svg { width: 16px; height: 16px; color: var(--color-text-muted); }
+  .pick-thumb {
+    width: 40px; height: 40px; border-radius: var(--r-xs); overflow: hidden;
+    background: var(--color-surface-sub); flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; color: var(--color-text-muted);
+  }
+  .pick-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .pick-thumb svg { width: 18px; height: 18px; }
   .write-toolbar {
     display: flex; align-items: center; gap: 16px;
     padding: 12px 20px; border-top: 1px solid var(--color-border);
@@ -3265,6 +3341,7 @@
     <button type="button" class="write-format-btn" onclick="onToolVideo()" aria-label="동영상"><i data-lucide="video"></i></button>
     <!-- lucide 최신에서 브랜드 아이콘 삭제 → 구 lucide youtube SVG 인라인 -->
     <button type="button" class="write-format-btn" onclick="onToolYoutube()" aria-label="유튜브"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17"/><path d="m10 15 5-3-5-3z"/></svg></button>
+    <button type="button" class="write-format-btn" onclick="openLinkSheet()" aria-label="링크"><i data-lucide="link"></i></button>
   </div>
 
   <div class="write-body">
@@ -3286,6 +3363,18 @@
         <button class="write-block-del" aria-label="삭제" onclick="onBlockDelete(event, this)"><i data-lucide="x" style="width:14px;height:14px"></i></button>
       </div>
       <div class="write-block-text" contenteditable="true" data-placeholder="내용을 입력하세요">만드는 과정을 영상으로 담았어요. 자세한 소식은 매장에서 확인해주세요.</div>
+      <div class="write-block-media write-block-link" data-type="link" data-title="이벤트 자세히 보기" data-url="https://booking.naver.com" data-style="card" data-thumb="../assets/thumbnail_3.png">
+        <div class="write-link-box">
+          <div class="write-link-cover"><img src="../assets/thumbnail_3.png" alt=""></div>
+          <div class="write-link-row">
+            <span class="write-link-title text-body">이벤트 자세히 보기</span>
+            <i data-lucide="chevron-right" class="write-link-chev"></i>
+          </div>
+        </div>
+        <button class="write-block-handle" aria-label="순서 이동"><i data-lucide="grip-vertical" style="width:16px;height:16px"></i></button>
+        <button class="write-block-del" aria-label="삭제" onclick="onBlockDelete(event, this)"><i data-lucide="x" style="width:14px;height:14px"></i></button>
+      </div>
+      <div class="write-block-text" contenteditable="true" data-placeholder="내용을 입력하세요"></div>
     </div>
   </div>
 
@@ -4206,6 +4295,42 @@
 </div>
 
 <!-- ══════════════════════════════ -->
+<!-- 바텀시트: 링크 블록 추가·수정     -->
+<!-- ══════════════════════════════ -->
+<div class="sheet-wrap" id="sheet-link">
+  <div class="bottom-sheet-overlay" onclick="closeSheet('sheet-link')"></div>
+  <div class="bottom-sheet link-sheet">
+    <div class="bottom-sheet-handle"></div>
+    <div class="link-sheet-body">
+      <p class="sheet-title">링크</p>
+      <label class="label link-field-label" for="link-title">버튼 이름</label>
+      <input class="input" id="link-title" type="text">
+      <label class="label link-field-label" for="link-url">주소</label>
+      <input class="input" id="link-url" type="url" oninput="onLinkUrlInput()">
+      <p class="label link-field-label">표시 방식</p>
+      <div class="mock-row mock-row-3" id="link-styles">
+        <button type="button" class="mock" data-style="button" onclick="setLinkStyle('button')"><span class="mock-art"><svg class="mk" viewBox="0 0 72 44"><rect x="4" y="14" width="64" height="16" rx="4" style="fill:var(--color-surface);stroke:var(--color-border);stroke-width:1"/><rect x="26" y="20" width="20" height="4" rx="2" style="fill:var(--color-border)"/></svg></span><span class="mock-name">버튼형</span></button>
+        <button type="button" class="mock" data-style="thumb" onclick="setLinkStyle('thumb')"><span class="mock-art"><svg class="mk" viewBox="0 0 72 44"><rect x="4" y="10" width="64" height="24" rx="4" style="fill:var(--color-surface);stroke:var(--color-border);stroke-width:1"/><rect x="9" y="15" width="14" height="14" rx="3" style="fill:var(--color-surface-sub)"/><rect x="28" y="20" width="28" height="4" rx="2" style="fill:var(--color-border)"/></svg></span><span class="mock-name">썸네일</span></button>
+        <button type="button" class="mock" data-style="card" onclick="setLinkStyle('card')"><span class="mock-art"><svg class="mk" viewBox="0 0 72 44"><rect x="4" y="4" width="64" height="36" rx="4" style="fill:var(--color-surface);stroke:var(--color-border);stroke-width:1"/><rect x="4" y="4" width="64" height="22" rx="4" style="fill:var(--color-surface-sub)"/><rect x="4" y="20" width="64" height="6" style="fill:var(--color-surface-sub)"/><rect x="10" y="31" width="26" height="4" rx="2" style="fill:var(--color-border)"/></svg></span><span class="mock-name">카드형</span></button>
+      </div>
+      <div id="link-thumb-field" hidden>
+        <p class="label link-field-label">썸네일</p>
+        <div class="pick-wrap">
+          <button type="button" class="pick-row" onclick="pickLinkThumb()">
+            <span class="pick-thumb" id="link-thumb-box"></span>
+            <span class="pick-label">썸네일 이미지</span>
+            <span class="pick-more" id="link-thumb-more">등록</span>
+            <i data-lucide="chevron-right"></i>
+          </button>
+          <button type="button" class="icon-btn icon-btn-clear" id="link-thumb-clear" hidden onclick="clearLinkThumb()" aria-label="이미지 제거"><i data-lucide="trash-2"></i></button>
+        </div>
+      </div>
+      <button type="button" class="btn btn-lg btn-block btn-fill-primary link-submit" id="link-submit" disabled onclick="confirmLinkSheet()">추가</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════ -->
 <!-- 다이얼로그: 유튜브 추가          -->
 <!-- ══════════════════════════════ -->
 <div class="dialog-overlay" id="yt-dialog" hidden onclick="if(event.target===this)closeYtDialog()">
@@ -4732,6 +4857,119 @@
     var block = btn.closest('.write-block-media');
     if (block) block.remove();
   }
+
+  // ── 링크 블록 (버튼형 / 썸네일 / 카드형) ──
+  var _linkEditing = null;  // 수정 중인 캔버스 블록 (새로 추가면 null)
+  var _linkDraft = { style: 'button', thumb: '' };
+  var _linkThumbCount = 0;
+
+  function _escHtml(v) {
+    return String(v || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function linkBlockInner(d) {
+    var title = _escHtml(d.title || d.url);
+    if (d.style === 'button') {
+      return '<div class="btn btn-lg btn-block btn-line-dark write-link-btn">' + title + '</div>';
+    }
+    var img = d.thumb ? '<img src="' + _escHtml(d.thumb) + '" alt="">' : '<i data-lucide="image"></i>';
+    var titleRow = '<span class="write-link-title text-body">' + title + '</span>' +
+      '<i data-lucide="chevron-right" class="write-link-chev"></i>';
+    if (d.style === 'thumb') {
+      return '<div class="write-link-box"><div class="write-link-row">' +
+        '<span class="write-link-thumb">' + img + '</span>' + titleRow + '</div></div>';
+    }
+    return '<div class="write-link-box"><div class="write-link-cover">' + img + '</div>' +
+      '<div class="write-link-row">' + titleRow + '</div></div>';
+  }
+
+  function _applyLinkData(block, d) {
+    block.dataset.title = d.title;
+    block.dataset.url = d.url;
+    block.dataset.style = d.style;
+    block.dataset.thumb = d.thumb;
+    var old = block.querySelector('.write-link-btn, .write-link-box');
+    if (old) old.remove();
+    block.insertAdjacentHTML('afterbegin', linkBlockInner(d));
+  }
+
+  // 툴바 링크 버튼(빈 상태) 또는 캔버스 링크 블록 탭(기존 값)
+  function openLinkSheet(block) {
+    _linkEditing = block || null;
+    var d = block ? block.dataset : {};
+    document.getElementById('link-title').value = d.title || '';
+    document.getElementById('link-url').value = d.url || '';
+    _linkDraft = { style: d.style || 'button', thumb: d.thumb || '' };
+    document.getElementById('link-submit').textContent = block ? '저장' : '추가';
+    setLinkStyle(_linkDraft.style);
+    _renderLinkThumbPick();
+    onLinkUrlInput();
+    openSheet('sheet-link');
+  }
+
+  function setLinkStyle(style) {
+    _linkDraft.style = style;
+    document.querySelectorAll('#link-styles .mock').forEach(function(m) {
+      m.classList.toggle('is-active', m.dataset.style === style);
+    });
+    document.getElementById('link-thumb-field').hidden = style === 'button';
+  }
+
+  function _renderLinkThumbPick() {
+    var box = document.getElementById('link-thumb-box');
+    box.innerHTML = _linkDraft.thumb ? '<img src="' + _linkDraft.thumb + '" alt="">' : '<i data-lucide="image"></i>';
+    document.getElementById('link-thumb-more').textContent = _linkDraft.thumb ? '변경' : '등록';
+    document.getElementById('link-thumb-clear').hidden = !_linkDraft.thumb;
+    lucide.createIcons();
+  }
+
+  // 프로토타입: 이미지 선택 대신 샘플 이미지 순환
+  function pickLinkThumb() {
+    _linkDraft.thumb = _photoSamples[_linkThumbCount % _photoSamples.length];
+    _linkThumbCount++;
+    _renderLinkThumbPick();
+  }
+  function clearLinkThumb() {
+    _linkDraft.thumb = '';
+    _renderLinkThumbPick();
+  }
+
+  function onLinkUrlInput() {
+    document.getElementById('link-submit').disabled = document.getElementById('link-url').value.trim() === '';
+  }
+
+  function confirmLinkSheet() {
+    var url = document.getElementById('link-url').value.trim();
+    if (!url) return;
+    var d = {
+      title: document.getElementById('link-title').value.trim(),
+      url: url,
+      style: _linkDraft.style,
+      thumb: _linkDraft.style === 'button' ? '' : _linkDraft.thumb
+    };
+    closeSheet('sheet-link');
+    if (_linkEditing) {
+      _applyLinkData(_linkEditing, d);
+      lucide.createIcons();
+    } else {
+      var block = buildMediaBlock('link', '');
+      block.classList.add('write-block-link');
+      _applyLinkData(block, d);
+      insertMediaBlock(block);
+    }
+    _linkEditing = null;
+  }
+
+  // 캔버스 링크 블록 탭 → 수정 시트 (핸들·삭제 버튼 탭은 제외)
+  (function() {
+    var canvas = document.getElementById('write-canvas');
+    if (!canvas) return;
+    canvas.addEventListener('click', function(e) {
+      if (e.target.closest('.write-block-handle, .write-block-del')) return;
+      var block = e.target.closest('.write-block-link');
+      if (block) openLinkSheet(block);
+    });
+  })();
 
   // ── 블록 드래그 리오더 (핸들 기반, HTML5 DnD + 터치 fallback) ──
   var _dragBlock = null;
