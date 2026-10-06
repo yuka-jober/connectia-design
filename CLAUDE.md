@@ -33,8 +33,9 @@
 - 디자인 작업 요청 시 `/design-team` 스킬 사용 (기획→승인→디자이너→QA 파이프라인).
 
 ## 사용 가능한 토큰 (tokens.css)
-- **색상(semantic):** `--color-primary / -dark / -light / -subtle`, `--color-brand-gradient / -banner-gradient`, `--color-bg / -surface / -surface-sub / -surface-strong / -surface-glass / -surface-veil / -surface-dark / -card`, `--color-text / -sub / -muted`, `--color-border / -border-subtle / -input`, `--color-destructive / -destructive-subtle / -success / -success-dark / -success-subtle / -warning / -warning-dark / -warning-subtle / -star / -star-empty`, `--color-on-primary / -on-primary-sub / -on-primary-faint`, `--color-scrim / -scrim-strong`, `--color-page-mist / -page-cream / -page-blush / -page-lilac / -page-sky / -page-mint` (프로필 페이지 배경 프리셋 — mist는 board.html과 같은 기본 배경, 나머지는 파스텔), `--color-chat-apricot / -chat-blossom / -chat-plum / -chat-ocean / -chat-forest` (대화하기 버튼 색상 프리셋 — 배경 프리셋과 1:1로 짝지은 깊은 색. mist 자리는 그라데이션), `--color-kakao / -on-kakao` (카카오 로그인 버튼 — 브랜드 가이드상 색 고정)
+- **색상(semantic):** `--color-primary / -dark / -light / -subtle`, `--color-brand-gradient / -banner-gradient`, `--color-bg / -surface / -surface-sub / -surface-strong / -surface-glass / -surface-veil / -surface-dark / -card`, `--color-text / -sub / -muted`, `--color-border / -border-subtle / -input`, `--color-destructive / -destructive-subtle / -success / -success-dark / -success-subtle / -warning / -warning-dark / -warning-subtle / -star / -star-empty`, `--color-on-primary / -on-primary-sub / -on-primary-faint`, `--color-scrim / -scrim-strong`, `--color-page-mist / -page-cream / -page-blush / -page-lilac / -page-sky / -page-mint` (프로필 페이지 배경 프리셋 — mist는 board.html과 같은 기본 배경, 나머지는 파스텔), `--color-chat-apricot / -chat-blossom / -chat-plum / -chat-ocean / -chat-forest` (대화하기 버튼 색상 프리셋 — 배경 프리셋과 1:1로 짝지은 깊은 색. mist 자리는 그라데이션), `--color-kakao / -on-kakao` (카카오 로그인 버튼 — 브랜드 가이드상 색 고정), `--color-facebook / -on-facebook` (페이스북 공유 버튼 — 브랜드 파랑 고정), `--color-linkedin / -on-linkedin` (링크드인 공유 버튼 — 브랜드 파랑 고정)
 - **타이포(유틸 클래스):** `.text-display .text-title .text-heading .text-body-lg .text-body .text-label .text-caption .text-badge .text-link .text-metric .text-nav` (title-sm 18px는 유틸 없이 `var(--fs-title-sm)`·`--lh-title-sm`·`--ls-title-sm` 토큰만 사용)
+- **글꼴:** `--font-base`(Pretendard) · `--font-serif`(Noto Serif KR — 브런치풍 에디토리얼 제목. 쓰는 화면에서 Google Fonts 로드)
 - **radius:** `--r-xs/sm/md/lg/xl/full` · **shadow:** `--shadow-1`~`--shadow-4` · **motion:** `--motion-fast/standard/slow`, `--ease-enter/exit/standard`
 - **폼 컨트롤:** `--input-h`(input·select 높이) · `--input-px`(좌우 여백) · `--textarea-py` · `--textarea-h`(최소 높이). 인풋 배경은 흰색(`--color-surface`)
 - **블러:** `--blur-fill`(포스터 썸네일 배경 레이어, 24px) · `--blur-dim`(편집 중 나머지 요소를 뒤로 물릴 때, 2px)
@@ -42,7 +43,8 @@
 ## 사용 가능한 컴포넌트 (components.css)
 모두 클래스 조합 방식. **새로 만들기 전에 여기 있는지 먼저 확인한다.**
 - **Button:** `.btn` + 크기 `.btn-xs/sm/md/lg/xl` + `.btn-block .btn-pill` + 스타일 `.btn-fill-primary/dark/danger/success/gradient/kakao`, `.btn-weak-primary/dark/danger`, `.btn-line-dark` + 로딩 `.is-loading`
-- **IconButton:** `.icon-btn` + `.icon-btn-sm/lg` + 원형 `.icon-btn-pill` + `.icon-btn-clear/fill/border`
+- **IconButton:** `.icon-btn` + `.icon-btn-sm/lg` + 원형 `.icon-btn-pill` + `.icon-btn-clear/fill/border` + 소셜 공유 `.icon-btn-fill-kakao` / `.icon-btn-fill-linkedin`(브랜드 색 고정)
+- **BrandLogo:** `.brand-logo` + `.brand-logo-kakao` / `.brand-logo-linkedin`(심볼만 — 각각 `.icon-btn-fill-kakao` / `-linkedin` 원형 버튼 안에 넣어 씀) / `.brand-logo-facebook`(원형 로고 그대로) — assets의 공식 로고를 브랜드 색으로 찍는다. 소셜 로고는 Lucide 대신 이걸 쓴다
 - **Label:** `.label`, 필수표시 `.label-required`
 - **Input:** `.input` (+ `.is-error`), 에러문구 `.input-error-msg`
 - **TextArea:** `.textarea` (+ `.textarea-auto` 자동높이, `.is-error`)

@@ -116,6 +116,8 @@
   /* Brand — 외부 서비스(소셜 로그인) 고정 브랜드 컬러 */
   --palette-kakao-yellow: #fee500;
   --palette-kakao-ink:    #191919;
+  --palette-facebook-blue: #1877f2;
+  --palette-linkedin-blue: #0a66c2;
 
   /* Pastel — 프로필 페이지 배경용 저채도 색 */
   /* 대화하기 버튼 — 파스텔 배경과 어울리도록 채도를 낮춘 깊은 색 */
@@ -187,6 +189,10 @@
   /* Social Brand — 소셜 로그인 버튼 (브랜드 가이드상 색 고정) */
   --color-kakao:    var(--palette-kakao-yellow);
   --color-on-kakao: var(--palette-kakao-ink);
+  --color-facebook:    var(--palette-facebook-blue);   /* 페이스북 공유 버튼 (브랜드 색 고정) */
+  --color-on-facebook: var(--palette-gray-0);
+  --color-linkedin:    var(--palette-linkedin-blue);   /* 링크드인 공유 버튼 (브랜드 색 고정) */
+  --color-on-linkedin: var(--palette-gray-0);
 
   /* Brand Extended */
   --color-banner-gradient: linear-gradient(135deg, var(--palette-purple-700) 0%, var(--palette-purple-900) 100%);
@@ -212,6 +218,7 @@
      ========================================== */
 
   --font-base: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-serif: 'Noto Serif KR', serif;   /* 에디토리얼 제목 (공유 텍스트 썸네일 등) — 쓰는 화면에서 Google Fonts로 로드 */
 
   /*
     display   홈·친구 섹션 제목 "인기 아바타", "친구"
