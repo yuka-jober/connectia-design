@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>행사 목록 — 운영자</title>
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="../components.css">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-base);
+    background: var(--color-surface-strong);
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ── Frame (390 × 844, community-mode-owner.html과 동일) ── */
+  .frame {
+    width: 390px;
+    height: 844px;
+    max-height: 100dvh;
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--shadow-4);
+    background: var(--color-surface);
+    transform: translateZ(0);
+  }
+  @media (max-width: 439px) { .frame { width: 100vw; height: 100dvh; max-height: none; } }
+  @media (min-width: 440px) { .frame { border-radius: 44px; max-height: calc(100dvh - 40px); } }
+
+  .screen { position: absolute; inset: 0; display: flex; flex-direction: column; background: var(--color-bg); }
+
+  [data-lucide] { display: inline-flex; flex-shrink: 0; }
+
+
+  /* =============================================
+     커뮤니티 셸 헤더
+     좌: 커뮤니티명 + ▼ (스위처 트리거)
+     우: (나) 아바타 배지 = 마이페이지 진입점
+     ============================================= */
+  .c-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--color-border);
+    flex-shrink: 0;
+    background: var(--color-surface);
+    gap: 12px;
+  }
+  .c-switcher {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: none;
+    border: none;
+    padding: 4px 4px 4px 0;
+    font-family: var(--font-base);
+    color: var(--color-text);
+    cursor: pointer;
+    min-width: 0;
+    -webkit-tap-highlight-color: transparent;
+    border-radius: var(--r-sm);
+    transition: background var(--motion-fast) var(--ease-standard);
+  }
+  .c-switcher:active { background: var(--color-surface-sub); }
+  .c-switcher-name {
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-bold);
+    color: var(--color-text);
+    letter-spacing: var(--ls-body-lg);
+    max-width: 220px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .c-switcher [data-lucide] { width: 16px; height: 16px; color: var(--color-text-sub); }
+
+  /* (나) 마이페이지 진입점 — 프로필 사진만 */
+  .c-me {
+    display: inline-flex;
+    align-items: center;
+    padding: 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-family: var(--font-base);
+    -webkit-tap-highlight-color: transparent;
+    border-radius: var(--r-full);
+    transition: opacity var(--motion-fast) var(--ease-standard);
+  }
+  .c-me:active { opacity: 0.7; }
+  .c-me-avatar { box-shadow: var(--shadow-2); }
+
+  /* ── Body ── */
+  .c-body {
+    flex: 1;
+    overflow-y: auto;
+    background: var(--color-bg);
+    padding-bottom: 76px; /* tabbar 높이 확보 */
+  }
+
+  /* =============================================
+     커뮤니티 셸 하단 탭바
+     ============================================= */
+  .c-tabbar {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    display: flex;
+    align-items: stretch;
+    background: var(--color-surface);
+    border-radius: var(--r-lg) var(--r-lg) 0 0;
+    box-shadow: var(--shadow-4);
+    padding-bottom: env(safe-area-inset-bottom);
+    z-index: 10;
+  }
+  .c-tab {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 10px 4px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--color-text-muted);
+    font-family: var(--font-base);
+    -webkit-tap-highlight-color: transparent;
+    transition: color var(--motion-fast) var(--ease-standard);
+  }
+  .c-tab [data-lucide] { width: 22px; height: 22px; stroke-width: 2; }
+  .c-tab-label {
+    font-size: var(--fs-nav);
+    font-weight: var(--fw-medium);
+    letter-spacing: var(--ls-nav);
+    line-height: var(--lh-nav);
+  }
+  .c-tab.is-active { color: var(--color-primary); }
+  .c-tab.is-active [data-lucide] { stroke-width: 2.4; }
+
+  /* =============================================
+     공통 섹션 헤더
+     ============================================= */
+  .c-section {
+    padding: 20px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .c-section + .c-section { padding-top: 4px; }
+  .c-section-title {
+    font-size: var(--fs-title);
+    font-weight: var(--fw-bold);
+    color: var(--color-text);
+    letter-spacing: var(--ls-title);
+  }
+  .c-row-between {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  /* 정렬 세그먼트 */
+  .c-seg {
+    display: inline-flex;
+    align-self: flex-start;
+    align-items: center;
+    gap: 4px;
+    padding: 4px;
+    background: var(--color-surface-sub);
+    border-radius: var(--r-full);
+  }
+  .c-seg-btn {
+    padding: 8px 16px;
+    border: none;
+    background: transparent;
+    color: var(--color-text-muted);
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-medium);
+    border-radius: var(--r-full);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: background var(--motion-fast) var(--ease-standard), color var(--motion-fast) var(--ease-standard);
+  }
+  .c-seg-btn.is-active {
+    background: var(--color-surface);
+    color: var(--color-text);
+    font-weight: var(--fw-semibold);
+    box-shadow: var(--shadow-1);
+  }
+  .c-event-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .c-event-card {
+    display: flex;
+    align-items: stretch;
+    gap: 12px;
+    padding: 16px;
+    background: var(--color-surface);
+    border-radius: var(--r-md);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform var(--motion-fast) var(--ease-standard);
+  }
+  .c-event-card:active { transform: scale(0.99); }
+  .c-event-body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .c-event-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .c-event-title {
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text);
+  }
+  .c-event-title-row [data-lucide] { width: 16px; height: 16px; color: var(--color-text-muted); }
+  .c-event-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+    flex-wrap: wrap;
+  }
+  .c-event-meta span {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .c-event-meta [data-lucide] { width: 12px; height: 12px; }
+  .c-event-stats {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: var(--fs-caption);
+    color: var(--color-text-sub);
+    font-weight: var(--fw-medium);
+  }
+  .c-event-stats b { font-weight: var(--fw-bold); color: var(--color-text); }
+
+  /* =============================================
+     행사 · 캘린더 뷰
+     ============================================= */
+  .c-cal {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .c-cal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 0;
+  }
+  .c-cal-month {
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-bold);
+    color: var(--color-text);
+    letter-spacing: var(--ls-title);
+  }
+  .c-cal-nav {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--r-full);
+    border: none;
+    background: transparent;
+    color: var(--color-text-sub);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .c-cal-nav:active { background: var(--color-surface-sub); }
+  .c-cal-nav [data-lucide] { width: 20px; height: 20px; }
+
+  .c-cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    background: var(--color-surface);
+    border-radius: var(--r-md);
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+  }
+  .c-cal-dow {
+    padding: 8px 0;
+    text-align: center;
+    font-size: var(--fs-caption);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text-muted);
+    background: var(--color-surface-sub);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .c-cal-dow.is-sun { color: var(--color-destructive); }
+  .c-cal-dow.is-sat { color: var(--color-primary); }
+
+  .c-cal-cell {
+    min-height: 68px;
+    padding: 4px 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    background: var(--color-surface);
+    border-right: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .c-cal-cell:nth-child(7n) { border-right: none; }
+  .c-cal-cell.is-empty { cursor: default; }
+  .c-cal-day {
+    font-size: var(--fs-caption);
+    font-weight: var(--fw-medium);
+    color: var(--color-text);
+    text-align: right;
+    padding: 0 4px;
+    line-height: 1;
+  }
+  .c-cal-cell.is-other .c-cal-day { color: var(--color-text-muted); opacity: 0.4; }
+  .c-cal-cell.is-selected .c-cal-day { color: var(--color-primary); font-weight: var(--fw-bold); }
+
+  .c-cal-chip {
+    display: block;
+    box-sizing: border-box;
+    max-width: 100%;
+    font-size: var(--fs-badge);
+    font-weight: var(--fw-medium);
+    color: var(--color-primary);
+    background: var(--color-primary-light);
+    padding: 2px 4px;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: clip;
+  }
+  .c-cal-more {
+    font-size: var(--fs-badge);
+    font-weight: var(--fw-medium);
+    color: var(--color-text-muted);
+    padding: 0 4px;
+    line-height: 1.2;
+  }
+
+  /* 선택일 하단 상세 */
+  .c-cal-selected {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 4px;
+  }
+  .c-cal-selected-head {
+    font-size: var(--fs-label);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text-sub);
+  }
+  .c-cal-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 32px 16px;
+    background: var(--color-surface);
+    border-radius: var(--r-md);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-muted);
+    font-size: var(--fs-body);
+  }
+
+
+  /* =============================================
+     행사 · 타임라인 — 상태 탭 없이 날짜 순 한 목록
+     다가오는 행사(가까운 순) → 지난 행사(최근 순)
+     구분 기준 = 행사 종료일. 종료일 다음 날 0시에 지난 행사로 이동 (신청 기간은 '신청 마감' 표시에만 씀)
+     줄 형식: 포스터 썸네일 + 제목 · 기간 · 소개 한 줄 (실서비스 목록과 동일)
+     ============================================= */
+  .ev-group { display: flex; flex-direction: column; gap: 12px; }
+  .ev-group + .ev-group { margin-top: 32px; }
+  .ev-group-title {
+    font-size: var(--fs-body);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text-sub);
+    letter-spacing: var(--ls-body);
+  }
+  .ev-list { display: flex; flex-direction: column; gap: 12px; }
+  .ev-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .ev-row:active { opacity: 0.7; }
+  /* 포스터 썸네일 — 흐린 배경 위에 포스터 전체를 contain */
+  .ev-thumb {
+    position: relative;
+    flex-shrink: 0;
+    width: 100px;
+    aspect-ratio: 3 / 4;
+    border-radius: var(--r-md);
+    overflow: hidden;
+    background: var(--color-surface-dark);
+  }
+  .ev-thumb-fill {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: blur(var(--blur-fill));
+    transform: scale(1.2);
+  }
+  .ev-thumb-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  .ev-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; padding-top: 4px; }
+  .ev-title {
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-semibold);
+    line-height: var(--lh-body-lg);
+    letter-spacing: var(--ls-body-lg);
+    color: var(--color-text);
+  }
+  .ev-when {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: var(--fs-label);
+    line-height: var(--lh-label);
+    color: var(--color-text-sub);
+  }
+  .ev-when [data-lucide] { width: 14px; height: 14px; }
+  .ev-closed { color: var(--color-text-muted); }
+  .ev-desc {
+    font-size: var(--fs-label);
+    line-height: var(--lh-label);
+    color: var(--color-text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* 썸네일 비율 — 행사 설정값(4:3 / 1:1 / 3:4)에 따라 틀 모양이 바뀜. 폭은 고정 */
+  [data-ratio="4:3"] .ev-thumb { aspect-ratio: 4 / 3; }
+  [data-ratio="1:1"] .ev-thumb { aspect-ratio: 1 / 1; }
+  [data-ratio="3:4"] .ev-thumb { aspect-ratio: 3 / 4; }
+
+  /* ── 프로토타입 옵션바 (화면 밖 · 확인용) ── */
+  .proto-bar {
+    position: fixed;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 4px 4px 4px 16px;
+    background: var(--color-surface);
+    border-radius: var(--r-full);
+    box-shadow: var(--shadow-2);
+  }
+  .proto-bar-label {
+    font-size: var(--fs-label);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text-sub);
+    white-space: nowrap;
+  }
+</style>
+</head>
+<body>
+<div class="proto-bar">
+  <span class="proto-bar-label">썸네일 비율</span>
+  <div class="c-seg" role="tablist">
+    <button class="c-seg-btn" type="button" onclick="setRatio(this, '4:3')">4:3</button>
+    <button class="c-seg-btn" type="button" onclick="setRatio(this, '1:1')">1:1</button>
+    <button class="c-seg-btn is-active" type="button" onclick="setRatio(this, '3:4')">3:4</button>
+  </div>
+</div>
+
+<div class="frame">
+
+  <section id="s-event" class="screen">
+    <header class="c-topbar">
+      <button class="c-switcher" type="button">
+        <span class="c-switcher-name">서울 파운더스 테이블</span>
+        <i data-lucide="chevron-down"></i>
+      </button>
+      <button class="c-me" type="button" aria-label="마이페이지">
+        <span class="avatar avatar-xs c-me-avatar" aria-hidden="true">
+          <img src="../assets/profile.svg" alt="">
+        </span>
+      </button>
+    </header>
+
+    <div class="c-body">
+      <div class="c-section">
+        <div class="c-row-between">
+          <div class="c-section-title">행사</div>
+          <button class="btn btn-sm btn-fill-primary btn-pill" type="button">
+            <i data-lucide="plus" style="width:14px;height:14px"></i>
+            만들기
+          </button>
+        </div>
+
+        <div class="c-seg" role="tablist">
+          <button class="c-seg-btn is-active" type="button" onclick="setEventView(this, 'timeline')">타임라인</button>
+          <button class="c-seg-btn" type="button" onclick="setEventView(this, 'calendar')">캘린더</button>
+        </div>
+
+        <div id="event-view-timeline" data-ratio="3:4">
+          <div class="ev-group">
+            <div class="ev-group-title">다가오는 행사</div>
+            <div class="ev-list">
+              <div class="ev-row">
+                <div class="ev-thumb">
+                  <img class="ev-thumb-fill" src="../assets/poster-cheongchun.jpg" alt="" aria-hidden="true">
+                  <img class="ev-thumb-img" src="../assets/poster-cheongchun.jpg" alt="">
+                </div>
+                <div class="ev-info">
+                  <div class="ev-title">AXiom MEETUP 5회차 참가 신청 — 10월 7일(수) 저녁 · 강남 모두의연구소</div>
+                  <div class="ev-when"><i data-lucide="calendar-days"></i>10.07 ~ 10.07 <span class="ev-closed">· 신청 마감</span></div>
+                  <div class="ev-desc">AI를 더 잘 쓰고 싶다면, AI를 쓰는 사람들 속으로! AXiom MEETUP 5회차</div>
+                </div>
+              </div>
+              <div class="ev-row">
+                <div class="ev-thumb">
+                  <img class="ev-thumb-fill" src="../assets/event_thumbnail.png" alt="" aria-hidden="true">
+                  <img class="ev-thumb-img" src="../assets/event_thumbnail.png" alt="">
+                </div>
+                <div class="ev-info">
+                  <div class="ev-title">10월 정기모임</div>
+                  <div class="ev-when"><i data-lucide="calendar-days"></i>10.21 ~ 10.21</div>
+                  <div class="ev-desc">이번 달 정기모임은 각자 자기 업무에 AI를 붙여 본 사례를 나눠요</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="ev-group">
+            <div class="ev-group-title">지난 행사</div>
+            <div class="ev-list">
+              <div class="ev-row">
+                <div class="ev-thumb">
+                  <img class="ev-thumb-fill" src="../assets/thumbnail_1.png" alt="" aria-hidden="true">
+                  <img class="ev-thumb-img" src="../assets/thumbnail_1.png" alt="">
+                </div>
+                <div class="ev-info">
+                  <div class="ev-title">AXiom MEETUP 4회차</div>
+                  <div class="ev-when"><i data-lucide="calendar-days"></i>09.15 ~ 09.15</div>
+                  <div class="ev-desc">AXiom(액시엄) — 격주 아침, 각자 자기 업무를 AI로 바꾼 사례를 나눠요</div>
+                </div>
+              </div>
+              <div class="ev-row">
+                <div class="ev-thumb">
+                  <img class="ev-thumb-fill" src="../assets/studiogloss-event1.png" alt="" aria-hidden="true">
+                  <img class="ev-thumb-img" src="../assets/studiogloss-event1.png" alt="">
+                </div>
+                <div class="ev-info">
+                  <div class="ev-title">9월 정기모임</div>
+                  <div class="ev-when"><i data-lucide="calendar-days"></i>09.02 ~ 09.02</div>
+                  <div class="ev-desc">첫 정기모임, 서로 하는 일을 소개하고 다음 모임 주제를 정했어요</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="event-view-calendar" hidden>
+          <div class="c-cal">
+            <div class="c-cal-head">
+              <button class="c-cal-nav" type="button" aria-label="이전 달"><i data-lucide="chevron-left"></i></button>
+              <span class="c-cal-month">2026년 7월</span>
+              <button class="c-cal-nav" type="button" aria-label="다음 달"><i data-lucide="chevron-right"></i></button>
+            </div>
+
+            <div class="c-cal-grid">
+              <div class="c-cal-dow is-sun">일</div>
+              <div class="c-cal-dow">월</div>
+              <div class="c-cal-dow">화</div>
+              <div class="c-cal-dow">수</div>
+              <div class="c-cal-dow">목</div>
+              <div class="c-cal-dow">금</div>
+              <div class="c-cal-dow is-sat">토</div>
+
+              <!-- Row 1: _ _ _ 1 2 3 4  (2026-07-01 = 수) -->
+              <div class="c-cal-cell is-empty"></div>
+              <div class="c-cal-cell is-empty"></div>
+              <div class="c-cal-cell is-empty"></div>
+              <div class="c-cal-cell"><span class="c-cal-day">1</span></div>
+              <div class="c-cal-cell"><span class="c-cal-day">2</span></div>
+              <div class="c-cal-cell"><span class="c-cal-day">3</span></div>
+              <div class="c-cal-cell"><span class="c-cal-day">4</span></div>
+
+              <!-- Row 2: 5~11 -->
+              <div class="c-cal-cell"><span class="c-cal-day">5</span></div>
+              <div class="c-cal-cell"><span class="c-cal-day">6</span></div>
+              <div class="c-cal-cell"><span class="c-cal-day">7</span></div>
+              <div class="c-cal-cell">
+                <span class="c-cal-day">8</span>
+                <span class="c-cal-chip">팀 스탠드업</span>
+                <span class="c-cal-chip">신규 온보딩</span>
+              </div>
+              <div class="c-cal-cell"><span class="c-cal-day">9</span></div>
+              <div class="c-cal-cell"><span class="c-cal-day">10</span></div>
+              <div class="c-cal-cell"><span class="c-cal-day">11</span></div>
+
+              <!-- Row 3: 12~18 -->
+              <div class="c-cal-cell"><span class="c-cal-day">12</span></div>
+              <div class="c-cal-cell"><span class="c-cal-day">13</span></div>
+              <div class="c-cal-cell"><span class="c-cal-day">14</span></div>
+              <div class="c-cal-cell">
+                <span class="c-cal-day">15</span>
+                <span class="c-cal-chip">IR 미팅</span>
+                <span class="c-cal-chip">파트너 콜</span>
+                <span class="c-cal-more">+1</span>
+              </div>
+              <div class="c-cal-cell"><span class="c-cal-day">16</span></div>
+              <div class="c-cal-cell"><span class="c-cal-day">17</span></div>
+              <div class="c-cal-cell"><span class="c-cal-day">18</span></div>
+
+              <!-- Row 4: 19~25 (21 선택 · 정기모임) -->
+              <div class="c-cal-cell"><span class="c-cal-day">19</span></div>
+              <div class="c-cal-cell"><span class="c-cal-day">20</span></div>
+              <div class="c-cal-cell is-selected">
+                <span class="c-cal-day">21</span>
+                <span class="c-cal-chip">정기모임</span>
+              </div>
+              <div class="c-cal-cell"><span class="c-cal-day">22</span></div>
+              <div class="c-cal-cell"><span class="c-cal-day">23</span></div>
+              <div class="c-cal-cell"><span class="c-cal-day">24</span></div>
+              <div class="c-cal-cell">
+                <span class="c-cal-day">25</span>
+                <span class="c-cal-chip">여름 MT</span>
+              </div>
+
+              <!-- Row 5: 26~31 _ (26,27 = MT / 28 = 스터디 / 30,31 = 워크샵) -->
+              <div class="c-cal-cell">
+                <span class="c-cal-day">26</span>
+                <span class="c-cal-chip">여름 MT</span>
+              </div>
+              <div class="c-cal-cell">
+                <span class="c-cal-day">27</span>
+                <span class="c-cal-chip">여름 MT</span>
+              </div>
+              <div class="c-cal-cell">
+                <span class="c-cal-day">28</span>
+                <span class="c-cal-chip">스터디</span>
+              </div>
+              <div class="c-cal-cell"><span class="c-cal-day">29</span></div>
+              <div class="c-cal-cell">
+                <span class="c-cal-day">30</span>
+                <span class="c-cal-chip">여름 워크샵</span>
+              </div>
+              <div class="c-cal-cell">
+                <span class="c-cal-day">31</span>
+                <span class="c-cal-chip">여름 워크샵</span>
+              </div>
+              <div class="c-cal-cell is-empty"></div>
+            </div>
+
+            <!-- 선택일 상세 (7/21 정기모임) -->
+            <div class="c-cal-selected">
+              <div class="c-cal-selected-head">7월 21일 (화) · 행사 1건</div>
+              <div class="c-event-list">
+                <div class="c-event-card">
+                  <div class="c-event-body">
+                    <div class="c-event-title-row">
+                      <span class="c-event-title">정기모임</span>
+                      <i data-lucide="chevron-right"></i>
+                    </div>
+                    <div class="c-event-meta">
+                      <span><i data-lucide="clock"></i>19:34</span>
+                    </div>
+                    <div class="c-event-stats">
+                      <span><b>3</b>참석 · <b>0</b>불참 · <b>2</b>미정</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <nav class="c-tabbar" id="tabbar-event"></nav>
+  </section>
+
+</div>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+  const TABS = [
+    { key: 'home',     icon: 'home',           label: '홈' },
+    { key: 'members',  icon: 'users',          label: '멤버' },
+    { key: 'board',    icon: 'message-square', label: '게시판' },
+    { key: 'event',    icon: 'calendar',       label: '행사' },
+    { key: 'settings', icon: 'settings',       label: '설정' },
+  ];
+  document.getElementById('tabbar-event').innerHTML = TABS.map(t => `
+    <button class="c-tab ${t.key === 'event' ? 'is-active' : ''}" type="button">
+      <i data-lucide="${t.icon}"></i>
+      <span class="c-tab-label">${t.label}</span>
+    </button>
+  `).join('');
+
+  function setEventView(btn, view) {
+    btn.parentElement.querySelectorAll('.c-seg-btn').forEach(b => b.classList.remove('is-active'));
+    btn.classList.add('is-active');
+    document.getElementById('event-view-timeline').hidden = (view !== 'timeline');
+    document.getElementById('event-view-calendar').hidden = (view !== 'calendar');
+  }
+
+  function setRatio(btn, ratio) {
+    btn.parentElement.querySelectorAll('.c-seg-btn').forEach(b => b.classList.remove('is-active'));
+    btn.classList.add('is-active');
+    document.getElementById('event-view-timeline').dataset.ratio = ratio;
+  }
+
+  lucide.createIcons();
+</script>
+</body>
+</html>
