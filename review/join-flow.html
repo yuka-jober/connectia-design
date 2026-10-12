@@ -205,6 +205,7 @@
     padding: 24px 20px 16px;
     display: flex; flex-direction: column; gap: 12px;
   }
+  .hero-host-row { display: flex; align-items: center; gap: 8px; }
   .hero-clinic-row {
     display: inline-flex; align-items: center; gap: 4px;
     align-self: flex-start;
@@ -1074,10 +1075,13 @@
       </div>
 
       <div class="hero-info">
-        <button class="hero-clinic-row" type="button" id="ev-host" onclick="goTo('s-welcome')">
-          <span class="hero-clinic-name">경륜재</span>
-          <i data-lucide="chevron-right"></i>
-        </button>
+        <div class="hero-host-row">
+          <button class="hero-clinic-row" type="button" id="ev-host" onclick="goTo('s-welcome')">
+            <span class="hero-clinic-name">경륜재</span>
+            <i data-lucide="chevron-right"></i>
+          </button>
+          <span class="badge badge-sm badge-weak-neutral" id="ev-members-only" hidden>회원 전용</span>
+        </div>
         <h1 class="hero-headline">10월 경륜재 정기 모임</h1>
         <p class="hero-schedule">
           <i data-lucide="calendar-check"></i>
@@ -1140,7 +1144,7 @@
       </div>
       <button class="club-row" type="button" id="ev-club-row" onclick="onClubRow()"></button>
       <div class="sticky-actions">
-        <button class="btn btn-lg btn-block btn-fill-primary" type="button" id="ev-apply" onclick="openApply()">신청하기</button>
+        <button class="btn btn-lg btn-block btn-fill-primary" type="button" id="ev-apply" onclick="onApplyTap()">신청하기</button>
         <button class="btn btn-lg btn-block btn-weak-primary" type="button" id="ev-mine" onclick="goTo('s-done')">내 신청</button>
         <button class="sticky-chat" type="button" aria-label="AI 상담">
           <i data-lucide="message-circle-question"></i>
@@ -1500,6 +1504,7 @@
       <div class="js-center">
         <span class="club-logo club-logo-64"></span>
         <h2 class="c-sheet-title" id="js-ask-title">경륜재 회원으로도 가입할까요?</h2>
+        <p class="text-body js-desc" id="js-ask-desc" hidden>경륜재에 가입할까요?</p>
         <div class="js-actions">
           <button class="btn btn-lg btn-block btn-fill-primary" type="button" id="js-ask-join" onclick="expandToForm()">가입하기</button>
           <button class="btn btn-lg btn-block btn-weak-dark" type="button" id="js-ask-later" onclick="closeJoin()">다음에 할게요</button>
@@ -1652,6 +1657,10 @@
     <span>승인제</span>
     <input class="toggle" type="checkbox" id="dp-approval-toggle" onchange="onApprovalToggle(this)" aria-label="승인제">
   </div>
+  <div class="dp-toggle-row">
+    <span>회원 전용 행사</span>
+    <input class="toggle" type="checkbox" id="dp-members-only-toggle" onchange="onMembersOnlyToggle(this)" aria-label="회원 전용 행사">
+  </div>
 
   <div class="dp-buttons">
     <button class="btn btn-md btn-line-dark" type="button" onclick="resetScenario(state.scenario)"><i data-lucide="rotate-ccw"></i>처음부터</button>
@@ -1678,7 +1687,9 @@
     { id: 'already-pending', label: '이미 승인 대기인 사람이 신청',   set: { membership: 'pending' } },
     { id: 'revisit-applied', label: '같은 이벤트 재방문',           set: { applied: true, count: 4, eventData: SAMPLE_EVENT } },
     { id: 'rejected',        label: '가입 거절됨 → 다시 신청',       set: { membership: 'rejected', applied: true, count: 4, eventData: SAMPLE_EVENT }, screen: 's-welcome' },
-    { id: 'visitor-members', label: '방문자 · 멤버 탭 보고 가입',  set: {}, screen: 's-welcome' }
+    { id: 'visitor-members', label: '방문자 · 멤버 탭 보고 가입',  set: {}, screen: 's-welcome' },
+    { id: 'members-only-approval', label: '회원 전용 행사 · 승인제',   set: { eventMembersOnly: true, approval: true } },
+    { id: 'members-only-instant',  label: '회원 전용 행사 · 즉시 가입', set: { eventMembersOnly: true, approval: false } }
   ];
   function findScenario(id) {
     for (var i = 0; i < SCENARIOS.length; i++) if (SCENARIOS[i].id === id) return SCENARIOS[i];
@@ -1687,7 +1698,7 @@
 
   function freshState(id) {
     var scn = findScenario(id);
-    var s = { scenario: scn.id, approval: true, membership: 'none', applied: false, count: 3, eventData: null, screen: scn.screen || 's-event' };
+    var s = { scenario: scn.id, approval: true, eventMembersOnly: false, membership: 'none', applied: false, count: 3, eventData: null, screen: scn.screen || 's-event' };
     for (var k in scn.set) s[k] = scn.set[k];
     return s;
   }
@@ -1813,6 +1824,7 @@
     document.getElementById('ev-count').textContent = state.count + '명';
     document.getElementById('ev-apply').hidden = state.applied;
     document.getElementById('ev-mine').hidden = !state.applied;
+    document.getElementById('ev-members-only').hidden = !state.eventMembersOnly;
 
     // 모임 상태 행
     document.getElementById('ev-club-row').innerHTML = clubRowHTML();
@@ -1852,10 +1864,18 @@
   /* ══════════════════════════════════════════
      이벤트 신청
      ══════════════════════════════════════════ */
-  function openApply() {
-    ['ap-name', 'ap-phone'].forEach(function (id) {
-      var el = document.getElementById(id); el.value = ''; el.classList.remove('is-error');
-    });
+  // 회원 전용 행사 — 회원만 바로 신청 폼, 가입 전·거절은 가입을 물어보고, 승인 대기는 토스트
+  function onApplyTap() {
+    var m = state.membership;
+    if (!state.eventMembersOnly || m === 'member') openApply();
+    else if (m === 'pending') toast('승인되면 신청할 수 있어요');
+    else openJoinAsk('membersOnly');
+  }
+  // prefill: 가입 폼에서 이어서 신청할 때 이름·전화번호를 채운다
+  function openApply(prefill) {
+    document.getElementById('ap-name').value = prefill ? prefill.name : '';
+    document.getElementById('ap-phone').value = prefill ? prefill.phone : '';
+    ['ap-name', 'ap-phone'].forEach(function (id) { document.getElementById(id).classList.remove('is-error'); });
     document.querySelectorAll('input[name="ap-slot"]').forEach(function (r) { r.checked = false; });
     document.getElementById('ap-agree').checked = false;
     clearAgreeError('ap');
@@ -1949,9 +1969,15 @@
     document.getElementById('join-overlay').classList.add('is-open');
     sheet.classList.add('is-open');
   }
-  // fromWelcome: 모임 페이지에서 바로 물어볼 때 — 이벤트 맥락이 없으니 '회원으로'
-  function openJoinAsk(fromWelcome) {
-    document.getElementById('js-ask-title').textContent = fromWelcome === true ? '경륜재 회원으로 가입할까요?' : '경륜재 회원으로도 가입할까요?';
+  // ctx: 'welcome'(모임 페이지 — 이벤트 맥락 없음) · 'membersOnly'(회원 전용 행사 신청) · 없음(이벤트 신청 직후)
+  var joinContext = null;
+  function openJoinAsk(ctx) {
+    joinContext = (typeof ctx === 'string') ? ctx : null;
+    var title = '경륜재 회원으로도 가입할까요?';
+    if (joinContext === 'welcome') title = '경륜재 회원으로 가입할까요?';
+    if (joinContext === 'membersOnly') title = '회원만 신청할 수 있어요';
+    document.getElementById('js-ask-title').textContent = title;
+    document.getElementById('js-ask-desc').hidden = (joinContext !== 'membersOnly');
     prefillJoin();
     sheet.style.height = '';
     showView('ask');
@@ -1960,10 +1986,11 @@
   // 가려진 멤버 행·게시글 — 가입 전·거절이면 가입을 물어보고, 승인 대기면 토스트, 회원이면 그대로
   function onMemberPeek() {
     var m = state.membership;
-    if (m === 'none' || m === 'rejected') openJoinAsk(true);
+    if (m === 'none' || m === 'rejected') openJoinAsk('welcome');
     else if (m === 'pending') toast('승인되면 볼 수 있어요');
   }
   function openJoin() {
+    joinContext = null;
     prefillJoin();
     showView('form');
     sheet.style.height = fullHeight() + 'px';
@@ -2015,7 +2042,7 @@
       icon.innerHTML = '<i data-lucide="check"></i>';
       document.getElementById('jr-title').textContent = '경륜재 회원이 되었어요';
       document.getElementById('jr-desc').hidden = true;
-      document.getElementById('jr-primary').textContent = '회원 메뉴로 가기';
+      document.getElementById('jr-primary').textContent = joinContext === 'membersOnly' ? '이어서 신청하기' : '회원 메뉴로 가기';
     }
     render();
     save();
@@ -2024,6 +2051,10 @@
 
   function onResultPrimary() {
     closeJoin();
+    if (state.membership === 'member' && joinContext === 'membersOnly') {
+      openApply({ name: document.getElementById('jf-name').value.trim(), phone: document.getElementById('jf-phone').value.trim() });
+      return;
+    }
     if (state.membership === 'pending') setTimeout(function () { openMypage('community'); }, 200);
     else goTo('s-member');
   }
@@ -2070,6 +2101,7 @@
     document.getElementById('dp-applied').textContent = state.applied ? '신청함' : '미신청';
     document.getElementById('dp-approval').textContent = state.approval ? '승인제' : '즉시 가입';
     document.getElementById('dp-approval-toggle').checked = state.approval;
+    document.getElementById('dp-members-only-toggle').checked = !!state.eventMembersOnly;
     document.querySelectorAll('#dp-scn input').forEach(function (r) { r.checked = r.value === state.scenario; });
   }
   function buildPanel() {
@@ -2078,6 +2110,7 @@
     }).join('');
   }
   function onApprovalToggle(chk) { state.approval = chk.checked; render(); save(); }
+  function onMembersOnlyToggle(chk) { state.eventMembersOnly = chk.checked; render(); save(); }
 
   function closeAllSheets() {
     closeJoin(); closeMypage();
@@ -2322,6 +2355,41 @@
       await sleep(1200, tk);
       await tap('#s-c-board .c-post-card:nth-child(2)', tk);
       await sleep(1600, tk);
+    },
+    // 회원 전용 행사 · 승인제 — 신청하기 → 가입 물어보기 → 가입 신청 → 다시 신청하기는 토스트
+    'members-only-approval': async function (tk) {
+      await sleep(600, tk);
+      await tap('#ev-apply', tk);
+      await sleep(900, tk);
+      await tap('#js-ask-join', tk);
+      await sleep(900, tk);
+      await typeInto('#jf-name', SAMPLE_EVENT.name, tk);
+      await tap('#jf-agree-label', tk);
+      await tap('#jf-submit', tk);
+      await sleep(1400, tk);
+      await tap('#jr-close', tk);
+      await sleep(900, tk);
+      await tap('#ev-apply', tk);
+      await sleep(1800, tk);
+    },
+    // 회원 전용 행사 · 즉시 가입 — 가입 후 이어서 신청 (이름·전화 채워짐)
+    'members-only-instant': async function (tk) {
+      await sleep(600, tk);
+      await tap('#ev-apply', tk);
+      await sleep(900, tk);
+      await tap('#js-ask-join', tk);
+      await sleep(900, tk);
+      await typeInto('#jf-name', SAMPLE_EVENT.name, tk);
+      await typeInto('#jf-phone', SAMPLE_EVENT.phone, tk);
+      await tap('#jf-agree-label', tk);
+      await tap('#jf-submit', tk);
+      await sleep(1400, tk);
+      await tap('#jr-primary', tk);
+      await sleep(1000, tk);
+      await tap('#ap-slot-all', tk);
+      await tap('#ap-agree-label', tk);
+      await tap('#ap-submit', tk);
+      await sleep(1800, tk);
     }
   };
 
