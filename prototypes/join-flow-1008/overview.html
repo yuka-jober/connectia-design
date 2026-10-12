@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>커뮤니티 가입 흐름 개편</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: 한 줄 읽기 폭의 문서 + 시나리오마다 "폰 영상 | 경로" 카드. Connectia 토큰 팔레트를 그대로 씀 */
+:root {
+  --bg: #f2f2f7;
+  --surface: #ffffff;
+  --surface-sub: #ecedf5;
+  --text: #111318;
+  --text-sub: #252638;
+  --muted: #767985;
+  --border: #d8d9e7;
+  --accent: #6b6be1;
+  --accent-ink: #4242a6;
+  --accent-soft: #ededfb;
+  --warn-soft: #fdf1e3;
+  --warn-ink: #9a5b12;
+  --font: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --r: 14px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111318; --surface: #1a1c24; --surface-sub: #23252f; --text: #f2f2f7; --text-sub: #d8d9e7;
+    --muted: #9a9cab; --border: #2f3240; --accent: #8a8af0; --accent-ink: #b9b9f7; --accent-soft: #23234a;
+    --warn-soft: #3a2a14; --warn-ink: #f0c48a; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111318; --surface: #1a1c24; --surface-sub: #23252f; --text: #f2f2f7; --text-sub: #d8d9e7;
+  --muted: #9a9cab; --border: #2f3240; --accent: #8a8af0; --accent-ink: #b9b9f7; --accent-soft: #23234a;
+  --warn-soft: #3a2a14; --warn-ink: #f0c48a; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 15px; line-height: 1.65; }
+.wrap { max-width: 1040px; margin: 0 auto; padding-inline: 20px; padding-block: 48px 96px; display: flex; flex-direction: column; gap: 64px; }
+h1, h2, h3 { text-wrap: balance; margin: 0; line-height: 1.3; }
+h1 { font-size: clamp(28px, 4.4vw, 40px); font-weight: 700; letter-spacing: -0.02em; }
+h2 { font-size: 24px; font-weight: 700; letter-spacing: -0.01em; }
+h3 { font-size: 17px; font-weight: 600; }
+p { margin: 0; }
+.eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+.lead { font-size: 17px; color: var(--text-sub); max-width: 64ch; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px 16px; color: var(--muted); font-size: 13px; }
+.meta b { color: var(--text-sub); font-weight: 600; }
+header { display: flex; flex-direction: column; gap: 16px; }
+section { display: flex; flex-direction: column; gap: 24px; }
+.sec-head { display: flex; flex-direction: column; gap: 8px; max-width: 70ch; }
+.sec-head p { color: var(--text-sub); }
+
+/* 크게 바뀌는 점 */
+.changes { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+.change { background: var(--surface); border-radius: var(--r); padding: 20px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.change p { color: var(--text-sub); font-size: 14px; }
+.change b { color: var(--text); font-weight: 600; }
+.change.is-key { grid-column: 1 / -1; background: var(--accent-soft); }
+.change.is-key h3 { color: var(--accent-ink); font-size: 19px; }
+
+/* 문제 → 해결 */
+.pairs { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.pair { background: var(--surface); border-radius: var(--r); padding: 20px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.pair .was { color: var(--muted); font-size: 14px; }
+.pair .was::before { content: "지금 · "; font-weight: 600; }
+.pair .now { font-weight: 600; color: var(--text); }
+.pair .now::before { content: "바뀐 뒤 · "; color: var(--accent); }
+
+/* 표 */
+.table-wrap { overflow-x: auto; background: var(--surface); border-radius: var(--r); }
+table { border-collapse: collapse; width: 100%; min-width: 620px; font-size: 14px; }
+th, td { text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--border); vertical-align: top; }
+thead th { font-size: 12px; font-weight: 600; color: var(--muted); background: var(--surface-sub); letter-spacing: 0.02em; }
+tbody th { font-weight: 600; white-space: nowrap; }
+tbody tr:last-child th, tbody tr:last-child td { border-bottom: 0; }
+.rule { background: var(--accent-soft); color: var(--accent-ink); border-radius: var(--r); padding: 16px 20px; font-weight: 600; }
+
+/* 시나리오 카드 */
+.scenarios { display: grid; grid-template-columns: 1fr; gap: 16px; }
+.sc { background: var(--surface); border-radius: var(--r); padding: 24px; display: grid; grid-template-columns: minmax(0, 340px) 1fr; gap: 40px; align-items: start; min-width: 0; }
+.sc video { width: 100%; max-width: 100%; aspect-ratio: 780 / 1688; border-radius: 10px; background: var(--surface-sub); display: block; }
+.sc-body { display: flex; flex-direction: column; gap: 12px; min-width: 0; padding-top: 8px; }
+.sc-body h3 { font-size: 20px; }
+.sc .steps { font-size: 15px; gap: 10px; }
+.sc-num { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.sc-sub { color: var(--muted); font-size: 13px; }
+.steps { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: 14px; color: var(--text-sub); counter-reset: s; }
+.steps li { display: grid; grid-template-columns: 20px 1fr; gap: 6px; }
+.steps li::before { counter-increment: s; content: counter(s); font-family: var(--mono); font-size: 11px; color: var(--accent); padding-top: 3px; }
+.q { color: var(--text); font-weight: 600; }
+
+/* 개발 전달 */
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+.box { background: var(--surface); border-radius: var(--r); padding: 20px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.box ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 8px; font-size: 14px; color: var(--text-sub); }
+.box.warn { background: var(--warn-soft); }
+.box.warn h3 { color: var(--warn-ink); }
+code, .path { font-family: var(--mono); font-size: 12.5px; background: var(--surface-sub); padding: 2px 6px; border-radius: 6px; word-break: break-all; }
+.files { display: flex; flex-direction: column; gap: 8px; font-size: 14px; color: var(--text-sub); }
+.toc { display: flex; flex-wrap: wrap; gap: 8px; }
+.toc a { color: var(--accent-ink); background: var(--accent-soft); text-decoration: none; padding: 6px 12px; border-radius: 999px; font-size: 13px; font-weight: 500; }
+.toc a:focus-visible, video:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (max-width: 560px) {
+  .scenarios { grid-template-columns: 1fr; }
+  .sc { grid-template-columns: 1fr; gap: 16px; padding: 16px; }
+  .sc video { max-width: 280px; margin-inline: auto; }
+}
+</style>
+<style>body{margin:0} img{max-width:100%} [hidden]{display:none!important}</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Connectia · 디자인 리뷰</span>
+    <h1>커뮤니티 가입 흐름 개편</h1>
+    <p class="lead">이벤트를 신청한 사람이 모임 회원이 되고, 회원 메뉴에 들어가기까지를 하나의 흐름으로 이었어요. 운영자가 회원·방문자에게 보이는 화면을 직접 확인할 수 있는 관리자 모드도 함께 정리했어요.</p>
+    <div class="meta"><span><b>작성</b> 2026.10.08</span><span><b>상태</b> 팀 리뷰 대기</span><span><b>예시 모임</b> 경륜재 · 서울 파운더스 테이블</span></div>
+    <nav class="toc" aria-label="목차">
+      <a href="#changes">크게 바뀌는 점</a><a href="#problem">왜 바꾸나</a><a href="#viewers">누가 무엇을 보나</a><a href="#join">가입 흐름 시나리오</a><a href="#admin">관리자 모드 시나리오</a><a href="#dev">개발 전달</a>
+    </nav>
+  </header>
+
+  <section id="changes">
+    <div class="sec-head">
+      <h2>크게 바뀌는 점</h2>
+    </div>
+    <ol class="changes">
+      <li class="change is-key"><h3>가입하지 않은 사람도 회원 메뉴를 봐요</h3><p>홈·멤버·게시판·행사 탭이 모두 보이고, 멤버·게시판 내용만 일부 가려져요. 가려진 걸 누르면 <b>로그인하지 않았으면 로그인 창</b>, <b>로그인했지만 회원이 아니면 가입 모달</b>이 떠요.</p></li>
+      <li class="change"><h3>이벤트 신청이 곧 가입 입구예요</h3><p>신청 완료 직후 "회원으로도 가입할까요?" 모달이 뜨고, 행사 때 입력한 이름·전화번호가 가입 폼에 채워져요.</p></li>
+      <li class="change"><h3>가입 상태가 어디서나 같아요</h3><p>가입 전 / 승인 대기 / 회원 / 거절을 이벤트 페이지, 모임 페이지, 가입한 커뮤니티가 똑같이 보여줘요. 새로고침해도 유지돼요.</p></li>
+      <li class="change"><h3>운영자도 기본은 회원 화면이에요</h3><p>[관리]를 눌러야 관리자 모드로 들어가요. 관리자 모드에서 [방문자로 보기]로 가입 전 사람의 화면도 확인할 수 있어요.</p></li>
+      <li class="change"><h3>공개 설정이 하나로 줄었어요</h3><p>항목마다 고르던 공개 범위와 멤버별 항목 토글을 없앴어요. 연락처(전화·이메일)만 운영자가 보고, 본인이 공개를 켜면 멤버에게도 보여요.</p></li>
+      <li class="change"><h3>운영자가 등록한 멤버는 '인증 전' 표시</h3><p>명단으로 미리 등록하고 아직 본인 인증을 하지 않은 멤버에게 뱃지가 붙어요.</p></li>
+    </ol>
+  </section>
+
+  <section id="problem">
+    <div class="sec-head">
+      <h2>왜 바꾸나</h2>
+      <p>실서비스 녹화(10/7)에서 사용자가 이벤트 신청 → 가입 신청 → 앱 홈을 오가며 4분 동안 회원 메뉴를 찾지 못했어요.</p>
+    </div>
+    <div class="pairs">
+      <div class="pair"><p class="was">신청 완료 화면에 [닫기]만 있고 모임 가입으로 이어지지 않음</p><p class="now">신청 완료 직후 "회원으로도 가입할까요?" 모달</p></div>
+      <div class="pair"><p class="was">행사 때 쓴 이름·전화번호를 가입 신청에서 다시 입력</p><p class="now">가입 폼에 자동으로 채워짐</p></div>
+      <div class="pair"><p class="was">'가입 대기중'만 보이고 다음 행동이 없어 40초 정지</p><p class="now">결과 안내 + [내 모임 보기] / [회원 메뉴로 가기]</p></div>
+      <div class="pair"><p class="was">가입한 커뮤니티에 대기 중 모임이 없고, 재방문하면 상태가 사라짐</p><p class="now">모든 화면이 같은 가입 상태를 보여줌</p></div>
+      <div class="pair"><p class="was">운영자 화면에 관리 요소가 섞여 회원이 보는 화면을 알 수 없음</p><p class="now">[관리]로 들어가는 관리자 모드 + 방문자 화면 미리보기</p></div>
+      <div class="pair"><p class="was">비회원은 모임 안에 뭐가 있는지 볼 수 없음</p><p class="now">탭은 모두 보이고 멤버·게시판 내용만 가림 → 누르면 가입 모달</p></div>
+    </div>
+  </section>
+
+  <section id="viewers">
+    <div class="sec-head">
+      <h2>누가 무엇을 보나</h2>
+      <p>화면 구조는 하나예요. 보는 사람에 따라 얼마나 보이는지만 달라져요.</p>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>탭</th><th>방문자 (가입 전·거절)</th><th>승인 대기</th><th>회원</th><th>운영자 (관리자 모드)</th></tr></thead>
+        <tbody>
+          <tr><th>상단</th><td>"○○에 초대받았어요" 띠 + [가입하기]</td><td>띠에 '승인 대기'</td><td>띠 없음</td><td>어두운 상단 바 "관리자 모드"</td></tr>
+          <tr><th>홈</th><td>모임 페이지</td><td>모임 페이지</td><td>모임 페이지</td><td>모임 페이지</td></tr>
+          <tr><th>멤버</th><td>이름 일부(김*연)·사진·소속 가림 → 누르면 가입 모달 (비로그인은 로그인 창)</td><td>가림 → "승인되면 볼 수 있어요"</td><td>전부 (연락처는 본인이 공개한 사람만)</td><td>전부 + 멤버 추가·가입 대기·편집</td></tr>
+          <tr><th>게시판</th><td>제목만, 본문 흐림 → 가입 모달 (비로그인은 로그인 창)</td><td>흐림 → 토스트</td><td>전부 (권한에 따라 글쓰기)</td><td>전부 + 글쓰기</td></tr>
+          <tr><th>행사</th><td>공개 · 신청 가능</td><td>공개</td><td>공개</td><td>+ 만들기</td></tr>
+          <tr><th>설정</th><td>없음</td><td>없음</td><td>내 프로필 · 모임 나가기</td><td>통계 · 모임 설정 · 멤버/초대 관리 · 권한</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="rule">연락처 규칙 하나: 받은 정보는 멤버끼리 다 보여요. 전화번호·이메일만 운영자가 보고, 본인이 "연락처를 멤버에게 공개"를 켜면 멤버에게도 보여요.</p>
+  </section>
+
+  <section id="join">
+    <div class="sec-head">
+      <span class="eyebrow">프로토타입 1 · join-flow</span>
+      <h2>가입 흐름 시나리오</h2>
+      <p>예시: 모임 '경륜재', 이벤트 '10월 경륜재 정기 모임'. 영상마다 첫 2초는 시나리오 제목이에요.</p>
+    </div>
+    <div class="scenarios">
+      <article class="sc"><video src="videos/01-basic-approval.mp4#t=0.1" controls muted playsinline preload="metadata"></video><div class="sc-body"><span class="sc-num">01</span><h3>기본 경로 · 승인제 모임</h3><ol class="steps">
+        <li>이벤트 [신청하기] → 이름·전화번호·일정 → [신청 완료]</li>
+        <li><span><span class="q">"경륜재 회원으로도 가입할까요?"</span> → [가입하기]</span></li>
+        <li>가입 폼에 이름·전화번호가 채워져 있음, 이메일은 계정값</li>
+        <li>동의 없이 누르면 체크박스에 에러 → 동의 → [가입 신청]</li>
+        <li><span><span class="q">"운영자 승인 후 회원 메뉴를 이용할 수 있어요"</span> → [내 모임 보기]</span></li>
+        <li>가입한 커뮤니티에 '승인 대기' → 새로고침해도 유지</li></ol></div></article>
+      <article class="sc"><video src="videos/02-basic-instant.mp4#t=0.1" controls muted playsinline preload="metadata"></video><div class="sc-body"><span class="sc-num">02</span><h3>기본 경로 · 즉시 가입 모임</h3><ol class="steps">
+        <li>이벤트 신청 → 가입 모달 → [가입하기]</li>
+        <li>동의 → [가입하기]</li>
+        <li><span><span class="q">"경륜재 회원이 되었어요"</span> → [회원 메뉴로 가기]</span></li>
+        <li>하단 탭바 5개(설정 포함)로 바로 이동</li></ol></div></article>
+      <article class="sc"><video src="videos/03-later-revisit.mp4#t=0.1" controls muted playsinline preload="metadata"></video><div class="sc-body"><span class="sc-num">03</span><h3>다음에 할게요 → 다시 방문</h3><ol class="steps">
+        <li>가입 모달에서 [다음에 할게요] → 모달만 닫힘</li>
+        <li>이벤트 재방문: [내 신청] + "경륜재 가입하기 ›"</li>
+        <li>모임 페이지 상단 [가입하기] → 가입 → 승인 대기</li></ol></div></article>
+      <article class="sc"><video src="videos/04-already-member.mp4#t=0.1" controls muted playsinline preload="metadata"></video><div class="sc-body"><span class="sc-num">04</span><h3>이미 회원인 사람</h3><ol class="steps">
+        <li>이벤트 신청 → 가입 모달 없음</li>
+        <li>완료 화면의 [회원 메뉴로 가기]</li></ol></div></article>
+      <article class="sc"><video src="videos/05-already-pending.mp4#t=0.1" controls muted playsinline preload="metadata"></video><div class="sc-body"><span class="sc-num">05</span><h3>이미 승인 대기 중인 사람</h3><ol class="steps">
+        <li>이벤트 신청 → 가입 모달 없음</li>
+        <li>완료 화면에 "경륜재 · 승인 대기" 행 → 모임 페이지</li></ol></div></article>
+      <article class="sc"><video src="videos/06-revisit-applied.mp4#t=0.1" controls muted playsinline preload="metadata"></video><div class="sc-body"><span class="sc-num">06</span><h3>이미 신청한 이벤트 재방문</h3><ol class="steps">
+        <li>[신청하기] 대신 [내 신청] → 중복 신청 방지</li>
+        <li>신청 내용 확인</li></ol></div></article>
+      <article class="sc"><video src="videos/07-rejected.mp4#t=0.1" controls muted playsinline preload="metadata"></video><div class="sc-body"><span class="sc-num">07</span><h3>가입이 거절된 사람</h3><ol class="steps">
+        <li>모임 페이지 상단 [다시 신청하기]</li>
+        <li>가입 폼 → 승인 대기 → [내 모임 보기]</li></ol></div></article>
+      <article class="sc"><video src="videos/08-visitor-members.mp4#t=0.1" controls muted playsinline preload="metadata"></video><div class="sc-body"><span class="sc-num">08</span><h3>방문자가 멤버 탭을 보고 가입</h3><ol class="steps">
+        <li>가입 전에도 탭바 4개(홈·멤버·게시판·행사)</li>
+        <li>멤버 탭: 김*연처럼 가려진 목록 → 누르면 가입 모달</li>
+        <li>가입 신청 후 다시 누르면 <span class="q">"승인되면 볼 수 있어요"</span></li>
+        <li>게시판: 제목만 보이고 본문은 흐림</li></ol><p class="sc-sub">영상은 로그인한 방문자 기준이에요. 로그인하지 않았으면 가입 모달 대신 로그인 창이 먼저 떠요.</p></div></article>
+    </div>
+  </section>
+
+  <section id="admin">
+    <div class="sec-head">
+      <span class="eyebrow">프로토타입 2 · 커뮤니티 운영자</span>
+      <h2>관리자 모드 시나리오</h2>
+      <p>운영자도 기본은 회원 화면이에요. 상단 [관리]를 누르면 상단 바가 어두워지며 관리자 모드로 들어가고, [완료]로 나와요.</p>
+    </div>
+    <div class="scenarios">
+      <article class="sc"><video src="../community-admin-mode-1008/videos/01-mode-switch.mp4#t=0.1" controls muted playsinline preload="metadata"></video><div class="sc-body"><span class="sc-num">01</span><h3>회원 화면 ↔ 관리자 모드</h3><ol class="steps">
+        <li>회원 화면 멤버 탭: 검색·목록만</li>
+        <li>[관리] → 멤버 추가·가입 대기 2명·칩 편집이 나타남</li>
+        <li>설정 탭: 관리 메뉴와 권한 → [완료]로 복귀</li></ol></div></article>
+      <article class="sc"><video src="../community-admin-mode-1008/videos/02-write-permission.mp4#t=0.1" controls muted playsinline preload="metadata"></video><div class="sc-body"><span class="sc-num">02</span><h3>글쓰기 권한이 회원 화면에 반영</h3><ol class="steps">
+        <li>관리자 모드 › 설정 › 글쓰기 권한 '관리자만'</li>
+        <li>[완료] → 회원 화면 게시판에 [글쓰기] 없음</li>
+        <li>'일반 멤버 이상'으로 되돌리면 다시 보임</li></ol></div></article>
+      <article class="sc"><video src="../community-admin-mode-1008/videos/03-contact-public.mp4#t=0.1" controls muted playsinline preload="metadata"></video><div class="sc-body"><span class="sc-num">03</span><h3>연락처는 공개한 사람만</h3><ol class="steps">
+        <li>회원 화면: 박서연(비공개) 상세에 이메일 없음</li>
+        <li>이준호(공개) 상세에는 이메일 있음</li>
+        <li>관리자 모드에선 박서연도 전부 보임</li></ol></div></article>
+      <article class="sc"><video src="../community-admin-mode-1008/videos/04-my-contact.mp4#t=0.1" controls muted playsinline preload="metadata"></video><div class="sc-body"><span class="sc-num">04</span><h3>내 연락처 공개하기</h3><ol class="steps">
+        <li>설정 › 이 모임에서 내 프로필</li>
+        <li>"연락처를 멤버에게 공개" 토글 켜기 (기본 꺼짐)</li>
+        <li>내 멤버 상세에 이메일이 나타남</li></ol></div></article>
+      <article class="sc"><video src="../community-admin-mode-1008/videos/05-unverified.mp4#t=0.1" controls muted playsinline preload="metadata"></video><div class="sc-body"><span class="sc-num">05</span><h3>운영자가 등록한 인증 전 멤버</h3><ol class="steps">
+        <li>목록과 상세에 '인증 전' 뱃지</li>
+        <li>관리자 모드: 로그인하면 자동 연결, 전화번호까지</li>
+        <li>회원 화면: 뱃지와 기본 정보만</li></ol></div></article>
+      <article class="sc"><video src="../community-admin-mode-1008/videos/06-visitor-preview.mp4#t=0.1" controls muted playsinline preload="metadata"></video><div class="sc-body"><span class="sc-num">06</span><h3>방문자 화면 미리보기</h3><ol class="steps">
+        <li>관리자 모드 › [방문자로 보기]</li>
+        <li>초대 띠 + 탭 4개, 멤버 이름 가림, 게시글 본문 흐림</li>
+        <li>[닫기]로 관리자 모드 복귀</li></ol></div></article>
+      <article class="sc"><video src="../community-admin-mode-1008/videos/07-leave.mp4#t=0.1" controls muted playsinline preload="metadata"></video><div class="sc-body"><span class="sc-num">07</span><h3>모임 나가기</h3><ol class="steps">
+        <li>회원 화면 설정: 내 프로필 + 모임 나가기만</li>
+        <li><span><span class="q">"모임에서 나갈까요?"</span> → [나가기]</span></li></ol></div></article>
+    </div>
+  </section>
+
+  <section id="dev">
+    <div class="sec-head">
+      <h2>개발 전달</h2>
+      <p>프로토타입은 아래 버그가 고쳐졌다는 전제로 동작해요.</p>
+    </div>
+    <div class="two">
+      <div class="box warn"><h3>먼저 고쳐야 할 버그</h3><ul>
+        <li>새로고침하면 '가입 대기' 상태가 사라지고 [가입하기]로 돌아감</li>
+        <li>신청 직후 이벤트 페이지가 갱신되지 않아 같은 이벤트가 2번 신청됨 (서버에서도 중복 차단 필요)</li>
+        <li>가입한 커뮤니티에 승인 대기 모임이 안 보임</li>
+      </ul></div>
+      <div class="box"><h3>구현에 필요한 것</h3><ul>
+        <li>계정×모임마다 가입 상태 하나: 가입 전 / 승인 대기 / 회원 / 거절. 모든 화면이 이 값을 읽음</li>
+        <li>가입 모달은 '가입 전'일 때만 자동 노출</li>
+        <li>이벤트 입력값(이름·전화번호)을 계정 이름보다 우선해 프리필</li>
+        <li>승인·거절 시 알림 발송</li>
+        <li>연락처(전화·이메일)는 운영자 고정 + 본인 공개 토글</li>
+      </ul></div>
+      <div class="box"><h3>함께 정할 정책</h3><ul>
+        <li>거절 후 재신청 횟수·기간 제한</li>
+        <li>비로그인 신청자의 가입: 인증 후 프리필된 폼으로 복귀 (개발 사양서 v1.0과 맞춤 필요)</li>
+        <li>회원 전용 행사 / 공개 행사 구분, 명단 동문의 인증 후 즉시 연결 — 다음 프로토타입에서 다룸</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><h2>파일</h2></div>
+    <div class="files">
+      <span>가입 흐름 <span class="path">review/join-flow.html</span></span>
+      <span>커뮤니티 운영자 <span class="path">review/community-mode-owner.html</span></span>
+      <span>개발 메모 <span class="path">prototypes/join-flow-1008/DEV-NOTES.md</span></span>
+    </div>
+  </section>
+</div>
+</body>
+</html>

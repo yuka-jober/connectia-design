@@ -1,0 +1,2369 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>이벤트 신청 → 모임 가입</title>
+<link rel="stylesheet" href="../../tokens.css">
+<link rel="stylesheet" href="../../components.css">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-base);
+    background: var(--color-surface-strong);
+    min-height: 100dvh;
+  }
+
+  /* ── 무대: 가운데 폰 프레임 + 오른쪽 데모 패널 ── */
+  .stage {
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 40px;
+    padding: 20px;
+  }
+
+  .frame {
+    width: 390px;
+    height: 844px;
+    max-height: calc(100dvh - 40px);
+    position: relative;
+    overflow: hidden;
+    flex-shrink: 0;
+    border-radius: var(--r-xl);
+    box-shadow: var(--shadow-4);
+    background: var(--color-surface);
+    transform: translateZ(0); /* 오버레이(position:fixed)를 프레임 안에 가둠 */
+    transition: opacity var(--motion-standard) var(--ease-standard);
+  }
+  .frame.is-reloading { opacity: 0; }
+
+  @media (max-width: 899px) { .demo-panel { display: none !important; } }
+  @media (max-width: 439px) {
+    .stage { padding: 0; }
+    .frame { width: 100vw; height: 100dvh; max-height: none; border-radius: 0; }
+  }
+  body.hide-panel .demo-panel { display: none; }
+
+  /* ── 화면 전환 ── */
+  .screen { position: absolute; inset: 0; display: none; flex-direction: column; background: var(--color-surface); }
+  .screen.on { display: flex; }
+  .screen.c-screen { background: var(--color-bg); }
+
+  i[data-lucide], [data-lucide] { display: inline-flex; flex-shrink: 0; }
+  svg.lucide { flex-shrink: 0; }
+  [hidden] { display: none !important; }
+
+  /* ── 모임 로고 (가입 시트·상태 행) ── */
+  .club-logo {
+    display: block;
+    flex-shrink: 0;
+    background-image: url('../../assets/krj-logo.svg');
+    background-size: cover;
+    background-position: center;
+    border-radius: var(--r-xs);
+  }
+  .club-logo-24 { width: 24px; height: 24px; }
+  .club-logo-32 { width: 32px; height: 32px; border-radius: var(--r-sm); }
+  .club-logo-64 { width: 64px; height: 64px; border-radius: var(--r-md); }
+
+  /* ── 모임 상태 행 (이벤트 sticky·신청 완료에 끼워 넣음) ── */
+  .club-row {
+    display: flex; align-items: center; gap: 8px;
+    width: 100%;
+    padding: 8px 12px;
+    border: none;
+    border-radius: var(--r-sm);
+    background: var(--color-surface-sub);
+    font-family: var(--font-base);
+    text-align: left;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: background var(--motion-fast) var(--ease-standard);
+  }
+  .club-row:hover { background: var(--color-surface-strong); }
+  .club-row.on-bg { background: var(--color-surface); padding: 12px 16px; border-radius: var(--r-md); }
+  .club-row.on-bg:hover { background: var(--color-surface-sub); }
+  .club-row-text {
+    flex: 1; min-width: 0;
+    font-size: var(--fs-label);
+    line-height: var(--lh-label);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text-sub);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .club-row-text .muted { font-weight: var(--fw-regular); color: var(--color-text-muted); }
+  .club-row svg.lucide { width: 16px; height: 16px; color: var(--color-text-muted); }
+
+  /* =====================================================
+     이벤트 랜딩 · 신청 · 완료
+     ← review/event-landing-question-card.html (screen-landing / screen-apply / screen-done)
+     ===================================================== */
+  .topbar {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 8px;
+    pointer-events: none;
+  }
+  .topbar .icon-btn {
+    pointer-events: auto;
+    background: var(--color-scrim);
+    border-radius: var(--r-full);
+    backdrop-filter: blur(var(--blur-veil)) saturate(140%);
+    -webkit-backdrop-filter: blur(var(--blur-veil)) saturate(140%);
+  }
+  .topbar .icon-btn:hover { background: var(--color-scrim-strong); }
+  .topbar .icon-btn i[data-lucide],
+  .topbar .icon-btn svg { color: var(--color-on-primary) !important; }
+  .topbar-actions { display: inline-flex; align-items: center; gap: 8px; }
+
+  .topbar-solid {
+    position: sticky; top: 0; z-index: 10;
+    display: flex; align-items: center; gap: 8px;
+    padding: 12px 8px;
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    flex-shrink: 0;
+  }
+  .topbar-solid .topbar-title {
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text);
+  }
+
+  /* 모임 상태 행이 끼어 sticky가 한 줄 늘어난 만큼 스크롤 여백을 더 준다 */
+  .scroll-body { flex: 1; overflow-y: auto; background: var(--color-surface); padding-bottom: 168px; }
+  .sticky-bar {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    padding: 12px 20px calc(20px + env(safe-area-inset-bottom));
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+    display: flex; flex-direction: column; gap: 8px;
+    z-index: 5;
+  }
+  .sticky-meta {
+    display: flex; align-items: center; justify-content: center; gap: 4px;
+    font-size: var(--fs-caption); color: var(--color-text-muted);
+  }
+  .sticky-meta strong { color: var(--color-text-sub); font-weight: var(--fw-semibold); }
+  .sticky-actions { display: flex; align-items: stretch; gap: 8px; }
+  .sticky-chat {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    border-radius: var(--r-md);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    color: var(--color-primary);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: background var(--motion-fast) var(--ease-standard);
+  }
+  .sticky-chat:hover { background: var(--color-surface-sub); }
+  .sticky-chat i[data-lucide], .sticky-chat svg { width: 22px; height: 22px; }
+
+  .hero {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    flex-shrink: 0;
+    background: var(--color-primary-light);
+  }
+  .hero-slider {
+    width: 100%; height: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    display: flex;
+    scrollbar-width: none;
+  }
+  .hero-slider::-webkit-scrollbar { display: none; }
+  .hero-slide {
+    flex: 0 0 100%;
+    width: 100%; height: 100%;
+    scroll-snap-align: start;
+    background-size: cover;
+    background-position: center;
+    background-color: var(--color-primary-light);
+    position: relative;
+  }
+  .hero-slide::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, transparent 50%, var(--color-scrim) 100%);
+    pointer-events: none;
+  }
+
+  .hero-info {
+    padding: 24px 20px 16px;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .hero-clinic-row {
+    display: inline-flex; align-items: center; gap: 4px;
+    align-self: flex-start;
+    background: none; border: none; padding: 0;
+    font-family: var(--font-base);
+    cursor: pointer;
+  }
+  .hero-clinic-name {
+    font-size: var(--fs-label); font-weight: var(--fw-semibold);
+    color: var(--color-text-sub);
+  }
+  .hero-clinic-row i[data-lucide],
+  .hero-clinic-row svg { width: 16px; height: 16px; color: var(--color-text-muted); }
+  .hero-headline {
+    font-size: var(--fs-display); font-weight: var(--fw-bold);
+    line-height: var(--lh-display); letter-spacing: var(--ls-display); color: var(--color-text);
+  }
+  .hero-schedule {
+    display: inline-flex; align-items: center; gap: 8px;
+    align-self: flex-start;
+    font-size: var(--fs-label);
+    color: var(--color-text-sub);
+    font-weight: var(--fw-medium);
+  }
+  .hero-schedule i[data-lucide],
+  .hero-schedule svg { width: 16px; height: 16px; color: var(--color-text-muted); }
+  .hero-schedule-label { color: var(--color-text-muted); }
+  .hero-schedule-date,
+  .hero-schedule-time { color: var(--color-text-sub); font-weight: var(--fw-medium); }
+
+  .section-divider { height: 8px; background: var(--color-bg); flex-shrink: 0; }
+  .section { padding: 24px 20px; display: flex; flex-direction: column; gap: 16px; }
+  .section-title {
+    font-size: var(--fs-heading);
+    font-weight: var(--fw-bold);
+    color: var(--color-text);
+    letter-spacing: var(--ls-heading);
+  }
+
+  .date-card {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--color-surface-sub);
+    border-radius: var(--r-md);
+    padding: 16px 20px;
+  }
+  .date-card i[data-lucide],
+  .date-card svg { width: 20px; height: 20px; color: var(--color-primary); }
+  .date-card-text { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+  .date-card-label { font-size: var(--fs-caption); color: var(--color-text-muted); }
+  .date-card-value { font-size: var(--fs-body); font-weight: var(--fw-semibold); color: var(--color-text); }
+  .date-card-tag {
+    font-size: var(--fs-badge); font-weight: var(--fw-semibold);
+    color: var(--color-destructive);
+    padding: 4px 8px;
+    background: var(--color-destructive-subtle);
+    border-radius: var(--r-full);
+  }
+
+  .desc { font-size: var(--fs-body); line-height: var(--lh-body-lg); color: var(--color-text-sub); }
+
+  .clinic-link {
+    display: flex; align-items: center; gap: 12px;
+    padding: 16px;
+    background: var(--color-surface-sub);
+    border-radius: var(--r-md);
+    cursor: pointer;
+    border: none;
+    width: 100%;
+    text-align: left;
+    font-family: var(--font-base);
+  }
+  .clinic-link:hover { background: var(--color-border); }
+  .clinic-link-thumb {
+    width: 44px; height: 44px;
+    border-radius: var(--r-sm);
+    background-color: var(--color-primary-light);
+    background-image: url('../../assets/krj-logo.svg');
+    background-size: cover; background-position: center;
+    flex-shrink: 0;
+  }
+  .clinic-link-text { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+  .clinic-link-name { font-size: var(--fs-body); font-weight: var(--fw-semibold); color: var(--color-text); }
+  .clinic-link-sub { font-size: var(--fs-caption); color: var(--color-text-muted); }
+  .clinic-link svg.chev { width: 18px; height: 18px; color: var(--color-text-muted); }
+
+  /* 신청하기 */
+  .apply-body {
+    flex: 1; overflow-y: auto;
+    background: var(--color-bg);
+    padding: 24px 20px 32px;
+    display: flex; flex-direction: column; gap: 24px;
+  }
+  .apply-head { display: flex; flex-direction: column; gap: 4px; }
+  .apply-event-owner { color: var(--color-text-muted); }
+  .apply-fields { display: flex; flex-direction: column; gap: 20px; }
+  .apply-field { display: flex; flex-direction: column; gap: 8px; }
+  .apply-choices { display: flex; flex-direction: column; gap: 8px; }
+  .apply-choice {
+    display: flex; align-items: center; gap: 12px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    font-size: var(--fs-body); color: var(--color-text-sub);
+  }
+  .apply-agree {
+    display: flex; align-items: center; gap: 12px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .apply-agree-text { font-size: var(--fs-body); color: var(--color-text-sub); }
+  .apply-footer {
+    flex-shrink: 0;
+    padding: 12px 20px calc(20px + env(safe-area-inset-bottom));
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+  }
+
+  /* 동의 안 하고 눌렀을 때 — 비활성 대신 체크박스 쪽 에러 */
+  .agree-wrap { display: flex; flex-direction: column; gap: 4px; }
+  .agree-wrap .input-error-msg { margin-top: 0; padding-left: 36px; }
+  .agree-wrap.is-error .apply-agree-text { color: var(--color-destructive); }
+  .agree-wrap.is-error .checkbox { outline: 2px solid var(--color-destructive); outline-offset: 2px; }
+  .agree-wrap.is-shake { animation: shake var(--motion-slow) var(--ease-standard); }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-4px); }
+    40%, 80% { transform: translateX(4px); }
+  }
+
+  /* 완료 — 작게 줄인 완료 블록 */
+  .done-body {
+    flex: 1; overflow-y: auto;
+    background: var(--color-bg);
+    padding: 24px 16px;
+    display: flex; flex-direction: column; gap: 24px;
+  }
+  .done-mini { display: flex; align-items: center; gap: 12px; }
+  .done-icon {
+    flex-shrink: 0;
+    width: 32px; height: 32px;
+    border-radius: var(--r-full);
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .done-icon i[data-lucide], .done-icon svg.lucide { width: 18px; height: 18px; stroke-width: 3; }
+  .done-mini-text { display: flex; flex-direction: column; min-width: 0; }
+  .done-mini-when { color: var(--color-text-muted); }
+  .done-tray {
+    flex-shrink: 0;
+    padding: 12px 16px calc(16px + env(safe-area-inset-bottom));
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+    display: flex; flex-direction: column; gap: 8px;
+  }
+
+  .summary {
+    width: 100%;
+    display: flex; flex-direction: column; gap: 12px;
+    padding: 16px;
+    background: var(--color-surface);
+    border-radius: var(--r-md);
+  }
+  .summary-row { display: flex; justify-content: space-between; gap: 12px; }
+  .summary-row .k { font-size: var(--fs-label); color: var(--color-text-muted); }
+  .summary-row .v { font-size: var(--fs-body); color: var(--color-text); font-weight: var(--fw-medium); text-align: right; }
+
+  /* =====================================================
+     모임 프로필 페이지 · 회원 메뉴
+     ← review/community-mode-owner.html (s-home / s-members / s-board / s-event / s-settings / s-join-preview)
+     ===================================================== */
+  .c-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--color-border);
+    flex-shrink: 0;
+    background: var(--color-surface);
+    gap: 12px;
+  }
+  .c-switcher {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: none;
+    border: none;
+    padding: 4px 4px 4px 0;
+    font-family: var(--font-base);
+    color: var(--color-text);
+    cursor: pointer;
+    min-width: 0;
+    -webkit-tap-highlight-color: transparent;
+    border-radius: var(--r-sm);
+    transition: background var(--motion-fast) var(--ease-standard);
+  }
+  .c-switcher:active { background: var(--color-surface-sub); }
+  .c-switcher-name {
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-bold);
+    color: var(--color-text);
+    letter-spacing: var(--ls-body-lg);
+    max-width: 220px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .c-switcher [data-lucide], .c-switcher svg { width: 16px; height: 16px; color: var(--color-text-sub); }
+  .c-me {
+    display: inline-flex;
+    align-items: center;
+    padding: 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    border-radius: var(--r-full);
+    transition: opacity var(--motion-fast) var(--ease-standard);
+  }
+  .c-me:active { opacity: 0.7; }
+  .c-me-avatar { box-shadow: var(--shadow-2); }
+
+  .c-body {
+    flex: 1;
+    overflow-y: auto;
+    background: var(--color-bg);
+  }
+  .c-body.has-tabbar { padding-bottom: 76px; /* tabbar 높이 확보 */ }
+
+  .c-tabbar {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    display: flex;
+    align-items: stretch;
+    background: var(--color-surface);
+    border-radius: var(--r-lg) var(--r-lg) 0 0;
+    box-shadow: var(--shadow-4);
+    padding-bottom: env(safe-area-inset-bottom);
+    z-index: 10;
+  }
+  .c-tab {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 12px 4px 8px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--color-text-muted);
+    font-family: var(--font-base);
+    -webkit-tap-highlight-color: transparent;
+    transition: color var(--motion-fast) var(--ease-standard);
+  }
+  .c-tab [data-lucide], .c-tab svg { width: 22px; height: 22px; stroke-width: 2; }
+  .c-tab-label {
+    font-size: var(--fs-nav);
+    font-weight: var(--fw-medium);
+    letter-spacing: var(--ls-nav);
+    line-height: var(--lh-nav);
+  }
+  .c-tab.is-active { color: var(--color-primary); }
+  .c-tab.is-active svg { stroke-width: 2.4; }
+
+  .c-section { padding: 20px 16px; display: flex; flex-direction: column; gap: 16px; }
+  .c-section + .c-section { padding-top: 4px; }
+  .c-row-between { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .c-section-title {
+    font-size: var(--fs-title);
+    font-weight: var(--fw-bold);
+    color: var(--color-text);
+    letter-spacing: var(--ls-title);
+  }
+
+  /* 홈 — 모임 프로필 페이지 (실서비스 화면 기준: 민트 배경 · 가운데 정렬) */
+  #s-welcome .c-body { background: var(--color-page-mint); }
+
+  /* 방문자 초대 밴드 — 상태별 CTA 자리 */
+  .pf-invite {
+    background: var(--color-primary-light);
+    padding: 20px 8px 24px;
+    display: flex; flex-direction: column; gap: 20px;
+  }
+  .pf-invite-head { display: flex; align-items: center; gap: 12px; padding: 0 4px; }
+  .pf-invite-logo {
+    width: 32px; height: 32px;
+    border-radius: var(--r-full);
+    background-image: url('../../assets/krj-logo.svg');
+    background-size: cover; background-position: center;
+    box-shadow: var(--shadow-1);
+    flex-shrink: 0;
+  }
+  .pf-invite-text { font-size: var(--fs-body-lg); line-height: var(--lh-body-lg); color: var(--color-text); }
+  .pf-invite-text strong { color: var(--color-primary); font-weight: var(--fw-medium); }
+  .pf-invite .status-line { background: var(--color-surface); }
+
+  /* 프로필 */
+  .pf-cover {
+    margin: 0 8px;
+    height: 160px;
+    background-image: url('../../assets/fellows/moim-default.jpg');
+    background-size: cover;
+    background-position: center 30%;
+    -webkit-mask-image: linear-gradient(180deg, var(--color-text) 60%, transparent 100%);
+    mask-image: linear-gradient(180deg, var(--color-text) 60%, transparent 100%);
+  }
+  .pf-head {
+    margin-top: -40px;
+    padding: 0 20px;
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    text-align: center;
+    position: relative;
+  }
+  .pf-logo { border: 4px solid var(--color-surface); box-shadow: var(--shadow-1); }
+  .pf-name { margin-top: 12px; font-weight: var(--fw-bold); color: var(--color-text); }
+  .pf-handle { color: var(--color-text-muted); }
+  .pf-share { margin-top: 12px; }
+  .pf-body { padding: 24px 20px 32px; display: flex; flex-direction: column; gap: 24px; }
+  .btn-fill-chat { background: var(--color-chat-forest); color: var(--color-on-primary); border-radius: var(--r-sm); }
+  .btn-fill-chat:hover { filter: brightness(0.94); }
+  .pf-about { display: flex; flex-direction: column; gap: 12px; color: var(--color-text); }
+  .pf-about strong { font-weight: var(--fw-bold); }
+
+  /* 다가오는 모임 — 가로 카드 (썸네일은 review/event-list.html의 ev-thumb 패턴) */
+  .pf-upcoming { padding: 8px 0 32px; display: flex; flex-direction: column; gap: 16px; }
+  .pf-upcoming .text-heading { padding: 0 20px; color: var(--color-text); }
+  .ev-tiles {
+    display: flex; gap: 12px;
+    overflow-x: auto;
+    padding: 0 20px;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+  .ev-tiles::-webkit-scrollbar { display: none; }
+  .ev-tile {
+    flex: 0 0 calc((100% - 12px) / 2);
+    scroll-snap-align: start;
+    display: flex; flex-direction: column;
+    background: var(--color-surface);
+    border: none;
+    border-radius: var(--r-md);
+    overflow: hidden;
+    padding: 0;
+    font-family: var(--font-base);
+    text-align: left;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .ev-tile:active { opacity: 0.7; }
+  .ev-thumb {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    background: var(--color-surface-dark);
+  }
+  .ev-thumb-fill {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    filter: blur(var(--blur-fill));
+    transform: scale(1.2);
+  }
+  .ev-thumb-img {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: contain;
+  }
+  .ev-tile-body { padding: 12px 12px 16px; display: flex; flex-direction: column; gap: 4px; }
+  .ev-title {
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-semibold);
+    line-height: var(--lh-body);
+    letter-spacing: var(--ls-body-lg);
+    color: var(--color-text);
+  }
+  .ev-desc {
+    font-size: var(--fs-label);
+    line-height: var(--lh-caption);
+    color: var(--color-text-muted);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* 비회원용 가려진 멤버 목록 · 게시판 — c-member-row 계열, 사진·소속·본문 흐림 */
+  .c-member-list { background: var(--color-surface); border-radius: var(--r-md); overflow: hidden; }
+  .c-member-list .c-member-row {
+    width: 100%;
+    padding: 12px 16px;
+    border: none;
+    background: none;
+    font-family: var(--font-base);
+    text-align: left;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .c-member-list .c-member-row:active { background: var(--color-surface-sub); }
+  .is-veiled img { filter: blur(calc(var(--blur-dim) * 2)); transform: scale(1.1); }
+  .is-veiled-text { filter: blur(calc(var(--blur-dim) * 2)); user-select: none; }
+  #s-c-board.is-locked .c-post-author-row,
+  #s-c-board.is-locked .c-post-body,
+  #s-c-board.is-locked .c-post-stat-row { filter: blur(calc(var(--blur-dim) * 2)); user-select: none; }
+
+  .status-line {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    height: 48px;
+    border-radius: var(--r-md);
+    background: var(--color-surface-sub);
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text-sub);
+  }
+  .status-line svg.lucide { width: 18px; height: 18px; color: var(--color-text-muted); }
+
+  /* 멤버 탭 */
+  .c-members-count { font-size: var(--fs-body-lg); font-weight: var(--fw-bold); color: var(--color-text); }
+  .c-search-wrap { position: relative; width: 100%; }
+  .c-search-wrap .input {
+    padding: 8px 16px 8px 44px;
+    border-color: transparent;
+    border-radius: var(--r-full);
+  }
+  .c-search-icon {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--color-text-muted);
+    pointer-events: none;
+    display: flex;
+  }
+  .c-search-icon svg { width: 18px; height: 18px; }
+  .c-member-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; }
+  .c-member-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+  .c-member-name { font-weight: var(--fw-semibold); color: var(--color-text); }
+  .c-member-role { margin-left: 4px; color: var(--color-text-muted); font-weight: var(--fw-regular); }
+  .c-member-l1 { color: var(--color-text-muted); }
+
+  /* 게시판·행사 카드 */
+  .c-post-list { display: flex; flex-direction: column; gap: 12px; }
+  .c-post-card {
+    background: var(--color-surface);
+    border-radius: var(--r-md);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    cursor: pointer;
+    border: none;
+    font-family: var(--font-base);
+    text-align: left;
+    width: 100%;
+  }
+  .c-post-card:active { transform: scale(0.99); }
+  .c-post-author-row { display: flex; align-items: center; gap: 8px; }
+  .c-post-author { font-size: var(--fs-label); font-weight: var(--fw-semibold); color: var(--color-text); }
+  .c-post-time, .c-post-dot { font-size: var(--fs-caption); color: var(--color-text-muted); }
+  .c-post-title {
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text);
+    line-height: var(--lh-heading);
+  }
+  .c-post-body {
+    font-size: var(--fs-body);
+    color: var(--color-text-sub);
+    line-height: var(--lh-body);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .c-post-stat-row { display: flex; align-items: center; gap: 16px; color: var(--color-text-muted); font-size: var(--fs-caption); }
+  .c-post-stat { display: inline-flex; align-items: center; gap: 4px; }
+  .c-post-stat svg { width: 14px; height: 14px; }
+
+  /* 설정 탭 */
+  .c-menu-card { background: var(--color-surface); border-radius: var(--r-md); overflow: hidden; }
+  .c-menu-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px 20px;
+    background: none;
+    border: none;
+    border-bottom: 1px solid var(--color-border);
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    font-family: var(--font-base);
+  }
+  .c-menu-item:last-child { border-bottom: none; }
+  .c-menu-item:active { background: var(--color-surface-sub); }
+  .c-menu-item-title { font-size: var(--fs-body-lg); font-weight: var(--fw-semibold); color: var(--color-text); }
+  .c-menu-item svg { width: 20px; height: 20px; color: var(--color-text-muted); }
+  .c-menu-item.is-danger .c-menu-item-title { color: var(--color-destructive); }
+
+  /* =====================================================
+     가입 바텀시트 — 물어보기 → 폼으로 펼침 → 결과
+     폼 필드·제목·하단 버튼은 community-mode-owner의 가입 폼(c-jp-*) · 시트(c-sheet-*)와 맞춤
+     ===================================================== */
+  .c-sheet-title {
+    font-size: var(--fs-title-sm);
+    line-height: var(--lh-title-sm);
+    letter-spacing: var(--ls-title-sm);
+    font-weight: var(--fw-bold);
+    color: var(--color-text);
+  }
+  .c-jp-field { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+  .c-jp-field:last-child { margin-bottom: 0; }
+
+  .join-sheet {
+    display: flex; flex-direction: column;
+    padding: 12px 0 0;
+    max-height: 92%;
+    overflow: hidden;
+    transition:
+      transform var(--motion-standard) var(--ease-enter),
+      height var(--motion-slow) var(--ease-standard);
+  }
+  .join-sheet .bottom-sheet-handle { margin-bottom: 12px; flex-shrink: 0; }
+  /* 닫힌 시트가 프레임 아래에서 그림자를 비추지 않게 */
+  .frame .bottom-sheet:not(.is-open) { box-shadow: none; }
+  .js-view { display: none; flex-direction: column; min-height: 0; }
+  .js-view.is-on { display: flex; flex: 1; }
+  .js-view.is-fading { animation: fadein var(--motion-standard) var(--ease-enter); }
+  @keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+
+  .js-center {
+    padding: 12px 20px 20px;
+    display: flex; flex-direction: column; align-items: center; text-align: center;
+  }
+  .js-center .c-sheet-title { margin-top: 16px; }
+  .js-center .js-desc { margin-top: 8px; color: var(--color-text-muted); }
+  .js-actions { width: 100%; display: flex; flex-direction: column; gap: 8px; padding-top: 24px; }
+
+  .js-head {
+    display: flex; align-items: center; gap: 12px;
+    padding: 0 12px 16px 20px;
+    flex-shrink: 0;
+  }
+  .js-head .c-sheet-title { flex: 1; min-width: 0; }
+  .js-head .icon-btn svg { width: 22px; height: 22px; color: var(--color-text-muted); }
+  .js-scroll {
+    flex: 1; min-height: 0;
+    overflow-y: auto;
+    padding: 4px 20px 24px;
+  }
+  .js-foot {
+    flex-shrink: 0;
+    padding: 12px 20px calc(16px + env(safe-area-inset-bottom));
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+    display: flex; flex-direction: column; gap: 12px;
+  }
+
+  .opt-toggle {
+    display: flex; align-items: center; justify-content: space-between;
+    width: 100%;
+    padding: 16px 0 4px;
+    margin-bottom: 20px;
+    border: none;
+    border-top: 1px solid var(--color-border);
+    background: none;
+    font-family: var(--font-base);
+    font-size: var(--fs-body);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text-sub);
+    cursor: pointer;
+  }
+  .opt-toggle svg.lucide {
+    width: 18px; height: 18px; color: var(--color-text-muted);
+    transition: transform var(--motion-standard) var(--ease-standard);
+  }
+  .opt-toggle.is-open svg.lucide { transform: rotate(180deg); }
+
+  .result-icon {
+    width: 56px; height: 56px;
+    border-radius: var(--r-full);
+    background: var(--color-surface-sub);
+    color: var(--color-text-sub);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .result-icon.is-done { background: var(--color-primary); color: var(--color-on-primary); }
+  .result-icon svg.lucide { width: 28px; height: 28px; }
+  .result-icon.is-done svg.lucide { stroke-width: 3; }
+
+  /* =====================================================
+     내 페이지 시트 — screens/my-ai-avatars.html 바텀시트
+     ===================================================== */
+  .mp-scrim {
+    position: absolute; inset: 0;
+    background: var(--color-scrim);
+    z-index: 300;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--motion-standard) var(--ease-enter);
+  }
+  .mp-scrim.is-open { opacity: 1; pointer-events: auto; }
+  .sheet {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 88%;
+    background: var(--color-surface);
+    border-top-left-radius: var(--r-xl);
+    border-top-right-radius: var(--r-xl);
+    display: flex; flex-direction: column;
+    z-index: 301;
+    overflow: hidden;
+    transform: translateY(100%);
+    transition: transform var(--motion-standard) var(--ease-enter);
+  }
+  .sheet.is-open { transform: translateY(0); }
+  .sheet-handle {
+    width: 40px; height: 4px;
+    background: var(--color-border);
+    border-radius: var(--r-full);
+    margin: 8px auto 4px;
+    flex-shrink: 0;
+  }
+  .sheet-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px 0;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+  .sheet-tabs { display: inline-flex; align-items: center; gap: 20px; }
+  .tab {
+    background: none; border: none;
+    padding: 8px 0 12px;
+    font-family: var(--font-base);
+    font-size: var(--fs-body-lg);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    letter-spacing: var(--ls-heading);
+    position: relative;
+  }
+  .tab.is-active { color: var(--color-text); font-weight: var(--fw-bold); }
+  .tab.is-active::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 2px;
+    background: var(--color-text);
+    border-radius: var(--r-full);
+  }
+  .tab-count { color: var(--color-text-muted); font-weight: var(--fw-semibold); margin-left: 4px; }
+  .sheet-header-border { height: 1px; background: var(--color-border); margin: 0 20px; flex-shrink: 0; }
+  .tab-panel { display: none; flex: 1; flex-direction: column; min-height: 0; }
+  .tab-panel.is-active { display: flex; }
+  .search-wrap { padding: 16px 20px 12px; flex-shrink: 0; position: relative; }
+  .search-wrap svg.search-icon {
+    position: absolute;
+    left: 36px;
+    top: calc(50% + 2px);
+    transform: translateY(-50%);
+    width: 16px; height: 16px;
+    color: var(--color-text-muted);
+    pointer-events: none;
+  }
+  .search-input {
+    width: 100%;
+    height: 44px;
+    background: var(--color-surface-sub);
+    border: none;
+    border-radius: var(--r-md);
+    padding: 0 16px 0 40px;
+    font-family: var(--font-base);
+    font-size: var(--fs-label);
+    color: var(--color-text);
+  }
+  .search-input::placeholder { color: var(--color-text-muted); }
+  .search-input:focus { outline: 2px solid var(--color-primary); outline-offset: -2px; }
+  .list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 4px 12px 96px;
+    display: flex; flex-direction: column;
+    gap: 4px;
+  }
+  .avatar-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px;
+    border-radius: var(--r-md);
+    cursor: pointer;
+    background: none;
+    border: none;
+    width: 100%;
+    text-align: left;
+    font-family: var(--font-base);
+    transition: background var(--motion-fast) var(--ease-standard);
+  }
+  .avatar-item:hover { background: var(--color-surface-sub); }
+  .avatar-item.is-selected { background: var(--color-primary-light); }
+  .avatar-img {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background-color: var(--color-surface-sub);
+    background-image: url('../../assets/profile.svg');
+    background-size: 60%;
+    background-repeat: no-repeat;
+    background-position: center;
+    flex-shrink: 0;
+  }
+  .avatar-img.is-krj { background-image: url('../../assets/krj-logo.svg'); background-size: cover; }
+  .avatar-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+  .avatar-name {
+    flex: 1;
+    font-size: var(--fs-body);
+    color: var(--color-text);
+    font-weight: var(--fw-medium);
+    letter-spacing: var(--ls-body);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .avatar-item.is-selected .avatar-name { color: var(--color-primary); font-weight: var(--fw-semibold); }
+  .avatar-check { width: 20px; height: 20px; color: var(--color-primary); flex-shrink: 0; }
+  /* 가입 상태 — 뱃지 대신 글자 크기·색 위계 */
+  .avatar-status { font-size: var(--fs-caption); line-height: var(--lh-caption); color: var(--color-text-muted); }
+  .avatar-status.is-pending { color: var(--color-text-sub); font-weight: var(--fw-semibold); }
+  .list-empty { padding: 48px 20px; text-align: center; color: var(--color-text-muted); font-size: var(--fs-body); }
+  .sheet-cta {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    padding: 12px 20px calc(20px + env(safe-area-inset-bottom));
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+    display: flex; align-items: center;
+    z-index: 2;
+  }
+  .create-btn {
+    display: flex; align-items: center; gap: 8px;
+    width: 100%;
+    background: none; border: none;
+    padding: 8px 4px;
+    cursor: pointer;
+    font-family: var(--font-base);
+    color: var(--color-text);
+    font-size: var(--fs-body);
+    font-weight: var(--fw-semibold);
+    letter-spacing: var(--ls-heading);
+  }
+  .create-icon {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: var(--color-surface-sub);
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--color-text-sub);
+    flex-shrink: 0;
+  }
+  .create-icon svg { width: 18px; height: 18px; }
+
+  /* ── 토스트 (프레임 안) ── */
+  .frame .toast-container { position: absolute; bottom: 104px; }
+
+  /* =====================================================
+     데모 장치 — 가짜 커서 · 탭 리플
+     ===================================================== */
+  .demo-cursor {
+    position: absolute;
+    left: 50%; top: 50%;
+    width: 32px; height: 32px;
+    margin: -16px 0 0 -16px;
+    border-radius: var(--r-full);
+    background: var(--color-scrim);
+    border: 2px solid var(--color-surface);
+    box-shadow: var(--shadow-3);
+    z-index: 500;
+    pointer-events: none;
+    opacity: 0;
+    transition:
+      left var(--motion-slow) var(--ease-standard),
+      top var(--motion-slow) var(--ease-standard),
+      opacity var(--motion-standard) var(--ease-standard),
+      transform var(--motion-fast) var(--ease-standard);
+  }
+  .demo-cursor.is-on { opacity: 1; }
+  .demo-cursor.is-press { transform: scale(0.8); }
+  .demo-ripple {
+    position: absolute;
+    width: 32px; height: 32px;
+    margin: -16px 0 0 -16px;
+    border-radius: var(--r-full);
+    background: var(--color-scrim);
+    z-index: 499;
+    pointer-events: none;
+    animation: ripple var(--motion-slow) var(--ease-exit) forwards;
+  }
+  @keyframes ripple {
+    from { transform: scale(0.6); opacity: 1; }
+    to   { transform: scale(2.4); opacity: 0; }
+  }
+
+  /* =====================================================
+     데모 패널 (PC 오른쪽)
+     ===================================================== */
+  .demo-panel {
+    width: 320px;
+    max-height: calc(100dvh - 40px);
+    overflow-y: auto;
+    flex-shrink: 0;
+    background: var(--color-surface);
+    border-radius: var(--r-lg);
+    box-shadow: var(--shadow-2);
+    padding: 24px 20px;
+    display: flex; flex-direction: column; gap: 20px;
+  }
+  .dp-group { display: flex; flex-direction: column; gap: 8px; }
+  .dp-status {
+    display: flex; flex-direction: column; gap: 8px;
+    padding: 12px 16px;
+    border-radius: var(--r-md);
+    background: var(--color-surface-sub);
+  }
+  .dp-status-row { display: flex; justify-content: space-between; font-size: var(--fs-label); color: var(--color-text-muted); }
+  .dp-status-row strong { color: var(--color-text); font-weight: var(--fw-semibold); }
+  .dp-scn { display: flex; flex-direction: column; gap: 4px; }
+  .dp-scn label {
+    display: flex; align-items: center; gap: 12px;
+    padding: 8px;
+    border-radius: var(--r-sm);
+    font-size: var(--fs-body);
+    color: var(--color-text-sub);
+    cursor: pointer;
+  }
+  .dp-scn label:hover { background: var(--color-surface-sub); }
+  .dp-scn .radio { width: 20px; height: 20px; }
+  .dp-toggle-row { display: flex; align-items: center; justify-content: space-between; font-size: var(--fs-body); color: var(--color-text-sub); }
+  .dp-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .dp-buttons .btn svg.lucide { width: 16px; height: 16px; }
+  .dp-buttons .span-2 { grid-column: span 2; }
+</style>
+</head>
+<body>
+<div class="stage">
+<div class="frame" id="frame">
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- 이벤트 랜딩 (screen-landing)                   -->
+  <!-- ════════════════════════════════════════════ -->
+  <div class="screen" id="s-event">
+    <div class="scroll-body">
+      <div class="topbar">
+        <button class="icon-btn icon-btn-clear" type="button" aria-label="뒤로" onclick="back()">
+          <i data-lucide="chevron-left" style="width:22px;height:22px;"></i>
+        </button>
+        <div class="topbar-actions">
+          <button class="icon-btn icon-btn-clear" type="button" aria-label="공유">
+            <i data-lucide="share-2" style="width:20px;height:20px;"></i>
+          </button>
+          <button class="icon-btn icon-btn-clear" type="button" aria-label="더보기">
+            <i data-lucide="more-horizontal" style="width:20px;height:20px;"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="hero">
+        <div class="hero-slider">
+          <div class="hero-slide" style="background-image:url('../../assets/fellows/moim-grad.jpg');"></div>
+        </div>
+      </div>
+
+      <div class="hero-info">
+        <button class="hero-clinic-row" type="button" id="ev-host" onclick="goTo('s-welcome')">
+          <span class="hero-clinic-name">경륜재</span>
+          <i data-lucide="chevron-right"></i>
+        </button>
+        <h1 class="hero-headline">10월 경륜재 정기 모임</h1>
+        <p class="hero-schedule">
+          <i data-lucide="calendar-check"></i>
+          <span class="hero-schedule-label">일정</span>
+          <span class="hero-schedule-date">2026.10.24(토)</span>
+          <span class="hero-schedule-time">16:00 ~ 18:30</span>
+        </p>
+        <p class="hero-schedule">
+          <i data-lucide="map-pin"></i>
+          <span class="hero-schedule-label">장소</span>
+          <span class="hero-schedule-date">경륜재 서재 · 종로구 북촌로</span>
+        </p>
+      </div>
+
+      <div class="section-divider"></div>
+
+      <div class="section">
+        <div class="date-card">
+          <i data-lucide="calendar-days"></i>
+          <div class="date-card-text">
+            <div class="date-card-label">신청 기간</div>
+            <div class="date-card-value">2026.10.01 ~ 10.23</div>
+          </div>
+          <span class="date-card-tag">D-15</span>
+        </div>
+      </div>
+
+      <div class="section-divider"></div>
+
+      <div class="section">
+        <div class="section-title">이벤트 안내</div>
+        <div class="desc">
+          <p>매달 넷째 주 토요일, 경륜재 회원과 손님이 함께 모입니다.</p>
+          <br>
+          <p>· 오전 — 북한산 둘레길 산행</p>
+          <p>· 오후 — 『논어』 학이편 함께 읽기</p>
+          <br>
+          <p>한 가지만 참여하셔도 괜찮아요. 처음 오시는 분도 환영합니다.</p>
+        </div>
+      </div>
+
+      <div class="section-divider"></div>
+
+      <div class="section">
+        <button class="clinic-link" type="button" aria-label="경륜재 페이지 가기" onclick="goTo('s-welcome')">
+          <div class="clinic-link-thumb"></div>
+          <div class="clinic-link-text">
+            <div class="clinic-link-name">경륜재</div>
+            <div class="clinic-link-sub">모임 소식 · 지난 모임 · 회원 24명</div>
+          </div>
+          <i data-lucide="chevron-right" class="chev"></i>
+        </button>
+      </div>
+    </div>
+
+    <div class="sticky-bar">
+      <div class="sticky-meta">
+        <i data-lucide="users" style="width:14px;height:14px;"></i>
+        <span>지금까지 <strong id="ev-count">3명</strong>이 신청했어요</span>
+      </div>
+      <button class="club-row" type="button" id="ev-club-row" onclick="onClubRow()"></button>
+      <div class="sticky-actions">
+        <button class="btn btn-lg btn-block btn-fill-primary" type="button" id="ev-apply" onclick="openApply()">신청하기</button>
+        <button class="btn btn-lg btn-block btn-weak-primary" type="button" id="ev-mine" onclick="goTo('s-done')">내 신청</button>
+        <button class="sticky-chat" type="button" aria-label="AI 상담">
+          <i data-lucide="message-circle-question"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- 신청하기 (screen-apply)                        -->
+  <!-- ════════════════════════════════════════════ -->
+  <div class="screen" id="s-apply">
+    <div class="topbar-solid">
+      <button class="icon-btn icon-btn-clear" type="button" aria-label="뒤로" onclick="back()">
+        <i data-lucide="chevron-left" style="width:22px;height:22px;color:var(--color-text);"></i>
+      </button>
+      <span class="topbar-title">신청하기</span>
+    </div>
+
+    <div class="apply-body">
+      <div class="apply-head">
+        <h2 class="text-title">10월 경륜재 정기 모임</h2>
+        <p class="text-body apply-event-owner">경륜재</p>
+      </div>
+
+      <div class="apply-fields">
+        <div class="apply-field">
+          <label class="label label-required" for="ap-name">이름</label>
+          <input class="input" id="ap-name" type="text" placeholder="이름을 입력해 주세요" autocomplete="off">
+        </div>
+        <div class="apply-field">
+          <label class="label label-required" for="ap-phone">전화번호</label>
+          <input class="input" id="ap-phone" type="tel" placeholder="010-0000-0000" autocomplete="off">
+        </div>
+        <div class="apply-field">
+          <span class="label label-required">참여 일정</span>
+          <div class="apply-choices">
+            <label class="apply-choice" id="ap-slot-am"><input class="radio" type="radio" name="ap-slot" value="오전 산행만">오전 산행만</label>
+            <label class="apply-choice" id="ap-slot-pm"><input class="radio" type="radio" name="ap-slot" value="오후 공부만">오후 공부만</label>
+            <label class="apply-choice" id="ap-slot-all"><input class="radio" type="radio" name="ap-slot" value="모두 참석">모두 참석</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="agree-wrap" id="ap-agree-wrap">
+        <label class="apply-agree" id="ap-agree-label">
+          <input class="checkbox" type="checkbox" id="ap-agree" onchange="clearAgreeError('ap')">
+          <span class="apply-agree-text">개인정보 수집·이용에 동의합니다.</span>
+        </label>
+        <p class="input-error-msg" hidden>동의해야 신청할 수 있어요</p>
+      </div>
+    </div>
+
+    <div class="apply-footer">
+      <button class="btn btn-lg btn-block btn-fill-primary" type="button" id="ap-submit" onclick="submitApply()">신청 완료</button>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- 신청 완료 · 내 신청 (screen-done)              -->
+  <!-- ════════════════════════════════════════════ -->
+  <div class="screen" id="s-done">
+    <div class="done-body">
+      <div class="done-mini">
+        <div class="done-icon"><i data-lucide="check"></i></div>
+        <div class="done-mini-text">
+          <h2 class="text-heading">신청이 완료되었어요</h2>
+          <p class="text-caption done-mini-when">2026.10.24(토) 16:00 ~ 18:30</p>
+        </div>
+      </div>
+      <div class="summary" id="done-summary"></div>
+      <button class="club-row on-bg" type="button" id="done-club-row" onclick="onClubRow()"></button>
+    </div>
+    <div class="done-tray">
+      <button class="btn btn-lg btn-block btn-weak-primary" type="button" id="done-member" onclick="goTo('s-member')">회원 메뉴로 가기</button>
+      <button class="btn btn-lg btn-block btn-fill-primary" type="button" id="done-ok" onclick="goTo('s-event', { reset: true })">확인</button>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- 모임 프로필 페이지 — 방문자: 초대 밴드 CTA / 회원: 하단 탭바 -->
+  <!-- ════════════════════════════════════════════ -->
+  <section class="screen c-screen" id="s-welcome">
+    <!-- 회원일 때만 — 탭 화면들과 같은 상단바 -->
+    <header class="c-topbar" id="wl-topbar">
+      <button class="c-switcher" type="button" onclick="openMypage('community')">
+        <span class="c-switcher-name">경륜재</span>
+        <i data-lucide="chevron-down"></i>
+      </button>
+      <button class="c-me" type="button" onclick="openMypage('community')" aria-label="마이페이지">
+        <span class="avatar avatar-xs c-me-avatar" aria-hidden="true"><img src="../../assets/profile.svg" alt=""></span>
+      </button>
+    </header>
+
+    <div class="c-body has-tabbar" id="wl-body">
+      <!-- 방문자 초대 밴드 — 상태별 CTA -->
+      <div class="pf-invite" id="wl-invite">
+        <div class="pf-invite-head">
+          <span class="pf-invite-logo"></span>
+          <p class="pf-invite-text"><strong>경륜재</strong>에 초대받았어요</p>
+        </div>
+        <button class="btn btn-lg btn-block btn-fill-dark" type="button" id="wl-join" onclick="openJoin()">가입하기</button>
+        <div class="status-line" id="wl-pending"><i data-lucide="clock"></i>승인 대기</div>
+        <button class="btn btn-lg btn-block btn-fill-dark" type="button" id="wl-retry" onclick="openJoin()">다시 신청하기</button>
+      </div>
+
+      <div class="pf-cover"></div>
+      <div class="pf-head">
+        <span class="avatar avatar-xl pf-logo"><img src="../../assets/krj-logo.svg" alt=""></span>
+        <h1 class="text-title pf-name">경륜재</h1>
+        <p class="text-label pf-handle">@krj</p>
+        <button class="btn btn-md btn-fill-light btn-pill pf-share" type="button">
+          <i data-lucide="link" style="width:16px;height:16px"></i>
+          공유
+        </button>
+      </div>
+
+      <div class="pf-body">
+        <button class="btn btn-lg btn-block btn-fill-chat" type="button">
+          <i data-lucide="message-circle" style="width:18px;height:18px"></i>
+          대화하기
+        </button>
+        <div class="pf-about text-body-lg">
+          <p><strong>경륜재에 오신 걸 환영합니다</strong></p>
+          <p>고전을 함께 읽고 <strong>산을 함께 오르는 모임</strong>이에요.</p>
+          <p>매달 넷째 주 토요일, 오전엔 북한산을 걷고 오후엔 책 한 권을 함께 읽어요.</p>
+        </div>
+      </div>
+
+      <div class="pf-upcoming">
+        <h2 class="text-heading">다가오는 모임</h2>
+        <div class="ev-tiles">
+          <button class="ev-tile" type="button" id="wl-event-card" onclick="goTo('s-event')">
+            <span class="ev-thumb">
+              <img class="ev-thumb-fill" src="../../assets/fellows/moim-grad.jpg" alt="" aria-hidden="true">
+              <img class="ev-thumb-img" src="../../assets/fellows/moim-grad.jpg" alt="">
+            </span>
+            <span class="ev-tile-body">
+              <span class="ev-title">10월 경륜재 정기 모임</span>
+              <span class="ev-desc">오전엔 북한산 둘레길 산행, 오후엔 『논어』 학이편을 함께 읽어요.</span>
+            </span>
+          </button>
+          <button class="ev-tile" type="button">
+            <span class="ev-thumb">
+              <img class="ev-thumb-fill" src="../../assets/poster-cheongchun.jpg" alt="" aria-hidden="true">
+              <img class="ev-thumb-img" src="../../assets/poster-cheongchun.jpg" alt="">
+            </span>
+            <span class="ev-tile-body">
+              <span class="ev-title">11월 단풍 산행과 시 읽기</span>
+              <span class="ev-desc">단풍이 절정인 주말, 산에서 내려와 한시 몇 편을 소리 내어 읽어요.</span>
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 회원 — 하단 탭바 -->
+    <nav class="c-tabbar" id="tabbar-home" data-active="home"></nav>
+  </section>
+
+  <!-- 회원 메뉴 · 멤버 -->
+  <section class="screen c-screen" id="s-c-members">
+    <header class="c-topbar">
+      <button class="c-switcher" type="button" onclick="openMypage('community')">
+        <span class="c-switcher-name">경륜재</span>
+        <i data-lucide="chevron-down"></i>
+      </button>
+      <button class="c-me" type="button" onclick="openMypage('community')" aria-label="마이페이지">
+        <span class="avatar avatar-xs c-me-avatar" aria-hidden="true"><img src="../../assets/profile.svg" alt=""></span>
+      </button>
+    </header>
+    <div class="c-body has-tabbar">
+      <div class="pf-invite" data-invite></div>
+      <div class="c-section">
+        <span class="c-members-count">멤버 24</span>
+        <div class="c-search-wrap" id="c-members-search">
+          <span class="c-search-icon"><i data-lucide="search"></i></span>
+          <input class="input" type="text" placeholder="이름, 소속으로 검색">
+        </div>
+        <div class="c-member-list" id="c-members-veiled">
+        <button class="c-member-row" type="button" onclick="onMemberPeek()">
+          <span class="avatar avatar-lg is-veiled"><img src="../../assets/fellows/fellow-seoyeon.jpg" alt=""></span>
+          <span class="c-member-info">
+            <span class="text-body c-member-name">김*연</span>
+            <span class="text-label c-member-l1 is-veiled-text" aria-hidden="true">북촌 한옥 책방 · 대표</span>
+          </span>
+        </button>
+        <button class="c-member-row" type="button" onclick="onMemberPeek()">
+          <span class="avatar avatar-lg is-veiled"><img src="../../assets/fellows/fellow-junho.jpg" alt=""></span>
+          <span class="c-member-info">
+            <span class="text-body c-member-name">이*호</span>
+            <span class="text-label c-member-l1 is-veiled-text" aria-hidden="true">종로 세무회계 · 세무사</span>
+          </span>
+        </button>
+        <button class="c-member-row" type="button" onclick="onMemberPeek()">
+          <span class="avatar avatar-lg is-veiled"><img src="../../assets/fellows/fellow-yuna.jpg" alt=""></span>
+          <span class="c-member-info">
+            <span class="text-body c-member-name">최*나</span>
+            <span class="text-label c-member-l1 is-veiled-text" aria-hidden="true">삼청동 공방 · 운영</span>
+          </span>
+        </button>
+        <button class="c-member-row" type="button" onclick="onMemberPeek()">
+          <span class="avatar avatar-lg is-veiled"><img src="../../assets/fellows/fellow-jungmin.jpg" alt=""></span>
+          <span class="c-member-info">
+            <span class="text-body c-member-name">서*민</span>
+            <span class="text-label c-member-l1 is-veiled-text" aria-hidden="true">계동 한의원 · 원장</span>
+          </span>
+        </button>
+        <button class="c-member-row" type="button" onclick="onMemberPeek()">
+          <span class="avatar avatar-lg"></span>
+          <span class="c-member-info">
+            <span class="text-body c-member-name">박*윤</span>
+            <span class="text-label c-member-l1 is-veiled-text" aria-hidden="true">경륜재 서재 · 운영자</span>
+          </span>
+        </button>
+      </div>
+        <div id="c-members-full">
+          <div class="c-member-row">
+            <span class="avatar avatar-lg"></span>
+            <span class="c-member-info">
+              <span class="text-body c-member-name">박서윤<span class="c-member-role">운영자</span></span>
+              <span class="text-label c-member-l1">경륜재 서재</span>
+            </span>
+          </div>
+          <div class="c-member-row">
+            <span class="avatar avatar-lg"></span>
+            <span class="c-member-info">
+              <span class="text-body c-member-name">김네오</span>
+              <span class="text-label c-member-l1">자버</span>
+            </span>
+          </div>
+          <div class="c-member-row">
+            <span class="avatar avatar-lg"></span>
+            <span class="c-member-info">
+              <span class="text-body c-member-name">이도현</span>
+              <span class="text-label c-member-l1">북촌 한옥 책방</span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <nav class="c-tabbar" id="tabbar-members" data-active="members"></nav>
+  </section>
+
+  <!-- 회원 메뉴 · 게시판 -->
+  <section class="screen c-screen" id="s-c-board">
+    <header class="c-topbar">
+      <button class="c-switcher" type="button" onclick="openMypage('community')">
+        <span class="c-switcher-name">경륜재</span>
+        <i data-lucide="chevron-down"></i>
+      </button>
+      <button class="c-me" type="button" onclick="openMypage('community')" aria-label="마이페이지">
+        <span class="avatar avatar-xs c-me-avatar" aria-hidden="true"><img src="../../assets/profile.svg" alt=""></span>
+      </button>
+    </header>
+    <div class="c-body has-tabbar">
+      <div class="pf-invite" data-invite></div>
+      <div class="c-section">
+        <div class="c-row-between">
+          <div class="c-section-title">게시판</div>
+          <button class="btn btn-sm btn-fill-primary btn-pill" type="button" id="board-write">
+            <i data-lucide="plus" style="width:14px;height:14px"></i>
+            글쓰기
+          </button>
+        </div>
+        <div class="c-post-list">
+          <div class="c-post-card" onclick="onMemberPeek()">
+            <div class="c-post-author-row">
+              <span class="avatar avatar-xs"></span>
+              <span class="c-post-author">박서윤</span>
+              <span class="c-post-dot">·</span>
+              <span class="c-post-time">10.02</span>
+            </div>
+            <span class="badge badge-sm badge-fill-primary" style="align-self:flex-start;">공지</span>
+            <div class="c-post-title">10월 읽을거리 — 『논어』 학이편</div>
+            <div class="c-post-body">모임 전까지 1~8장을 읽어 오세요. 인상 깊은 구절 하나씩 나눠요.</div>
+            <div class="c-post-stat-row"><span class="c-post-stat"><i data-lucide="message-circle"></i>4</span></div>
+          </div>
+          <div class="c-post-card" onclick="onMemberPeek()">
+            <div class="c-post-author-row">
+              <span class="avatar avatar-xs"></span>
+              <span class="c-post-author">이도현</span>
+              <span class="c-post-dot">·</span>
+              <span class="c-post-time">09.27</span>
+            </div>
+            <div class="c-post-title">9월 산행 사진 올려요</div>
+            <div class="c-post-body">날씨가 좋아서 정상까지 다녀왔어요. 다음 달에도 같이 가요.</div>
+            <div class="c-post-stat-row"><span class="c-post-stat"><i data-lucide="message-circle"></i>2</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <nav class="c-tabbar" id="tabbar-board" data-active="board"></nav>
+  </section>
+
+  <!-- 회원 메뉴 · 행사 -->
+  <section class="screen c-screen" id="s-c-event">
+    <header class="c-topbar">
+      <button class="c-switcher" type="button" onclick="openMypage('community')">
+        <span class="c-switcher-name">경륜재</span>
+        <i data-lucide="chevron-down"></i>
+      </button>
+      <button class="c-me" type="button" onclick="openMypage('community')" aria-label="마이페이지">
+        <span class="avatar avatar-xs c-me-avatar" aria-hidden="true"><img src="../../assets/profile.svg" alt=""></span>
+      </button>
+    </header>
+    <div class="c-body has-tabbar">
+      <div class="pf-invite" data-invite></div>
+      <div class="c-section">
+        <div class="c-section-title">행사</div>
+        <div class="c-post-list">
+          <button class="c-post-card" type="button" onclick="goTo('s-event')">
+            <div class="c-post-title">10월 경륜재 정기 모임</div>
+            <div class="c-post-body">2026.10.24(토) 16:00 ~ 18:30 · 경륜재 서재</div>
+          </button>
+        </div>
+      </div>
+    </div>
+    <nav class="c-tabbar" id="tabbar-event" data-active="event"></nav>
+  </section>
+
+  <!-- 회원 메뉴 · 설정 -->
+  <section class="screen c-screen" id="s-c-settings">
+    <header class="c-topbar">
+      <button class="c-switcher" type="button" onclick="openMypage('community')">
+        <span class="c-switcher-name">경륜재</span>
+        <i data-lucide="chevron-down"></i>
+      </button>
+      <button class="c-me" type="button" onclick="openMypage('community')" aria-label="마이페이지">
+        <span class="avatar avatar-xs c-me-avatar" aria-hidden="true"><img src="../../assets/profile.svg" alt=""></span>
+      </button>
+    </header>
+    <div class="c-body has-tabbar">
+      <div class="c-section">
+        <div class="c-section-title">설정</div>
+      </div>
+      <div class="c-section">
+        <div class="c-menu-card">
+          <button class="c-menu-item" type="button"><span class="c-menu-item-title">이 모임에서 내 프로필</span><i data-lucide="chevron-right"></i></button>
+          <button class="c-menu-item" type="button"><span class="c-menu-item-title">알림</span><i data-lucide="chevron-right"></i></button>
+          <button class="c-menu-item is-danger" type="button"><span class="c-menu-item-title">모임 나가기</span></button>
+        </div>
+      </div>
+    </div>
+    <nav class="c-tabbar" id="tabbar-settings" data-active="settings"></nav>
+  </section>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- 가입 바텀시트                                  -->
+  <!-- ════════════════════════════════════════════ -->
+  <div class="bottom-sheet-overlay" id="join-overlay" onclick="closeJoin()"></div>
+  <div class="bottom-sheet join-sheet" id="join-sheet" role="dialog" aria-label="모임 가입">
+    <div class="bottom-sheet-handle"></div>
+
+    <!-- 물어보기 -->
+    <div class="js-view" data-view="ask">
+      <div class="js-center">
+        <span class="club-logo club-logo-64"></span>
+        <h2 class="c-sheet-title" id="js-ask-title">경륜재 회원으로도 가입할까요?</h2>
+        <div class="js-actions">
+          <button class="btn btn-lg btn-block btn-fill-primary" type="button" id="js-ask-join" onclick="expandToForm()">가입하기</button>
+          <button class="btn btn-lg btn-block btn-weak-dark" type="button" id="js-ask-later" onclick="closeJoin()">다음에 할게요</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 가입 폼 -->
+    <div class="js-view" data-view="form">
+      <div class="js-head">
+        <span class="club-logo club-logo-32"></span>
+        <h2 class="c-sheet-title">경륜재 가입 신청</h2>
+        <button class="icon-btn icon-btn-clear" type="button" aria-label="닫기" onclick="closeJoin()"><i data-lucide="x"></i></button>
+      </div>
+      <div class="js-scroll" id="jf-scroll">
+        <div class="c-jp-field">
+          <label class="label label-required" for="jf-name">이름</label>
+          <input class="input" id="jf-name" type="text" autocomplete="off">
+        </div>
+        <div class="c-jp-field">
+          <label class="label label-required" for="jf-email">이메일</label>
+          <input class="input" id="jf-email" type="email" autocomplete="off">
+        </div>
+        <div class="c-jp-field">
+          <label class="label" for="jf-phone">전화번호</label>
+          <input class="input" id="jf-phone" type="tel" placeholder="010-0000-0000" autocomplete="off">
+        </div>
+        <div>
+          <button class="opt-toggle" type="button" id="jf-opt-toggle" aria-expanded="false" onclick="toggleOptional()">
+            선택 항목 <i data-lucide="chevron-down"></i>
+          </button>
+        </div>
+        <div id="jf-opt-body" hidden>
+          <div class="c-jp-field">
+            <label class="label" for="jf-bio">한 줄 소개</label>
+            <input class="input" id="jf-bio" type="text" autocomplete="off">
+          </div>
+          <div class="c-jp-field">
+            <label class="label" for="jf-org">소속</label>
+            <input class="input" id="jf-org" type="text" autocomplete="off">
+          </div>
+          <div class="c-jp-field">
+            <label class="label" for="jf-dept">부서</label>
+            <input class="input" id="jf-dept" type="text" autocomplete="off">
+          </div>
+        </div>
+      </div>
+      <div class="js-foot">
+        <div class="agree-wrap" id="jf-agree-wrap">
+          <label class="apply-agree" id="jf-agree-label">
+            <input class="checkbox" type="checkbox" id="jf-agree" onchange="clearAgreeError('jf')">
+            <span class="apply-agree-text">개인정보 수집·이용에 동의합니다.</span>
+          </label>
+          <p class="input-error-msg" hidden>동의해야 가입할 수 있어요</p>
+        </div>
+        <button class="btn btn-lg btn-block btn-fill-primary" type="button" id="jf-submit" onclick="submitJoin()">가입 신청</button>
+      </div>
+    </div>
+
+    <!-- 결과 -->
+    <div class="js-view" data-view="result">
+      <div class="js-center">
+        <div class="result-icon" id="jr-icon"></div>
+        <h2 class="c-sheet-title" id="jr-title"></h2>
+        <p class="text-body js-desc" id="jr-desc" hidden>운영자 승인 후 회원 메뉴를 이용할 수 있어요.<br>승인되면 알림으로 알려드려요.</p>
+        <div class="js-actions">
+          <button class="btn btn-lg btn-block btn-fill-primary" type="button" id="jr-primary" onclick="onResultPrimary()"></button>
+          <button class="btn btn-lg btn-block btn-weak-dark" type="button" id="jr-close" onclick="closeJoin()">닫기</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- 내 페이지 시트 (my-ai-avatars)                 -->
+  <!-- ════════════════════════════════════════════ -->
+  <div class="mp-scrim" id="mypage-overlay" onclick="closeMypage()"></div>
+  <div class="sheet" id="mypage-sheet" role="dialog" aria-label="내 페이지">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <div class="sheet-tabs" role="tablist">
+        <button class="tab" type="button" role="tab" data-tab="ai" onclick="setMypageTab('ai')">
+          내 AI 페이지 <span class="tab-count">2</span>
+        </button>
+        <button class="tab is-active" type="button" role="tab" data-tab="community" onclick="setMypageTab('community')">
+          가입한 커뮤니티 <span class="tab-count" id="mp-count">1</span>
+        </button>
+      </div>
+      <button class="btn btn-sm btn-line-dark btn-pill" type="button">기본값 설정</button>
+    </div>
+    <div class="sheet-header-border"></div>
+
+    <div class="tab-panel" id="panel-ai">
+      <div class="search-wrap">
+        <i data-lucide="search" class="search-icon"></i>
+        <input class="search-input" type="text" placeholder="아바타 검색...">
+      </div>
+      <div class="list">
+        <button class="avatar-item is-selected" type="button">
+          <span class="avatar-img"></span>
+          <span class="avatar-name">김네오</span>
+          <i data-lucide="check" class="avatar-check"></i>
+        </button>
+        <button class="avatar-item" type="button">
+          <span class="avatar-img"></span>
+          <span class="avatar-name">네오의 책방</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="tab-panel is-active" id="panel-community">
+      <div class="search-wrap">
+        <i data-lucide="search" class="search-icon"></i>
+        <input class="search-input" type="text" placeholder="커뮤니티 검색..." id="search-community" oninput="renderCommunities()">
+      </div>
+      <div class="list" id="mp-community"></div>
+    </div>
+
+    <div class="sheet-cta" id="sheet-cta" hidden>
+      <button class="create-btn" type="button">
+        <span class="create-icon"><i data-lucide="plus"></i></span>
+        <span>새 AI 아바타 만들기</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toast-container"></div>
+  <div class="demo-cursor" id="demo-cursor"></div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- 데모 패널 (PC 전용)                            -->
+<!-- ════════════════════════════════════════════ -->
+<aside class="demo-panel" id="demo-panel">
+  <div class="dp-group">
+    <span class="text-heading">현재 상태</span>
+    <div class="dp-status">
+      <div class="dp-status-row"><span>경륜재</span><strong id="dp-membership">가입 전</strong></div>
+      <div class="dp-status-row"><span>10월 정기 모임</span><strong id="dp-applied">미신청</strong></div>
+      <div class="dp-status-row"><span>가입 방식</span><strong id="dp-approval">승인제</strong></div>
+    </div>
+  </div>
+
+  <div class="dp-group">
+    <span class="text-heading">시나리오</span>
+    <div class="dp-scn" id="dp-scn"></div>
+  </div>
+
+  <div class="dp-toggle-row">
+    <span>승인제</span>
+    <input class="toggle" type="checkbox" id="dp-approval-toggle" onchange="onApprovalToggle(this)" aria-label="승인제">
+  </div>
+
+  <div class="dp-buttons">
+    <button class="btn btn-md btn-line-dark" type="button" onclick="resetScenario(state.scenario)"><i data-lucide="rotate-ccw"></i>처음부터</button>
+    <button class="btn btn-md btn-fill-primary" type="button" id="dp-play" onclick="runDemo(state.scenario)"><i data-lucide="play"></i>자동 재생</button>
+    <button class="btn btn-md btn-weak-dark span-2" type="button" onclick="hardReload()"><i data-lucide="refresh-cw"></i>새로고침 (상태 유지 확인)</button>
+  </div>
+</aside>
+</div>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+  /* ══════════════════════════════════════════
+     상태 — 전역 한 곳. sessionStorage로 새로고침에도 유지
+     ══════════════════════════════════════════ */
+  var STORE_KEY = 'join-flow-1008';
+  var ACCOUNT_EMAIL = 'neo@jober.io';
+  var SAMPLE_EVENT = { name: '김네오', phone: '010-1234-5678', slot: '모두 참석' };
+
+  var SCENARIOS = [
+    { id: 'basic-approval',  label: '기본 경로 · 승인제',          set: { approval: true } },
+    { id: 'basic-instant',   label: '기본 경로 · 즉시 가입',        set: { approval: false } },
+    { id: 'later-revisit',   label: '다음에 할게요 → 재방문',        set: {} },
+    { id: 'already-member',  label: '이미 회원인 사람이 신청',       set: { membership: 'member' } },
+    { id: 'already-pending', label: '이미 승인 대기인 사람이 신청',   set: { membership: 'pending' } },
+    { id: 'revisit-applied', label: '같은 이벤트 재방문',           set: { applied: true, count: 4, eventData: SAMPLE_EVENT } },
+    { id: 'rejected',        label: '가입 거절됨 → 다시 신청',       set: { membership: 'rejected', applied: true, count: 4, eventData: SAMPLE_EVENT }, screen: 's-welcome' },
+    { id: 'visitor-members', label: '방문자 · 멤버 탭 보고 가입',  set: {}, screen: 's-welcome' }
+  ];
+  function findScenario(id) {
+    for (var i = 0; i < SCENARIOS.length; i++) if (SCENARIOS[i].id === id) return SCENARIOS[i];
+    return SCENARIOS[0];
+  }
+
+  function freshState(id) {
+    var scn = findScenario(id);
+    var s = { scenario: scn.id, approval: true, membership: 'none', applied: false, count: 3, eventData: null, screen: scn.screen || 's-event' };
+    for (var k in scn.set) s[k] = scn.set[k];
+    return s;
+  }
+
+  var state = freshState('basic-approval');
+  var historyStack = [];
+
+  function save() {
+    state.screen = currentScreen();
+    try { sessionStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) {}
+  }
+  function load() {
+    try {
+      var raw = sessionStorage.getItem(STORE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) { return null; }
+  }
+
+  /* ══════════════════════════════════════════
+     화면 전환
+     ══════════════════════════════════════════ */
+  // 회원 메뉴 = 모임 페이지에 하단 탭바가 붙은 상태
+  var TABS = [
+    { key: 'home',     screen: 's-welcome',    icon: 'home',           label: '홈' },
+    { key: 'members',  screen: 's-c-members',  icon: 'users',          label: '멤버' },
+    { key: 'board',    screen: 's-c-board',    icon: 'message-square', label: '게시판' },
+    { key: 'event',    screen: 's-c-event',    icon: 'calendar',       label: '행사' },
+    { key: 'settings', screen: 's-c-settings', icon: 'settings',       label: '설정' }
+  ];
+  // 비회원은 설정 탭 없이 4개
+  function renderTabbars() {
+    var tabs = TABS.filter(function (t) { return t.key !== 'settings' || state.membership === 'member'; });
+    document.querySelectorAll('.c-tabbar').forEach(function (nav) {
+      var active = nav.getAttribute('data-active');
+      nav.innerHTML = tabs.map(function (t) {
+        return '<button class="c-tab' + (t.key === active ? ' is-active' : '') + '" type="button" data-key="' + t.key + '" onclick="goTab(\'' + t.key + '\')">' +
+          '<i data-lucide="' + t.icon + '"></i><span class="c-tab-label">' + t.label + '</span></button>';
+      }).join('');
+    });
+  }
+  function goTab(key) {
+    for (var i = 0; i < TABS.length; i++) if (TABS[i].key === key) goTo(TABS[i].screen, { noPush: true });
+  }
+
+  function currentScreen() {
+    var cur = document.querySelector('.screen.on');
+    return cur ? cur.id : 's-event';
+  }
+  function goTo(id, opts) {
+    opts = opts || {};
+    if (id === 's-member') id = 's-welcome';
+    // 설정 탭은 회원만
+    if (id === 's-c-settings' && state.membership !== 'member') id = 's-welcome';
+    var cur = currentScreen();
+    if (opts.reset) historyStack = [];
+    else if (cur !== id && !opts.noPush) historyStack.push(cur);
+    document.querySelectorAll('.screen').forEach(function (s) { s.classList.toggle('on', s.id === id); });
+    var scroller = document.querySelector('#' + id + ' .scroll-body, #' + id + ' .c-body, #' + id + ' .apply-body, #' + id + ' .done-body');
+    if (scroller) scroller.scrollTop = 0;
+    render();
+    save();
+  }
+  function back() {
+    var prev = historyStack.pop();
+    if (!prev) prev = currentScreen() === 's-event' ? 's-welcome' : 's-event';
+    goTo(prev, { noPush: true });
+  }
+
+  /* ══════════════════════════════════════════
+     렌더 — 상태 하나로 모든 화면의 표시를 맞춘다
+     ══════════════════════════════════════════ */
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function clubRowHTML() {
+    var m = state.membership;
+    var logo = '<span class="club-logo club-logo-24"></span>';
+    var chev = '<i data-lucide="chevron-right"></i>';
+    if (m === 'pending')  return logo + '<span class="club-row-text">경륜재 <span class="muted">· 승인 대기</span></span>' + chev;
+    if (m === 'member')   return logo + '<span class="club-row-text">경륜재 회원 메뉴</span>' + chev;
+    if (m === 'rejected') return logo + '<span class="club-row-text">경륜재 다시 신청하기</span>' + chev;
+    return logo + '<span class="club-row-text">경륜재 가입하기</span>' + chev;
+  }
+  function onClubRow() {
+    var m = state.membership;
+    if (m === 'pending' || m === 'member') goTo('s-welcome');
+    else openJoin();
+  }
+
+  function summaryHTML(rows) {
+    return rows.map(function (r) {
+      return '<div class="summary-row"><span class="k">' + esc(r[0]) + '</span><span class="v">' + esc(r[1]) + '</span></div>';
+    }).join('');
+  }
+
+  var COMMUNITY_OTHER = { name: '종로 스타트업 모임', status: '가입 완료' };
+  function renderCommunities() {
+    var m = state.membership;
+    var q = (document.getElementById('search-community').value || '').trim();
+    var items = [];
+    if (m === 'pending' || m === 'member') items.push({ key: 'krj', name: '경륜재', status: m === 'pending' ? '승인 대기' : '가입 완료' });
+    items.push({ key: 'other', name: COMMUNITY_OTHER.name, status: COMMUNITY_OTHER.status });
+    document.getElementById('mp-count').textContent = items.length;
+    var shown = items.filter(function (c) { return !q || c.name.indexOf(q) !== -1; });
+    var wrap = document.getElementById('mp-community');
+    if (!shown.length) { wrap.innerHTML = '<div class="list-empty">검색 결과가 없어요</div>'; return; }
+    wrap.innerHTML = shown.map(function (c) {
+      return '<button class="avatar-item" type="button" data-club="' + c.key + '"' + (c.key === 'krj' ? ' onclick="openClubFromMypage()"' : '') + '>' +
+        '<span class="avatar-img' + (c.key === 'krj' ? ' is-krj' : '') + '"></span>' +
+        '<span class="avatar-text"><span class="avatar-name">' + esc(c.name) + '</span>' +
+        '<span class="avatar-status' + (c.status === '승인 대기' ? ' is-pending' : '') + '">' + c.status + '</span></span>' +
+        '</button>';
+    }).join('');
+  }
+
+  function render() {
+    var m = state.membership;
+
+    // 이벤트 랜딩 sticky
+    document.getElementById('ev-count').textContent = state.count + '명';
+    document.getElementById('ev-apply').hidden = state.applied;
+    document.getElementById('ev-mine').hidden = !state.applied;
+
+    // 모임 상태 행
+    document.getElementById('ev-club-row').innerHTML = clubRowHTML();
+    var doneRow = document.getElementById('done-club-row');
+    doneRow.innerHTML = clubRowHTML();
+    doneRow.hidden = (m === 'member');
+    document.getElementById('done-member').hidden = (m !== 'member');
+
+    // 신청 완료 요약
+    var d = state.eventData || SAMPLE_EVENT;
+    document.getElementById('done-summary').innerHTML = summaryHTML([['이름', d.name], ['전화번호', d.phone], ['참여 일정', d.slot]]);
+
+    // 모임 화면 — 비회원도 탭바(설정 제외)를 보고, 위쪽 초대 띠 + 내용만 가린다. 회원은 상단바 + 전부
+    var isMember = (m === 'member');
+    document.getElementById('wl-invite').hidden = isMember;
+    document.getElementById('wl-join').hidden    = (m !== 'none');
+    document.getElementById('wl-pending').hidden = (m !== 'pending');
+    document.getElementById('wl-retry').hidden   = (m !== 'rejected');
+    var bandHTML = document.getElementById('wl-invite').innerHTML.replace(/ id="wl-[a-z]+"/g, '');
+    document.querySelectorAll('[data-invite]').forEach(function (band) {
+      band.hidden = isMember;
+      band.innerHTML = bandHTML;
+    });
+    document.querySelectorAll('.c-screen > .c-topbar').forEach(function (bar) { bar.hidden = !isMember; });
+    document.getElementById('c-members-search').hidden = !isMember;
+    document.getElementById('c-members-full').hidden = !isMember;
+    document.getElementById('c-members-veiled').hidden = isMember;
+    document.getElementById('board-write').hidden = !isMember;
+    document.getElementById('s-c-board').classList.toggle('is-locked', !isMember);
+    renderTabbars();
+
+    renderCommunities();
+    renderPanel();
+    lucide.createIcons();
+  }
+
+  /* ══════════════════════════════════════════
+     이벤트 신청
+     ══════════════════════════════════════════ */
+  function openApply() {
+    ['ap-name', 'ap-phone'].forEach(function (id) {
+      var el = document.getElementById(id); el.value = ''; el.classList.remove('is-error');
+    });
+    document.querySelectorAll('input[name="ap-slot"]').forEach(function (r) { r.checked = false; });
+    document.getElementById('ap-agree').checked = false;
+    clearAgreeError('ap');
+    goTo('s-apply');
+  }
+
+  function showAgreeError(prefix) {
+    var wrap = document.getElementById(prefix + '-agree-wrap');
+    wrap.classList.add('is-error');
+    wrap.querySelector('.input-error-msg').hidden = false;
+    wrap.classList.remove('is-shake');
+    void wrap.offsetWidth;
+    wrap.classList.add('is-shake');
+  }
+  function clearAgreeError(prefix) {
+    var wrap = document.getElementById(prefix + '-agree-wrap');
+    wrap.classList.remove('is-error', 'is-shake');
+    wrap.querySelector('.input-error-msg').hidden = true;
+  }
+
+  function submitApply() {
+    var name = document.getElementById('ap-name');
+    var phone = document.getElementById('ap-phone');
+    var slot = document.querySelector('input[name="ap-slot"]:checked');
+    var ok = true;
+    [name, phone].forEach(function (el) {
+      var bad = !el.value.trim();
+      el.classList.toggle('is-error', bad);
+      if (bad) ok = false;
+    });
+    if (!slot) ok = false;
+    if (!ok) { toast('필수 항목을 채워주세요'); return; }
+    if (!document.getElementById('ap-agree').checked) { showAgreeError('ap'); return; }
+
+    state.applied = true;
+    state.count += 1;
+    state.eventData = { name: name.value.trim(), phone: phone.value.trim(), slot: slot.value };
+    historyStack = ['s-event'];
+    goTo('s-done', { noPush: true });
+
+    // 아직 회원이 아닐 때만 가입을 물어본다 (회원·승인 대기·거절은 완료 화면의 상태 표시로)
+    if (state.membership === 'none') setTimeout(openJoinAsk, 600);
+  }
+
+  /* ══════════════════════════════════════════
+     가입 바텀시트
+     ══════════════════════════════════════════ */
+  var sheet = document.getElementById('join-sheet');
+
+  function showView(name) {
+    sheet.querySelectorAll('.js-view').forEach(function (v) {
+      var on = v.getAttribute('data-view') === name;
+      v.classList.toggle('is-on', on);
+      v.classList.toggle('is-fading', on);
+    });
+  }
+  function fullHeight() { return Math.round(document.getElementById('frame').clientHeight * 0.88); }
+
+  // 높이를 현재 → 다음 화면 높이로 부드럽게 바꾼다
+  function morphTo(name) {
+    var from = sheet.getBoundingClientRect().height;
+    showView(name);
+    var to;
+    if (name === 'form') {
+      to = fullHeight();
+    } else {
+      sheet.style.height = 'auto';
+      to = sheet.getBoundingClientRect().height;
+    }
+    sheet.style.height = from + 'px';
+    void sheet.offsetHeight;
+    sheet.style.height = to + 'px';
+  }
+
+  function prefillJoin() {
+    var d = state.eventData;
+    document.getElementById('jf-name').value = d ? d.name : '';
+    document.getElementById('jf-phone').value = d ? d.phone : '';
+    document.getElementById('jf-email').value = ACCOUNT_EMAIL;
+    ['jf-bio', 'jf-org', 'jf-dept'].forEach(function (id) { document.getElementById(id).value = ''; });
+    ['jf-name', 'jf-email', 'jf-phone'].forEach(function (id) { document.getElementById(id).classList.remove('is-error'); });
+    document.getElementById('jf-agree').checked = false;
+    clearAgreeError('jf');
+    setOptional(false);
+
+    document.getElementById('jf-submit').textContent = state.approval ? '가입 신청' : '가입하기';
+    document.getElementById('jf-scroll').scrollTop = 0;
+  }
+
+  function openSheet() {
+    document.getElementById('join-overlay').classList.add('is-open');
+    sheet.classList.add('is-open');
+  }
+  // fromWelcome: 모임 페이지에서 바로 물어볼 때 — 이벤트 맥락이 없으니 '회원으로'
+  function openJoinAsk(fromWelcome) {
+    document.getElementById('js-ask-title').textContent = fromWelcome === true ? '경륜재 회원으로 가입할까요?' : '경륜재 회원으로도 가입할까요?';
+    prefillJoin();
+    sheet.style.height = '';
+    showView('ask');
+    openSheet();
+  }
+  // 가려진 멤버 행·게시글 — 가입 전·거절이면 가입을 물어보고, 승인 대기면 토스트, 회원이면 그대로
+  function onMemberPeek() {
+    var m = state.membership;
+    if (m === 'none' || m === 'rejected') openJoinAsk(true);
+    else if (m === 'pending') toast('승인되면 볼 수 있어요');
+  }
+  function openJoin() {
+    prefillJoin();
+    showView('form');
+    sheet.style.height = fullHeight() + 'px';
+    openSheet();
+  }
+  function expandToForm() { morphTo('form'); }
+  function closeJoin() {
+    document.getElementById('join-overlay').classList.remove('is-open');
+    sheet.classList.remove('is-open');
+  }
+
+  function setOptional(open) {
+    var t = document.getElementById('jf-opt-toggle');
+    t.classList.toggle('is-open', open);
+    t.setAttribute('aria-expanded', open ? 'true' : 'false');
+    document.getElementById('jf-opt-body').hidden = !open;
+  }
+  function toggleOptional() {
+    var open = document.getElementById('jf-opt-body').hidden;
+    setOptional(open);
+    if (open) {
+      var sc = document.getElementById('jf-scroll');
+      setTimeout(function () { sc.scrollTo({ top: sc.scrollHeight, behavior: 'smooth' }); }, 50);
+    }
+  }
+
+  function submitJoin() {
+    var ok = true;
+    ['jf-name', 'jf-email'].forEach(function (id) {
+      var el = document.getElementById(id);
+      var bad = !el.value.trim();
+      el.classList.toggle('is-error', bad);
+      if (bad) ok = false;
+    });
+    if (!ok) { toast('필수 항목을 채워주세요'); return; }
+    if (!document.getElementById('jf-agree').checked) { showAgreeError('jf'); return; }
+
+    state.membership = state.approval ? 'pending' : 'member';
+
+    var icon = document.getElementById('jr-icon');
+    if (state.approval) {
+      icon.className = 'result-icon';
+      icon.innerHTML = '<i data-lucide="clock"></i>';
+      document.getElementById('jr-title').textContent = '가입 신청을 보냈어요';
+      document.getElementById('jr-desc').hidden = false;
+      document.getElementById('jr-primary').textContent = '내 모임 보기';
+    } else {
+      icon.className = 'result-icon is-done';
+      icon.innerHTML = '<i data-lucide="check"></i>';
+      document.getElementById('jr-title').textContent = '경륜재 회원이 되었어요';
+      document.getElementById('jr-desc').hidden = true;
+      document.getElementById('jr-primary').textContent = '회원 메뉴로 가기';
+    }
+    render();
+    save();
+    morphTo('result');
+  }
+
+  function onResultPrimary() {
+    closeJoin();
+    if (state.membership === 'pending') setTimeout(function () { openMypage('community'); }, 200);
+    else goTo('s-member');
+  }
+
+  /* ══════════════════════════════════════════
+     내 페이지 시트
+     ══════════════════════════════════════════ */
+  function openMypage(tab) {
+    setMypageTab(tab || 'community');
+    document.getElementById('mypage-overlay').classList.add('is-open');
+    document.getElementById('mypage-sheet').classList.add('is-open');
+  }
+  function closeMypage() {
+    document.getElementById('mypage-overlay').classList.remove('is-open');
+    document.getElementById('mypage-sheet').classList.remove('is-open');
+  }
+  function setMypageTab(tab) {
+    document.querySelectorAll('#mypage-sheet .tab').forEach(function (b) { b.classList.toggle('is-active', b.getAttribute('data-tab') === tab); });
+    document.querySelectorAll('#mypage-sheet .tab-panel').forEach(function (p) { p.classList.toggle('is-active', p.id === 'panel-' + tab); });
+    // 커뮤니티 탭에서는 하단 CTA 숨김
+    document.getElementById('sheet-cta').hidden = (tab !== 'ai');
+  }
+  function openClubFromMypage() {
+    closeMypage();
+    goTo('s-welcome');
+  }
+
+  /* ── 토스트 ── */
+  function toast(msg) {
+    var c = document.getElementById('toast-container');
+    var t = document.createElement('div');
+    t.className = 'toast';
+    t.textContent = msg;
+    c.appendChild(t);
+    setTimeout(function () { t.remove(); }, 1800);
+  }
+
+  /* ══════════════════════════════════════════
+     데모 패널
+     ══════════════════════════════════════════ */
+  var MEMBERSHIP_LABEL = { none: '가입 전', pending: '승인 대기', member: '회원', rejected: '거절됨' };
+  function renderPanel() {
+    document.getElementById('dp-membership').textContent = MEMBERSHIP_LABEL[state.membership];
+    document.getElementById('dp-applied').textContent = state.applied ? '신청함' : '미신청';
+    document.getElementById('dp-approval').textContent = state.approval ? '승인제' : '즉시 가입';
+    document.getElementById('dp-approval-toggle').checked = state.approval;
+    document.querySelectorAll('#dp-scn input').forEach(function (r) { r.checked = r.value === state.scenario; });
+  }
+  function buildPanel() {
+    document.getElementById('dp-scn').innerHTML = SCENARIOS.map(function (s) {
+      return '<label><input class="radio" type="radio" name="dp-scn" value="' + s.id + '" onchange="resetScenario(this.value)">' + esc(s.label) + '</label>';
+    }).join('');
+  }
+  function onApprovalToggle(chk) { state.approval = chk.checked; render(); save(); }
+
+  function closeAllSheets() {
+    closeJoin(); closeMypage();
+    sheet.style.height = '';
+  }
+  function resetScenario(id) {
+    demoToken++;
+    hideCursor();
+    closeAllSheets();
+    state = freshState(id);
+    historyStack = [];
+    document.getElementById('search-community').value = '';
+    goTo(state.screen, { reset: true });
+  }
+
+  // 실제 새로고침 — 상태는 sessionStorage에서 복원된다
+  function hardReload() {
+    save();
+    var url = new URL(location.href);
+    url.searchParams.delete('autoplay');
+    url.searchParams.set('scenario', state.scenario);
+    location.href = url.toString();
+  }
+  // 데모 중 새로고침 — 스크립트가 끊기지 않게 화면만 다시 그린다
+  function softReload() {
+    return new Promise(function (resolve) {
+      save();
+      var frame = document.getElementById('frame');
+      frame.classList.add('is-reloading');
+      setTimeout(function () {
+        closeAllSheets();
+        var s = load();
+        if (s) state = s;
+        historyStack = [];
+        goTo(state.screen, { reset: true });
+        frame.classList.remove('is-reloading');
+        setTimeout(resolve, 400);
+      }, 450);
+    });
+  }
+
+  /* ══════════════════════════════════════════
+     자동 재생 — 가짜 커서로 탭·타이핑
+     ══════════════════════════════════════════ */
+  var demoToken = 0;
+  var cursor = document.getElementById('demo-cursor');
+
+  function sleep(ms, tk) {
+    return new Promise(function (resolve, reject) {
+      setTimeout(function () { if (tk !== undefined && tk !== demoToken) reject('abort'); else resolve(); }, ms);
+    });
+  }
+  function hideCursor() { cursor.classList.remove('is-on'); }
+
+  function scrollParent(el) {
+    var p = el.parentElement;
+    while (p && p.id !== 'frame') {
+      var oy = getComputedStyle(p).overflowY;
+      if ((oy === 'auto' || oy === 'scroll') && p.scrollHeight > p.clientHeight) return p;
+      p = p.parentElement;
+    }
+    return null;
+  }
+  async function ensureVisible(el, tk) {
+    var sp = scrollParent(el);
+    if (!sp) return;
+    var er = el.getBoundingClientRect(), pr = sp.getBoundingClientRect();
+    var margin = 24;
+    var reserved = 0;
+    // 이벤트 랜딩은 sticky 바, 모임 페이지는 하단 CTA·탭바에 가리는 영역을 피한다
+    if (sp.classList.contains('scroll-body')) reserved = 168;
+    if (sp.classList.contains('c-body')) reserved = 80;
+    if (er.top < pr.top + margin || er.bottom > pr.bottom - reserved - margin) {
+      sp.scrollTo({ top: sp.scrollTop + (er.top - pr.top) - pr.height / 3, behavior: 'smooth' });
+      await sleep(500, tk);
+    }
+  }
+  function q(sel) {
+    var el = document.querySelector(sel);
+    if (!el) throw new Error('demo: not found ' + sel);
+    return el;
+  }
+  async function moveTo(el, tk) {
+    var fr = document.getElementById('frame').getBoundingClientRect();
+    var r = el.getBoundingClientRect();
+    cursor.style.left = (r.left - fr.left + r.width / 2) + 'px';
+    cursor.style.top = (r.top - fr.top + r.height / 2) + 'px';
+    cursor.classList.add('is-on');
+    await sleep(600, tk);
+  }
+  function ripple() {
+    var rp = document.createElement('div');
+    rp.className = 'demo-ripple';
+    rp.style.left = cursor.style.left;
+    rp.style.top = cursor.style.top;
+    document.getElementById('frame').appendChild(rp);
+    setTimeout(function () { rp.remove(); }, 500);
+  }
+  async function tap(sel, tk) {
+    var el = q(sel);
+    await ensureVisible(el, tk);
+    await moveTo(el, tk);
+    cursor.classList.add('is-press');
+    ripple();
+    await sleep(140, tk);
+    cursor.classList.remove('is-press');
+    if (el.tagName === 'INPUT' && (el.type === 'text' || el.type === 'tel' || el.type === 'email')) el.focus();
+    else el.click();
+    await sleep(380, tk);
+  }
+  async function typeInto(sel, text, tk) {
+    await tap(sel, tk);
+    var el = q(sel);
+    el.value = '';
+    for (var i = 0; i < text.length; i++) {
+      el.value += text[i];
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+      await sleep(60, tk);
+    }
+    el.blur();
+    await sleep(200, tk);
+  }
+
+  // 이벤트 신청 폼 채우기 (공통)
+  async function fillEventForm(tk) {
+    await tap('#ev-apply', tk);
+    await typeInto('#ap-name', SAMPLE_EVENT.name, tk);
+    await typeInto('#ap-phone', SAMPLE_EVENT.phone, tk);
+    await tap('#ap-slot-all', tk);
+    await tap('#ap-agree-label', tk);
+    await tap('#ap-submit', tk);
+    await sleep(1100, tk);
+  }
+
+  var DEMOS = {
+    // 기본 경로 · 승인제 — 동의 안 하고 눌러서 에러 → 체크 → 신청 → 내 모임 → 모임 페이지 → 새로고침해도 유지
+    'basic-approval': async function (tk) {
+      await fillEventForm(tk);
+      await tap('#js-ask-join', tk);
+      await sleep(700, tk);
+      await tap('#jf-opt-toggle', tk);
+      await typeInto('#jf-bio', '고전 읽기와 산을 좋아해요', tk);
+      await tap('#jf-submit', tk);
+      await sleep(900, tk);
+      await tap('#jf-agree-label', tk);
+      await tap('#jf-submit', tk);
+      await sleep(1400, tk);
+      await tap('#jr-primary', tk);
+      await sleep(1400, tk);
+      await tap('#mp-community [data-club="krj"]', tk);
+      await sleep(1200, tk);
+      await softReload();
+      await sleep(900, tk);
+      await tap('#wl-event-card', tk);
+      await sleep(1600, tk);
+    },
+    // 기본 경로 · 즉시 가입 — 회원 메뉴(하단 탭바)까지
+    'basic-instant': async function (tk) {
+      await fillEventForm(tk);
+      await tap('#js-ask-join', tk);
+      await sleep(700, tk);
+      await tap('#jf-agree-label', tk);
+      await tap('#jf-submit', tk);
+      await sleep(1400, tk);
+      await tap('#jr-primary', tk);
+      await sleep(1000, tk);
+      await tap('#tabbar-home .c-tab[data-key="board"]', tk);
+      await sleep(800, tk);
+      await tap('#tabbar-board .c-tab[data-key="members"]', tk);
+      await sleep(1000, tk);
+    },
+    // 다음에 할게요 → 랜딩·모임 페이지에서 다시 가입하기
+    'later-revisit': async function (tk) {
+      await fillEventForm(tk);
+      await tap('#js-ask-later', tk);
+      await sleep(900, tk);
+      await tap('#done-ok', tk);
+      await sleep(1000, tk);
+      await softReload();
+      await sleep(900, tk);
+      await tap('#ev-host', tk);
+      await sleep(1000, tk);
+      await tap('#wl-join', tk);
+      await sleep(900, tk);
+      await tap('#jf-agree-label', tk);
+      await tap('#jf-submit', tk);
+      await sleep(1400, tk);
+      await tap('#jr-close', tk);
+      await sleep(1200, tk);
+    },
+    // 이미 회원 — 모달 없이 완료 화면에서 회원 메뉴로
+    'already-member': async function (tk) {
+      await fillEventForm(tk);
+      await sleep(600, tk);
+      await tap('#done-member', tk);
+      await sleep(1400, tk);
+    },
+    // 이미 승인 대기 — 완료 화면에 상태 행만
+    'already-pending': async function (tk) {
+      await fillEventForm(tk);
+      await sleep(600, tk);
+      await tap('#done-club-row', tk);
+      await sleep(1400, tk);
+    },
+    // 같은 이벤트 재방문 — [내 신청]
+    'revisit-applied': async function (tk) {
+      await sleep(600, tk);
+      await tap('#ev-mine', tk);
+      await sleep(1400, tk);
+      await tap('#done-ok', tk);
+      await sleep(1000, tk);
+    },
+    // 거절 후 다시 신청
+    'rejected': async function (tk) {
+      await sleep(600, tk);
+      await tap('#wl-retry', tk);
+      await sleep(900, tk);
+      await tap('#jf-agree-label', tk);
+      await tap('#jf-submit', tk);
+      await sleep(1400, tk);
+      await tap('#jr-primary', tk);
+      await sleep(1600, tk);
+    },
+    // 방문자 — 멤버 탭(가려진 목록)을 보고 가입 → 승인 대기에선 토스트 → 게시판도 흐림
+    'visitor-members': async function (tk) {
+      await sleep(600, tk);
+      await tap('#tabbar-home .c-tab[data-key="members"]', tk);
+      await sleep(900, tk);
+      await tap('#c-members-veiled .c-member-row:nth-child(2)', tk);
+      await sleep(900, tk);
+      await tap('#js-ask-join', tk);
+      await sleep(900, tk);
+      await typeInto('#jf-name', SAMPLE_EVENT.name, tk);
+      await tap('#jf-agree-label', tk);
+      await tap('#jf-submit', tk);
+      await sleep(1400, tk);
+      await tap('#jr-close', tk);
+      await sleep(900, tk);
+      await tap('#c-members-veiled .c-member-row:nth-child(3)', tk);
+      await sleep(1600, tk);
+      await tap('#tabbar-members .c-tab[data-key="board"]', tk);
+      await sleep(1200, tk);
+      await tap('#s-c-board .c-post-card:nth-child(2)', tk);
+      await sleep(1600, tk);
+    }
+  };
+
+  window.runDemo = async function (scenarioId) {
+    var id = findScenario(scenarioId).id;
+    window.__demoDone = false;
+    resetScenario(id);
+    var tk = ++demoToken;
+    try {
+      await sleep(900, tk);
+      await DEMOS[id](tk);
+    } catch (e) {
+      if (e === 'abort') return;
+      console.error(e);
+    }
+    hideCursor();
+    window.__demoDone = true;
+  };
+
+  /* ══════════════════════════════════════════
+     시작
+     ══════════════════════════════════════════ */
+  (function init() {
+    var params = new URLSearchParams(location.search);
+    if (params.get('hidepanel') === '1') document.body.classList.add('hide-panel');
+    buildPanel();
+    renderTabbars();
+
+    var qScn = params.get('scenario');
+    var autoplay = params.get('autoplay') === '1';
+    var saved = load();
+
+    if (!autoplay && saved && (!qScn || saved.scenario === qScn)) {
+      state = saved;
+      goTo(state.screen || 's-event', { reset: true });
+    } else {
+      state = freshState(qScn || 'basic-approval');
+      goTo(state.screen, { reset: true });
+    }
+    lucide.createIcons();
+    if (autoplay) setTimeout(function () { window.runDemo(state.scenario); }, 300);
+  })();
+</script>
+</body>
+</html>
