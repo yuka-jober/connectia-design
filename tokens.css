@@ -40,9 +40,15 @@
   --palette-gray-50:  #f2f2f7;
   --palette-gray-100: #ecedf5;
   --palette-gray-200: #d8d9e7;
+  --palette-gray-300: #b3b5c4;
   --palette-gray-500: #767985;
   --palette-gray-700: #252638;
   --palette-gray-900: #111318;
+
+  /* Stone — 카드형 프로필 템플릿의 따뜻한 중립색 */
+  --palette-stone-100: #efece5;
+  --palette-stone-400: #a39d93;
+  --palette-stone-500: #8b857b;
 
   /* Red */
   --palette-red-100: #fde2dc;
@@ -116,8 +122,31 @@
   /* Brand — 외부 서비스(소셜 로그인) 고정 브랜드 컬러 */
   --palette-kakao-yellow: #fee500;
   --palette-kakao-ink:    #191919;
+  --palette-coral-500:    #ef5a4e;   /* 다홍 — 알림 신청 같은 눈에 띄는 보조 강조 */
+  --palette-apple-black:  #000000;
   --palette-facebook-blue: #1877f2;
   --palette-linkedin-blue: #0a66c2;
+
+  /* Fellows — 펠로우즈 로고 올리브 그린 (#5a7344) 기준 */
+  --palette-olive-50:  #f1f4ec;
+  --palette-olive-100: #dfe7d4;
+  --palette-olive-500: #5a7344;
+  --palette-olive-700: #3f5230;
+
+  /* Warm — 캠퍼스 선배 카드 문장 강조 (Chocolate / Peach Glow / Pale Amber / Muted Olive) */
+  --palette-warm-chocolate: #d57530;
+  --palette-warm-peach:     #ffbc92;
+  --palette-warm-amber:     #eee47d;
+  --palette-warm-olive:     #9fb768;
+
+  /* Forest — 펠로우즈 캠퍼스 (로고를 이 초록으로 칠한 판) */
+  --palette-forest-50:  #f3f8f0;
+  --palette-forest-100: #eaf3ec;
+  --palette-forest-500: #2f7a3f;
+  --palette-forest-700: #225c2f;
+  --palette-lime-100:   #edf7be;
+  --palette-sage-200:   #c9d8a5;
+  --palette-sage-400:   #7fa05a;
 
   /* Pastel — 프로필 페이지 배경용 저채도 색 */
   /* 대화하기 버튼 — 파스텔 배경과 어울리도록 채도를 낮춘 깊은 색 */
@@ -159,11 +188,15 @@
   --color-text:       var(--palette-gray-900);
   --color-text-sub:   var(--palette-gray-700);
   --color-text-muted: var(--palette-gray-500);
+  --color-text-faint: var(--palette-gray-300);   /* 아직 못 고르는 탭처럼 한 단계 더 물러난 글자 */
+  --color-text-warm-sub:   var(--palette-stone-500);  /* 카드형 프로필의 보조 글자 — 화살표·작성자·전체보기 */
+  --color-text-warm-faint: var(--palette-stone-400);  /* 카드형 프로필의 날짜처럼 가장 물러난 글자 */
 
   /* Border & Input */
   --color-border: var(--palette-gray-200);
   --color-border-subtle: var(--palette-gray-100);  /* 버튼 등 면이 넓은 컨트롤의 옅은 테두리 */
   --color-input:  var(--palette-gray-200);
+  --color-line-warm: var(--palette-stone-100);  /* 카드형 프로필의 행 구분선·옅은 테두리 */
 
   /* Status */
   --color-destructive:        var(--palette-red-500);
@@ -181,18 +214,49 @@
   --color-on-primary:       var(--palette-gray-0);   /* 채워진 버튼·배지 위 텍스트·아이콘 */
   --color-on-primary-sub:   rgba(255,255,255,0.75);  /* 브랜드 배경 위 보조 텍스트 */
   --color-on-primary-faint: rgba(255,255,255,0.2);   /* 어두운 배경 위 장식 아이콘 */
+  --color-card-stack:       rgba(26,20,10,0.07);     /* 명함 카드 아래로 한 장 더 비치는 종이 */
   --color-scrim:            rgba(0,0,0,0.4);         /* 이미지 위 삭제 버튼 등 어두운 스크림 */
   --color-scrim-strong:     rgba(0,0,0,0.6);         /* 사진 위 글자가 묻힐 때 쓰는 진한 스크림 */
+  --color-scrim-heavy:      rgba(0,0,0,0.85);        /* 배경이 복잡한 사진 위에 글자를 얹을 때 */
   --color-surface-glass:    rgba(255,255,255,0.92);  /* 이미지·영상 위에 얹는 반투명 흰 배경 (play 버튼 등) */
   --color-surface-veil:     rgba(255,255,255,0.7);   /* 페이지 배경 위에 얹는 반투명 흰 면 — 배경 색조가 비쳐 어떤 테마에도 어울린다 */
 
   /* Social Brand — 소셜 로그인 버튼 (브랜드 가이드상 색 고정) */
   --color-kakao:    var(--palette-kakao-yellow);
   --color-on-kakao: var(--palette-kakao-ink);
+  --color-apple:    var(--palette-apple-black);
+  --color-on-apple: var(--palette-gray-0);
   --color-facebook:    var(--palette-facebook-blue);   /* 페이스북 공유 버튼 (브랜드 색 고정) */
   --color-on-facebook: var(--palette-gray-0);
   --color-linkedin:    var(--palette-linkedin-blue);   /* 링크드인 공유 버튼 (브랜드 색 고정) */
   --color-on-linkedin: var(--palette-gray-0);
+
+  /* Coral — 다홍. 알림 신청 등 눈에 띄는 보조 강조 */
+  --color-coral:    var(--palette-coral-500);
+  --color-on-coral: var(--palette-gray-0);
+
+  /* Fellows — 펠로우즈가 여는 공식 모임에만 쓰는 브랜드색 (앱 기본색은 primary 유지) */
+  --color-fellows:        var(--palette-olive-500);
+  --color-fellows-dark:   var(--palette-olive-700);
+  --color-fellows-light:  var(--palette-olive-100);
+  --color-fellows-subtle: var(--palette-olive-50);
+  --color-on-fellows:     var(--palette-gray-0);
+
+  /* Mark — 선배 카드 문장에서 핵심 단어 밑에 까는 형광펜 색. 카드마다 돌아가며 쓴다 */
+  --color-mark-chocolate: var(--palette-warm-chocolate);
+  --color-mark-peach:     var(--palette-warm-peach);
+  --color-mark-amber:     var(--palette-warm-amber);
+  --color-mark-olive:     var(--palette-warm-olive);
+
+  /* Campus — 펠로우즈 캠퍼스 화면 전용 초록 */
+  --color-campus:          var(--palette-forest-500);
+  --color-campus-dark:     var(--palette-forest-700);
+  --color-campus-weak:     var(--palette-forest-100);   /* 약한 버튼 면 */
+  --color-campus-subtle:   var(--palette-forest-50);    /* 고른 선택지 면 */
+  --color-campus-lime:     var(--palette-lime-100);     /* 곧 열리는 모임 띠 */
+  --color-campus-arrow:    var(--palette-sage-400);
+  --color-campus-arrow-off: var(--palette-sage-200);
+  --color-on-campus:       var(--palette-gray-0);
 
   /* Brand Extended */
   --color-banner-gradient: linear-gradient(135deg, var(--palette-purple-700) 0%, var(--palette-purple-900) 100%);
@@ -208,6 +272,7 @@
   /* Chat CTA — 대화하기 버튼 색상 프리셋 */
   --color-chat-apricot: var(--palette-soft-apricot);
   --color-chat-blossom: var(--palette-soft-blossom);
+
   --color-chat-plum:    var(--palette-deep-plum);
   --color-chat-ocean:   var(--palette-deep-ocean);
   --color-chat-forest:  var(--palette-deep-forest);
@@ -234,9 +299,13 @@
   */
 
   /* Font Size */
+  --fs-hero:     44px;   /* 랜딩 히어로 대형 제목 (PC) — 유틸 없이 토큰만 */
   --fs-display:  26px;
   --fs-title:    19px;
   --fs-title-sm: 18px;
+  --fs-lead:     17px;   /* 캠퍼스 — 입력값·선택지·주요 버튼 */
+  --fs-title-lg: 22px;   /* 캠퍼스 — 선배 이야기 본문 */
+  --fs-headline: 24px;   /* 캠퍼스 — 화면 제목 */
   --fs-heading:  16px;
   --fs-body-lg: 15px;
   --fs-body:    14px;
@@ -253,9 +322,13 @@
   --fw-bold:     700;
 
   /* Line Height */
+  --lh-hero:     1.25;
   --lh-display:  1.35;
   --lh-title:    1.4;
   --lh-title-sm: 1.4;
+  --lh-lead:     1.5;
+  --lh-title-lg: 1.55;
+  --lh-headline: 1.4;
   --lh-heading:  1.45;
   --lh-body-lg: 1.65;
   --lh-body:    1.6;
@@ -266,9 +339,13 @@
   --lh-nav:     1.2;
 
   /* Letter Spacing */
+  --ls-hero:     -1.2px;
   --ls-display:  -0.5px;
   --ls-title:    -0.3px;
   --ls-title-sm: -0.25px;
+  --ls-lead:     -0.2px;
+  --ls-title-lg: -0.6px;
+  --ls-headline: -0.7px;
   --ls-heading:  -0.2px;
   --ls-body-lg: -0.1px;
   --ls-body:    -0.1px;
@@ -277,6 +354,7 @@
   --ls-badge:    0.1px;
   --ls-metric:  -1px;
   --ls-nav:      0.2px;
+  --ls-wide:     1px;    /* 영문 대문자 장식 문구(리본·마퀴 등) 트래킹 */
 
 
   /* ==========================================
@@ -284,6 +362,7 @@
      ========================================== */
 
   --input-h:     40px;   /* input·select 높이 */
+  --input-h-lg:  56px;   /* 큰 입력 — 한 화면에 입력 하나만 크게 받을 때 */
   --input-px:    16px;   /* input·select 좌우 여백 */
   --textarea-py:  8px;   /* textarea 상하 여백 */
   --textarea-h:  68px;   /* textarea 최소 높이 */
@@ -295,6 +374,7 @@
 
   --blur-fill:     24px;  /* 포스터 썸네일 배경 레이어 블러 반경 */
   --blur-dim:      2px;   /* 편집 중 나머지 요소를 뒤로 물릴 때의 블러 반경 */
+  --blur-veil:     16px;  /* 화면 전체를 흐리고 그 위에 문구를 띄울 때의 블러 반경 */
 
 
   /* ==========================================
@@ -313,6 +393,7 @@
      SHADOW
      ========================================== */
 
+  --shadow-lift: 0 18px 40px -22px rgba(26,20,10,0.28), inset 0 1px 0 rgba(255,255,255,0.9);  /* 카드형 프로필의 명함 카드가 배경 사진 위로 떠 보이게 */
   --shadow-1: 0px 1px 3px rgba(0,0,0,0.06);
   --shadow-2: 0px 2px 8px rgba(0,0,0,0.08);
   --shadow-3: 0px 4px 12px rgba(0,0,0,0.12);
