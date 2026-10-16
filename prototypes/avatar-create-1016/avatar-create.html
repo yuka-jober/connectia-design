@@ -27,7 +27,7 @@
   }
   .back svg { width: 18px; height: 18px; }
 
-  .page { max-width: 920px; margin: 0 auto; padding: 0 20px 120px; }
+  .page { max-width: 920px; margin: 0 auto; padding: 0 20px 48px; }
   h1 {
     margin: 24px 0 32px; text-align: center;
     font-size: var(--fs-display); font-weight: var(--fw-bold); letter-spacing: var(--ls-display);
@@ -37,25 +37,33 @@
   .grid {
     display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px;
   }
+  /* 좁은 화면 — 가운데 한 장이 서고 양옆이 뒤로 물러나 겹쳐 보인다 */
   @media (max-width: 860px) {
     .page { padding-left: 0; padding-right: 0; }
     h1 { padding: 0 20px; }
     .grid {
-      display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory;
-      padding: 4px 20px 8px; scrollbar-width: none;
+      display: flex; gap: 0; overflow-x: auto; scroll-snap-type: x mandatory;
+      padding: 8px 0 16px; scrollbar-width: none;
     }
     .grid::-webkit-scrollbar { display: none; }
-    .preset { flex: 0 0 74%; scroll-snap-align: center; }
+    /* 처음·마지막 장도 가운데 설 수 있도록 양 끝을 비워 둔다 */
+    .grid::before, .grid::after { content: ''; flex: 0 0 13%; }
+    .preset {
+      flex: 0 0 74%; scroll-snap-align: center;
+      transform: scale(0.86); opacity: 0.5; z-index: 0;
+      transition: transform var(--motion-standard) var(--ease-standard),
+                  opacity var(--motion-standard) var(--ease-standard);
+    }
+    .preset + .preset { margin-left: -5%; }
+    .preset.is-center { transform: scale(1); opacity: 1; z-index: 2; }
   }
 
   .preset {
     display: flex; flex-direction: column; gap: 12px; padding: 12px;
-    background: var(--color-surface); border: 2px solid transparent;
+    background: var(--color-surface); border: none;
     border-radius: var(--r-xl); box-shadow: var(--shadow-1);
     cursor: pointer; text-align: left;
-    transition: border-color var(--motion-fast) var(--ease-standard);
   }
-  .preset.is-selected { border-color: var(--color-primary); }
   /* 넓은 화면에서는 가리킨 한 장이 앞으로 떠오른다 — 네 장을 견주는 자리라 그 한 장만 커진다 */
   @media (min-width: 861px) {
     .preset {
@@ -67,7 +75,7 @@
     .preset:hover { transform: scale(1.08); box-shadow: var(--shadow-3); z-index: 2; }
   }
   .grid .preset { transition: opacity var(--motion-standard) var(--ease-standard); }
-  .preset-name { font-size: var(--fs-body-lg); font-weight: var(--fw-semibold); color: var(--color-text); }
+  .preset-name { text-align: center; font-size: var(--fs-body-lg); font-weight: var(--fw-semibold); color: var(--color-text); }
 
   /* 실제 페이지를 찍은 그림 — 위에서부터 보이는 만큼 */
   .shot {
@@ -76,13 +84,6 @@
   }
   .shot img { width: 100%; display: block; }
 
-  /* ── 만들기 ── */
-  .foot {
-    position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
-    display: flex; justify-content: center; padding: 16px 20px 24px;
-    background: linear-gradient(to top, var(--color-bg) 70%, transparent);
-  }
-  .foot .btn { width: 100%; max-width: 320px; }
 </style>
 </head>
 <body>
@@ -96,7 +97,7 @@
 
   <div class="grid" id="grid">
 
-    <button class="preset is-selected" data-k="card">
+    <button class="preset" data-k="card">
       <span class="shot"><img src="../../assets/presets/preset-card.jpg" alt="튼튼내과 김태현 원장"></span>
       <span class="preset-name">명함</span>
     </button>
@@ -119,22 +120,42 @@
   </div>
 </div>
 
-<div class="foot">
-  <button class="btn btn-lg btn-pill btn-fill-primary" id="go">만들기</button>
-</div>
-
 <script src="https://unpkg.com/lucide@latest"></script>
 <script>
   lucide.createIcons();
-  document.getElementById('grid').addEventListener('click', e => {
+  const grid = document.getElementById('grid');
+  const cards = [...document.querySelectorAll('.preset')];
+  const narrow = () => window.matchMedia('(max-width: 860px)').matches;
+
+  /* 가운데 온 장이 고른 장이다 — 밀어 보는 동안 선택이 따라온다 */
+  /* offsetLeft 는 위치 지정 조상에 따라 기준이 달라진다 — 화면 좌표로 잰다 */
+  const midOf = el => { const r = el.getBoundingClientRect(); return r.left + r.width / 2; };
+  function markCenter() {
+    const mid = midOf(grid);
+    let best = cards[0], bestD = Infinity;
+    cards.forEach(p => {
+      const d = Math.abs(midOf(p) - mid);
+      if (d < bestD) { bestD = d; best = p; }
+    });
+    cards.forEach(p => p.classList.toggle('is-center', p === best));
+  }
+
+  let tick;
+  grid.addEventListener('scroll', () => { clearTimeout(tick); tick = setTimeout(markCenter, 60); });
+  window.addEventListener('resize', markCenter);
+
+  grid.addEventListener('click', e => {
     const b = e.target.closest('.preset');
     if (!b) return;
-    document.querySelectorAll('.preset').forEach(p => p.classList.toggle('is-selected', p === b));
+    /* 좁은 화면에서 옆에 있던 장은 먼저 가운데로 온다 — 반쯤 가린 장이 바로 만들어지면 곤란하다 */
+    if (narrow() && !b.classList.contains('is-center')) {
+      grid.scrollBy({ left: midOf(b) - midOf(grid), behavior: 'smooth' });
+      return;
+    }
+    location.href = '../profile-edit-card-1015/profile-edit-card.html#' + b.dataset.k;
   });
-  document.getElementById('go').onclick = () => {
-    const k = document.querySelector('.preset.is-selected').dataset.k;
-    location.href = '../profile-edit-card-1015/profile-edit-card.html#' + k;
-  };
+
+  markCenter();
 </script>
 </body>
 </html>
