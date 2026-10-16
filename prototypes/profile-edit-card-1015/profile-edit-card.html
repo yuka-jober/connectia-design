@@ -108,17 +108,6 @@
 
     /* ── 커버 — 본문 블록이 아니라 페이지 배경. 이미지가 등록됐을 때만 렌더된다 ── */
     .head { background: var(--page-bg); position: relative; }
-    body:not(.preview) .cover { cursor: pointer; }
-    /* 커버가 없으면 편집 중에만 등록 슬롯을 둔다 — 미리보기·실제 페이지에는 아무것도 없다 */
-    .cover-empty {
-      display: flex; align-items: center; justify-content: center; gap: 8px;
-      width: calc(100% - 40px); height: 72px; margin: 8px 20px 0;
-      border: 1px dashed var(--color-border); border-radius: var(--r-md);
-      background: none; cursor: pointer; font-family: var(--font-base);
-      font-size: var(--fs-label); font-weight: var(--fw-medium); color: var(--color-text-muted);
-    }
-    .cover-empty svg { width: 16px; height: 16px; }
-    body.preview .cover-empty { display: none; }
     .cover {
       position: relative;
       aspect-ratio: 9 / 5;
@@ -718,34 +707,6 @@
     .kv-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
     .kv-row .kv-v { flex: 1; min-width: 0; }
 
-    /* 이미지 업로드 행 / 썸네일 관리 */
-    .pick-wrap { display: flex; align-items: center; gap: 8px; }
-    /* 이미지 등록 행이 연달아 놓일 때 서로 붙지 않게 */
-    .pick-row + .pick-row,
-    .pick-row + .pick-wrap,
-    .pick-wrap + .pick-row,
-    .pick-wrap + .pick-wrap { margin-top: 8px; }
-    /* 라벨 없이 바로 이어지는 등록 행도 앞 줄에 붙지 않게 */
-    .mock-row + .pick-row,
-    .mock-row + .pick-wrap,
-    .switch-row + .pick-row,
-    .switch-row + .pick-wrap { margin-top: 12px; }
-    .pick-wrap .pick-row { flex: 1; min-width: 0; }
-    .pick-row {
-      display: flex; align-items: center; gap: 12px; width: 100%;
-      padding: 12px; background: var(--color-surface);
-      border: 1px solid var(--color-border-subtle); border-radius: var(--r-sm);
-      cursor: pointer; font-family: var(--font-base);
-    }
-    .pick-label { flex: 1; text-align: left; font-size: var(--fs-body-lg); font-weight: var(--fw-medium); color: var(--color-text); }
-    .pick-more { font-size: var(--fs-body); font-weight: var(--fw-medium); color: var(--color-text-muted); flex-shrink: 0; }
-    .pick-row > svg { width: 16px; height: 16px; color: var(--color-text-muted); }
-    .pick-thumb {
-      width: 40px; height: 40px; border-radius: var(--r-xs); object-fit: cover;
-      background: var(--color-surface-sub); flex-shrink: 0;
-      display: flex; align-items: center; justify-content: center; color: var(--color-text-muted);
-    }
-    .pick-thumb svg { width: 18px; height: 18px; }
 
     .pick-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
     .pick-cell {
@@ -804,6 +765,28 @@
     }
 
     /* ── 목업 옵션 카드 ── */
+    /* 이미지 등록 칸을 한 줄에 — 어떤 그림이 비어 있는지 한눈에 보인다 */
+    .img-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .img-slot { position: relative; display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 0; }
+    .img-slot-btn {
+      width: 100%; aspect-ratio: 1; padding: 0; overflow: hidden; cursor: pointer;
+      border: 1px dashed var(--color-border); border-radius: var(--r-sm);
+      background: var(--color-surface-sub); color: var(--color-text-muted);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .img-slot-btn.is-set { border-style: solid; background: var(--color-surface); }
+    .img-slot-btn img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .img-slot-btn img.is-contain { object-fit: contain; padding: 8px; }
+    .img-slot-btn svg { width: 20px; height: 20px; }
+    .img-slot-label { font-size: var(--fs-caption); color: var(--color-text-sub); }
+    .img-slot-x {
+      position: absolute; top: 4px; right: 4px; padding: 0; border: none; cursor: pointer;
+      width: 20px; height: 20px; border-radius: var(--r-full);
+      background: var(--color-scrim-strong); color: var(--color-on-primary);
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .img-slot-x svg { width: 12px; height: 12px; }
+
     .mock-row { display: grid; gap: 8px; }
     .mock-row-2 { grid-template-columns: repeat(2, 1fr); }
     .mock-row-3 { grid-template-columns: repeat(3, 1fr); }
@@ -1155,7 +1138,6 @@
   let seq = 100;
   let activeId = null;
   /* 커버는 블록이 아니지만, 편집은 블록과 같은 반쪽 시트에서 한다 */
-  const COVER_ID = -3;
   let insertAt = null;
   let previewMode = false;
   let designTab = 'style';
@@ -1290,9 +1272,10 @@
     document.body.classList.toggle('balign-center', T.balign === 'center');
     document.body.classList.toggle('surface-plain', T.surface === 'plain');
     document.body.classList.toggle('editing', activeId !== null);
-    $('head').classList.toggle('is-active', activeId === COVER_ID);
 
     syncChatBlock();
+    const act = activeId === null ? null : find(activeId);
+    $('head').classList.toggle('is-active', !!act && act.kind === 'profile');
     renderHead();
     snapCoverHeight();
     renderCta();
@@ -1331,12 +1314,9 @@
   /* 커버는 등록된 이미지가 있을 때만 렌더한다 — 없으면 블록이 화면 맨 위에서 시작한다 */
   function renderHead() {
     const h = $('head');
-    if (!P.cover) {
-      h.innerHTML = '<button class="cover-empty" data-cover><i data-lucide="image"></i>배경 사진</button>';
-      return;
-    }
+    if (!P.cover) { h.innerHTML = ''; return; }
     h.innerHTML =
-      '<div class="cover" data-cover style="--cover-img:url(\'' + P.cover + '\')">'
+      '<div class="cover" style="--cover-img:url(\'' + P.cover + '\')">'
       + (T.coverEdge === 'fade' ? '<span class="cover-fade"></span>' : '')
       + '</div>';
   }
@@ -1640,17 +1620,6 @@
     aiRow(label, on, 'data-act="togglei" data-arr="' + arr + '" data-i="' + i + '"');
 
   /* 업로드 행 — 현재 썸네일 + 라벨 + 변경/등록 + 셰브론, 등록돼 있으면 제거 버튼을 옆에 둔다 */
-  function pickRow(act, thumbHtml, label, src, clearAct) {
-    const row = '<button class="pick-row" data-act="' + act + '">' + thumbHtml
-      + '<span class="pick-label">' + label + '</span>'
-      + '<span class="pick-more">' + (src ? '변경' : '등록') + '</span>'
-      + '<i data-lucide="chevron-right"></i></button>';
-    if (!clearAct || !src) return row;
-    return '<div class="pick-wrap">' + row
-      + '<button class="icon-btn icon-btn-clear" data-act="' + clearAct + '" aria-label="이미지 제거">'
-      + '<i data-lucide="trash-2" style="width:18px;height:18px"></i></button></div>';
-  }
-
   /* ============================================================
      이미지 업로드 — 프로필·커버·블록 이미지 모두 기기에서 고른다
      ============================================================ */
@@ -1713,18 +1682,6 @@
     });
   }
 
-  function openCover() {
-    if (previewMode || document.body.classList.contains('design-open')) return;
-    closeLayer('layer-design');
-    closeLayer('layer-catalog');
-    activeId = COVER_ID;
-    render();
-    $('scroll').scrollTo({ top: 0 });
-    openLayer('layer-editor');
-    drawEditor();
-  }
-  $('head').addEventListener('click', e => { if (e.target.closest('[data-cover]')) openCover(); });
-
   function openEditor(id) {
     const b = find(id);
     if (!b || previewMode || document.body.classList.contains('design-open')) return;
@@ -1764,10 +1721,6 @@
     });
   }
 
-  function thumbBox(src, icon, fit) {
-    return '<span class="pick-thumb">' + (src ? '<img src="' + src + '" alt="" style="width:100%;height:100%;object-fit:' + (fit || 'cover') + ';border-radius:var(--r-xs)">' : '<i data-lucide="' + icon + '"></i>') + '</span>';
-  }
-
   /* 프로필 한 패널 — 블록을 눌러도, 디자인 > 프로필로 와도 같은 화면이 뜬다 */
   const LAYOUT_USES = { avatar: ['photo'], cover: [], card: ['logo', 'photo'], image: ['hero'] };
   const PROFILE_IMG = {
@@ -1775,6 +1728,18 @@
     photo: ['pick-photo', 'clear-photo', '사진',        'cover'],
     hero:  ['pick-hero',  'clear-hero',  '대표 이미지', 'cover']
   };
+
+  /* 그림 한 칸 — 비어 있으면 +, 채워져 있으면 썸네일과 지우기 */
+  function imgSlot(key, label, fit) {
+    const pick = 'pick-' + key, clear = 'clear-' + key;
+    const inner = P[key]
+      ? '<img src="' + P[key] + '" alt=""' + (fit === 'contain' ? ' class="is-contain"' : '') + '>'
+      : '<i data-lucide="plus"></i>';
+    return '<span class="img-slot">'
+      + '<button class="img-slot-btn' + (P[key] ? ' is-set' : '') + '" data-act="' + pick + '">' + inner + '</button>'
+      + (P[key] ? '<button class="img-slot-x" data-act="' + clear + '" aria-label="' + label + ' 지우기"><i data-lucide="x"></i></button>' : '')
+      + '<span class="img-slot-label">' + label + '</span></span>';
+  }
 
   function profilePanel() {
     const pb = blocks.find(b => b.kind === 'profile');
@@ -1785,22 +1750,26 @@
       + mock('layout', 'image',  P.layout, mkLayout('image'),  '큰 이미지', 'setp')
       + '</div>';
 
-    /* 고른 레이아웃이 실제로 쓰는 이미지만 내놓는다 */
-    (LAYOUT_USES[P.layout] || []).forEach(k => {
-      const f = PROFILE_IMG[k];
-      h += pickRow(f[0], thumbBox(P[k], 'image', f[3]), f[2], P[k], f[1]);
-    });
-    /* 명함은 로고 자리에 회사명을 글자로 넣을 수 있다 */
-    if (P.layout === 'card') h += fieldLabel('회사명')
-      + '<input class="input" data-pin="company" value="' + esc(P.company) + '" placeholder="로고 대신 표시">';
+    /* 고른 레이아웃이 쓰는 그림과 배경 사진을 한 줄에 — 배경이 묻히지 않게 */
+    h += fieldLabel('이미지') + '<div class="img-row">'
+      + (LAYOUT_USES[P.layout] || []).map(k => imgSlot(k, PROFILE_IMG[k][2], PROFILE_IMG[k][3])).join('')
+      + imgSlot('cover', '배경 사진', 'cover')
+      + '</div>';
+    if (P.cover) h += fieldLabel('배경 가장자리') + '<div class="mock-row mock-row-2">'
+      + mock('coverEdge', 'sharp', T.coverEdge, mkCoverEdge('sharp'), '기본')
+      + mock('coverEdge', 'fade',  T.coverEdge, mkCoverEdge('fade'),  '페이드')
+      + '</div>';
 
     if (pb) h += fieldLabel('정렬') + '<div class="mock-row mock-row-2">'
       + mock('align', 'left',   pb.align, mkIcon('align-left'),   '좌측정렬', 'setpb')
       + mock('align', 'center', pb.align, mkIcon('align-center'), '중앙정렬', 'setpb')
       + '</div>';
 
-    h += fieldLabel('이름') + '<input class="input" data-pin="name" value="' + esc(P.name) + '" placeholder="이름">'
-      + fieldLabel('직함') + '<input class="input" data-pin="role" value="' + esc(P.role) + '" placeholder="직함">';
+    h += fieldLabel('이름') + '<input class="input" data-pin="name" value="' + esc(P.name) + '" placeholder="이름">';
+    /* 명함은 로고 자리에 회사명을 글자로 세울 수 있다 */
+    if (P.layout === 'card') h += fieldLabel('회사명')
+      + '<input class="input" data-pin="company" value="' + esc(P.company) + '" placeholder="로고 대신 표시">';
+    h += fieldLabel('직함') + '<input class="input" data-pin="role" value="' + esc(P.role) + '" placeholder="직함">';
 
     if (pb) {
       h += '<hr class="sheet-divider">';
@@ -1810,12 +1779,6 @@
         + '<input class="input" data-pb="' + f[0] + '" value="' + esc(pb[f[0]] || '') + '" placeholder="' + esc(f[1]) + '">').join('');
     }
 
-    h += '<hr class="sheet-divider">'
-      + pickRow('pick-cover', thumbBox(P.cover, 'image'), '배경 사진', P.cover, 'clear-cover');
-    if (P.cover) h += fieldLabel('배경 가장자리') + '<div class="mock-row mock-row-2">'
-      + mock('coverEdge', 'sharp', T.coverEdge, mkCoverEdge('sharp'), '기본')
-      + mock('coverEdge', 'fade',  T.coverEdge, mkCoverEdge('fade'),  '페이드')
-      + '</div>';
     return h;
   }
 
@@ -1848,12 +1811,6 @@
   }
 
   function drawEditor() {
-    if (activeId === COVER_ID) {
-      $('editor-title').textContent = '프로필';
-      $('editor-body').innerHTML = profilePanel();
-      icons();
-      return;
-    }
     const b = find(activeId);
     if (!b) return;
     $('editor-title').textContent = KIND_ALL[b.kind];
