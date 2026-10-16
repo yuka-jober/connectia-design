@@ -1324,7 +1324,7 @@
     if (!P.cover) { h.innerHTML = ''; return; }
     h.innerHTML =
       '<div class="cover" style="--cover-img:url(\'' + P.cover + '\')">'
-      + (P.layout === 'image' || T.coverEdge === 'fade' ? '<span class="cover-fade"></span>' : '')
+      + (OVER_COVER.indexOf(P.layout) >= 0 || T.coverEdge === 'fade' ? '<span class="cover-fade"></span>' : '')
       + '</div>';
   }
 
@@ -1370,7 +1370,7 @@
       + (b.id === activeId ? ' is-active' : '')
       + (b.visible ? '' : ' is-hidden')
       + (isEmptyBlock(b) ? ' is-empty-coll' : '')
-      + (i === 0 && P.cover && b.kind === 'profile' ? ' is-over-cover' : '');
+      + (i === 0 && P.cover && b.kind === 'profile' && OVER_COVER.indexOf(P.layout) >= 0 ? ' is-over-cover' : '');
     el.dataset.blockId = b.id;
 
     el.innerHTML =
@@ -1731,6 +1731,9 @@
 
   /* 프로필 한 패널 — 블록을 눌러도, 디자인 > 프로필로 와도 같은 화면이 뜬다 */
   const LAYOUT_USES = { avatar: ['photo'], cover: [], card: ['logo', 'photo'], image: ['hero'] };
+  /* 카드가 배경 위로 올라타는 레이아웃 — 배경은 위쪽 띠만 남고 아래는 늘 페이드로 잦아든다.
+     원형·배경만은 배경을 덮지 않으므로 겹치지도, 페이드를 강제하지도 않는다 */
+  const OVER_COVER = ['card', 'image'];
   const PROFILE_IMG = {
     logo:  ['pick-logo',  'clear-logo',  '로고',        'contain'],
     photo: ['pick-photo', 'clear-photo', '사진',        'cover'],
@@ -1763,7 +1766,7 @@
       + (LAYOUT_USES[P.layout] || []).map(k => imgSlot(k, PROFILE_IMG[k][2], PROFILE_IMG[k][3])).join('')
       + imgSlot('cover', '배경 사진', 'cover')
       + '</div>';
-    if (P.cover && P.layout !== 'image') h += fieldLabel('배경 가장자리') + '<div class="mock-row mock-row-2">'
+    if (P.cover && OVER_COVER.indexOf(P.layout) < 0) h += fieldLabel('배경 가장자리') + '<div class="mock-row mock-row-2">'
       + mock('coverEdge', 'sharp', T.coverEdge, mkCoverEdge('sharp'), '기본')
       + mock('coverEdge', 'fade',  T.coverEdge, mkCoverEdge('fade'),  '페이드')
       + '</div>';
