@@ -142,30 +142,30 @@
       display: flex; flex-direction: column; gap: 12px;
       padding: 22px 18px 24px;
       background: var(--color-surface);
-      border-radius: var(--r-xl);
+      border-radius: var(--r-section);
+      box-shadow: var(--shadow-1);
     }
 
     /* ── 프로필 블록 — 카드형 명함. 모서리를 더 작게, 그림자를 한 단계 강하게 ── */
     .pf-card {
       position: relative;
       aspect-ratio: 91 / 55; justify-content: space-between;
-    }
-    .pf-card.pf-photo-face {
-      padding: 0; overflow: hidden;
-      padding: 22px; gap: 0;
+      padding: 22px 22px 20px; gap: 0;
       border-radius: var(--r-md); box-shadow: var(--shadow-lift);
     }
+    /* 사진이 명함 앞면을 대신할 때는 사진이 카드를 꽉 채운다 */
+    .pf-card.pf-photo-face { padding: 0; }
     /* 명함 한 장이 더 깔린 듯 아래로 비치는 종이 */
     .pf-card::after {
-      content: ''; position: absolute; left: 12px; right: 12px; bottom: -12px; height: 12px;
+      content: ''; position: absolute; left: 14px; right: 14px; bottom: -8px; height: 14px;
       border-radius: 0 0 var(--r-md) var(--r-md);
-      background: var(--color-card-stack); pointer-events: none;
+      background: var(--color-card-stack); filter: blur(10px); pointer-events: none;
     }
     .pf-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
     .pf-card.pf-center .pf-top { justify-content: center; }
-    .pf-photo { width: 56px; height: 56px; object-fit: cover; display: block; flex-shrink: 0; }
+    .pf-photo { width: 54px; height: 54px; border-radius: var(--r-xs); object-fit: cover; display: block; flex-shrink: 0; }
     /* 대표 이미지는 명함 비율에 꽉 채워 자른다 — 실서비스는 올릴 때 자르기 창을 띄운다 */
-    .pf-media { width: 100%; height: 100%; overflow: hidden; }
+    .pf-media { width: 100%; height: 100%; overflow: hidden; border-radius: var(--r-md); }
     .pf-media img { display: block; width: 100%; height: 100%; object-fit: cover; }
     .pf-info { padding: 0; display: flex; flex-direction: column; }
     .pf-name-row { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
@@ -176,11 +176,11 @@
     .pf-card.pf-center .pf-logo { object-position: center; }
     .pf-name {
       font-size: var(--fs-title); font-weight: var(--fw-bold);
-      line-height: var(--lh-title); letter-spacing: var(--ls-title);
+      line-height: var(--lh-title); letter-spacing: var(--ls-namecard);
       color: var(--color-text);
     }
     .pf-name.is-empty { color: var(--color-text-muted); font-weight: var(--fw-medium); }
-    .pf-role { font-size: var(--fs-badge); color: var(--color-text-muted); }
+    .pf-role { font-size: var(--fs-badge); letter-spacing: var(--ls-namecard-sub); color: var(--color-text-muted); }
 
     /* 대화하기 버튼 (하단 고정 / 코너) — 프레임 안에 고정 */
     /* 하단 고정·코너 CTA는 실제 페이지의 요소다. 편집 chrome이 떠 있는 기본 화면에서는 감추고,
@@ -314,7 +314,7 @@
 
     /* 아이콘이 많아지면 거터를 넘지 않고 블록 열 안에서 가로로 잘린다 (이벤트 캐러셀과 동일) */
     .sns-block {
-      display: flex; gap: 12px; width: 100%; background: none; border: none;
+      display: flex; justify-content: center; gap: 12px; width: 100%; background: none; border: none;
       padding: 4px 0; cursor: pointer;
       overflow-x: auto; scrollbar-width: none;
     }
@@ -325,7 +325,7 @@
     body.balign-center .lp-star-row { justify-content: center; }
     /* SNS 타일 — 브랜드 마크는 인라인 SVG(fill=currentColor)로 그린다 */
     .sns-tile {
-      width: 48px; height: 48px; border-radius: var(--r-sm);
+      width: 48px; height: 48px; border-radius: var(--r-tile);
       background: var(--color-text);
       display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
@@ -335,7 +335,7 @@
     }
     .sns-tile-ico svg { width: 100%; height: 100%; display: block; }
     .sns-add {
-      width: 48px; height: 48px; border-radius: var(--r-sm);
+      width: 48px; height: 48px; border-radius: var(--r-tile);
       border: 1.5px dashed var(--color-border); color: var(--color-text-muted);
       background: transparent; display: inline-flex; align-items: center; justify-content: center;
       flex-shrink: 0; cursor: pointer;
@@ -394,7 +394,7 @@
     }
     .lp-banner-scroll::-webkit-scrollbar { display: none; }
     .lp-banner-card {
-      flex: 0 0 148px; min-width: 0;
+      flex: 0 0 200px; min-width: 0;
       scroll-snap-align: start;
       display: flex;
       flex-direction: column;
@@ -407,7 +407,7 @@
     }
     .lp-banner-img {
       width: 100%;
-      aspect-ratio: 3 / 4;
+      aspect-ratio: 4 / 3;
       border-radius: var(--r-md);
       background: var(--color-line-warm);
       position: relative;
@@ -500,7 +500,7 @@
     .lp-post-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .lp-post-body { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 4px; padding: 0; min-width: 0; }
     .lp-post-tags { display: flex; gap: 8px; align-items: center; }
-    .lp-post-title { font-size: var(--fs-body); color: var(--color-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .lp-post-title { font-size: var(--fs-body); line-height: var(--lh-body); color: var(--color-text); }
     .lp-post-date { font-size: var(--fs-badge); color: var(--color-text-warm-faint); }
 
     /* ── 리뷰: 별점 요약 + 가로 텍스트 카드 ── */
@@ -513,13 +513,14 @@
     .lp-star-rate { font-size: var(--fs-metric); font-weight: var(--fw-bold); color: var(--color-text); }
     .lp-star-count { font-size: var(--fs-caption); color: var(--color-text-muted); }
     .lp-review-cards { display: flex; flex-direction: column; width: 100%; }
-    .lp-review-card { width: 100%; padding: 16px 0; display: flex; flex-direction: column; gap: 4px; border-bottom: 1px solid var(--color-line-warm); }
+    .lp-review-card { width: 100%; padding: 16px 0; display: flex; flex-direction: column; gap: 8px; border-bottom: 1px solid var(--color-line-warm); }
     .lp-review-card:last-child { border-bottom: none; }
-    .lp-review-date { font-size: var(--fs-badge); color: var(--color-text-warm-faint); }
-    .lp-review-stars { display: flex; gap: 4px; }
-    .lp-review-stars svg { width: 14px; height: 14px; color: var(--color-star); fill: currentColor; }
+    .lp-review-top { display: flex; justify-content: space-between; align-items: center; }
+    .lp-review-date { font-size: var(--fs-nav); color: var(--color-text-warm-faint); }
+    .lp-review-stars { display: inline-flex; gap: 2px; }
+    .lp-review-stars svg { width: 12px; height: 12px; color: var(--color-star); fill: currentColor; }
     .lp-review-stars svg.is-off { color: var(--color-star-empty); }
-    .lp-review-text { font-size: var(--fs-body); color: var(--color-text); line-height: var(--lh-body); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .lp-review-text { font-size: var(--fs-label); color: var(--color-text); line-height: 1.7; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
     .lp-review-meta { font-size: var(--fs-badge); color: var(--color-text-warm-sub); }
 
     /* ── 갤러리: board.html 원본 (격자 gap 2px는 board.html 값 그대로) ── */
@@ -539,7 +540,7 @@
     }
     .lp-gallery-carousel { display: flex; gap: 8px; overflow-x: auto; width: 100%; padding-bottom: 4px; scrollbar-width: none; }
     .lp-gallery-carousel::-webkit-scrollbar { display: none; }
-    .lp-gallery-carousel .lp-gallery-cell { flex: 0 0 auto; width: 260px; aspect-ratio: 16 / 9; border-radius: var(--r-md); }
+    .lp-gallery-carousel .lp-gallery-cell { flex: 0 0 auto; width: 150px; aspect-ratio: 4 / 5; border-radius: var(--r-md); }
     /* 세로 — 전체 폭 이미지를 위아래로 쌓는다 */
     .lp-gallery-stack { display: flex; flex-direction: column; gap: 8px; width: 100%; }
     .lp-gallery-stack .lp-gallery-cell { width: 100%; aspect-ratio: 4 / 3; border-radius: var(--r-md); }
@@ -1544,8 +1545,10 @@
     let stars = '';
     for (let i = 1; i <= 5; i++) stars += '<i data-lucide="star"' + (i > rate ? ' class="is-off"' : '') + '></i>';
     return '<div class="lp-review-card">'
-      + '<div class="lp-review-date">' + esc(it.d) + '</div>'
-      + '<div class="lp-review-stars">' + stars + '</div>'
+      + '<div class="lp-review-top">'
+      + '<span class="lp-review-stars">' + stars + '</span>'
+      + '<span class="lp-review-date">' + esc(it.d) + '</span>'
+      + '</div>'
       + '<div class="lp-review-text">' + esc(it.t) + '</div>'
       + '<div class="lp-review-meta">' + esc(it.n) + '</div>'
       + '</div>';
