@@ -267,7 +267,7 @@
 
     /* 세로 여백을 모든 블록에 동일하게 32px. 짧은 블록만 커지던 min-height 대신
        .block-body 최소 높이로 레일(112px) 자리를 확보한다 */
-    .block { display: flex; align-items: center; padding: 32px 44px; position: relative; }
+    .block { display: flex; align-items: center; padding: 16px 44px; position: relative; }
     .block.is-hidden .block-body { opacity: 0.4; }
     .block.is-dragging .block-body { opacity: 0.4; }
 
@@ -1077,7 +1077,8 @@
     name:   '양은주',
     role:   'Product Designer',
     handle: 'yuka',
-    layout: 'card',   /* avatar(동그란 사진) · card(자체 명함) · image(큰 이미지) */
+    layout: 'card',   /* avatar(원형) · cover(배경만) · card(자체 명함) · image(큰 이미지) */
+    showName: true, showContact: true,
     logo:   '../../assets/jober.svg',
     photo:  '../../assets/profile-yuka.png',
     hero:   '',
@@ -1429,13 +1430,15 @@
 
   /* 이름·직함·연락처 */
   function pfInfo(b) {
-    const nameRow = (P.name || P.role)
+    const showName = P.layout === 'card' || P.showName;
+    const showContact = P.layout === 'card' || P.showContact;
+    const nameRow = showName && (P.name || P.role)
       ? '<div class="pf-name-row">'
         + (P.name ? '<span class="pf-name">' + esc(P.name) + '</span>' : '')
         + (P.role ? '<span class="pf-role">' + esc(P.role) + '</span>' : '')
         + '</div>'
       : '';
-    const rows = contactRows(b);
+    const rows = showContact ? contactRows(b) : [];
     const ct = rows.length
       ? '<div class="ct-list">' + rows.map(f =>
           '<div class="ct-row"><span class="ct-k">' + f[1] + '</span>'
@@ -1605,9 +1608,10 @@
       + (o[2] ? '<i data-lucide="' + o[2] + '"></i>' : '') + o[1] + '</button>'
     ).join('') + '</div>';
   }
-  function switchRow(label, on, key) {
+  function switchRow(label, on, key, act) {
     return '<div class="switch-row"><span class="switch-label">' + label + '</span>'
-      + '<input type="checkbox" class="toggle toggle-sm"' + (on ? ' checked' : '') + ' data-act="togglef" data-k="' + key + '"></div>';
+      + '<input type="checkbox" class="toggle toggle-sm"' + (on ? ' checked' : '')
+      + ' data-act="' + (act || 'togglef') + '" data-k="' + key + '"></div>';
   }
   /* AI 학습 행 — [라벨] ......... [AI 학습 (토글)]
      label 이 있으면 항목별(라벨 우측 상단), 없으면 블록 단위(라벨 자리가 'AI 학습') */
@@ -1683,7 +1687,7 @@
   /* ============================================================
      블록 편집 시트
      ============================================================ */
-  /* 블록 삭제 — 편집 시트의 삭제 버튼과 구분선의 휴지통이 함께 쓴다 */
+  /* 블록 삭제 — 편집 시트의 삭제 버튼이 쓴다 */
   function askDeleteBlock(id) {
     confirmDlg('블록을 삭제할까요?', '삭제', true, () => {
       const idx = blocks.findIndex(x => x.id === id);
@@ -2120,6 +2124,9 @@
         + mock('align', 'left',   pb.align, mkIcon('align-left'),   '좌측정렬', 'setpb')
         + mock('align', 'center', pb.align, mkIcon('align-center'), '중앙정렬', 'setpb')
         + '</div>';
+      if (P.layout !== 'card') h += '<hr class="sheet-divider">'
+        + switchRow('이름·직함', P.showName, 'showName', 'togglep')
+        + switchRow('연락처', P.showContact, 'showContact', 'togglep');
       h += pickRow('pick-cover', thumbBox(P.cover, 'image'), '배경 사진', P.cover, 'clear-cover');
       /* 배경을 깐 뒤에야 가장자리 선택이 뜻을 갖는다 */
       if (P.cover) h += fieldLabel('배경 가장자리') + '<div class="mock-row mock-row-2">'
@@ -2188,6 +2195,10 @@
     }
     if (act === 'setp') {
       P[el.dataset.k] = el.dataset.v;
+      touch(); render(); drawDesign();
+    }
+    if (act === 'togglep') {
+      P[el.dataset.k] = !P[el.dataset.k];
       touch(); render(); drawDesign();
     }
     if (act === 'setpb') {
