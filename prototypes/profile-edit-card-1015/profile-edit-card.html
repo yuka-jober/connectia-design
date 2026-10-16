@@ -232,13 +232,16 @@
       background: linear-gradient(to top, var(--page-bg) 64%, transparent);
       pointer-events: auto;
     }
-    /* 블록 추가 — 편집 중에만 뜬다. 대화하기 버튼은 미리보기에서만 뜨므로 자리가 겹치지 않는다 */
+    /* 블록 추가 — 편집 중에만 뜬다. 대화하기 버튼은 미리보기에서만 뜨므로 자리가 겹치지 않는다.
+       더하기만 세우면 무엇이 더해지는지가 없어 글자를 함께 둔다. 치수는 .btn-lg 와 같다 */
     .add-fab {
       position: absolute; right: 16px; z-index: 70;
       bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 16px);
-      width: 56px; height: 56px; border-radius: var(--r-full); border: none;
+      height: 48px; padding: 0 20px; gap: 8px;
+      border-radius: var(--r-full); border: none;
       background: var(--color-text); color: var(--color-on-primary);
       display: inline-flex; align-items: center; justify-content: center;
+      font-family: var(--font-base); font-size: var(--fs-body-lg); font-weight: var(--fw-semibold);
       box-shadow: var(--shadow-3); cursor: pointer;
     }
     .add-fab svg { width: 24px; height: 24px; }
@@ -1044,7 +1047,7 @@
     </nav>
 
     <!-- 블록 추가 — 편집 중에만 보인다 -->
-    <button class="add-fab" id="add-fab" aria-label="블록 추가"><i data-lucide="plus"></i></button>
+    <button class="add-fab" id="add-fab"><i data-lucide="plus"></i>블록 추가</button>
 
     <!-- 대화하기 버튼 (하단 고정 / 코너) — 디자인 시트에서도 캔버스와 함께 축소된다 -->
     <div class="page-cta" id="page-cta"></div>
