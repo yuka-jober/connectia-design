@@ -158,9 +158,8 @@
 
     /* ── 동그란 사진 레이아웃 — 명함 면 없이 사진과 이름만 ── */
     .pf-avatar-card { align-items: flex-start; text-align: left; gap: 16px; background: none; box-shadow: none; }
-    .pf-avatar { box-shadow: 0 0 0 4px var(--color-surface); }
     .pf-avatar-card .pf-info { align-items: flex-start; }
-    .pf-avatar-card .pf-name-row { flex-direction: column; align-items: flex-start; gap: 4px; }
+    .pf-avatar-card .pf-name-row { flex-direction: column; align-items: flex-start; gap: 8px; }
     .pf-avatar-card .pf-name { letter-spacing: var(--ls-title); }
     .pf-avatar-card .ct-list { align-items: flex-start; }
     .pf-avatar-card.pf-center { align-items: center; text-align: center; }
@@ -339,6 +338,52 @@
     .canvas-empty .btn svg { width: 18px; height: 18px; }
     body.preview .canvas-empty { display: none; }
 
+    /* ── 링크 블록 — 버튼형 · 썸네일형 · 카드형 ── */
+    .lb {
+      display: flex; align-items: center; justify-content: center;
+      /* 썸네일형(.lc = 8 + 56 + 8)과 높이를 맞춘다 */
+      width: 100%; height: 72px; padding: 0 16px;
+      border-radius: var(--btn-radius);
+      font-size: var(--fs-body-lg); font-weight: var(--fw-semibold);
+      cursor: pointer; border: 1px solid transparent; font-family: var(--font-base);
+      text-align: center;
+    }
+    .lb-plain { background: var(--color-surface); color: var(--color-text); box-shadow: var(--block-shadow); }
+    .lc {
+      position: relative;
+      display: flex; align-items: center; gap: 12px;
+      width: 100%; padding: 8px 16px 8px 8px;
+      background: var(--color-surface); border-radius: var(--card-radius);
+      box-shadow: var(--block-shadow); cursor: pointer; text-align: left; border: none;
+      font-family: var(--font-base);
+    }
+    .lc-thumb {
+      width: 56px; height: 56px; border-radius: var(--r-xs); overflow: hidden;
+      background: var(--color-surface-sub); flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; color: var(--color-text-muted);
+    }
+    .lc-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .lc-thumb svg { width: 20px; height: 20px; }
+    /* 제목은 썸네일 옆이 아니라 카드 정중앙에 — 버튼형과 축이 맞도록 좌우 인셋을 대칭으로 */
+    .lc-title {
+      position: absolute; left: 76px; right: 76px; top: 0; bottom: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: var(--fs-body-lg); font-weight: var(--fw-semibold); color: var(--color-text);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .lcard {
+      width: 100%; background: var(--color-surface); border-radius: var(--card-radius);
+      overflow: hidden; box-shadow: var(--block-shadow); border: none; padding: 0;
+      text-align: left; font-family: var(--font-base); cursor: pointer;
+    }
+    .lcard-img {
+      width: 100%; aspect-ratio: 16 / 9; background: var(--color-surface-sub);
+      display: flex; align-items: center; justify-content: center; color: var(--color-text-muted);
+    }
+    .lcard-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .lcard-img svg { width: 24px; height: 24px; }
+    .lcard-title { padding: 12px 16px; font-size: var(--fs-body-lg); font-weight: var(--fw-semibold); color: var(--color-text); }
+
     /* ── About 블록 ── */
     .text-block { width: 100%; text-align: left; background: none; border: none; cursor: pointer; font-family: var(--font-base); }
     .text-block .text-p { font-size: var(--fs-body-lg); line-height: var(--lh-body-lg); color: var(--color-text); white-space: pre-wrap; }
@@ -376,6 +421,7 @@
     /* ── 연락처 블록 — [라벨] ........ [값] ↗ ── */
     .ct-list { width: 100%; display: flex; flex-direction: column; gap: 4px; }
     .pf-card .ct-list { margin-top: 12px; }
+    .pf-avatar-card .ct-list { margin-top: 12px; }
     .ct-row { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
     .pf-card.pf-center .ct-row { justify-content: center; }
     .ct-k { font-size: var(--fs-caption); color: var(--color-text-muted); flex-shrink: 0; }
@@ -445,6 +491,8 @@
       overflow: hidden;
       flex-shrink: 0;
     }
+    .lp-banner-scroll.ratio-square .lp-banner-img { aspect-ratio: 1; }
+    .lp-banner-scroll.ratio-tall .lp-banner-img { aspect-ratio: 3 / 4; }
     .lp-banner-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .lp-banner-text { padding: 12px 0 0; display: flex; flex-direction: column; gap: 4px; }
     .lp-banner-title + .lp-banner-date,
@@ -1129,7 +1177,7 @@
     ]},
     /* 컬렉션 데모 데이터 — 필드는 board.html 카드가 요구하는 형태.
        t 제목 / d 일정·날짜 / p 설명·미리보기 / n 신청자 수 / img 썸네일 / tag 배지 */
-    { id: 6, kind: 'event', name: '이벤트', limit: '3', order: 'manual', visible: true, items: [
+    { id: 6, kind: 'event', name: '이벤트', limit: '3', order: 'manual', ratio: 'wide', visible: true, items: [
       { id: 'e1', t: '포트폴리오 1:1 리뷰', d: '10.20 ~ 10.31 · 19:00 ~ 21:00', p: '화면 설계와 포트폴리오 구성을 함께 보며 다음 버전을 정리해 드려요.', n: 86, img: '../../assets/event_thumbnail.png' },
       { id: 'e2', t: '명함 리뉴얼 신청',    d: '',                              p: '쓰고 있는 명함을 보내 주시면 카드형 프로필로 다시 짜 드려요.', img: '../../assets/thumbnail_1.png' },
       { id: 'e3', t: '프로덕트 디자인 세미나', d: '11.08 · 14:00 ~ 16:00',       p: '혼자 일하는 디자이너를 위한 설계 순서를 주제로 이야기합니다.', n: 34, img: '../../assets/thumbnail_2.png' },
@@ -1168,7 +1216,7 @@
   const ITEM = { event: { n: '이벤트', j: '가' }, board: { n: '게시글', j: '이' }, review: { n: '리뷰', j: '가' } };
   const KIND_ALL = {
     profile: '프로필', text: 'About', gallery: '갤러리', sns: 'SNS',
-    info: '링크 목록', event: '이벤트', board: '게시판', review: '리뷰'
+    link: '링크', info: '링크 목록', event: '이벤트', board: '게시판', review: '리뷰'
   };
   /* 갤러리는 여러 개 둘 수 있다 — 나머지는 페이지당 1개 */
   const SINGLETON = ['profile', 'sns', 'info', 'event', 'board', 'review'];
@@ -1381,6 +1429,7 @@
     if (b.kind === 'profile') return !(P.hero || P.logo || P.company || P.photo || P.name || P.role);
     if (isColl(b.kind)) return b.items.length === 0;
     if (b.kind === 'gallery') return b.items.length === 0;
+    if (b.kind === 'link') return !b.title;
     if (b.kind === 'info') return !b.links.some(l => l.title || l.url);
     return false;
   }
@@ -1420,7 +1469,7 @@
 
   /* 카드형 템플릿 — 대화하기 버튼을 뺀 모든 블록 본문이 흰 카드 안에 들어간다 */
   function cardWrap(b) {
-    if (b.kind === 'chat') return blockInner(b);
+    if (b.kind === 'chat' || b.kind === 'link') return blockInner(b);
     if (b.kind === 'profile') {
       const center = b.align === 'center' ? ' pf-center' : '';
       /* 동그란 사진 — 명함 면 없이 사진과 이름만 선다 */
@@ -1452,10 +1501,12 @@
   /* 이름·직함·연락처 */
   function pfInfo(b) {
     const showContact = P.layout === 'card' || P.showContact;
-    const nameRow = (P.name || P.role)
+    /* 명함은 회사명을 로고 자리에 세우므로 여기서는 빼고, 나머지는 직함과 나란히 둔다 */
+    const sub = [P.layout === 'card' ? '' : P.company, P.role].filter(Boolean).join(' · ');
+    const nameRow = (P.name || sub)
       ? '<div class="pf-name-row">'
         + (P.name ? '<span class="pf-name">' + esc(P.name) + '</span>' : '')
-        + (P.role ? '<span class="pf-role">' + esc(P.role) + '</span>' : '')
+        + (sub ? '<span class="pf-role">' + esc(sub) + '</span>' : '')
         + '</div>'
       : '';
     const rows = showContact ? contactRows(b) : [];
@@ -1476,13 +1527,25 @@
       if (P.layout === 'avatar' || P.layout === 'cover') {
         const info = pfInfo(b) || '<div class="pf-info"><div class="pf-name is-empty">이름을 설정해주세요</div></div>';
         if (P.layout === 'cover') return info;
-        return '<span class="avatar avatar-2xl pf-avatar">'
+        return '<span class="avatar avatar-xl pf-avatar">'
           + (P.photo ? '<img src="' + P.photo + '" alt="">' : '') + '</span>' + info;
       }
       const face = pfFace();
       const info = pfInfo(b);
       if (!face && !info) return '<div class="pf-info"><div class="pf-name is-empty">이름을 설정해주세요</div></div>';
       return face + info;
+    }
+    if (b.kind === 'link') {
+      const th = b.thumb ? '<img src="' + b.thumb + '" alt="">' : '<i data-lucide="image"></i>';
+      if (b.style === 'card') {
+        return '<div class="lcard"><div class="lcard-img">' + th + '</div>'
+          + '<div class="lcard-title">' + esc(b.title) + '</div></div>';
+      }
+      if (b.style === 'thumb') {
+        return '<div class="lc"><span class="lc-thumb">' + th + '</span>'
+          + '<span class="lc-title">' + esc(b.title) + '</span></div>';
+      }
+      return '<div class="lb lb-plain">' + esc(b.title) + '</div>';
     }
     if (b.kind === 'sns') {
       return secTitle(b.name)
@@ -1544,7 +1607,7 @@
     const rows = b.items.slice(0, n);
     if (b.kind === 'event') {
       return '<div class="lp-banner-section">' + title
-        + '<div class="lp-banner-scroll">' + rows.map(eventCard).join('') + '</div>' + moreBtn() + '</div>';
+        + '<div class="lp-banner-scroll ratio-' + (b.ratio || 'wide') + '">' + rows.map(eventCard).join('') + '</div>' + moreBtn() + '</div>';
     }
     if (b.kind === 'board') {
       return '<div class="lp-post-section">' + title
@@ -1762,16 +1825,16 @@
   };
 
   /* 그림 한 칸 — 비어 있으면 +, 채워져 있으면 썸네일과 지우기 */
-  function imgSlot(key, label, fit) {
-    const pick = 'pick-' + key, clear = 'clear-' + key;
-    const inner = P[key]
-      ? '<img src="' + P[key] + '" alt=""' + (fit === 'contain' ? ' class="is-contain"' : '') + '>'
+  function imgSlotOf(src, label, fit, pick, clear) {
+    const inner = src
+      ? '<img src="' + src + '" alt=""' + (fit === 'contain' ? ' class="is-contain"' : '') + '>'
       : '<i data-lucide="plus"></i>';
     return '<span class="img-slot">'
-      + '<button class="img-slot-btn' + (P[key] ? ' is-set' : '') + '" data-act="' + pick + '">' + inner + '</button>'
-      + (P[key] ? '<button class="img-slot-x" data-act="' + clear + '" aria-label="' + label + ' 지우기"><i data-lucide="x"></i></button>' : '')
+      + '<button class="img-slot-btn' + (src ? ' is-set' : '') + '" data-act="' + pick + '">' + inner + '</button>'
+      + (src ? '<button class="img-slot-x" data-act="' + clear + '" aria-label="' + label + ' 지우기"><i data-lucide="x"></i></button>' : '')
       + '<span class="img-slot-label">' + label + '</span></span>';
   }
+  const imgSlot = (key, label, fit) => imgSlotOf(P[key], label, fit, 'pick-' + key, 'clear-' + key);
 
   function profilePanel() {
     const pb = blocks.find(b => b.kind === 'profile');
@@ -1798,9 +1861,8 @@
       + '</div>';
 
     h += fieldLabel('이름') + '<input class="input" data-pin="name" value="' + esc(P.name) + '" placeholder="이름">';
-    /* 명함은 로고 자리에 회사명을 글자로 세울 수 있다 */
-    if (P.layout === 'card') h += fieldLabel('회사명')
-      + '<input class="input" data-pin="company" value="' + esc(P.company) + '" placeholder="로고 대신 표시">';
+    h += fieldLabel('회사명')
+      + '<input class="input" data-pin="company" value="' + esc(P.company) + '" placeholder="회사명">';
     h += fieldLabel('직함') + '<input class="input" data-pin="role" value="' + esc(P.role) + '" placeholder="직함">';
 
     if (pb) {
@@ -1867,6 +1929,18 @@
         + '</div></div>'
         + aiKeyRow('', b.ai, 'ai');
 
+    } else if (b.kind === 'link') {
+      h += fieldLabel('버튼 이름') + '<input class="input" data-in="title" value="' + esc(b.title) + '" placeholder="버튼에 쓸 말">'
+        + fieldLabel('주소') + '<input class="input" data-in="url" value="' + esc(b.url) + '" placeholder="example.com">'
+        + fieldLabel('표시 방식') + '<div class="mock-row mock-row-3">'
+        + mock('style', 'button', b.style, mkLinkStyle('button'), '버튼형', 'setf')
+        + mock('style', 'thumb',  b.style, mkLinkStyle('thumb'),  '썸네일', 'setf')
+        + mock('style', 'card',   b.style, mkLinkStyle('card'),   '카드형', 'setf')
+        + '</div>';
+      if (b.style !== 'button') h += fieldLabel('썸네일') + '<div class="img-row">'
+        + imgSlotOf(b.thumb, '썸네일', 'cover', 'pick-thumb', 'clear-thumb') + '</div>';
+      h += aiKeyRow('', b.ai, 'ai');
+
     } else if (b.kind === 'sns') {
       h += fieldLabel('블록 제목') + '<input class="input" data-in="name" value="' + esc(b.name) + '" placeholder="표시 안 함">'
         + '<div class="sns-edit-list">'
@@ -1910,6 +1984,9 @@
     } else if (isColl(b.kind)) {
       h += fieldLabel('블록 제목') + '<input class="input" data-in="name" value="' + esc(b.name) + '" placeholder="표시 안 함">'
         + fieldLabel('노출 개수') + optRow('setf', 'limit', b.limit, [['3', '3개'], ['5', '5개'], ['10', '10개']]);
+      /* 이벤트 포스터는 가로·정사각·세로가 모두 쓰여 썸네일 비율을 고를 수 있어야 한다 */
+      if (b.kind === 'event') h += fieldLabel('썸네일 비율')
+        + optRow('setf', 'ratio', b.ratio || 'wide', [['wide', '가로'], ['square', '정사각'], ['tall', '세로']]);
       /* 리뷰는 방문자가 남기는 순서대로 쌓이므로 정렬을 두지 않는다 */
       if (b.kind !== 'review') {
         h += fieldLabel('정렬') + optRow('setf', 'order', b.order, [['recent', '최신순'], ['manual', '직접 지정']]);
@@ -1946,6 +2023,15 @@
 
     const b = find(activeId);
     if (!b) return;
+
+    if (act === 'pick-thumb') {
+      pickFile(v => { b.thumb = v[0].src; touch(); render(); drawEditor(); });
+      return;
+    }
+    if (act === 'clear-thumb') {
+      b.thumb = ''; touch(); render(); drawEditor();
+      return;
+    }
 
     if (act === 'setf') {
       b[el.dataset.k] = el.dataset.v;
@@ -2124,6 +2210,21 @@
 
   function mkIcon(name) { return '<i data-lucide="' + name + '" class="mk-ico"></i>'; }
 
+  /* 링크 표시 방식 미리보기 */
+  function mkLinkStyle(v) {
+    const line = '<rect x="4" y="4" width="64" height="36" rx="4" style="fill:var(--color-surface);stroke:var(--color-border);stroke-width:1"/>';
+    if (v === 'button') return '<svg class="mk" viewBox="0 0 72 44">'
+      + '<rect x="4" y="14" width="64" height="16" rx="4" style="fill:var(--color-surface);stroke:var(--color-border);stroke-width:1"/>'
+      + '<rect x="26" y="20" width="20" height="4" rx="2"' + F('--color-border') + '/></svg>';
+    if (v === 'thumb') return '<svg class="mk" viewBox="0 0 72 44">'
+      + '<rect x="4" y="10" width="64" height="24" rx="4" style="fill:var(--color-surface);stroke:var(--color-border);stroke-width:1"/>'
+      + '<rect x="9" y="15" width="14" height="14" rx="3"' + F('--color-surface-sub') + '/>'
+      + '<rect x="28" y="20" width="28" height="4" rx="2"' + F('--color-border') + '/></svg>';
+    return '<svg class="mk" viewBox="0 0 72 44">' + line
+      + '<rect x="4" y="4" width="64" height="22" rx="4"' + F('--color-surface-sub') + '/>'
+      + '<rect x="10" y="31" width="26" height="4" rx="2"' + F('--color-border') + '/></svg>';
+  }
+
   /* 프로필 앞면 미리보기 — 동그란 사진 · 명함 · 큰 이미지 */
   function mkLayout(v) {
     const line = (x, y, w) => '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="4" rx="2"' + F('--color-border') + '/>';
@@ -2278,12 +2379,12 @@
 
   const KIND_ICON = {
     profile: 'circle-user-round', text: 'type', gallery: 'images', sns: 'at-sign',
-    info: 'list', event: 'calendar-days', board: 'newspaper', review: 'star'
+    link: 'link', info: 'list', event: 'calendar-days', board: 'newspaper', review: 'star'
   };
 
   function drawCatalog() {
     const has = k => blocks.some(b => b.kind === k);
-    const cells = ['profile', 'sns', 'text', 'gallery', 'event', 'info', 'board', 'review'];
+    const cells = ['profile', 'sns', 'text', 'link', 'gallery', 'event', 'info', 'board', 'review'];
     $('catalog-body').innerHTML = '<div class="cat-grid">' + cells.map(k => {
       const off = SINGLETON.indexOf(k) >= 0 && has(k);
       return '<button class="cat-cell" data-act="add" data-v="' + k + '"' + (off ? ' disabled' : '') + '>'
@@ -2306,8 +2407,9 @@
     else if (kind === 'text') nb = { id, kind: 'text', title: KIND_ALL.text, html: '', ai: true, visible: true };
     else if (kind === 'sns') nb = { id, kind: 'sns', name: KIND_ALL.sns, visible: true, icons: [{ p: 'Instagram', id: '', ai: true }] };
     else if (kind === 'gallery') nb = { id, kind: 'gallery', name: KIND_ALL.gallery, layout: 'grid', items: [], visible: true };
+    else if (kind === 'link') nb = { id, kind: 'link', title: '새 링크', url: '', style: 'button', thumb: '', ai: true, visible: true };
     else if (kind === 'info') nb = { id, kind: 'info', name: KIND_ALL.info, visible: true, links: [{ title: '', url: '', ai: true }] };
-    else nb = { id, kind, name: KIND[kind], limit: '3', order: 'recent', visible: true, ai: true, items: [] };
+    else nb = { id, kind, name: KIND[kind], limit: '3', order: 'recent', ratio: 'wide', visible: true, ai: true, items: [] };
 
     blocks.splice(insertAt, 0, nb);
     touch();
