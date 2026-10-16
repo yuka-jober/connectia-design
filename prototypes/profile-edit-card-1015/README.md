@@ -198,6 +198,7 @@
 편집 결과가 실제로 어떻게 보이는지 두 파일로 떼어 두었다.
 
 - `profile-view.html` — 카드형 명함이 적용된 공개 프로필
+- `profile-view-plain.html` — 같은 프로필을 **카드 면 없이** 둔 경우
 - `profile-view-all.html` — 각 섹션의 전체보기 네 화면
 
 ### 섹션 액션
