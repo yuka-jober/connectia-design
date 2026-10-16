@@ -55,8 +55,18 @@
     cursor: pointer; text-align: left;
     transition: border-color var(--motion-fast) var(--ease-standard);
   }
-  .preset:hover { border-color: var(--color-border); }
   .preset.is-selected { border-color: var(--color-primary); }
+  /* 넓은 화면에서는 가리킨 한 장이 앞으로 떠오른다 — 네 장을 견주는 자리라 그 한 장만 커진다 */
+  @media (min-width: 861px) {
+    .preset {
+      position: relative;
+      transition: transform var(--motion-standard) var(--ease-standard),
+                  box-shadow var(--motion-standard) var(--ease-standard);
+    }
+    .grid:hover .preset:not(:hover) { opacity: 0.6; }
+    .preset:hover { transform: scale(1.08); box-shadow: var(--shadow-3); z-index: 2; }
+  }
+  .grid .preset { transition: opacity var(--motion-standard) var(--ease-standard); }
   .preset-name { font-size: var(--fs-body-lg); font-weight: var(--fw-semibold); color: var(--color-text); }
 
   /* 실제 페이지를 찍은 그림 — 위에서부터 보이는 만큼 */
@@ -82,7 +92,7 @@
 </header>
 
 <div class="page">
-  <h1>어떤 페이지로 쓸까요</h1>
+  <h1>템플릿을 선택하세요</h1>
 
   <div class="grid" id="grid">
 

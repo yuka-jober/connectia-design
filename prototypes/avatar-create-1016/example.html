@@ -222,7 +222,7 @@ const BRANDS = {
   /* 모임 — 서울시립대학교 총동문회, 큰 이미지 */
   group: {
     surface: 'card',
-    cover: A + 'uos/uos-alumni-hero.webp',
+    coverColor: 'var(--color-page-sky)',
     head: `
       <div class="pf-wrap"><div class="pf-card pf-photo-face">
         <div class="pf-media"><img src="${A}uos/uos-alumni-hero.webp" alt=""></div>
@@ -262,7 +262,7 @@ function draw(key) {
   document.body.classList.toggle('plain', d.surface === 'plain');
   document.getElementById('frame').innerHTML =
     `<div class="head">
-       <div class="cover" style="background-image:url(${d.cover})"><span class="cover-fade"></span></div>
+       <div class="cover" style="${d.coverColor ? 'background-color:' + d.coverColor : 'background-image:url(' + d.cover + ')'}"><span class="cover-fade"></span></div>
        <div class="head-bar">
          <button class="btn btn-sm btn-pill btn-fill-dark"><i data-lucide="plus"></i>팔로우</button>
          <button class="btn btn-sm btn-pill btn-glass-light">공유</button>
