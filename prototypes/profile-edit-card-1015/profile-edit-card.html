@@ -1177,7 +1177,7 @@
     ]},
     /* 컬렉션 데모 데이터 — 필드는 board.html 카드가 요구하는 형태.
        t 제목 / d 일정·날짜 / p 설명·미리보기 / n 신청자 수 / img 썸네일 / tag 배지 */
-    { id: 6, kind: 'event', name: '이벤트', limit: '3', order: 'manual', ratio: 'wide', visible: true, items: [
+    { id: 6, kind: 'event', name: '이벤트', limit: '3', order: 'manual', ratio: 'wide', ai: true, visible: true, items: [
       { id: 'e1', t: '포트폴리오 1:1 리뷰', d: '10.20 ~ 10.31 · 19:00 ~ 21:00', p: '화면 설계와 포트폴리오 구성을 함께 보며 다음 버전을 정리해 드려요.', n: 86, img: '../../assets/event_thumbnail.png' },
       { id: 'e2', t: '명함 리뉴얼 신청',    d: '',                              p: '쓰고 있는 명함을 보내 주시면 카드형 프로필로 다시 짜 드려요.', img: '../../assets/thumbnail_1.png' },
       { id: 'e3', t: '프로덕트 디자인 세미나', d: '11.08 · 14:00 ~ 16:00',       p: '혼자 일하는 디자이너를 위한 설계 순서를 주제로 이야기합니다.', n: 34, img: '../../assets/thumbnail_2.png' },
@@ -1188,7 +1188,7 @@
       { title: '작업 기록',       url: 'brunch.co.kr/@yuka', ai: true },
       { title: '포트폴리오 PDF',  url: 'jober.io/yuka.pdf', ai: false }
     ]},
-    { id: 8, kind: 'board', name: '게시판', limit: '3', order: 'recent', visible: true, items: [
+    { id: 8, kind: 'board', name: '게시판', limit: '3', order: 'recent', ai: true, visible: true, items: [
       { id: 'b1', t: '카드형 명함 템플릿을 열었어요', d: '10/14', tag: '공지', tagCls: 'badge-fill-neutral', p: '사진만 올려도 되고, 이름과 직함만 둬도 됩니다. 쓰는 방식에 맞게 골라 보세요.', img: '../../assets/cardnews-1.png' },
       { id: 'b2', t: '프로필 편집이 블록으로 바뀝니다', d: '10/02', p: '보이는 것을 바로 눌러 고치는 방식으로 정리했습니다. 순서도 끌어서 바꿀 수 있어요.' },
       { id: 'b3', t: '연락처 저장이 한 번에 됩니다',   d: '9/21',  p: '휴대폰과 이메일을 눌러 바로 저장하거나 전화를 걸 수 있게 했어요.' },
@@ -1982,14 +1982,14 @@
         + '<button class="btn btn-md btn-weak-primary" data-act="yt-add">추가</button></div>';
 
     } else if (isColl(b.kind)) {
-      h += fieldLabel('블록 제목') + '<input class="input" data-in="name" value="' + esc(b.name) + '" placeholder="표시 안 함">'
-        + fieldLabel('노출 개수') + optRow('setf', 'limit', b.limit, [['3', '3개'], ['5', '5개'], ['10', '10개']]);
-      /* 이벤트 포스터는 가로·정사각·세로가 모두 쓰여 썸네일 비율을 고를 수 있어야 한다 */
-      if (b.kind === 'event') h += fieldLabel('썸네일 비율')
-        + optRow('setf', 'ratio', b.ratio || 'wide', [['wide', '가로'], ['square', '정사각'], ['tall', '세로']]);
-      /* 리뷰는 방문자가 남기는 순서대로 쌓이므로 정렬을 두지 않는다 */
-      if (b.kind !== 'review') {
-        h += fieldLabel('정렬') + optRow('setf', 'order', b.order, [['recent', '최신순'], ['manual', '직접 지정']]);
+      h += fieldLabel('블록 제목') + '<input class="input" data-in="name" value="' + esc(b.name) + '" placeholder="표시 안 함">';
+      /* 이벤트는 순서를 직접 쥐고 포스터 비율을 고른다. 게시판·리뷰는 쌓이는 대로 몇 개만 보여준다 */
+      if (b.kind === 'event') {
+        h += fieldLabel('정렬') + optRow('setf', 'order', b.order, [['recent', '최신순'], ['manual', '직접 지정']])
+          + fieldLabel('썸네일 비율') + optRow('setf', 'ratio', b.ratio || 'wide',
+              [['tall', '포스터형 3:4'], ['square', '정사각형 1:1'], ['wide', '배너형 4:3']]);
+      } else {
+        h += fieldLabel('노출 개수') + optRow('setf', 'limit', b.limit, [['3', '3개'], ['5', '5개'], ['10', '10개']]);
       }
       /* 콘텐츠 등록은 프로필 화면에서 한다. 여기서는 정렬을 '직접 지정'으로 바꿨을 때
          바로 아래에 순서 변경 진입을 붙여 흐름이 이어지게 한다. */
@@ -1997,9 +1997,7 @@
         h += '<button class="goto-full" data-act="full"><span>노출 순서 변경 (' + b.items.length + ')</span>'
           + '<i data-lucide="arrow-right"></i></button>';
       }
-      /* 이벤트·게시판은 항목마다 따로 AI 학습을 지정하므로 블록 단위 토글을 두지 않는다.
-         리뷰는 방문자가 남기는 것이라 항목별 설정이 없어 블록 단위로만 둔다. */
-      if (b.kind === 'review') h += aiKeyRow('', b.ai, 'ai');
+      h += aiKeyRow('', b.ai, 'ai');
       h += '<hr class="sheet-divider">' + switchRow('프로필에 표시', b.visible, 'visible');
     }
 
