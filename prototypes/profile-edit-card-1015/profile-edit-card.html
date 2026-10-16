@@ -287,8 +287,8 @@
     .block.is-over-cover { margin-top: calc(var(--cover-show) - var(--cover-h) - 24px); z-index: 1; }
     body.preview .block.is-over-cover { margin-top: calc(var(--cover-show) - var(--cover-h) - 12px); }
     /* 원형·배경만 — 배경 사진에 걸쳐 서거나, 바로 아래 붙어 선다 */
-    .block.is-head-over { margin-top: -60px; z-index: 1; }
-    body.preview .block.is-head-over { margin-top: -48px; }
+    .block.is-head-over { margin-top: -82px; z-index: 1; }
+    body.preview .block.is-head-over { margin-top: -70px; }
     .block.is-head-near { margin-top: -28px; }
     body.preview .block.is-head-near { margin-top: -16px; }
     .block.is-hidden .block-body { opacity: 0.4; }
@@ -2760,8 +2760,9 @@
      ============================================================ */
   const PRESETS = {
     card:    { layout: 'card',   surface: 'card',  kinds: ['sns', 'text', 'info'] },
-    profile: { layout: 'avatar', surface: 'plain', kinds: ['text', 'gallery', 'info', 'board', 'review'] },
-    group:   { layout: 'cover',  surface: 'card',  kinds: ['text', 'event', 'board', 'gallery'] }
+    profile: { layout: 'avatar', surface: 'plain', kinds: ['text', 'gallery', 'info', 'review'] },
+    photo:   { layout: 'image',  surface: 'card',  kinds: ['text', 'gallery', 'info'] },
+    group:   { layout: 'image',  surface: 'card',  kinds: ['text', 'event', 'board', 'info'] }
   };
 
   function startFromPreset(key) {
