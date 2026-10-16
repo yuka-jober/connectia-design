@@ -1495,7 +1495,16 @@
 
   /* 미리보기에서 숨길 "내용이 비어 있는" 블록 */
   function isEmptyBlock(b) {
-    if (b.kind === 'profile') return !(P.hero || P.logo || P.company || P.photo || P.name || P.role || contactRows(b).length);
+    /* 프로필은 눈을 끈 것까지 쳐서 센다 — 꺼 둔 이름만 남으면 미리보기에서 설 게 없다 */
+    if (b.kind === 'profile') {
+      const sub = [P.layout === 'card' ? '' : P.company, P.role].filter(Boolean).join(' · ');
+      const info = (P.showName && (P.name || sub)) || (P.showContact && contactRows(b).length);
+      const face = P.layout === 'card'  ? (P.logo || P.company || P.photo)
+                 : P.layout === 'image' ? P.hero
+                 : P.layout === 'avatar' ? P.photo
+                 : '';   /* 배경만 — 얼굴은 배경이 맡으므로 블록에는 글만 남는다 */
+      return !(info || face);
+    }
     if (isColl(b.kind)) return b.items.length === 0;
     if (b.kind === 'gallery') return b.items.length === 0;
     if (b.kind === 'link') return !b.title;
@@ -1580,8 +1589,7 @@
 
   /* 이름·직함·연락처 */
   function pfInfo(b) {
-    const showName = P.layout === 'card' || P.showName;
-    const showContact = P.layout === 'card' || P.showContact;
+    const showName = P.showName, showContact = P.showContact;
     /* 명함은 회사명을 로고 자리에 세우므로 여기서는 빼고, 나머지는 직함과 나란히 둔다 */
     const sub = [P.layout === 'card' ? '' : P.company, P.role].filter(Boolean).join(' · ');
     const nameRow = showName && (P.name || sub)
@@ -1606,7 +1614,9 @@
     if (b.kind === 'chat') return chatBtn();
     if (b.kind === 'profile') {
       if (P.layout === 'avatar' || P.layout === 'cover') {
-        const info = pfInfo(b) || '<div class="pf-info"><div class="pf-name is-empty">이름을 설정해주세요</div></div>';
+        /* 자리표시는 정말 빈 블록에만 — 사진만 세우려고 글을 끈 경우까지 가로채면 안 된다 */
+        const info = pfInfo(b)
+          || (isEmptyBlock(b) ? '<div class="pf-info"><div class="pf-name is-empty">이름을 설정해주세요</div></div>' : '');
         if (P.layout === 'cover') return info;
         return '<span class="avatar avatar-xl pf-avatar">'
           + (P.photo ? '<img src="' + P.photo + '" alt="">' : '') + '</span>' + info;
@@ -1945,8 +1955,8 @@
       + '</div>';
 
     h += '<hr class="sheet-divider">'
-      + navRow('이름·직함', 'name', P.layout === 'card' ? null : 'showName')
-      + (pb ? navRow('연락처', 'contact', P.layout === 'card' ? null : 'showContact') : '');
+      + navRow('이름·직함', 'name', 'showName')
+      + (pb ? navRow('연락처', 'contact', 'showContact') : '');
 
     return h;
   }
