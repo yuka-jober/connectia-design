@@ -1241,7 +1241,7 @@
     ]},
     /* 컬렉션 데모 데이터 — 필드는 board.html 카드가 요구하는 형태.
        t 제목 / d 일정·날짜 / p 설명·미리보기 / n 신청자 수 / img 썸네일 / tag 배지 */
-    { id: 6, kind: 'event', name: '이벤트', limit: '3', order: 'manual', ratio: 'wide', ai: true, visible: true, items: [
+    { id: 6, kind: 'event', name: '이벤트', limit: '3', order: 'manual', ratio: 'tall', ai: true, visible: true, items: [
       { id: 'e1', t: '포트폴리오 1:1 리뷰', d: '10.20 ~ 10.31 · 19:00 ~ 21:00', p: '화면 설계와 포트폴리오 구성을 함께 보며 다음 버전을 정리해 드려요.', n: 86, img: '../../assets/event_thumbnail.png' },
       { id: 'e2', t: '명함 리뉴얼 신청',    d: '',                              p: '쓰고 있는 명함을 보내 주시면 카드형 프로필로 다시 짜 드려요.', img: '../../assets/thumbnail_1.png' },
       { id: 'e3', t: '프로덕트 디자인 세미나', d: '11.08 · 14:00 ~ 16:00',       p: '혼자 일하는 디자이너를 위한 설계 순서를 주제로 이야기합니다.', n: 34, img: '../../assets/thumbnail_2.png' },
@@ -1680,7 +1680,7 @@
     const rows = b.items.slice(0, n);
     if (b.kind === 'event') {
       return '<div class="lp-banner-section">' + title
-        + '<div class="lp-banner-scroll ratio-' + (b.ratio || 'wide') + '">' + rows.map(eventCard).join('') + '</div>' + moreBtn() + '</div>';
+        + '<div class="lp-banner-scroll ratio-' + (b.ratio || 'tall') + '">' + rows.map(eventCard).join('') + '</div>' + moreBtn() + '</div>';
     }
     if (b.kind === 'board') {
       return '<div class="lp-post-section">' + title
@@ -2084,7 +2084,7 @@
       /* 이벤트는 순서를 직접 쥐고 포스터 비율을 고른다. 게시판·리뷰는 쌓이는 대로 몇 개만 보여준다 */
       if (b.kind === 'event') {
         h += fieldLabel('정렬') + optRow('setf', 'order', b.order, [['recent', '최신순'], ['manual', '직접 지정']])
-          + fieldLabel('썸네일 비율') + optRow('setf', 'ratio', b.ratio || 'wide',
+          + fieldLabel('썸네일 비율') + optRow('setf', 'ratio', b.ratio || 'tall',
               [['tall', '포스터형 3:4'], ['square', '정사각형 1:1'], ['wide', '배너형 4:3']]);
       } else {
         h += fieldLabel('노출 개수') + optRow('setf', 'limit', b.limit, [['3', '3개'], ['5', '5개'], ['10', '10개']]);
@@ -2514,7 +2514,7 @@
     else if (kind === 'gallery') nb = { id, kind: 'gallery', name: KIND_ALL.gallery, layout: 'grid', items: [], visible: true };
     else if (kind === 'link') nb = { id, kind: 'link', title: '새 링크', url: '', style: 'button', thumb: '', ai: true, visible: true };
     else if (kind === 'info') nb = { id, kind: 'info', name: KIND_ALL.info, visible: true, links: [{ title: '', url: '', ai: true }] };
-    else nb = { id, kind, name: KIND[kind], limit: '3', order: 'recent', ratio: 'wide', visible: true, ai: true, items: [] };
+    else nb = { id, kind, name: KIND[kind], limit: '3', order: 'recent', ratio: 'tall', visible: true, ai: true, items: [] };
 
     blocks.splice(insertAt, 0, nb);
     touch();
