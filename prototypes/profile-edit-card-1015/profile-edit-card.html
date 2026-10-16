@@ -302,7 +302,7 @@
     body.dragging { -webkit-user-select: none; user-select: none; }
 
     /* 좌측 레일 — 아이콘은 작게, 탭 영역은 44px */
-    /* 왼쪽 거터 — 블록을 프로필에 내보낼지 여기서 바로 끈다 */
+    /* 눈 — 프로필에 내보낼지 끄고 켠다. 블록 왼쪽 거터와 이름·연락처 줄이 같은 손잡이를 쓴다 */
     .rail-left { right: auto; left: 0; }
     .vis-btn {
       display: flex; align-items: center; justify-content: center;
@@ -311,7 +311,7 @@
       color: var(--color-text-faint);
     }
     .vis-btn svg { width: 20px; height: 20px; }
-    .block.is-hidden .vis-btn { color: var(--color-text-sub); }
+    .block.is-hidden .vis-btn, .vis-btn.is-off { color: var(--color-text-sub); }
 
     .rail {
       position: absolute; right: 0; top: 0; bottom: 0; width: 44px;
@@ -1955,8 +1955,10 @@
     return '<div class="nav-row">'
       + '<button class="nav-row-open" data-act="fields" data-v="' + which + '">' + label + '</button>'
       + (toggleKey
-          ? '<input type="checkbox" class="toggle toggle-sm"' + (P[toggleKey] ? ' checked' : '')
-            + ' data-act="togglep" data-k="' + toggleKey + '" aria-label="' + label + ' 표시">'
+          ? '<button class="vis-btn' + (P[toggleKey] ? '' : ' is-off') + '"'
+            + ' data-act="togglep" data-k="' + toggleKey + '"'
+            + ' aria-label="' + label + (P[toggleKey] ? ' 숨기기' : ' 표시하기') + '">'
+            + '<i data-lucide="' + (P[toggleKey] ? 'eye' : 'eye-off') + '"></i></button>'
           : '')
       + '<button class="nav-row-go" data-act="fields" data-v="' + which + '" aria-label="' + label + ' 입력">'
       + '<i data-lucide="chevron-right"></i></button>'
