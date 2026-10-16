@@ -719,6 +719,11 @@
     .pick-row + .pick-wrap,
     .pick-wrap + .pick-row,
     .pick-wrap + .pick-wrap { margin-top: 8px; }
+    /* 라벨 없이 바로 이어지는 등록 행도 앞 줄에 붙지 않게 */
+    .mock-row + .pick-row,
+    .mock-row + .pick-wrap,
+    .switch-row + .pick-row,
+    .switch-row + .pick-wrap { margin-top: 12px; }
     .pick-wrap .pick-row { flex: 1; min-width: 0; }
     .pick-row {
       display: flex; align-items: center; gap: 12px; width: 100%;
