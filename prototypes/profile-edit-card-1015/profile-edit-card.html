@@ -263,6 +263,9 @@
     /* 세로 여백을 모든 블록에 동일하게 32px. 짧은 블록만 커지던 min-height 대신
        .block-body 최소 높이로 레일(112px) 자리를 확보한다 */
     .block { display: flex; align-items: center; padding: 16px 44px; position: relative; }
+    /* 명함이 배경 사진을 덮고 올라선다 — 블록 자신의 위 여백까지 끌어올린다 */
+    .block.is-over-cover { margin-top: calc(var(--cover-show) - var(--cover-h) - 24px); z-index: 1; }
+    body.preview .block.is-over-cover { margin-top: calc(var(--cover-show) - var(--cover-h) - 12px); }
     .block.is-hidden .block-body { opacity: 0.4; }
     .block.is-dragging .block-body { opacity: 0.4; }
 
@@ -1302,7 +1305,11 @@
     const w = cv.parentElement.offsetWidth;
     if (!w) return;
     cv.style.aspectRatio = 'auto';
-    cv.style.height = Math.round(w * 5 / 9) + 'px';
+    const h = Math.round(w * 5 / 9);
+    cv.style.height = h + 'px';
+    /* 명함이 배경 사진 위로 올라타 배경은 위쪽 띠만 남는다 (원본 390폭 기준 84px) */
+    document.body.style.setProperty('--cover-h', h + 'px');
+    document.body.style.setProperty('--cover-show', Math.round(w * 84 / 390) + 'px');
   }
   /* 창 크기뿐 아니라 시트 열림·스크롤바 유무로도 폭이 바뀌므로 레이아웃 변화를 직접 관찰한다.
      폭만 읽고 높이만 바꾸므로 관찰 루프는 생기지 않는다. */
@@ -1317,7 +1324,7 @@
     if (!P.cover) { h.innerHTML = ''; return; }
     h.innerHTML =
       '<div class="cover" style="--cover-img:url(\'' + P.cover + '\')">'
-      + (T.coverEdge === 'fade' ? '<span class="cover-fade"></span>' : '')
+      + (P.layout === 'image' || T.coverEdge === 'fade' ? '<span class="cover-fade"></span>' : '')
       + '</div>';
   }
 
@@ -1362,7 +1369,8 @@
     el.className = 'block'
       + (b.id === activeId ? ' is-active' : '')
       + (b.visible ? '' : ' is-hidden')
-      + (isEmptyBlock(b) ? ' is-empty-coll' : '');
+      + (isEmptyBlock(b) ? ' is-empty-coll' : '')
+      + (i === 0 && P.cover && b.kind === 'profile' ? ' is-over-cover' : '');
     el.dataset.blockId = b.id;
 
     el.innerHTML =
@@ -1755,7 +1763,7 @@
       + (LAYOUT_USES[P.layout] || []).map(k => imgSlot(k, PROFILE_IMG[k][2], PROFILE_IMG[k][3])).join('')
       + imgSlot('cover', '배경 사진', 'cover')
       + '</div>';
-    if (P.cover) h += fieldLabel('배경 가장자리') + '<div class="mock-row mock-row-2">'
+    if (P.cover && P.layout !== 'image') h += fieldLabel('배경 가장자리') + '<div class="mock-row mock-row-2">'
       + mock('coverEdge', 'sharp', T.coverEdge, mkCoverEdge('sharp'), '기본')
       + mock('coverEdge', 'fade',  T.coverEdge, mkCoverEdge('fade'),  '페이드')
       + '</div>';
