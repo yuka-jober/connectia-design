@@ -703,6 +703,7 @@
     .layer.on .dialog-overlay { opacity: 1; pointer-events: auto; }
 
     #layer-snspick { z-index: 520; }
+    #layer-fields { z-index: 520; }
     #layer-autofill { z-index: 520; }
     .autofill-actions { display: flex; flex-direction: column; gap: 8px; }
     #layer-name    { z-index: 540; }
@@ -889,6 +890,21 @@
       display: inline-flex; align-items: center; justify-content: center;
     }
     .img-slot-x svg { width: 12px; height: 12px; }
+
+    /* 라벨 · 토글 · 들어가기 한 줄 — 입력은 따로 뜨는 시트에서 한다 */
+    .nav-row { display: flex; align-items: center; gap: 12px; min-height: 48px; }
+    .nav-row + .nav-row { border-top: 1px solid var(--color-border-subtle); }
+    .nav-row-open {
+      flex: 1; min-width: 0; height: 48px; padding: 0; text-align: left;
+      background: none; border: none; cursor: pointer; font-family: var(--font-base);
+      font-size: var(--fs-body-lg); font-weight: var(--fw-medium); color: var(--color-text);
+    }
+    .nav-row-go {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 24px; height: 48px; padding: 0; flex: none;
+      background: none; border: none; cursor: pointer; color: var(--color-text-muted);
+    }
+    .nav-row-go svg { width: 18px; height: 18px; }
 
     .mock-row { display: grid; gap: 8px; }
     .mock-row-2 { grid-template-columns: repeat(2, 1fr); }
@@ -1090,6 +1106,19 @@
           </button>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- 이름·연락처 입력 — 프로필 패널에서 들어간다 -->
+  <div class="layer" id="layer-fields">
+    <div class="bottom-sheet-overlay" id="fields-overlay"></div>
+    <div class="bottom-sheet sheet-panel">
+      <div class="sheet-head">
+        <button class="sheet-action" id="fields-cancel">취소</button>
+        <span class="sheet-head-title" id="fields-title">이름</span>
+        <button class="sheet-action primary" id="fields-done">완료</button>
+      </div>
+      <div class="sheet-body" id="fields-body"></div>
     </div>
   </div>
 
@@ -1722,7 +1751,7 @@
   function openLayer(id) { $(id).classList.add('on'); document.body.classList.add('sheet-open'); }
   function closeLayer(id) { $(id).classList.remove('on'); }
   function closeAllSheets() {
-    ['layer-editor', 'layer-design', 'layer-catalog', 'layer-snspick', 'layer-autofill'].forEach(closeLayer);
+    ['layer-editor', 'layer-design', 'layer-catalog', 'layer-snspick', 'layer-autofill', 'layer-fields'].forEach(closeLayer);
     document.body.classList.remove('sheet-open', 'design-open');
     if (!previewMode) document.body.classList.remove('preview');
     activeId = null;
@@ -1906,26 +1935,49 @@
       + mock('align', 'center', pb.align, mkIcon('align-center'), '중앙정렬', 'setpb')
       + '</div>';
 
-    h += fieldLabel('이름') + '<input class="input" data-pin="name" value="' + esc(P.name) + '" placeholder="이름">';
-    h += fieldLabel('회사명')
-      + '<input class="input" data-pin="company" value="' + esc(P.company) + '" placeholder="회사명">';
-    h += fieldLabel('직함') + '<input class="input" data-pin="role" value="' + esc(P.role) + '" placeholder="직함">';
-
-    if (pb) {
-      h += '<hr class="sheet-divider">';
-      if (P.layout !== 'card') h += switchRow('이름·직함', P.showName, 'showName', 'togglep')
-        + switchRow('연락처', P.showContact, 'showContact', 'togglep');
-      if (P.layout === 'card' || P.showContact) h += CONTACT_FIELDS.map(f =>
-        aiKeyRow(f[1], pb[f[2]], f[2], 'togglepb')
-        + '<input class="input" data-pb="' + f[0] + '" value="' + esc(pb[f[0]] || '') + '" placeholder="' + esc(f[1]) + '">').join('');
-    }
+    h += '<hr class="sheet-divider">'
+      + navRow('이름·직함', 'name', P.layout === 'card' ? null : 'showName')
+      + (pb ? navRow('연락처', 'contact', P.layout === 'card' ? null : 'showContact') : '');
 
     return h;
+  }
+
+  function navRow(label, which, toggleKey) {
+    return '<div class="nav-row">'
+      + '<button class="nav-row-open" data-act="fields" data-v="' + which + '">' + label + '</button>'
+      + (toggleKey
+          ? '<input type="checkbox" class="toggle toggle-sm"' + (P[toggleKey] ? ' checked' : '')
+            + ' data-act="togglep" data-k="' + toggleKey + '" aria-label="' + label + ' 표시">'
+          : '')
+      + '<button class="nav-row-go" data-act="fields" data-v="' + which + '" aria-label="' + label + ' 입력">'
+      + '<i data-lucide="chevron-right"></i></button>'
+      + '</div>';
+  }
+
+  /* 이름·연락처 입력 시트 */
+  let fieldsKind = 'name';
+  function openFields(which) {
+    fieldsKind = which;
+    openLayer('layer-fields');
+    drawFields();
+  }
+  function drawFields() {
+    const pb = blocks.find(b => b.kind === 'profile');
+    $('fields-title').textContent = fieldsKind === 'name' ? '이름·직함' : '연락처';
+    $('fields-body').innerHTML = fieldsKind === 'name'
+      ? fieldLabel('이름') + '<input class="input" data-pin="name" value="' + esc(P.name) + '" placeholder="이름">'
+        + fieldLabel('회사명') + '<input class="input" data-pin="company" value="' + esc(P.company) + '" placeholder="회사명">'
+        + fieldLabel('직함') + '<input class="input" data-pin="role" value="' + esc(P.role) + '" placeholder="직함">'
+      : (pb ? CONTACT_FIELDS.map(f =>
+          aiKeyRow(f[1], pb[f[2]], f[2], 'togglepb')
+          + '<input class="input" data-pb="' + f[0] + '" value="' + esc(pb[f[0]] || '') + '" placeholder="' + esc(f[1]) + '">').join('') : '');
+    icons();
   }
 
   /* 패널의 손잡이 — 어느 시트에서 눌렸든 같은 곳을 고친다 */
   function panelClick(act, el, redraw) {
     const pb = blocks.find(b => b.kind === 'profile');
+    if (act === 'fields') { openFields(el.dataset.v); return true; }
     const img = { 'pick-logo': 'logo', 'pick-photo': 'photo', 'pick-hero': 'hero', 'pick-cover': 'cover' };
     const wipe = { 'clear-logo': 'logo', 'clear-photo': 'photo', 'clear-hero': 'hero', 'clear-cover': 'cover' };
     if (img[act]) { pickFile(v => { P[img[act]] = v[0].src; touch(); render(); redraw(); }); return true; }
@@ -2389,6 +2441,15 @@
     document.querySelectorAll('#design-body .swatch').forEach(s => s.classList.remove('is-active'));
     el.closest('.swatch').classList.add('is-active');
   });
+
+  $('fields-body').addEventListener('click', e => {
+    const el = e.target.closest('[data-act]');
+    if (el) panelClick(el.dataset.act, el, drawFields);
+  });
+  $('fields-body').addEventListener('input', e => { panelInput(e.target); });
+  $('fields-overlay').onclick = () => closeLayer('layer-fields');
+  $('fields-cancel').onclick = () => closeLayer('layer-fields');
+  $('fields-done').onclick = () => closeLayer('layer-fields');
 
   $('design-cancel').onclick = closeAllSheets;
   $('design-done').onclick = closeAllSheets;
