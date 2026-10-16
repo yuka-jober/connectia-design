@@ -125,6 +125,10 @@
 .btn-line-light              { background: transparent; color: var(--color-on-primary); border: 1px solid var(--color-on-primary); }
 .btn-line-light:hover        { background: var(--color-scrim); }
 
+/* glass — 사진 위에 얹는 반투명 유리 버튼 (사진이 비쳐 테두리가 덜 도드라진다) */
+.btn-glass-light             { background: var(--color-glass-fill); color: var(--color-on-primary); border: 1px solid var(--color-glass-line); backdrop-filter: blur(var(--blur-glass)); -webkit-backdrop-filter: blur(var(--blur-glass)); }
+.btn-glass-light:hover       { background: var(--color-scrim); }
+
 /* loading */
 .btn.is-loading {
   pointer-events: none;
