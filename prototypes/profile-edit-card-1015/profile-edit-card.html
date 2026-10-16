@@ -152,13 +152,16 @@
     }
 
     /* ── 동그란 사진 레이아웃 — 명함 면 없이 사진과 이름만 ── */
-    .pf-avatar-card { align-items: center; text-align: center; gap: 16px; background: none; box-shadow: none; }
-    .pf-avatar-card.pf-center { align-items: center; }
+    .pf-avatar-card { align-items: flex-start; text-align: left; gap: 16px; background: none; box-shadow: none; }
     .pf-avatar { box-shadow: 0 0 0 4px var(--color-surface); }
-    .pf-avatar-card .pf-info { align-items: center; }
-    .pf-avatar-card .pf-name-row { flex-direction: column; align-items: center; gap: 4px; }
+    .pf-avatar-card .pf-info { align-items: flex-start; }
+    .pf-avatar-card .pf-name-row { flex-direction: column; align-items: flex-start; gap: 4px; }
     .pf-avatar-card .pf-name { letter-spacing: var(--ls-title); }
-    .pf-avatar-card .ct-list { align-items: center; }
+    .pf-avatar-card .ct-list { align-items: flex-start; }
+    .pf-avatar-card.pf-center { align-items: center; text-align: center; }
+    .pf-avatar-card.pf-center .pf-info,
+    .pf-avatar-card.pf-center .pf-name-row,
+    .pf-avatar-card.pf-center .ct-list { align-items: center; }
 
     /* ── 프로필 블록 — 카드형 명함. 모서리를 더 작게, 그림자를 한 단계 강하게 ── */
     .pf-card {
@@ -167,8 +170,10 @@
       padding: 22px 22px 20px; gap: 0;
       border-radius: var(--r-md); box-shadow: var(--shadow-lift);
     }
-    /* 사진이 명함 앞면을 대신할 때는 사진이 카드를 꽉 채운다 */
+    /* 사진이 명함 앞면을 대신할 때는 사진이 카드를 꽉 채운다.
+       흐름 안에 두면 사진의 원래 높이가 명함 비율을 밀어내므로 카드에서 띄운다 */
     .pf-card.pf-photo-face { padding: 0; }
+    .pf-card.pf-photo-face .pf-media { position: absolute; inset: 0; width: auto; height: auto; }
     /* 명함 한 장이 더 깔린 듯 아래로 비치는 종이 */
     .pf-card::after {
       content: ''; position: absolute; left: 14px; right: 14px; bottom: -8px; height: 14px;
@@ -212,6 +217,19 @@
       background: linear-gradient(to top, var(--page-bg) 64%, transparent);
       pointer-events: auto;
     }
+    /* 블록 추가 — 편집 중에만 뜬다. 대화하기 버튼은 미리보기에서만 뜨므로 자리가 겹치지 않는다 */
+    .add-fab {
+      position: absolute; right: 16px; z-index: 70;
+      bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 16px);
+      width: 56px; height: 56px; border-radius: var(--r-full); border: none;
+      background: var(--color-text); color: var(--color-on-primary);
+      display: inline-flex; align-items: center; justify-content: center;
+      box-shadow: var(--shadow-3); cursor: pointer;
+    }
+    .add-fab svg { width: 24px; height: 24px; }
+    body.preview .add-fab,
+    body.editing .add-fab { display: none; }
+
     .cta-fab {
       position: absolute; right: 16px; bottom: 16px;
       height: 56px; padding: 0 20px; border-radius: var(--r-full); border: none;
@@ -247,23 +265,8 @@
     /* ── 블록 캔버스 ── */
     .canvas { padding: 8px 0 0; position: relative; }
 
-    .ins {
-      display: flex; align-items: center; gap: 8px;
-      width: 100%; height: 32px; padding: 0 44px;
-      background: none; border: none; cursor: pointer;
-    }
-    .ins-line { flex: 1; height: 0; border-top: 1px dashed var(--color-border); }
-    .ins-plus {
-      display: inline-flex; align-items: center; justify-content: center;
-      width: 24px; height: 24px; border-radius: var(--r-full);
-      background: var(--color-surface);
-      color: var(--color-text-muted); flex-shrink: 0;
-    }
-    .ins-plus svg { width: 14px; height: 14px; }
-    .ins:hover .ins-plus { color: var(--color-primary); }
-
     /* 세로 여백을 모든 블록에 동일하게 32px. 짧은 블록만 커지던 min-height 대신
-       .block-body 최소 높이로 레일(112px) 자리를 확보한다 → 삽입선까지 거리가 항상 같다 */
+       .block-body 최소 높이로 레일(112px) 자리를 확보한다 */
     .block { display: flex; align-items: center; padding: 32px 44px; position: relative; }
     .block.is-hidden .block-body { opacity: 0.4; }
     .block.is-dragging .block-body { opacity: 0.4; }
@@ -575,7 +578,6 @@
 
     /* ── 미리보기 모드 ── */
     body.preview .rail,
-    body.preview .ins,
     body.preview .block-tag,
     body.preview .block.is-hidden { display: none; }
     body.preview .block.is-empty-coll { display: none; }
@@ -923,6 +925,9 @@
       <button class="tab-item"><i data-lucide="chart-column"></i><span class="text-nav tab-label">통계</span></button>
       <button class="tab-item"><i data-lucide="settings"></i><span class="text-nav tab-label">설정</span></button>
     </nav>
+
+    <!-- 블록 추가 — 편집 중에만 보인다 -->
+    <button class="add-fab" id="add-fab" aria-label="블록 추가"><i data-lucide="plus"></i></button>
 
     <!-- 대화하기 버튼 (하단 고정 / 코너) — 디자인 시트에서도 캔버스와 함께 축소된다 -->
     <div class="page-cta" id="page-cta"></div>
@@ -1285,11 +1290,7 @@
     if (blocks.length === 0) {
       canvas.appendChild(emptyCanvas());
     } else {
-      blocks.forEach((b, i) => {
-        canvas.appendChild(insertRow(i));
-        canvas.appendChild(blockRow(b, i));
-      });
-      canvas.appendChild(insertRow(blocks.length));
+      blocks.forEach((b, i) => canvas.appendChild(blockRow(b, i)));
       /* 사진·이름·대화하기·탭만 있는 상태는 여전히 '빈 페이지'다 */
       if (!blocks.some(b => CHROME_KINDS.indexOf(b.kind) < 0)) canvas.appendChild(emptyCanvas());
     }
@@ -1310,6 +1311,8 @@
   }
   /* 창 크기뿐 아니라 시트 열림·스크롤바 유무로도 폭이 바뀌므로 레이아웃 변화를 직접 관찰한다.
      폭만 읽고 높이만 바꾸므로 관찰 루프는 생기지 않는다. */
+  $('add-fab').addEventListener('click', () => openCatalog(blocks.length));
+
   if (window.ResizeObserver) new ResizeObserver(snapCoverHeight).observe($('head'));
   else window.addEventListener('resize', snapCoverHeight);
 
@@ -1350,14 +1353,6 @@
       + '<p class="canvas-empty-s">블록을 추가해서 페이지를 채워보세요</p>'
       + '<button class="btn btn-lg btn-fill-primary"><i data-lucide="plus"></i>블록 추가</button>';
     el.querySelector('.btn').onclick = () => openCatalog(0);
-    return el;
-  }
-
-  function insertRow(i) {
-    const el = document.createElement('button');
-    el.className = 'ins';
-    el.innerHTML = '<span class="ins-line"></span><span class="ins-plus"><i data-lucide="plus"></i></span><span class="ins-line"></span>';
-    el.onclick = () => openCatalog(i);
     return el;
   }
 
@@ -1408,7 +1403,7 @@
     if (b.kind === 'profile') {
       const center = b.align === 'center' ? ' pf-center' : '';
       /* 동그란 사진 — 명함 면 없이 사진과 이름만 선다 */
-      if (P.layout === 'avatar') {
+      if (P.layout === 'avatar' || P.layout === 'cover') {
         return '<div class="sec-card pf-avatar-card' + center + '">' + blockInner(b) + '</div>';
       }
       /* 큰 이미지 — 사진이 명함 앞면을 대신하고, 이름·직함·연락처는 아래 별도 카드로 분리된다 */
@@ -1455,11 +1450,11 @@
   function blockInner(b) {
     if (b.kind === 'chat') return chatBtn();
     if (b.kind === 'profile') {
-      if (P.layout === 'avatar') {
-        const info = pfInfo(b);
+      if (P.layout === 'avatar' || P.layout === 'cover') {
+        const info = pfInfo(b) || '<div class="pf-info"><div class="pf-name is-empty">이름을 설정해주세요</div></div>';
+        if (P.layout === 'cover') return info;
         return '<span class="avatar avatar-2xl pf-avatar">'
-          + (P.photo ? '<img src="' + P.photo + '" alt="">' : '') + '</span>'
-          + (info || '<div class="pf-info"><div class="pf-name is-empty">이름을 설정해주세요</div></div>');
+          + (P.photo ? '<img src="' + P.photo + '" alt="">' : '') + '</span>' + info;
       }
       const face = pfFace();
       const info = pfInfo(b);
@@ -2074,6 +2069,7 @@
     const line = (x, y, w) => '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="4" rx="2"' + F('--color-border') + '/>';
     let art;
     if (v === 'avatar') art = '<circle cx="31" cy="16" r="9"' + F('--color-text-muted') + '/>' + line(18, 31, 26) + line(23, 39, 16);
+    else if (v === 'cover') art = '<rect x="6" y="4" width="50" height="20" rx="4"' + F('--color-text-muted') + '/>' + line(18, 31, 26) + line(23, 39, 16);
     else if (v === 'card') art = '<rect x="6" y="6" width="50" height="32" rx="4" style="fill:var(--color-surface);stroke:var(--color-border);stroke-width:1.5"/>'
       + '<rect x="11" y="11" width="14" height="8" rx="2"' + F('--color-text-muted') + '/>'
       + '<rect x="42" y="11" width="9" height="9" rx="2"' + F('--color-border') + '/>' + line(11, 28, 22);
@@ -2114,14 +2110,21 @@
     let h = '';
     if (designTab === 'profile') {
       const pb = blocks.find(b => b.kind === 'profile');
-      h += fieldLabel('레이아웃') + '<div class="mock-row mock-row-3">'
-        + mock('layout', 'avatar', P.layout, mkLayout('avatar'), '동그란 사진', 'setp')
-        + mock('layout', 'card',   P.layout, mkLayout('card'),   '명함',       'setp')
-        + mock('layout', 'image',  P.layout, mkLayout('image'),  '큰 이미지',   'setp')
+      h += fieldLabel('레이아웃') + '<div class="mock-row mock-row-4">'
+        + mock('layout', 'avatar', P.layout, mkLayout('avatar'), '원형',      'setp')
+        + mock('layout', 'cover',  P.layout, mkLayout('cover'),  '배경만',    'setp')
+        + mock('layout', 'card',   P.layout, mkLayout('card'),   '명함',      'setp')
+        + mock('layout', 'image',  P.layout, mkLayout('image'),  '큰 이미지', 'setp')
         + '</div>';
       if (pb) h += fieldLabel('정렬') + '<div class="mock-row mock-row-2">'
         + mock('align', 'left',   pb.align, mkIcon('align-left'),   '좌측정렬', 'setpb')
         + mock('align', 'center', pb.align, mkIcon('align-center'), '중앙정렬', 'setpb')
+        + '</div>';
+      h += pickRow('pick-cover', thumbBox(P.cover, 'image'), '배경 사진', P.cover, 'clear-cover');
+      /* 배경을 깐 뒤에야 가장자리 선택이 뜻을 갖는다 */
+      if (P.cover) h += fieldLabel('배경 가장자리') + '<div class="mock-row mock-row-2">'
+        + mock('coverEdge', 'sharp', T.coverEdge, mkCoverEdge('sharp'), '기본')
+        + mock('coverEdge', 'fade',  T.coverEdge, mkCoverEdge('fade'),  '페이드')
         + '</div>';
 
     } else if (designTab === 'style') {
