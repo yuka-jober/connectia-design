@@ -108,6 +108,16 @@
 
     /* ── 커버 — 본문 블록이 아니라 페이지 배경. 이미지가 등록됐을 때만 렌더된다 ── */
     .head { background: var(--page-bg); position: relative; }
+    /* 팔로우·공유 — 커버가 있으면 그 위에 얹히고, 없으면 제자리를 차지한다.
+       실제 페이지의 요소라 대화하기 버튼과 같이 미리보기에서만 보인다 */
+    .head-bar { display: none; justify-content: flex-end; gap: 8px; padding: 12px 24px; z-index: 2; }
+    body.preview .head-bar { display: flex; }
+    .head-bar.is-over {
+      position: absolute; top: 0; left: 0; right: 0;
+      background: linear-gradient(180deg, var(--color-scrim) 0%, transparent 100%);
+    }
+    .head-bar .btn svg { width: 14px; height: 14px; }
+
     .cover {
       position: relative;
       aspect-ratio: 9 / 5;
@@ -1321,11 +1331,16 @@
   /* 커버는 등록된 이미지가 있을 때만 렌더한다 — 없으면 블록이 화면 맨 위에서 시작한다 */
   function renderHead() {
     const h = $('head');
-    if (!P.cover) { h.innerHTML = ''; return; }
+    const onCover = !!P.cover;
+    const bar = '<div class="head-bar' + (onCover ? ' is-over' : '') + '">'
+      + '<button class="btn btn-sm btn-pill btn-fill-dark"><i data-lucide="plus"></i>팔로우</button>'
+      + '<button class="btn btn-sm btn-pill ' + (onCover ? 'btn-line-light' : 'btn-line-dark') + '">공유</button>'
+      + '</div>';
+    if (!onCover) { h.innerHTML = bar; return; }
     h.innerHTML =
       '<div class="cover" style="--cover-img:url(\'' + P.cover + '\')">'
       + (OVER_COVER.indexOf(P.layout) >= 0 || T.coverEdge === 'fade' ? '<span class="cover-fade"></span>' : '')
-      + '</div>';
+      + '</div>' + bar;
   }
 
   /* 세 위치가 같은 대화하기 버튼을 쓴다 (색은 --cta-fill) */
