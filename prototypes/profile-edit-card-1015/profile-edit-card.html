@@ -178,6 +178,11 @@
        흐름 안에 두면 사진의 원래 높이가 명함 비율을 밀어내므로 카드에서 띄운다 */
     .pf-card.pf-photo-face { padding: 0; }
     .pf-card.pf-photo-face .pf-media { position: absolute; inset: 0; width: auto; height: auto; }
+    .pf-media-empty {
+      display: flex; align-items: center; justify-content: center;
+      background: var(--color-surface-sub); color: var(--color-text-muted);
+    }
+    .pf-media-empty svg { width: 28px; height: 28px; }
     /* 명함 한 장이 더 깔린 듯 아래로 비치는 종이 */
     .pf-card::after {
       content: ''; position: absolute; left: 14px; right: 14px; bottom: -8px; height: 14px;
@@ -1170,7 +1175,7 @@
     role:   'Product Designer',
     handle: 'yuka',
     layout: 'card',   /* avatar(원형) · cover(배경만) · card(자체 명함) · image(큰 이미지) */
-    company: '', showContact: true,
+    company: '', showName: true, showContact: true,
     logo:   '../../assets/jober.svg',
     photo:  '../../assets/profile-yuka.png',
     hero:   '',
@@ -1514,10 +1519,12 @@
         return '<div class="sec-card pf-avatar-card' + center + '">' + blockInner(b) + '</div>';
       }
       /* 큰 이미지 — 사진이 명함 앞면을 대신하고, 이름·직함·연락처는 아래 별도 카드로 분리된다 */
-      if (P.layout === 'image' && P.hero) {
+      if (P.layout === 'image') {
         const info = pfInfo(b);
-        return '<div class="sec-card pf-card pf-photo-face' + center + '">'
-          + '<div class="pf-media"><img src="' + P.hero + '" alt=""></div></div>'
+        const face = P.hero
+          ? '<div class="pf-media"><img src="' + P.hero + '" alt=""></div>'
+          : '<div class="pf-media pf-media-empty"><i data-lucide="image"></i></div>';
+        return '<div class="sec-card pf-card pf-photo-face' + center + '">' + face + '</div>'
           + (info ? '<div class="sec-card pf-info-card' + center + '">' + info + '</div>' : '');
       }
       return '<div class="sec-card pf-card' + center + '">' + blockInner(b) + '</div>';
@@ -1537,10 +1544,11 @@
 
   /* 이름·직함·연락처 */
   function pfInfo(b) {
+    const showName = P.layout === 'card' || P.showName;
     const showContact = P.layout === 'card' || P.showContact;
     /* 명함은 회사명을 로고 자리에 세우므로 여기서는 빼고, 나머지는 직함과 나란히 둔다 */
     const sub = [P.layout === 'card' ? '' : P.company, P.role].filter(Boolean).join(' · ');
-    const nameRow = (P.name || sub)
+    const nameRow = showName && (P.name || sub)
       ? '<div class="pf-name-row">'
         + (P.name ? '<span class="pf-name">' + esc(P.name) + '</span>' : '')
         + (sub ? '<span class="pf-role">' + esc(sub) + '</span>' : '')
@@ -1905,7 +1913,8 @@
 
     if (pb) {
       h += '<hr class="sheet-divider">';
-      if (P.layout !== 'card') h += switchRow('연락처', P.showContact, 'showContact', 'togglep');
+      if (P.layout !== 'card') h += switchRow('이름·직함', P.showName, 'showName', 'togglep')
+        + switchRow('연락처', P.showContact, 'showContact', 'togglep');
       if (P.layout === 'card' || P.showContact) h += CONTACT_FIELDS.map(f =>
         aiKeyRow(f[1], pb[f[2]], f[2], 'togglepb')
         + '<input class="input" data-pb="' + f[0] + '" value="' + esc(pb[f[0]] || '') + '" placeholder="' + esc(f[1]) + '">').join('');
