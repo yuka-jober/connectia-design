@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>새 페이지 만들기</title>
+<link rel="stylesheet" href="../../tokens.css">
+<link rel="stylesheet" href="../../components.css">
+<style>
+  /* ============================================================
+     새 페이지 만들기 — 프리셋 고르기.
+     고르면 그 블록이 이미 올라간 편집 화면으로 바로 들어간다.
+     미리보기가 곧 설명이라, 무엇이 들어가는지 따로 적지 않는다.
+     ============================================================ */
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--color-bg); font-family: var(--font-base);
+    -webkit-font-smoothing: antialiased; color: var(--color-text);
+  }
+  button { font-family: var(--font-base); }
+
+  .top { display: flex; align-items: center; height: 56px; padding: 0 12px; }
+  .back {
+    display: inline-flex; align-items: center; gap: 4px; height: 40px; padding: 0 8px;
+    background: none; border: none; cursor: pointer;
+    font-size: var(--fs-body); color: var(--color-text-sub);
+  }
+  .back svg { width: 18px; height: 18px; }
+
+  .page { max-width: 920px; margin: 0 auto; padding: 0 20px 120px; }
+  h1 {
+    margin: 24px 0 32px; text-align: center;
+    font-size: var(--fs-display); font-weight: var(--fw-bold); letter-spacing: var(--ls-display);
+  }
+
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } }
+
+  .preset {
+    display: flex; flex-direction: column; gap: 16px; padding: 16px;
+    background: var(--color-surface); border: 2px solid transparent;
+    border-radius: var(--r-xl); box-shadow: var(--shadow-1);
+    cursor: pointer; text-align: left;
+    transition: border-color var(--motion-fast) var(--ease-standard);
+  }
+  .preset:hover { border-color: var(--color-border); }
+  .preset.is-selected { border-color: var(--color-primary); }
+  .preset-name { font-size: var(--fs-body-lg); font-weight: var(--fw-semibold); color: var(--color-text); }
+
+  /* ── 미리보기 ── */
+  .shot {
+    position: relative; width: 100%; aspect-ratio: 2 / 3; overflow: hidden;
+    border-radius: var(--r-md); background: var(--color-bg);
+    display: flex; flex-direction: column;
+  }
+  .shot-cover {
+    width: 100%; aspect-ratio: 9 / 5; flex: none;
+    background: var(--color-surface-strong) center/cover;
+  }
+  .cover-a { background-image: url(../../assets/cardnews-2.png); }
+  .cover-b { background-image: url(../../assets/thumbnail_2.png); }
+  .cover-c { background-image: url(../../assets/event_thumbnail.png); }
+  .shot-body { flex: 1; display: flex; flex-direction: column; gap: 6px; padding: 0 10px 10px; }
+
+  /* 명함 */
+  .m-card {
+    margin: -22% 0 0; padding: 8px; aspect-ratio: 91 / 55;
+    background: var(--color-surface); border-radius: var(--r-xs); box-shadow: var(--shadow-2);
+    display: flex; flex-direction: column; justify-content: space-between;
+  }
+  .m-card-top { display: flex; align-items: flex-start; justify-content: space-between; }
+  .m-logo { width: 32px; height: 10px; border-radius: 2px; background: var(--color-text); }
+  .m-photo { width: 16px; height: 16px; border-radius: 2px; background: var(--color-surface-strong); }
+  .m-name { width: 36px; height: 7px; border-radius: 2px; background: var(--color-text); }
+  .m-line { height: 4px; border-radius: 2px; background: var(--color-border); margin-top: 4px; }
+
+  /* 원형 · 배경만 */
+  .m-head { display: flex; flex-direction: column; align-items: center; gap: 6px; margin: -18% 0 4px; }
+  .m-avatar {
+    width: 36px; height: 36px; border-radius: var(--r-full);
+    background: var(--color-surface-strong); border: 2px solid var(--color-surface);
+  }
+  .m-head .m-name { width: 48px; }
+  .m-head-left { align-items: flex-start; margin-top: 8px; padding: 0 2px; }
+
+  /* 섹션 */
+  .m-sec {
+    background: var(--color-surface); border-radius: var(--r-sm); padding: 7px 8px;
+    display: flex; flex-direction: column; gap: 5px;
+  }
+  .m-sec.is-plain { background: none; padding: 7px 2px; }
+  .m-label { font-size: var(--fs-nav); font-weight: var(--fw-bold); color: var(--color-text); }
+  .m-rows { display: flex; flex-direction: column; gap: 4px; }
+  .m-row { height: 5px; border-radius: 2px; background: var(--color-border); }
+  .m-row.w70 { width: 70%; }
+  .m-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; }
+  .m-grid span { aspect-ratio: 4 / 5; background: var(--color-surface-strong); display: block; }
+  .m-scroll { display: flex; gap: 4px; }
+  .m-poster { flex: 0 0 26px; aspect-ratio: 3 / 4; border-radius: 2px; background: var(--color-surface-strong); }
+  .m-sns { display: flex; justify-content: center; gap: 4px; }
+  .m-sns span { width: 14px; height: 14px; border-radius: 3px; background: var(--color-text); display: block; }
+
+  /* ── 만들기 ── */
+  .foot {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+    display: flex; justify-content: center; padding: 16px 20px 24px;
+    background: linear-gradient(to top, var(--color-bg) 70%, transparent);
+  }
+  .foot .btn { width: 100%; max-width: 320px; }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <button class="back"><i data-lucide="chevron-left"></i>돌아가기</button>
+</header>
+
+<div class="page">
+  <h1>어떤 페이지로 쓸까요</h1>
+
+  <div class="grid" id="grid">
+
+    <!-- 명함 -->
+    <button class="preset is-selected" data-k="card">
+      <span class="shot">
+        <span class="shot-cover cover-a"></span>
+        <span class="shot-body">
+          <span class="m-card">
+            <span class="m-card-top"><span class="m-logo"></span><span class="m-photo"></span></span>
+            <span>
+              <span class="m-name" style="display:block"></span>
+              <span class="m-line" style="display:block;width:80%"></span>
+              <span class="m-line" style="display:block;width:65%"></span>
+            </span>
+          </span>
+          <span class="m-sec"><span class="m-label">SNS</span>
+            <span class="m-sns"><span></span><span></span><span></span></span>
+          </span>
+          <span class="m-sec"><span class="m-label">소개</span>
+            <span class="m-rows"><span class="m-row"></span><span class="m-row w70"></span></span>
+          </span>
+          <span class="m-sec"><span class="m-label">링크</span>
+            <span class="m-rows"><span class="m-row"></span><span class="m-row"></span></span>
+          </span>
+        </span>
+      </span>
+      <span class="preset-name">명함</span>
+    </button>
+
+    <!-- 프로필 페이지 -->
+    <button class="preset" data-k="profile">
+      <span class="shot">
+        <span class="shot-cover cover-b"></span>
+        <span class="shot-body">
+          <span class="m-head">
+            <span class="m-avatar"></span>
+            <span class="m-name"></span>
+          </span>
+          <span class="m-sec is-plain"><span class="m-label">소개</span>
+            <span class="m-rows"><span class="m-row"></span><span class="m-row w70"></span></span>
+          </span>
+          <span class="m-sec is-plain"><span class="m-label">갤러리</span>
+            <span class="m-grid"><span></span><span></span><span></span></span>
+          </span>
+          <span class="m-sec is-plain"><span class="m-label">리뷰</span>
+            <span class="m-rows"><span class="m-row"></span><span class="m-row w70"></span></span>
+          </span>
+        </span>
+      </span>
+      <span class="preset-name">프로필 페이지</span>
+    </button>
+
+    <!-- 모임 페이지 -->
+    <button class="preset" data-k="group">
+      <span class="shot">
+        <span class="shot-cover cover-c"></span>
+        <span class="shot-body">
+          <span class="m-head m-head-left">
+            <span class="m-name"></span>
+          </span>
+          <span class="m-sec"><span class="m-label">소개</span>
+            <span class="m-rows"><span class="m-row"></span><span class="m-row w70"></span></span>
+          </span>
+          <span class="m-sec"><span class="m-label">이벤트</span>
+            <span class="m-scroll"><span class="m-poster"></span><span class="m-poster"></span><span class="m-poster"></span></span>
+          </span>
+          <span class="m-sec"><span class="m-label">게시판</span>
+            <span class="m-rows"><span class="m-row"></span><span class="m-row w70"></span></span>
+          </span>
+        </span>
+      </span>
+      <span class="preset-name">모임 페이지</span>
+    </button>
+
+  </div>
+</div>
+
+<div class="foot">
+  <button class="btn btn-lg btn-pill btn-fill-primary" id="go">만들기</button>
+</div>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+  lucide.createIcons();
+  document.getElementById('grid').addEventListener('click', e => {
+    const b = e.target.closest('.preset');
+    if (!b) return;
+    document.querySelectorAll('.preset').forEach(p => p.classList.toggle('is-selected', p === b));
+  });
+  document.getElementById('go').onclick = () => {
+    const k = document.querySelector('.preset.is-selected').dataset.k;
+    location.href = '../profile-edit-card-1015/profile-edit-card.html#' + k;
+  };
+</script>
+</body>
+</html>
