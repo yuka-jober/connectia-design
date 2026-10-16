@@ -688,7 +688,7 @@
     body.preview .block.is-empty-coll { display: none; }
     body.preview .block { padding: 0 16px; }
     body.preview .block-body { min-height: 0; }
-    /* 카드 사이는 간격만으로 구획된다 (구분선 블록이 없다) */
+    /* 카드 사이는 간격으로 구획되고, 더 끊어야 할 때만 구분선 블록을 끼운다 */
     body.preview .canvas { display: flex; flex-direction: column; gap: 12px; padding-top: 12px; }
 
     /* ── 레이어 (시트 / 전체화면 / 다이얼로그) ── */
@@ -774,6 +774,8 @@
     .kv-item .label-row { margin: 0 0 8px; padding-right: 40px; }
 
     .sheet-divider { height: 1px; background: var(--color-border); margin: 12px 0; border: none; }
+    /* 구분선 블록 — 흰 면 없이 선만 선다 */
+    .div-block { height: 1px; background: var(--color-border); }
 
     /* 리치 텍스트 — 툴바와 입력 영역을 한 판으로 묶고 글자수는 안쪽 우하단에 */
     .rt { margin-top: 12px; border: 1px solid var(--color-border); border-radius: var(--r-sm); overflow: hidden; }
@@ -938,16 +940,16 @@
     }
 
     /* 카탈로그 그리드 */
-    .cat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .cat-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
     .cat-cell {
       display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
-      height: 88px; padding: 0 12px;
+      height: 76px; padding: 0 8px;
       background: var(--color-surface); border: 1px solid var(--color-border-subtle);
       border-radius: var(--r-md); cursor: pointer;
       font-family: var(--font-base); font-size: var(--fs-body-lg); font-weight: var(--fw-semibold);
       color: var(--color-text);
     }
-    .cat-cell svg { width: 22px; height: 22px; color: var(--color-text-sub); }
+    .cat-cell svg { width: 20px; height: 20px; color: var(--color-text-sub); }
     .cat-cell:hover { border-color: var(--color-text-muted); color: var(--color-text); }
     .cat-cell:hover svg { color: var(--color-text); }
     .cat-cell:disabled { opacity: 0.35; cursor: not-allowed; pointer-events: none; }
@@ -1288,12 +1290,14 @@
   const ITEM = { event: { n: '이벤트', j: '가' }, board: { n: '게시글', j: '이' }, review: { n: '리뷰', j: '가' } };
   const KIND_ALL = {
     profile: '프로필', text: 'About', gallery: '갤러리', sns: 'SNS',
-    link: '링크', info: '링크 목록', event: '이벤트', board: '게시판', review: '리뷰'
+    link: '링크', info: '링크 목록', event: '이벤트', board: '게시판', review: '리뷰',
+    divider: '구분선'
   };
-  /* 갤러리는 여러 개 둘 수 있다 — 나머지는 페이지당 1개 */
-  const SINGLETON = ['profile', 'sns', 'info', 'event', 'board', 'review'];
+  /* 페이지당 1개만 둘 수 있는 블록 — 나머지는 몇 개든 둘 수 있다.
+     컬렉션(이벤트·게시판·리뷰)은 항목이 한 곳에 모여야 전체보기가 가리킬 데가 생긴다 */
+  const SINGLETON = ['profile', 'event', 'board', 'review'];
   /* 페이지를 '채웠다'고 보지 않는 블록 — 이것만 남으면 빈 캔버스 안내를 띄운다 */
-  const CHROME_KINDS = ['profile', 'chat'];
+  const CHROME_KINDS = ['profile', 'chat', 'divider'];
   const isColl = k => !!KIND[k];
   const $ = id => document.getElementById(id);
   const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -1559,7 +1563,7 @@
 
   /* 카드형 템플릿 — 대화하기 버튼을 뺀 모든 블록 본문이 흰 카드 안에 들어간다 */
   function cardWrap(b) {
-    if (b.kind === 'chat' || b.kind === 'link') return blockInner(b);
+    if (b.kind === 'chat' || b.kind === 'link' || b.kind === 'divider') return blockInner(b);
     if (b.kind === 'profile') {
       const center = b.align === 'center' ? ' pf-center' : '';
       /* 동그란 사진 — 명함 면 없이 사진과 이름만 선다 */
@@ -1615,6 +1619,7 @@
 
   function blockInner(b) {
     if (b.kind === 'chat') return chatBtn();
+    if (b.kind === 'divider') return '<div class="div-block"></div>';
     if (b.kind === 'profile') {
       if (P.layout === 'avatar' || P.layout === 'cover') {
         /* 자리표시는 정말 빈 블록에만 — 사진만 세우려고 글을 끈 경우까지 가로채면 안 된다 */
@@ -2517,12 +2522,13 @@
 
   const KIND_ICON = {
     profile: 'circle-user-round', text: 'type', gallery: 'images', sns: 'at-sign',
-    link: 'link', info: 'list', event: 'calendar-days', board: 'newspaper', review: 'star'
+    link: 'link', info: 'list', event: 'calendar-days', board: 'newspaper', review: 'star',
+    divider: 'minus'
   };
 
   function drawCatalog() {
     const has = k => blocks.some(b => b.kind === k);
-    const cells = ['sns', 'text', 'link', 'gallery', 'event', 'info', 'board', 'review'];
+    const cells = ['sns', 'text', 'link', 'gallery', 'event', 'info', 'board', 'review', 'divider'];
     $('catalog-body').innerHTML = '<div class="cat-grid">' + cells.map(k => {
       const off = SINGLETON.indexOf(k) >= 0 && has(k);
       return '<button class="cat-cell" data-act="add" data-v="' + k + '"' + (off ? ' disabled' : '') + '>'
@@ -2547,6 +2553,7 @@
     else if (kind === 'gallery') nb = { id, kind: 'gallery', name: KIND_ALL.gallery, layout: 'grid', items: [], visible: true };
     else if (kind === 'link') nb = { id, kind: 'link', title: '새 링크', url: '', style: 'button', thumb: '', ai: true, visible: true };
     else if (kind === 'info') nb = { id, kind: 'info', name: KIND_ALL.info, visible: true, links: [{ title: '', url: '', ai: true }] };
+    else if (kind === 'divider') nb = { id, kind: 'divider', visible: true };
     else nb = { id, kind, name: KIND[kind], limit: '3', order: 'recent', ratio: 'tall', visible: true, ai: true, items: [] };
 
     return nb;
@@ -2557,7 +2564,8 @@
     blocks.splice(insertAt, 0, nb);
     touch();
     closeLayer('layer-catalog');
-    openEditor(nb.id);
+    /* 구분선은 고칠 것이 없다 — 시트를 열면 삭제 버튼 하나만 뜬다 */
+    if (kind === 'divider') render(); else openEditor(nb.id);
   }
 
   /* ============================================================
