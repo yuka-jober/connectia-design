@@ -1437,7 +1437,7 @@
 
   /* 미리보기에서 숨길 "내용이 비어 있는" 블록 */
   function isEmptyBlock(b) {
-    if (b.kind === 'profile') return !(P.hero || P.logo || P.company || P.photo || P.name || P.role);
+    if (b.kind === 'profile') return !(P.hero || P.logo || P.company || P.photo || P.name || P.role || contactRows(b).length);
     if (isColl(b.kind)) return b.items.length === 0;
     if (b.kind === 'gallery') return b.items.length === 0;
     if (b.kind === 'link') return !b.title;
@@ -1614,7 +1614,7 @@
         + '<div class="coll-empty">아직 등록된 ' + ITEM[b.kind].n + ITEM[b.kind].j + ' 없어요</div></div>';
     }
 
-    const n = Math.min(Number(b.limit), total);
+    const n = b.kind === 'event' ? total : Math.min(Number(b.limit), total);
     const rows = b.items.slice(0, n);
     if (b.kind === 'event') {
       return '<div class="lp-banner-section">' + title
