@@ -337,7 +337,6 @@
     body.editing .canvas > *:not(.block.is-active) {
       opacity: 0.4; filter: blur(var(--blur-dim));
     }
-    .block-tag  { position: absolute; top: -20px; left: 44px; z-index: 2; }
 
     /* ── 빈 캔버스 안내 ── */
     .canvas-empty {
@@ -663,7 +662,6 @@
     /* ── 미리보기 모드 ── */
     body.preview .rail,
     body.preview .rail-left,
-    body.preview .block-tag,
     body.preview .block.is-hidden { display: none; }
     body.preview .block.is-empty-coll { display: none; }
     body.preview .block { padding: 0 16px; }
@@ -1477,7 +1475,6 @@
       + '<button class="rail-btn" data-mv="1"' + (i === blocks.length - 1 ? ' disabled' : '') + ' aria-label="아래로"><i data-lucide="chevron-down"></i></button>'
       + '</div>'
       + '<div class="block-body">'
-      + (b.visible ? '' : '<span class="badge badge-sm badge-weak-neutral block-tag">숨김</span>')
       + cardWrap(b)
       + '</div>';
 
