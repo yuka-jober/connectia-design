@@ -146,6 +146,20 @@
       box-shadow: var(--shadow-1);
     }
 
+    /* 카드 면 끄기 — 섹션이 면 없이 페이지 배경 위에 바로 놓인다 */
+    body.surface-plain .sec-card:not(.pf-card) {
+      background: none; box-shadow: none; border-radius: 0; padding: 22px 4px 24px;
+    }
+
+    /* ── 동그란 사진 레이아웃 — 명함 면 없이 사진과 이름만 ── */
+    .pf-avatar-card { align-items: center; text-align: center; gap: 16px; background: none; box-shadow: none; }
+    .pf-avatar-card.pf-center { align-items: center; }
+    .pf-avatar { box-shadow: 0 0 0 4px var(--color-surface); }
+    .pf-avatar-card .pf-info { align-items: center; }
+    .pf-avatar-card .pf-name-row { flex-direction: column; align-items: center; gap: 4px; }
+    .pf-avatar-card .pf-name { letter-spacing: var(--ls-title); }
+    .pf-avatar-card .ct-list { align-items: center; }
+
     /* ── 프로필 블록 — 카드형 명함. 모서리를 더 작게, 그림자를 한 단계 강하게 ── */
     .pf-card {
       position: relative;
@@ -1058,6 +1072,7 @@
     name:   '양은주',
     role:   'Product Designer',
     handle: 'yuka',
+    layout: 'card',   /* avatar(동그란 사진) · card(자체 명함) · image(큰 이미지) */
     logo:   '../../assets/jober.svg',
     photo:  '../../assets/profile-yuka.png',
     hero:   '',
@@ -1070,7 +1085,7 @@
     chat: 'bottom', cta: 'gradient', ctaCustom: '', ctaText: 'auto', ctaTextCustom: '', ctaLabel: '대화하기',
     pageText: 'ink', pageTextCustom: '',
     pageBg: 'mist', pageBgCustom: '',
-    shape: 'round', shadow: 'soft', balign: 'left'
+    shape: 'round', shadow: 'soft', balign: 'left', surface: 'card'
   };
 
   let blocks = [
@@ -1256,6 +1271,7 @@
     document.body.style.setProperty('--card-radius', CARD_SHAPE[T.shape]);
     document.body.style.setProperty('--block-shadow', SHADOW[T.shadow]);
     document.body.classList.toggle('balign-center', T.balign === 'center');
+    document.body.classList.toggle('surface-plain', T.surface === 'plain');
     document.body.classList.toggle('editing', activeId !== null);
     $('head').classList.toggle('is-active', activeId === COVER_ID);
 
@@ -1391,9 +1407,12 @@
     if (b.kind === 'chat') return blockInner(b);
     if (b.kind === 'profile') {
       const center = b.align === 'center' ? ' pf-center' : '';
-      /* 대표 이미지를 올리면 그 사진이 명함 앞면을 대신한다 — 명함 비율로 잘라 보여주고,
-         이름·직함·연락처는 아래 별도 카드로 분리한다 */
-      if (P.hero) {
+      /* 동그란 사진 — 명함 면 없이 사진과 이름만 선다 */
+      if (P.layout === 'avatar') {
+        return '<div class="sec-card pf-avatar-card' + center + '">' + blockInner(b) + '</div>';
+      }
+      /* 큰 이미지 — 사진이 명함 앞면을 대신하고, 이름·직함·연락처는 아래 별도 카드로 분리된다 */
+      if (P.layout === 'image' && P.hero) {
         const info = pfInfo(b);
         return '<div class="sec-card pf-card pf-photo-face' + center + '">'
           + '<div class="pf-media"><img src="' + P.hero + '" alt=""></div></div>'
@@ -1406,7 +1425,7 @@
 
   /* 명함 앞면 — 로고는 좌상단, 사진은 우상단 */
   function pfFace() {
-    if (!P.logo && !P.photo) return '';
+    if (P.layout !== 'card' || (!P.logo && !P.photo)) return '';
     return '<div class="pf-top">'
       + (P.logo ? '<img class="pf-logo" src="' + P.logo + '" alt="">' : '<span></span>')
       + (P.photo ? '<img class="pf-photo" src="' + P.photo + '" alt="">' : '')
@@ -1436,6 +1455,12 @@
   function blockInner(b) {
     if (b.kind === 'chat') return chatBtn();
     if (b.kind === 'profile') {
+      if (P.layout === 'avatar') {
+        const info = pfInfo(b);
+        return '<span class="avatar avatar-2xl pf-avatar">'
+          + (P.photo ? '<img src="' + P.photo + '" alt="">' : '') + '</span>'
+          + (info || '<div class="pf-info"><div class="pf-name is-empty">이름을 설정해주세요</div></div>');
+      }
       const face = pfFace();
       const info = pfInfo(b);
       if (!face && !info) return '<div class="pf-info"><div class="pf-name is-empty">이름을 설정해주세요</div></div>';
@@ -2044,6 +2069,29 @@
 
   function mkIcon(name) { return '<i data-lucide="' + name + '" class="mk-ico"></i>'; }
 
+  /* 프로필 앞면 미리보기 — 동그란 사진 · 명함 · 큰 이미지 */
+  function mkLayout(v) {
+    const line = (x, y, w) => '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="4" rx="2"' + F('--color-border') + '/>';
+    let art;
+    if (v === 'avatar') art = '<circle cx="31" cy="16" r="9"' + F('--color-text-muted') + '/>' + line(18, 31, 26) + line(23, 39, 16);
+    else if (v === 'card') art = '<rect x="6" y="6" width="50" height="32" rx="4" style="fill:var(--color-surface);stroke:var(--color-border);stroke-width:1.5"/>'
+      + '<rect x="11" y="11" width="14" height="8" rx="2"' + F('--color-text-muted') + '/>'
+      + '<rect x="42" y="11" width="9" height="9" rx="2"' + F('--color-border') + '/>' + line(11, 28, 22);
+    else art = '<rect x="6" y="4" width="50" height="28" rx="4"' + F('--color-text-muted') + '/>'
+      + '<rect x="6" y="36" width="50" height="14" rx="4" style="fill:var(--color-surface);stroke:var(--color-border);stroke-width:1.5"/>';
+    return '<svg class="mk" viewBox="0 0 62 52" style="max-width:62px;margin:0 auto">' + art + '</svg>';
+  }
+
+  /* 섹션이 흰 카드 면에 올라가는지 */
+  function mkSurface(v) {
+    const face = v === 'card'
+      ? '<rect x="2" y="3" width="68" height="22" rx="6" style="fill:var(--color-surface);stroke:var(--color-border);stroke-width:1.5"/>'
+      : '';
+    return '<svg class="mk" viewBox="0 0 72 28">' + face
+      + '<rect x="10" y="9" width="30" height="4" rx="2"' + F('--color-text-muted') + '/>'
+      + '<rect x="10" y="17" width="44" height="4" rx="2"' + F('--color-border') + '/></svg>';
+  }
+
   /* 색상 스와치 줄 — 프리셋 + 마지막 칸의 컬러피커(자유 선택) */
   function swatchRow(key, cur, presets, fillOf, custom, fallbackToken) {
     const cells = presets.map(v =>
@@ -2059,12 +2107,24 @@
   }
 
   function drawDesign() {
-    $('design-tabs').innerHTML = [['style', '스타일'], ['block', '블록'], ['chat', '대화버튼']].map(t =>
+    $('design-tabs').innerHTML = [['profile', '프로필'], ['style', '스타일'], ['block', '블록'], ['chat', '대화버튼']].map(t =>
       '<button class="tab' + (designTab === t[0] ? ' is-active' : '') + '" data-act="dtab" data-v="' + t[0] + '">' + t[1] + '</button>'
     ).join('');
 
     let h = '';
-    if (designTab === 'style') {
+    if (designTab === 'profile') {
+      const pb = blocks.find(b => b.kind === 'profile');
+      h += fieldLabel('레이아웃') + '<div class="mock-row mock-row-3">'
+        + mock('layout', 'avatar', P.layout, mkLayout('avatar'), '동그란 사진', 'setp')
+        + mock('layout', 'card',   P.layout, mkLayout('card'),   '명함',       'setp')
+        + mock('layout', 'image',  P.layout, mkLayout('image'),  '큰 이미지',   'setp')
+        + '</div>';
+      if (pb) h += fieldLabel('정렬') + '<div class="mock-row mock-row-2">'
+        + mock('align', 'left',   pb.align, mkIcon('align-left'),   '좌측정렬', 'setpb')
+        + mock('align', 'center', pb.align, mkIcon('align-center'), '중앙정렬', 'setpb')
+        + '</div>';
+
+    } else if (designTab === 'style') {
       h += fieldLabel('배경색')
         + swatchRow('pageBg', T.pageBg, PAGE_BG, v => 'var(--color-page-' + v + ')', T.pageBgCustom, '--color-page-lilac')
         + fieldLabel('텍스트 색상')
@@ -2081,6 +2141,10 @@
         + mock('shadow', 'soft',   T.shadow, mkShadow('soft'),   '')
         + mock('shadow', 'mid',    T.shadow, mkShadow('mid'),    '')
         + mock('shadow', 'strong', T.shadow, mkShadow('strong'), '')
+        + '</div>'
+        + fieldLabel('카드 면') + '<div class="mock-row mock-row-2">'
+        + mock('surface', 'card',  T.surface, mkSurface('card'),  '있음')
+        + mock('surface', 'plain', T.surface, mkSurface('plain'), '없음')
         + '</div>'
         + fieldLabel('정렬') + '<div class="mock-row mock-row-2">'
         + mock('balign', 'left',   T.balign, mkIcon('align-left'),   '좌측정렬')
@@ -2117,6 +2181,15 @@
     const act = el.dataset.act;
     if (act === 'sett') {
       T[el.dataset.k] = el.dataset.v;
+      touch(); render(); drawDesign();
+    }
+    if (act === 'setp') {
+      P[el.dataset.k] = el.dataset.v;
+      touch(); render(); drawDesign();
+    }
+    if (act === 'setpb') {
+      const pb = blocks.find(b => b.kind === 'profile');
+      if (pb) pb[el.dataset.k] = el.dataset.v;
       touch(); render(); drawDesign();
     }
   });

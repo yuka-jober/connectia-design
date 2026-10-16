@@ -60,7 +60,7 @@
 - **Bottom Sheet:** `.bottom-sheet-overlay .bottom-sheet .bottom-sheet-handle` (+ `.is-open`)
 - **Toast:** `.toast-container .toast` (+ 액션 붙일 때 `.toast-with-action` + `.toast-action`) + 크게 `.toast-lg` + 결과 색 `.toast-success` / `.toast-warning` / `.toast-neutral` + 안쪽 보조 텍스트 `.toast-sub`
 - **Dialog/Modal:** `.dialog-overlay .dialog .dialog-title .dialog-desc .dialog-actions` (닫을 땐 `.dialog-overlay`에 `hidden` 속성)
-- **Avatar:** `.avatar` + `.avatar-xs/sm/md/lg/xl` + `.avatar-rounded` — 사진 없는 사람도 `.avatar`만 쓴다(기본 실루엣 이미지가 배경으로 깔림). `.avatar-blank` 아이콘·이름 이니셜로 대체 금지. 아바타에 커스텀 클래스를 붙일 땐 `background`로 기본 이미지를 덮어쓰지 않게 주의
+- **Avatar:** `.avatar` + `.avatar-xs/sm/md/lg/xl/2xl` + `.avatar-rounded` — 사진 없는 사람도 `.avatar`만 쓴다(기본 실루엣 이미지가 배경으로 깔림). `.avatar-blank` 아이콘·이름 이니셜로 대체 금지. 아바타에 커스텀 클래스를 붙일 땐 `background`로 기본 이미지를 덮어쓰지 않게 주의
 - **Divider:** `.divider-text` — 가운데 텍스트가 들어가는 구분선(좌우 가로선 자동)
 - **SuggestChip:** `.suggest-chip` (+ `.suggest-chip-sm` 소형, 고른 상태 `.is-selected` = 무채색 채움) — AI 추천 답·빠른 요청처럼 **눌러야 하는 칩에만** 쓰는 알약. 상태·분류 표시용으로 쓰지 않는다
 
