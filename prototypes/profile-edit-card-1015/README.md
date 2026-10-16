@@ -6,8 +6,8 @@
 
 **바탕**
 
-- `review/profile-edit-block.html` — 9/11 블록 편집 구조
-- `prototypes/namecard-template-B-variants-0804/` — 카드형 명함 원본 디자인
+- **블록 편집 구조** — 프로필을 블록 단위로 고치는 기존 편집 화면
+- **카드형 명함 원본 디자인** — 편집화면이 블록형으로 바뀌기 전의 모습
 
 ---
 
