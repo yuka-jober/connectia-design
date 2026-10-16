@@ -292,6 +292,17 @@
     body.dragging { -webkit-user-select: none; user-select: none; }
 
     /* 좌측 레일 — 아이콘은 작게, 탭 영역은 44px */
+    /* 왼쪽 거터 — 블록을 프로필에 내보낼지 여기서 바로 끈다 */
+    .rail-left { right: auto; left: 0; }
+    .vis-btn {
+      display: flex; align-items: center; justify-content: center;
+      width: 44px; height: 44px; padding: 0;
+      background: none; border: none; cursor: pointer;
+      color: var(--color-text-faint);
+    }
+    .vis-btn svg { width: 20px; height: 20px; }
+    .block.is-hidden .vis-btn { color: var(--color-text-sub); }
+
     .rail {
       position: absolute; right: 0; top: 0; bottom: 0; width: 44px;
       display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -326,7 +337,7 @@
     body.editing .canvas > *:not(.block.is-active) {
       opacity: 0.4; filter: blur(var(--blur-dim));
     }
-    .block-tag  { position: absolute; top: -20px; left: 0; z-index: 2; }
+    .block-tag  { position: absolute; top: -20px; left: 44px; z-index: 2; }
 
     /* ── 빈 캔버스 안내 ── */
     .canvas-empty {
@@ -651,6 +662,7 @@
 
     /* ── 미리보기 모드 ── */
     body.preview .rail,
+    body.preview .rail-left,
     body.preview .block-tag,
     body.preview .block.is-hidden { display: none; }
     body.preview .block.is-empty-coll { display: none; }
@@ -1455,7 +1467,11 @@
     el.dataset.blockId = b.id;
 
     el.innerHTML =
-      '<div class="rail">'
+      '<div class="rail rail-left">'
+      + '<button class="vis-btn" data-vis aria-label="' + (b.visible ? '프로필에서 숨기기' : '프로필에 표시하기') + '">'
+      + '<i data-lucide="' + (b.visible ? 'eye' : 'eye-off') + '"></i></button>'
+      + '</div>'
+      + '<div class="rail">'
       + '<button class="rail-btn" data-mv="-1"' + (i === 0 ? ' disabled' : '') + ' aria-label="위로"><i data-lucide="chevron-up"></i></button>'
       + '<span class="rail-grip" aria-label="순서 이동"><i data-lucide="grip-vertical"></i></span>'
       + '<button class="rail-btn" data-mv="1"' + (i === blocks.length - 1 ? ' disabled' : '') + ' aria-label="아래로"><i data-lucide="chevron-down"></i></button>'
@@ -1466,6 +1482,9 @@
       + '</div>';
 
     el.querySelector('.block-body').addEventListener('click', () => openEditor(b.id));
+    el.querySelector('[data-vis]').addEventListener('click', e => {
+      e.stopPropagation(); b.visible = !b.visible; touch(); render();
+    });
     el.querySelectorAll('.rail-btn').forEach(btn => {
       btn.addEventListener('click', e => { e.stopPropagation(); moveBlock(b.id, Number(btn.dataset.mv)); });
     });
@@ -2010,7 +2029,6 @@
           + '<i data-lucide="arrow-right"></i></button>';
       }
       h += aiKeyRow('', b.ai, 'ai');
-      h += '<hr class="sheet-divider">' + switchRow('프로필에 표시', b.visible, 'visible');
     }
 
     /* 프로필은 추가 목록에 없어 다시 세울 수 없으므로 지우지 않는다.
