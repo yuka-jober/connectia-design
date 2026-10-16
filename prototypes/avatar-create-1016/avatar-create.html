@@ -33,11 +33,23 @@
     font-size: var(--fs-display); font-weight: var(--fw-bold); letter-spacing: var(--ls-display);
   }
 
-  .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
-  @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } }
+  /* 좁은 화면에서는 가로로 밀어 본다 — 네 장을 세로로 쌓으면 비교가 안 된다 */
+  .grid {
+    display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px;
+  }
+  @media (max-width: 860px) {
+    .page { padding-left: 0; padding-right: 0; }
+    h1 { padding: 0 20px; }
+    .grid {
+      display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory;
+      padding: 4px 20px 8px; scrollbar-width: none;
+    }
+    .grid::-webkit-scrollbar { display: none; }
+    .preset { flex: 0 0 74%; scroll-snap-align: center; }
+  }
 
   .preset {
-    display: flex; flex-direction: column; gap: 16px; padding: 16px;
+    display: flex; flex-direction: column; gap: 12px; padding: 12px;
     background: var(--color-surface); border: 2px solid transparent;
     border-radius: var(--r-xl); box-shadow: var(--shadow-1);
     cursor: pointer; text-align: left;
@@ -47,59 +59,12 @@
   .preset.is-selected { border-color: var(--color-primary); }
   .preset-name { font-size: var(--fs-body-lg); font-weight: var(--fw-semibold); color: var(--color-text); }
 
-  /* ── 미리보기 ── */
+  /* 실제 페이지를 찍은 그림 — 위에서부터 보이는 만큼 */
   .shot {
-    position: relative; width: 100%; aspect-ratio: 2 / 3; overflow: hidden;
+    width: 100%; aspect-ratio: 5 / 7; overflow: hidden;
     border-radius: var(--r-md); background: var(--color-bg);
-    display: flex; flex-direction: column;
   }
-  .shot-cover {
-    width: 100%; aspect-ratio: 9 / 5; flex: none;
-    background: var(--color-surface-strong) center/cover;
-  }
-  .cover-a { background-image: url(../../assets/tntn-cover.png); }
-  .cover-b { background-image: url(../../assets/studiogloss-cover.png); }
-  .cover-c { background-image: url(../../assets/yoga-cover.png); }
-  .shot-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; padding: 0 10px 10px; }
-
-  /* 명함 */
-  .m-card {
-    margin: -22% 0 0; padding: 9px; aspect-ratio: 91 / 55;
-    background: var(--color-surface); border-radius: var(--r-xs); box-shadow: var(--shadow-2);
-    display: flex; flex-direction: column; justify-content: space-between;
-  }
-  .m-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 6px; }
-  .m-co { font-size: var(--fs-nav); font-weight: var(--fw-bold); color: var(--color-text); }
-  .m-photo { width: 18px; height: 18px; border-radius: 2px; object-fit: cover; display: block; }
-  .m-name { font-size: var(--fs-nav); font-weight: var(--fw-bold); color: var(--color-text); }
-  .m-role { font-size: 7px; color: var(--color-text-muted); margin-left: 3px; }
-  .m-ct { font-size: 7px; color: var(--color-text-muted); margin-top: 3px; line-height: 1.5; }
-
-  /* 원형 · 배경만 */
-  .m-head { display: flex; flex-direction: column; align-items: center; gap: 4px; margin: -16% 0 4px; }
-  .m-avatar {
-    width: 34px; height: 34px; border-radius: var(--r-full); object-fit: cover;
-    display: block; border: 2px solid var(--color-surface);
-  }
-  .m-head-left { align-items: flex-start; margin: 6px 0 4px; padding: 0 2px; }
-
-  /* 섹션 */
-  .m-sec {
-    background: var(--color-surface); border-radius: var(--r-sm); padding: 7px 8px;
-    display: flex; flex-direction: column; gap: 5px;
-  }
-  .m-sec.is-plain { background: none; padding: 7px 2px; }
-  .m-label { font-size: var(--fs-nav); font-weight: var(--fw-bold); color: var(--color-text); }
-  .m-text { font-size: 7px; line-height: 1.6; color: var(--color-text-sub); }
-  .m-link { font-size: 7px; color: var(--color-text-sub); padding: 3px 0; border-bottom: 1px solid var(--color-line-warm); }
-  .m-link:last-child { border-bottom: none; }
-  .m-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px; }
-  .m-grid img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; display: block; }
-  .m-scroll { display: flex; gap: 4px; overflow: hidden; }
-  .m-poster { flex: 0 0 28px; min-width: 0; aspect-ratio: 3 / 4; border-radius: 2px; object-fit: cover; display: block; }
-  .m-sns { display: flex; justify-content: center; gap: 4px; }
-  .m-sns span { width: 13px; height: 13px; border-radius: 3px; background: var(--color-text); display: block; }
-  .m-stars { font-size: 7px; color: var(--color-star); letter-spacing: 1px; }
+  .shot img { width: 100%; display: block; }
 
   /* ── 만들기 ── */
   .foot {
@@ -121,87 +86,24 @@
 
   <div class="grid" id="grid">
 
-    <!-- 명함 — 튼튼내과 김태현 원장 -->
     <button class="preset is-selected" data-k="card">
-      <span class="shot">
-        <span class="shot-cover cover-a"></span>
-        <span class="shot-body">
-          <span class="m-card">
-            <span class="m-card-top">
-              <span class="m-co">튼튼내과</span>
-              <img class="m-photo" src="../../assets/tntn-avatar.png" alt="">
-            </span>
-            <span>
-              <span style="display:block"><span class="m-name">김태현</span><span class="m-role">대표원장</span></span>
-              <span class="m-ct" style="display:block">02 546 2161<br>서울 강남구 테헤란로 12</span>
-            </span>
-          </span>
-          <span class="m-sec"><span class="m-label">SNS</span>
-            <span class="m-sns"><span></span><span></span><span></span></span>
-          </span>
-          <span class="m-sec"><span class="m-label">소개</span>
-            <span class="m-text">환자의 이야기를 충분히 듣고, 어떻게 치울 것인지 함께 정합니다.</span>
-          </span>
-          <span class="m-sec"><span class="m-label">링크</span>
-            <span><span class="m-link" style="display:block">진료 예약하기</span><span class="m-link" style="display:block">건강검진 프로그램</span></span>
-          </span>
-        </span>
-      </span>
+      <span class="shot"><img src="../../assets/presets/preset-card.jpg" alt="튼튼내과 김태현 원장"></span>
       <span class="preset-name">명함</span>
     </button>
 
-    <!-- 프로필 페이지 — 글로스네일 -->
     <button class="preset" data-k="profile">
-      <span class="shot">
-        <span class="shot-cover cover-b"></span>
-        <span class="shot-body">
-          <span class="m-head">
-            <img class="m-avatar" src="../../assets/studiogloss-avatar.png" alt="">
-            <span class="m-name">글로스네일</span>
-          </span>
-          <span class="m-sec is-plain"><span class="m-label">소개</span>
-            <span class="m-text">손끝에서 오래 가는 색을 만듭니다. 예약제로 한 분씩 봅니다.</span>
-          </span>
-          <span class="m-sec is-plain"><span class="m-label">갤러리</span>
-            <span class="m-grid">
-              <img src="../../assets/studiogloss-gallery1.png" alt="">
-              <img src="../../assets/studiogloss-gallery2.png" alt="">
-              <img src="../../assets/studiogloss-gallery3.png" alt="">
-            </span>
-          </span>
-          <span class="m-sec is-plain"><span class="m-label">리뷰</span>
-            <span class="m-stars">★★★★★</span>
-            <span class="m-text">색이 오래 가요. 다음에도 예약할게요.</span>
-          </span>
-        </span>
-      </span>
-      <span class="preset-name">프로필 페이지</span>
+      <span class="shot"><img src="../../assets/presets/preset-profile.jpg" alt="글로스네일"></span>
+      <span class="preset-name">프로필 · 원형 사진</span>
     </button>
 
-    <!-- 모임 페이지 — 하루요가 -->
+    <button class="preset" data-k="photo">
+      <span class="shot"><img src="../../assets/presets/preset-photo.jpg" alt="하루요가"></span>
+      <span class="preset-name">프로필 · 큰 이미지</span>
+    </button>
+
     <button class="preset" data-k="group">
-      <span class="shot">
-        <span class="shot-cover cover-c"></span>
-        <span class="shot-body">
-          <span class="m-head m-head-left">
-            <span class="m-name">하루요가</span>
-          </span>
-          <span class="m-sec"><span class="m-label">소개</span>
-            <span class="m-text">아침에 모여 30분 몸을 풉니다. 처음 오시는 분도 괜찮아요.</span>
-          </span>
-          <span class="m-sec"><span class="m-label">이벤트</span>
-            <span class="m-scroll">
-              <img class="m-poster" src="../../assets/yoga-event1.png" alt="">
-              <img class="m-poster" src="../../assets/yoga-event2.png" alt="">
-              <img class="m-poster" src="../../assets/yoga-gallery1.png" alt="">
-            </span>
-          </span>
-          <span class="m-sec"><span class="m-label">게시판</span>
-            <span><span class="m-link" style="display:block">11월 수업 시간표</span><span class="m-link" style="display:block">매트 준비 안내</span></span>
-          </span>
-        </span>
-      </span>
-      <span class="preset-name">모임 페이지</span>
+      <span class="shot"><img src="../../assets/presets/preset-group.jpg" alt="서울시립대학교 총동문회"></span>
+      <span class="preset-name">모임</span>
     </button>
 
   </div>

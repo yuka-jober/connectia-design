@@ -286,6 +286,11 @@
     /* 명함이 배경 사진을 덮고 올라선다 — 블록 자신의 위 여백까지 끌어올린다 */
     .block.is-over-cover { margin-top: calc(var(--cover-show) - var(--cover-h) - 24px); z-index: 1; }
     body.preview .block.is-over-cover { margin-top: calc(var(--cover-show) - var(--cover-h) - 12px); }
+    /* 원형·배경만 — 배경 사진에 걸쳐 서거나, 바로 아래 붙어 선다 */
+    .block.is-head-over { margin-top: -60px; z-index: 1; }
+    body.preview .block.is-head-over { margin-top: -48px; }
+    .block.is-head-near { margin-top: -28px; }
+    body.preview .block.is-head-near { margin-top: -16px; }
     .block.is-hidden .block-body { opacity: 0.4; }
     .block.is-dragging .block-body { opacity: 0.4; }
 
@@ -1212,7 +1217,7 @@
 
   /* 전역 디자인 */
   const T = {
-    coverEdge: 'sharp',
+    headPos: 'plain',   /* plain · plain-over · fade · fade-over */
     chat: 'bottom', cta: 'gradient', ctaCustom: '', ctaText: 'auto', ctaTextCustom: '', ctaLabel: '대화하기',
     pageText: 'ink', pageTextCustom: '',
     pageBg: 'mist', pageBgCustom: '',
@@ -1457,7 +1462,7 @@
     if (!onCover) { h.innerHTML = bar; return; }
     h.innerHTML =
       '<div class="cover" style="--cover-img:url(\'' + P.cover + '\')">'
-      + (OVER_COVER.indexOf(P.layout) >= 0 || T.coverEdge === 'fade' ? '<span class="cover-fade"></span>' : '')
+      + (OVER_COVER.indexOf(P.layout) >= 0 || T.headPos.indexOf('fade') === 0 ? '<span class="cover-fade"></span>' : '')
       + '</div>' + bar;
   }
 
@@ -1504,7 +1509,10 @@
       + (b.id === activeId ? ' is-active' : '')
       + (b.visible ? '' : ' is-hidden')
       + (isEmptyBlock(b) ? ' is-empty-coll' : '')
-      + (i === 0 && P.cover && b.kind === 'profile' && OVER_COVER.indexOf(P.layout) >= 0 ? ' is-over-cover' : '');
+      + (i === 0 && P.cover && b.kind === 'profile'
+          ? (OVER_COVER.indexOf(P.layout) >= 0 ? ' is-over-cover'
+             : (T.headPos.indexOf('over') > 0 ? ' is-head-over' : ' is-head-near'))
+          : '');
     el.dataset.blockId = b.id;
 
     el.innerHTML =
@@ -1924,9 +1932,11 @@
       + (LAYOUT_USES[P.layout] || []).map(k => imgSlot(k, PROFILE_IMG[k][2], PROFILE_IMG[k][3])).join('')
       + imgSlot('cover', '배경 사진', 'cover')
       + '</div>';
-    if (P.cover && OVER_COVER.indexOf(P.layout) < 0) h += fieldLabel('배경 가장자리') + '<div class="mock-row mock-row-2">'
-      + mock('coverEdge', 'sharp', T.coverEdge, mkCoverEdge('sharp'), '기본')
-      + mock('coverEdge', 'fade',  T.coverEdge, mkCoverEdge('fade'),  '페이드')
+    if (P.cover && OVER_COVER.indexOf(P.layout) < 0) h += fieldLabel('프로필 위치') + '<div class="mock-row mock-row-4">'
+      + mock('headPos', 'plain',      T.headPos, mkHeadPos('plain'),      '')
+      + mock('headPos', 'plain-over', T.headPos, mkHeadPos('plain-over'), '')
+      + mock('headPos', 'fade',       T.headPos, mkHeadPos('fade'),       '')
+      + mock('headPos', 'fade-over',  T.headPos, mkHeadPos('fade-over'),  '')
       + '</div>';
 
     if (pb) h += fieldLabel('정렬') + '<div class="mock-row mock-row-2">'
@@ -2271,14 +2281,22 @@
   const F = c => ' style="fill:var(' + c + ')"';
 
   /* 커버 가장자리 — 아래쪽 경계가 또렷한지, 페이지 배경으로 풀리는지 */
-  function mkCoverEdge(v) {
-    if (v === 'sharp') return '<svg class="mk" viewBox="0 0 72 28">'
-      + '<rect x="0" y="0" width="72" height="28" rx="4"' + F('--color-surface-sub') + '/></svg>';
-    return '<svg class="mk" viewBox="0 0 72 28">'
-      + '<defs><linearGradient id="mkedge" x1="0" y1="0" x2="0" y2="1">'
-      + '<stop offset="0.35" style="stop-color:var(--color-surface-sub)"/>'
-      + '<stop offset="1" style="stop-color:var(--color-surface-sub);stop-opacity:0"/></linearGradient></defs>'
-      + '<rect x="0" y="0" width="72" height="28" rx="4" style="fill:url(#mkedge)"/></svg>';
+  /* 프로필 위치 — 배경 가장자리(기본·페이드)와 겹침 여부를 한 칸에 담는다 */
+  function mkHeadPos(v) {
+    const fade = v.indexOf('fade') === 0;
+    const over = v.indexOf('over') > 0;
+    const id = 'mkhp-' + v;
+    const defs = fade
+      ? '<defs><linearGradient id="' + id + '" x1="0" y1="0" x2="0" y2="1">'
+        + '<stop offset="0.45" style="stop-color:var(--color-surface-strong)"/>'
+        + '<stop offset="1" style="stop-color:var(--color-surface-strong);stop-opacity:0"/></linearGradient></defs>'
+      : '';
+    const cover = '<rect x="0" y="0" width="56" height="26" rx="3"'
+      + (fade ? ' style="fill:url(#' + id + ')"' : F('--color-surface-strong')) + '/>';
+    const cy = over ? 26 : 36;
+    return '<svg class="mk" viewBox="0 0 56 50" style="max-width:56px;margin:0 auto">' + defs + cover
+      + '<circle cx="28" cy="' + cy + '" r="8" style="fill:var(--color-text-muted);stroke:var(--color-surface);stroke-width:2"/>'
+      + '<rect x="18" y="' + (cy + 12) + '" width="20" height="3" rx="1.5"' + F('--color-border') + '/></svg>';
   }
 
   function mkChat(v) {

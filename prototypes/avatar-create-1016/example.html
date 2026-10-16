@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>프리셋 예시 페이지</title>
+<link rel="stylesheet" href="../../tokens.css">
+<link rel="stylesheet" href="../../components.css">
+<style>
+  /* ============================================================
+     프리셋이 만들어 내는 페이지를 실제로 그려 둔 화면.
+     새 페이지 만들기 화면의 미리보기는 여기를 찍어서 쓴다.
+     #card 명함(튼튼내과) · #profile 프로필(글로스네일) · #group 모임(하루요가)
+     ============================================================ */
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--color-bg); font-family: var(--font-base); -webkit-font-smoothing: antialiased; }
+  a { color: inherit; text-decoration: none; }
+
+  .frame { position: relative; width: 100%; max-width: 430px; margin: 0 auto; background: var(--color-bg); overflow: hidden; }
+
+  .cover { position: relative; width: 100%; aspect-ratio: 9 / 5; background-position: center; background-size: cover; }
+  .cover-fade {
+    position: absolute; left: 0; right: 0; bottom: -2px; height: 64%;
+    background: linear-gradient(to bottom, transparent 0%, var(--color-bg) 76%, var(--color-bg) 100%);
+  }
+  .head { position: relative; }
+  .head-bar {
+    position: absolute; top: 0; left: 0; right: 0; z-index: 2;
+    display: flex; justify-content: flex-end; gap: 8px; padding: 12px 24px;
+    background: linear-gradient(180deg, var(--color-scrim) 0%, transparent 100%);
+  }
+  .head-bar .btn svg { width: 14px; height: 14px; }
+
+  /* 명함 */
+  .pf-wrap { position: relative; margin: -34% 18px 0; z-index: 1; }
+  .pf-card {
+    position: relative; display: flex; flex-direction: column; justify-content: space-between;
+    aspect-ratio: 91 / 55; padding: 22px 22px 20px;
+    background: var(--color-surface); border-radius: var(--r-md); box-shadow: var(--shadow-lift);
+  }
+  .pf-card::after {
+    content: ''; position: absolute; left: 14px; right: 14px; bottom: -8px; height: 14px;
+    border-radius: 0 0 var(--r-md) var(--r-md); background: var(--color-card-stack); filter: blur(10px);
+  }
+  .pf-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+  .pf-company { font-size: var(--fs-headline); font-weight: var(--fw-bold); line-height: 1.2; color: var(--color-text); }
+  .pf-photo { width: 54px; height: 54px; border-radius: var(--r-xs); object-fit: cover; flex-shrink: 0; }
+  .pf-name-row { display: flex; align-items: baseline; gap: 8px; }
+  .pf-name { font-size: var(--fs-title); font-weight: var(--fw-bold); letter-spacing: var(--ls-namecard); color: var(--color-text); }
+  .pf-role { font-size: var(--fs-badge); letter-spacing: var(--ls-namecard-sub); color: var(--color-text-muted); }
+  .ct-list { display: flex; flex-direction: column; gap: 4px; margin-top: 12px; }
+  .ct-row { display: flex; align-items: baseline; gap: 8px; }
+  .ct-k { font-size: var(--fs-caption); color: var(--color-text-muted); flex-shrink: 0; }
+  .ct-v { font-size: var(--fs-caption); color: var(--color-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* 큰 이미지 — 사진이 명함 앞면을 대신하고, 정보는 아래 카드로 분리된다 */
+  .pf-photo-face { padding: 0; overflow: hidden; }
+  .pf-photo-face .pf-media { position: absolute; inset: 0; overflow: hidden; border-radius: var(--r-md); }
+  .pf-photo-face .pf-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .pf-info-card {
+    margin: 16px 10px 0; padding: 22px 18px 24px;
+    background: var(--color-surface); border-radius: var(--r-section); box-shadow: var(--shadow-1);
+  }
+
+  /* 원형 · 배경만 */
+  .av-head { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 0 20px; margin-top: -36px; }
+  .av-photo { border: 3px solid var(--color-surface); }
+  .av-head.is-plain { align-items: flex-start; margin-top: 16px; }
+  .av-photo { width: 72px; height: 72px; border-radius: var(--r-full); object-fit: cover; display: block; }
+  .av-info { display: flex; flex-direction: column; gap: 8px; align-items: center; }
+  .av-head.is-plain .av-info { align-items: flex-start; }
+  .av-name { font-size: var(--fs-title); font-weight: var(--fw-bold); letter-spacing: var(--ls-title); color: var(--color-text); }
+  .av-role { font-size: var(--fs-badge); color: var(--color-text-muted); }
+
+  /* 섹션 */
+  .sections { padding: 16px 10px 32px; display: flex; flex-direction: column; gap: 10px; }
+  .sec { background: var(--color-surface); border-radius: var(--r-section); padding: 22px 18px 24px; box-shadow: var(--shadow-1); }
+  body.plain .sec { background: none; box-shadow: none; border-radius: 0; padding: 22px 4px 24px; }
+  .sec-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-bottom: 12px; }
+  .sec-title { font-size: var(--fs-body); font-weight: var(--fw-bold); color: var(--color-text); }
+  .sec-act {
+    display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0;
+    height: 32px; padding: 0 12px; border-radius: var(--r-full);
+    border: 1px solid var(--color-line-warm); background: none;
+    font-size: var(--fs-label); font-weight: var(--fw-medium); color: var(--color-text-sub);
+  }
+  .sec-act svg { width: 14px; height: 14px; }
+  .list-area { background: var(--color-surface-haze); border-radius: var(--r-md); padding: 0 16px; }
+  .about { font-size: var(--fs-body-lg); line-height: var(--lh-body-lg); color: var(--color-text); margin: 0; }
+
+  .sns { display: flex; justify-content: center; gap: 12px; }
+  .sns span { width: 48px; height: 48px; border-radius: var(--r-tile); background: var(--color-text); display: block; }
+
+  .gal { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px; }
+  .gal img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; display: block; }
+
+  .ev-scroll { display: flex; gap: 12px; overflow: hidden; }
+  .ev { flex: 0 0 200px; min-width: 0; }
+  .ev-img {
+    position: relative; width: 100%; aspect-ratio: 3 / 4; border-radius: var(--r-md);
+    overflow: hidden; background: var(--color-line-warm);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .poster-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: blur(var(--blur-fill)); transform: scale(1.15); }
+  .poster-fg { position: relative; z-index: 1; max-width: 100%; max-height: 100%; object-fit: contain; box-shadow: var(--shadow-2); }
+  .ev-text { padding: 12px 0 0; display: flex; flex-direction: column; gap: 4px; }
+  .ev-title { font-size: var(--fs-body-lg); font-weight: var(--fw-semibold); color: var(--color-text); line-height: 1.4; }
+  .ev-desc { font-size: var(--fs-caption); color: var(--color-text-muted); }
+
+  .lk { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 0; border-bottom: 1px solid var(--color-line-warm); }
+  .lk:last-child { border-bottom: none; }
+  .lk-title { font-size: var(--fs-body); color: var(--color-text); }
+  .lk svg { width: 16px; height: 16px; color: var(--color-text-warm-sub); flex-shrink: 0; }
+
+  .post { display: block; padding: 16px 0; border-bottom: 1px solid var(--color-line-warm); }
+  .post:last-child { border-bottom: none; }
+  .post-title { display: block; font-size: var(--fs-body); line-height: var(--lh-body); color: var(--color-text); }
+  .post-date { display: block; margin-top: 4px; font-size: var(--fs-badge); color: var(--color-text-warm-faint); }
+
+  .star-row { display: flex; align-items: baseline; gap: 8px; padding-bottom: 12px; border-bottom: 1px solid var(--color-line-warm); }
+  .star-rate { font-size: var(--fs-metric); font-weight: var(--fw-bold); color: var(--color-text); }
+  .star-set { display: inline-flex; gap: 2px; }
+  .star-row svg { width: 14px; height: 14px; color: var(--color-star); fill: var(--color-star); }
+  .rv { display: flex; flex-direction: column; gap: 8px; padding: 16px 0; }
+  .rv-text { font-size: var(--fs-label); line-height: 1.7; color: var(--color-text); margin: 0; }
+  .rv-who { font-size: var(--fs-badge); color: var(--color-text-warm-sub); }
+</style>
+</head>
+<body>
+<div class="frame" id="frame"></div>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+const A = '../../assets/';
+const star = '<i data-lucide="star"></i>';
+
+const BRANDS = {
+  /* 명함 — 흰 카드 면 */
+  card: {
+    surface: 'card',
+    cover: A + 'tntn-cover.png',
+    head: `
+      <div class="pf-wrap"><div class="pf-card">
+        <div class="pf-top">
+          <span class="pf-company">튼튼내과</span>
+          <img class="pf-photo" src="${A}tntn-avatar.png" alt="">
+        </div>
+        <div>
+          <div class="pf-name-row"><span class="pf-name">김태현</span><span class="pf-role">대표원장</span></div>
+          <div class="ct-list">
+            <div class="ct-row"><span class="ct-k">전화</span><span class="ct-v">02 546 2161</span></div>
+            <div class="ct-row"><span class="ct-k">주소</span><span class="ct-v">서울 강남구 테헤란로 12</span></div>
+            <div class="ct-row"><span class="ct-k">진료</span><span class="ct-v">평일 09:00 ~ 18:00</span></div>
+          </div>
+        </div>
+      </div></div>`,
+    secs: [
+      { t: 'SNS', b: '<div class="sns"><span></span><span></span><span></span></div>' },
+      { t: '소개', b: '<p class="about">환자의 이야기를 충분히 듣고, 어떻게 치료할지 함께 정합니다. 일상 속 건강 고민부터 정기적인 건강검진까지 편안하게 상담받으실 수 있어요.</p>' },
+      { t: '링크', b: `<div class="list-area">
+          <a class="lk"><span class="lk-title">진료 예약하기</span><i data-lucide="arrow-up-right"></i></a>
+          <a class="lk"><span class="lk-title">건강검진 프로그램 & 비용</span><i data-lucide="arrow-up-right"></i></a>
+          <a class="lk"><span class="lk-title">오시는 길</span><i data-lucide="arrow-up-right"></i></a>
+        </div>` }
+    ]
+  },
+
+  /* 프로필 페이지 — 카드 면 없음 */
+  profile: {
+    surface: 'plain',
+    cover: A + 'studiogloss-cover.png',
+    head: `
+      <div class="av-head">
+        <img class="av-photo" src="${A}studiogloss-avatar.png" alt="">
+        <div class="av-info">
+          <span class="av-name">글로스네일</span>
+          <span class="av-role">예약제 네일 스튜디오</span>
+        </div>
+      </div>`,
+    secs: [
+      { t: '소개', b: '<p class="about">손끝에서 오래 가는 색을 만듭니다. 한 분씩 천천히 봐 드려요.</p>' },
+      { t: '갤러리', b: `<div class="gal">
+          <img src="${A}studiogloss-gallery1.png" alt=""><img src="${A}studiogloss-gallery2.png" alt=""><img src="${A}studiogloss-gallery3.png" alt="">
+          <img src="${A}studiogloss-gallery4.png" alt=""><img src="${A}studiogloss-gallery5.png" alt=""><img src="${A}studiogloss-gallery6.png" alt="">
+        </div>` },
+      { t: '리뷰', act: '<button class="sec-act"><i data-lucide="pencil"></i>리뷰 작성</button>', b: `
+        <div class="star-row"><span class="star-rate">4.9</span>
+          <span class="star-set">${star.repeat(5)}</span></div>
+        <div class="list-area">
+          <div class="rv"><p class="rv-text">색이 오래 가요. 다음에도 예약할게요.</p><div class="rv-who">익명의 사슴</div></div>
+        </div>` }
+    ]
+  },
+
+  /* 프로필 ② 큰 이미지 — 하루요가 */
+  photo: {
+    surface: 'card',
+    cover: A + 'yoga-cover.png',
+    head: `
+      <div class="pf-wrap"><div class="pf-card pf-photo-face">
+        <div class="pf-media"><img src="${A}yoga-event1.png" alt=""></div>
+      </div></div>
+      <div class="pf-info-card">
+        <div class="pf-name-row"><span class="pf-name">하루요가</span><span class="pf-role">김하루</span></div>
+        <div class="ct-list">
+          <div class="ct-row"><span class="ct-k">문의</span><span class="ct-v">010 2847 1930</span></div>
+          <div class="ct-row"><span class="ct-k">장소</span><span class="ct-v">서울 성동구 연무장길 45</span></div>
+        </div>
+      </div>`,
+    secs: [
+      { t: '소개', b: '<p class="about">아침에 모여 30분 몸을 풉니다. 처음 오시는 분도 괜찮아요.</p>' },
+      { t: '갤러리', b: `<div class="gal">
+          <img src="${A}yoga-gallery1.png" alt=""><img src="${A}yoga-event2.png" alt=""><img src="${A}yoga-event1.png" alt="">
+        </div>` },
+      { t: '링크', b: `<div class="list-area">
+          <a class="lk"><span class="lk-title">수업 시간표</span><i data-lucide="arrow-up-right"></i></a>
+          <a class="lk"><span class="lk-title">수업 예약하기</span><i data-lucide="arrow-up-right"></i></a>
+        </div>` }
+    ]
+  },
+
+  /* 모임 — 서울시립대학교 총동문회, 큰 이미지 */
+  group: {
+    surface: 'card',
+    cover: A + 'uos/uos-alumni-hero.webp',
+    head: `
+      <div class="pf-wrap"><div class="pf-card pf-photo-face">
+        <div class="pf-media"><img src="${A}uos/uos-alumni-hero.webp" alt=""></div>
+      </div></div>
+      <div class="pf-info-card">
+        <div class="pf-name-row"><span class="pf-name">서울시립대학교 총동문회</span></div>
+        <div class="ct-list">
+          <div class="ct-row"><span class="ct-k">전화</span><span class="ct-v">02 6490 6811</span></div>
+          <div class="ct-row"><span class="ct-k">이메일</span><span class="ct-v">uosalumni@uos.ac.kr</span></div>
+          <div class="ct-row"><span class="ct-k">주소</span><span class="ct-v">서울 동대문구 서울시립대로 163</span></div>
+        </div>
+      </div>`,
+    secs: [
+      { t: '이벤트', act: '<button class="sec-act"><i data-lucide="plus"></i>이벤트 추가</button>', b: `
+        <div class="ev-scroll">
+          <a class="ev"><span class="ev-img"><img class="poster-bg" src="${A}uos/cheers-parade.jpg" alt=""><img class="poster-fg" src="${A}uos/cheers-parade.jpg" alt=""></span>
+            <span class="ev-text"><span class="ev-title">청춘건배 동문 한마당</span><span class="ev-desc">11.15 · 서울시립대 대강당</span></span></a>
+          <a class="ev"><span class="ev-img"><img class="poster-bg" src="${A}uos/cheers-tent.jpg" alt=""><img class="poster-fg" src="${A}uos/cheers-tent.jpg" alt=""></span>
+            <span class="ev-text"><span class="ev-title">기수별 모임</span><span class="ev-desc">11.22 · 교내 잔디광장</span></span></a>
+        </div>` },
+      { t: '게시판', act: '<button class="sec-act"><i data-lucide="pencil"></i>글쓰기</button>', b: `
+        <div class="list-area">
+          <a class="post"><span class="post-title">2026 정기총회 안내</span><span class="post-date">10/28</span></a>
+          <a class="post"><span class="post-title">장학기금 모금 결과</span><span class="post-date">10/12</span></a>
+          <a class="post"><span class="post-title">동문 기업 채용 소식</span><span class="post-date">9/30</span></a>
+        </div>` },
+      { t: '링크', b: `<div class="list-area">
+          <a class="lk"><span class="lk-title">총동문회 카카오 채널</span><i data-lucide="arrow-up-right"></i></a>
+          <a class="lk"><span class="lk-title">총동문회 인스타그램</span><i data-lucide="arrow-up-right"></i></a>
+        </div>` }
+    ]
+  }
+};
+
+function draw(key) {
+  const d = BRANDS[key] || BRANDS.card;
+  document.body.classList.toggle('plain', d.surface === 'plain');
+  document.getElementById('frame').innerHTML =
+    `<div class="head">
+       <div class="cover" style="background-image:url(${d.cover})"><span class="cover-fade"></span></div>
+       <div class="head-bar">
+         <button class="btn btn-sm btn-pill btn-fill-dark"><i data-lucide="plus"></i>팔로우</button>
+         <button class="btn btn-sm btn-pill btn-glass-light">공유</button>
+       </div>
+       ${d.head}
+     </div>
+     <div class="sections">${d.secs.map(s =>
+       `<section class="sec">
+          <div class="sec-head"><span class="sec-title">${s.t}</span>${s.act || ''}</div>
+          ${s.b}
+        </section>`).join('')}
+     </div>`;
+  lucide.createIcons();
+}
+draw(location.hash.slice(1));
+window.addEventListener('hashchange', () => draw(location.hash.slice(1)));
+</script>
+</body>
+</html>
