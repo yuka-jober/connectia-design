@@ -191,6 +191,12 @@
     .pf-card.pf-center .pf-name-row { justify-content: center; }
     .pf-card.pf-center .pf-info { align-items: center; text-align: center; }
     /* 세로 플렉스 안에서 늘어나지 않도록 — 로고는 카드 좌상단(가운데 정렬이면 가운데) */
+    .pf-company {
+      flex: 1; min-width: 0;
+      font-size: var(--fs-headline); font-weight: var(--fw-bold); line-height: 1.2;
+      color: var(--color-text);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
     .pf-logo { display: block; height: 60px; width: auto; max-width: 108px; object-fit: contain; object-position: left center; }
     .pf-card.pf-center .pf-logo { object-position: center; }
     .pf-name {
@@ -1083,7 +1089,7 @@
     role:   'Product Designer',
     handle: 'yuka',
     layout: 'card',   /* avatar(원형) · cover(배경만) · card(자체 명함) · image(큰 이미지) */
-    showName: true, showContact: true,
+    company: '', showContact: true,
     logo:   '../../assets/jober.svg',
     photo:  '../../assets/profile-yuka.png',
     hero:   '',
@@ -1364,7 +1370,7 @@
 
   /* 미리보기에서 숨길 "내용이 비어 있는" 블록 */
   function isEmptyBlock(b) {
-    if (b.kind === 'profile') return !(P.hero || P.logo || P.photo || P.name || P.role);
+    if (b.kind === 'profile') return !(P.hero || P.logo || P.company || P.photo || P.name || P.role);
     if (isColl(b.kind)) return b.items.length === 0;
     if (b.kind === 'gallery') return b.items.length === 0;
     if (b.kind === 'info') return !b.links.some(l => l.title || l.url);
@@ -1426,18 +1432,18 @@
 
   /* 명함 앞면 — 로고는 좌상단, 사진은 우상단 */
   function pfFace() {
-    if (P.layout !== 'card' || (!P.logo && !P.photo)) return '';
-    return '<div class="pf-top">'
-      + (P.logo ? '<img class="pf-logo" src="' + P.logo + '" alt="">' : '<span></span>')
+    if (P.layout !== 'card' || (!P.logo && !P.company && !P.photo)) return '';
+    const mark = P.logo ? '<img class="pf-logo" src="' + P.logo + '" alt="">'
+      : (P.company ? '<span class="pf-company">' + esc(P.company) + '</span>' : '<span></span>');
+    return '<div class="pf-top">' + mark
       + (P.photo ? '<img class="pf-photo" src="' + P.photo + '" alt="">' : '')
       + '</div>';
   }
 
   /* 이름·직함·연락처 */
   function pfInfo(b) {
-    const showName = P.layout === 'card' || P.showName;
     const showContact = P.layout === 'card' || P.showContact;
-    const nameRow = showName && (P.name || P.role)
+    const nameRow = (P.name || P.role)
       ? '<div class="pf-name-row">'
         + (P.name ? '<span class="pf-name">' + esc(P.name) + '</span>' : '')
         + (P.role ? '<span class="pf-role">' + esc(P.role) + '</span>' : '')
@@ -1628,7 +1634,7 @@
       + '</div>';
   }
   /* 블록 단위 — 상태 키는 블록 객체에 */
-  const aiKeyRow  = (label, on, key) => aiRow(label, on, 'data-act="togglef" data-k="' + key + '"');
+  const aiKeyRow  = (label, on, key, act) => aiRow(label, on, 'data-act="' + (act || 'togglef') + '" data-k="' + key + '"');
   /* 항목별 — 상태 키는 항목 객체 안의 ai */
   const aiItemRow = (label, on, arr, i) =>
     aiRow(label, on, 'data-act="togglei" data-arr="' + arr + '" data-i="' + i + '"');
@@ -1762,18 +1768,89 @@
     return '<span class="pick-thumb">' + (src ? '<img src="' + src + '" alt="" style="width:100%;height:100%;object-fit:' + (fit || 'cover') + ';border-radius:var(--r-xs)">' : '<i data-lucide="' + icon + '"></i>') + '</span>';
   }
 
+  /* 프로필 한 패널 — 블록을 눌러도, 디자인 > 프로필로 와도 같은 화면이 뜬다 */
+  const LAYOUT_USES = { avatar: ['photo'], cover: [], card: ['logo', 'photo'], image: ['hero'] };
+  const PROFILE_IMG = {
+    logo:  ['pick-logo',  'clear-logo',  '로고',        'contain'],
+    photo: ['pick-photo', 'clear-photo', '사진',        'cover'],
+    hero:  ['pick-hero',  'clear-hero',  '대표 이미지', 'cover']
+  };
+
+  function profilePanel() {
+    const pb = blocks.find(b => b.kind === 'profile');
+    let h = fieldLabel('레이아웃') + '<div class="mock-row mock-row-4">'
+      + mock('layout', 'avatar', P.layout, mkLayout('avatar'), '원형',      'setp')
+      + mock('layout', 'cover',  P.layout, mkLayout('cover'),  '배경만',    'setp')
+      + mock('layout', 'card',   P.layout, mkLayout('card'),   '명함',      'setp')
+      + mock('layout', 'image',  P.layout, mkLayout('image'),  '큰 이미지', 'setp')
+      + '</div>';
+
+    /* 고른 레이아웃이 실제로 쓰는 이미지만 내놓는다 */
+    (LAYOUT_USES[P.layout] || []).forEach(k => {
+      const f = PROFILE_IMG[k];
+      h += pickRow(f[0], thumbBox(P[k], 'image', f[3]), f[2], P[k], f[1]);
+    });
+    /* 명함은 로고 자리에 회사명을 글자로 넣을 수 있다 */
+    if (P.layout === 'card') h += fieldLabel('회사명')
+      + '<input class="input" data-pin="company" value="' + esc(P.company) + '" placeholder="로고 대신 표시">';
+
+    if (pb) h += fieldLabel('정렬') + '<div class="mock-row mock-row-2">'
+      + mock('align', 'left',   pb.align, mkIcon('align-left'),   '좌측정렬', 'setpb')
+      + mock('align', 'center', pb.align, mkIcon('align-center'), '중앙정렬', 'setpb')
+      + '</div>';
+
+    h += fieldLabel('이름') + '<input class="input" data-pin="name" value="' + esc(P.name) + '" placeholder="이름">'
+      + fieldLabel('직함') + '<input class="input" data-pin="role" value="' + esc(P.role) + '" placeholder="직함">';
+
+    if (pb) {
+      h += '<hr class="sheet-divider">';
+      if (P.layout !== 'card') h += switchRow('연락처', P.showContact, 'showContact', 'togglep');
+      if (P.layout === 'card' || P.showContact) h += CONTACT_FIELDS.map(f =>
+        aiKeyRow(f[1], pb[f[2]], f[2], 'togglepb')
+        + '<input class="input" data-pb="' + f[0] + '" value="' + esc(pb[f[0]] || '') + '" placeholder="' + esc(f[1]) + '">').join('');
+    }
+
+    h += '<hr class="sheet-divider">'
+      + pickRow('pick-cover', thumbBox(P.cover, 'image'), '배경 사진', P.cover, 'clear-cover');
+    if (P.cover) h += fieldLabel('배경 가장자리') + '<div class="mock-row mock-row-2">'
+      + mock('coverEdge', 'sharp', T.coverEdge, mkCoverEdge('sharp'), '기본')
+      + mock('coverEdge', 'fade',  T.coverEdge, mkCoverEdge('fade'),  '페이드')
+      + '</div>';
+    return h;
+  }
+
+  /* 패널의 손잡이 — 어느 시트에서 눌렸든 같은 곳을 고친다 */
+  function panelClick(act, el, redraw) {
+    const pb = blocks.find(b => b.kind === 'profile');
+    const img = { 'pick-logo': 'logo', 'pick-photo': 'photo', 'pick-hero': 'hero', 'pick-cover': 'cover' };
+    const wipe = { 'clear-logo': 'logo', 'clear-photo': 'photo', 'clear-hero': 'hero', 'clear-cover': 'cover' };
+    if (img[act]) { pickFile(v => { P[img[act]] = v[0].src; touch(); render(); redraw(); }); return true; }
+    if (wipe[act]) P[wipe[act]] = '';
+    else if (act === 'setp')     P[el.dataset.k] = el.dataset.v;
+    else if (act === 'togglep')  P[el.dataset.k] = !P[el.dataset.k];
+    else if (act === 'sett')     T[el.dataset.k] = el.dataset.v;
+    else if (act === 'setpb')    { if (pb) pb[el.dataset.k] = el.dataset.v; }
+    else if (act === 'togglepb') { if (pb) pb[el.dataset.k] = !pb[el.dataset.k]; }
+    else return false;
+    touch(); render(); redraw();
+    return true;
+  }
+
+  function panelInput(target) {
+    const pin = target.closest('[data-pin]');
+    if (pin) { P[pin.dataset.pin] = pin.value; touch(); render(); return true; }
+    const el = target.closest('[data-pb]');
+    if (!el) return false;
+    const pb = blocks.find(b => b.kind === 'profile');
+    if (pb) pb[el.dataset.pb] = el.value;
+    touch(); render();
+    return true;
+  }
+
   function drawEditor() {
     if (activeId === COVER_ID) {
-      $('editor-title').textContent = '배경 사진';
-      let ch = pickRow('pick-cover', thumbBox(P.cover, 'image'), '배경 사진', P.cover, 'clear-cover');
-      /* 커버가 없으면 가장자리 처리는 의미가 없다 */
-      if (P.cover) {
-        ch += fieldLabel('가장자리') + '<div class="mock-row mock-row-2">'
-          + mock('coverEdge', 'sharp', T.coverEdge, mkCoverEdge('sharp'), '기본')
-          + mock('coverEdge', 'fade',  T.coverEdge, mkCoverEdge('fade'),  '페이드')
-          + '</div>';
-      }
-      $('editor-body').innerHTML = ch;
+      $('editor-title').textContent = '프로필';
+      $('editor-body').innerHTML = profilePanel();
       icons();
       return;
     }
@@ -1783,16 +1860,7 @@
     let h = '';
 
     if (b.kind === 'profile') {
-      h += pickRow('pick-logo', thumbBox(P.logo, 'image', 'contain'), '로고', P.logo, 'clear-logo')
-        + pickRow('pick-photo', thumbBox(P.photo, 'image'), '사진', P.photo, 'clear-photo')
-        + pickRow('pick-hero', thumbBox(P.hero, 'image'), '대표 이미지', P.hero, 'clear-hero')
-        + fieldLabel('이름') + '<input class="input" data-pin="name" value="' + esc(P.name) + '" placeholder="이름">'
-        + fieldLabel('직함') + '<input class="input" data-pin="role" value="' + esc(P.role) + '" placeholder="직함">'
-        + fieldLabel('정렬') + optRow('setf', 'align', b.align,
-            [['left', '좌측정렬', 'align-left'], ['center', '중앙정렬', 'align-center']])
-        + CONTACT_FIELDS.map(f =>
-            aiKeyRow(f[1], b[f[2]], f[2])
-            + '<input class="input" data-in="' + f[0] + '" value="' + esc(b[f[0]] || '') + '" placeholder="' + esc(f[1]) + '">').join('');
+      h += profilePanel();
 
     } else if (b.kind === 'text') {
       const fmtBtn = (cmd, icon, label) =>
@@ -1885,12 +1953,7 @@
     if (!el) return;
     const act = el.dataset.act;
 
-    if (activeId === COVER_ID) {
-      if (act === 'sett') { T[el.dataset.k] = el.dataset.v; touch(); render(); drawEditor(); }
-      else if (act === 'pick-cover') pickFile(v => { P.cover = v[0].src; touch(); render(); drawEditor(); });
-      else if (act === 'clear-cover') { P.cover = ''; touch(); render(); drawEditor(); }
-      return;
-    }
+    if (panelClick(act, el, drawEditor)) return;
 
     const b = find(activeId);
     if (!b) return;
@@ -1971,11 +2034,10 @@
   });
 
   $('editor-body').addEventListener('input', e => {
+    /* 이름·회사명·연락처는 블록이 아니라 프로필을 고친다 */
+    if (panelInput(e.target)) return;
     const b = find(activeId);
     if (!b) return;
-    /* 이름·직함은 블록이 아니라 프로필 정체성(P)을 고친다 */
-    const pin = e.target.closest('[data-pin]');
-    if (pin) { P[pin.dataset.pin] = pin.value; touch(); render(); return; }
     const sns = e.target.closest('[data-sns]');
     if (sns) { b.icons[Number(sns.dataset.sns)].id = sns.value; touch(); return; }
     const kv = e.target.closest('[data-kv]');
@@ -2118,26 +2180,7 @@
 
     let h = '';
     if (designTab === 'profile') {
-      const pb = blocks.find(b => b.kind === 'profile');
-      h += fieldLabel('레이아웃') + '<div class="mock-row mock-row-4">'
-        + mock('layout', 'avatar', P.layout, mkLayout('avatar'), '원형',      'setp')
-        + mock('layout', 'cover',  P.layout, mkLayout('cover'),  '배경만',    'setp')
-        + mock('layout', 'card',   P.layout, mkLayout('card'),   '명함',      'setp')
-        + mock('layout', 'image',  P.layout, mkLayout('image'),  '큰 이미지', 'setp')
-        + '</div>';
-      if (pb) h += fieldLabel('정렬') + '<div class="mock-row mock-row-2">'
-        + mock('align', 'left',   pb.align, mkIcon('align-left'),   '좌측정렬', 'setpb')
-        + mock('align', 'center', pb.align, mkIcon('align-center'), '중앙정렬', 'setpb')
-        + '</div>';
-      if (P.layout !== 'card') h += '<hr class="sheet-divider">'
-        + switchRow('이름·직함', P.showName, 'showName', 'togglep')
-        + switchRow('연락처', P.showContact, 'showContact', 'togglep');
-      h += pickRow('pick-cover', thumbBox(P.cover, 'image'), '배경 사진', P.cover, 'clear-cover');
-      /* 배경을 깐 뒤에야 가장자리 선택이 뜻을 갖는다 */
-      if (P.cover) h += fieldLabel('배경 가장자리') + '<div class="mock-row mock-row-2">'
-        + mock('coverEdge', 'sharp', T.coverEdge, mkCoverEdge('sharp'), '기본')
-        + mock('coverEdge', 'fade',  T.coverEdge, mkCoverEdge('fade'),  '페이드')
-        + '</div>';
+      h += profilePanel();
 
     } else if (designTab === 'style') {
       h += fieldLabel('배경색')
@@ -2193,28 +2236,12 @@
   $('design-body').addEventListener('click', e => {
     const el = e.target.closest('[data-act]');
     if (!el) return;
-    const act = el.dataset.act;
-    if (act === 'sett') {
-      T[el.dataset.k] = el.dataset.v;
-      touch(); render(); drawDesign();
-    }
-    if (act === 'setp') {
-      P[el.dataset.k] = el.dataset.v;
-      touch(); render(); drawDesign();
-    }
-    if (act === 'togglep') {
-      P[el.dataset.k] = !P[el.dataset.k];
-      touch(); render(); drawDesign();
-    }
-    if (act === 'setpb') {
-      const pb = blocks.find(b => b.kind === 'profile');
-      if (pb) pb[el.dataset.k] = el.dataset.v;
-      touch(); render(); drawDesign();
-    }
+    panelClick(el.dataset.act, el, drawDesign);
   });
 
   /* 컬러피커 — 프리셋 밖의 색을 런타임에 직접 고른다 */
   $('design-body').addEventListener('input', e => {
+    if (panelInput(e.target)) return;
     const tin = e.target.closest('[data-tin]');
     if (tin) { T[tin.dataset.tin] = tin.value; touch(); render(); return; }
     const el = e.target.closest('[data-pick]');
