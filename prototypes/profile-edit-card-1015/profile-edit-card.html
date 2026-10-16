@@ -2003,8 +2003,9 @@
       h += '<hr class="sheet-divider">' + switchRow('프로필에 표시', b.visible, 'visible');
     }
 
-    /* 컬렉션은 항목이 0개일 때만 삭제 허용 (데이터 유실 위험 없음) */
-    const canDelete = !isColl(b.kind) || b.items.length === 0;
+    /* 프로필은 추가 목록에 없어 다시 세울 수 없으므로 지우지 않는다.
+       컬렉션은 항목이 0개일 때만 삭제 허용 (데이터 유실 위험 없음) */
+    const canDelete = b.kind !== 'profile' && (!isColl(b.kind) || b.items.length === 0);
     if (canDelete) {
       h += '<div style="margin-top:24px"></div>'
         + '<button class="btn btn-md btn-block btn-weak-danger" data-act="del">블록 삭제</button>';
@@ -2384,7 +2385,7 @@
 
   function drawCatalog() {
     const has = k => blocks.some(b => b.kind === k);
-    const cells = ['profile', 'sns', 'text', 'link', 'gallery', 'event', 'info', 'board', 'review'];
+    const cells = ['sns', 'text', 'link', 'gallery', 'event', 'info', 'board', 'review'];
     $('catalog-body').innerHTML = '<div class="cat-grid">' + cells.map(k => {
       const off = SINGLETON.indexOf(k) >= 0 && has(k);
       return '<button class="cat-cell" data-act="add" data-v="' + k + '"' + (off ? ' disabled' : '') + '>'
