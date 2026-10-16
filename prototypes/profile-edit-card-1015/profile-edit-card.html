@@ -147,7 +147,7 @@
 
     /* 카드 면 끄기 — 섹션이 면 없이 페이지 배경 위에 바로 놓인다 */
     body.surface-plain .sec-card:not(.pf-card) {
-      background: none; box-shadow: none; border-radius: 0; padding: 22px 4px 24px;
+      background: var(--color-surface-veil); box-shadow: none;
     }
     /* 이벤트만은 카드 면 위에 놓인다 — 사진과 글이 한 덩어리로 읽혀야 한다 */
     body.surface-plain .lp-banner-card {
@@ -2269,7 +2269,7 @@
   function mkSurface(v) {
     const face = v === 'card'
       ? '<rect x="2" y="3" width="68" height="22" rx="6" style="fill:var(--color-surface);stroke:var(--color-border);stroke-width:1.5"/>'
-      : '';
+      : '<rect x="2" y="3" width="68" height="22" rx="6"' + F('--color-surface-veil') + '/>';
     return '<svg class="mk" viewBox="0 0 72 28">' + face
       + '<rect x="10" y="9" width="30" height="4" rx="2"' + F('--color-text-muted') + '/>'
       + '<rect x="10" y="17" width="44" height="4" rx="2"' + F('--color-border') + '/></svg>';
@@ -2317,8 +2317,8 @@
         + mock('shadow', 'strong', T.shadow, mkShadow('strong'), '')
         + '</div>'
         + fieldLabel('카드 면') + '<div class="mock-row mock-row-2">'
-        + mock('surface', 'card',  T.surface, mkSurface('card'),  '있음')
-        + mock('surface', 'plain', T.surface, mkSurface('plain'), '없음')
+        + mock('surface', 'card',  T.surface, mkSurface('card'),  '진하게')
+        + mock('surface', 'plain', T.surface, mkSurface('plain'), '옅게')
         + '</div>'
         + fieldLabel('정렬') + '<div class="mock-row mock-row-2">'
         + mock('balign', 'left',   T.balign, mkIcon('align-left'),   '좌측정렬')
